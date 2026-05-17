@@ -4,6 +4,7 @@ import AiUsageView from "./components/AiUsageView";
 import ContractDetail from "./components/ContractDetail";
 import ProjectForm from "./components/ProjectForm";
 import ProjectList from "./components/ProjectList";
+import ServerInfoPanel from "./components/ServerInfoPanel";
 import SettingsPage from "./components/SettingsPage";
 import SpecDetail from "./components/SpecDetail";
 import SpecForm from "./components/SpecForm";
@@ -33,6 +34,7 @@ export default function App() {
   const [showProjectForm, setShowProjectForm]   = useState(false);
   const [showAiUsage, setShowAiUsage]           = useState(false);
   const [showSettings, setShowSettings]         = useState(false);
+  const [showServerInfo, setShowServerInfo]     = useState(false);
   const [aiUsage, setAiUsage]     = useState<AiUsage | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -94,9 +96,12 @@ export default function App() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <StatusBar
-        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); }}
-        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); }}
+        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); }}
+        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); }}
+        onShowServerInfo={() => setShowServerInfo(v => !v)}
       />
+
+      {showServerInfo && <ServerInfoPanel onClose={() => setShowServerInfo(false)} />}
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* Sidebar */}

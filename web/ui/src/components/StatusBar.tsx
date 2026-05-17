@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Status, ValidationResult } from "../api";
 
-interface Props { onShowAiUsage: () => void; onShowSettings: () => void; }
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; }
 
-export default function StatusBar({ onShowAiUsage, onShowSettings }: Props) {
+export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo }: Props) {
   const [status, setStatus] = useState<Status | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -52,6 +52,9 @@ export default function StatusBar({ onShowAiUsage, onShowSettings }: Props) {
         <button onClick={handleTrace}>↻ Trace</button>
         <button onClick={onShowAiUsage} style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
           ✦ KI-Kosten
+        </button>
+        <button onClick={onShowServerInfo} style={{ color: "var(--muted)", borderColor: "var(--border)" }}>
+          ⬛ QR
         </button>
         <button onClick={onShowSettings} style={{ color: "var(--muted)", borderColor: "var(--border)" }}>
           ⚙ Einstellungen

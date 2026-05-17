@@ -25,6 +25,7 @@ import sdd_context  # noqa: E402
 from routes.ai import router as ai_router  # noqa: E402
 from routes.analyze import router as analyze_router  # noqa: E402
 from routes.analyze_async import router as analyze_async_router  # noqa: E402
+from routes.auth import router as auth_router  # noqa: E402
 from routes.commands import router as commands_router  # noqa: E402
 from routes.contracts import router as contracts_router  # noqa: E402
 from routes.copilot import router as copilot_router  # noqa: E402
@@ -34,6 +35,14 @@ from routes.orchestrate import router as orchestrate_router  # noqa: E402
 from routes.projects import router as projects_router  # noqa: E402
 from routes.specs import router as specs_router  # noqa: E402
 from routes.tests import router as tests_router  # noqa: E402
+
+# SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
+_raw_origins = os.environ.get("SDD_ALLOWED_ORIGINS", "")
+_ALLOWED_ORIGINS: list[str] = (
+    [o.strip() for o in _raw_origins.split(",") if o.strip()]
+    if _raw_origins
+    else ["http://localhost:5173", "http://localhost:8000"]
+)
 
 
 @asynccontextmanager
@@ -46,22 +55,23 @@ app = FastAPI(title="SDD Web API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:8000"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(projects_router,  prefix="/api")
-app.include_router(specs_router,     prefix="/api")
-app.include_router(contracts_router, prefix="/api")
-app.include_router(tests_router,     prefix="/api")
-app.include_router(commands_router,    prefix="/api")
-app.include_router(gate_router,        prefix="/api")
-app.include_router(orchestrate_router, prefix="/api")
-app.include_router(ai_router,          prefix="/api")
+app.include_router(projects_router,      prefix="/api")
+app.include_router(specs_router,         prefix="/api")
+app.include_router(contracts_router,     prefix="/api")
+app.include_router(tests_router,         prefix="/api")
+app.include_router(commands_router,      prefix="/api")
+app.include_router(gate_router,          prefix="/api")
+app.include_router(orchestrate_router,   prefix="/api")
+app.include_router(ai_router,            prefix="/api")
 app.include_router(analyze_router,       prefix="/api")
 app.include_router(analyze_async_router, prefix="/api")
 app.include_router(copilot_router,       prefix="/api")
+app.include_router(auth_router,          prefix="/api")  # SPEC-0025
 app.include_router(logs_router)  # WebSocket /ws/logs/{spec_id} – kein /api-Prefix
 
 # React-Build servieren (nach `npm run build`)
@@ -78,7 +88,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SDD Web API")
     parser.add_argument("--project", default=".", help="Pfad zum SDD-Projekt")
     parser.add_argument("--port", type=int, default=8000)
+    # SPEC-0025: FR-01 — externe URL und CORS-Origins konfigurierbar
+    parser.add_argument(
+        "--external-url",
+        default="",
+        help="Externe URL des Servers für QR-Code (z.B. http://rechner.tail.ts.net:8000)",
+    )
+    parser.add_argument(
+        "--allowed-origins",
+        default="http://localhost:5173,http://localhost:8000",
+        help="Kommaseparierte Liste erlaubter CORS-Origins (FR-10)",
+    )
     args = parser.parse_args()
 
     os.environ["SDD_PROJECT_ROOT"] = str(Path(args.project).resolve())
+    os.environ["SDD_EXTERNAL_URL"] = args.external_url
+    os.environ["SDD_ALLOWED_ORIGINS"] = args.allowed_origins
+
     uvicorn.run("main:app", host="0.0.0.0", port=args.port, reload=True)

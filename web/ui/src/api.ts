@@ -58,6 +58,10 @@ export const api = {
   getPipelineRun:      (runId: string) => req<PipelineRunState>("GET", `/pipeline/${runId}`),
   getActivePipeline:   (specId: string) => req<PipelineRunState>("GET", `/pipeline/active?spec_id=${specId}`),
   abortPipeline: (runId: string) => req<{aborted: boolean; run_id: string}>("POST", `/pipeline/${runId}/abort`),
+  // SPEC-0025: Server-Info und QR-Payload
+  serverInfo:       () => req<ServerInfo>("GET", "/server-info"),
+  qrPayload:        () => req<QrPayload>("GET", "/auth/qr-payload"),
+
   getConfig:        () => req<ConfigData>("GET", "/config"),
   saveConfigRaw:    (yaml: string) => req<{ok: boolean}>("PUT", "/config", { yaml }),
   patchConfig:      (fields: ConfigPatch) => req<{ok: boolean}>("PATCH", "/config", fields),
@@ -311,6 +315,20 @@ export interface PipelineRunState {
   issue_url?:    string | null;
   log?:          string[];
   report?:       PipelineReport | null;
+}
+
+// SPEC-0025
+export interface ServerInfo {
+  name: string;
+  externalUrl: string;
+  tokenHash: string;
+}
+
+export interface QrPayload {
+  sdd: number;
+  name: string;
+  url: string;
+  token: string;
 }
 
 export interface ConfigData {
