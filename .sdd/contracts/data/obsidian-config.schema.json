@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "obsidian-config.schema.json",
+  "title": "Obsidian Config Schema",
+  "description": "Schema der obsidian:-Sektion in .sdd/config.yaml (CON-0036)",
+  "type": "object",
+  "properties": {
+    "vault_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Absoluter oder ~-relativer Pfad zum Obsidian-Vault. Pflicht ohne --vault-Flag."
+    },
+    "subfolder": {
+      "type": "string",
+      "minLength": 1,
+      "default": "SDD",
+      "description": "Unterordner im Vault für SDD-Artefakte."
+    },
+    "watch_interval_secs": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 5,
+      "description": "Polling-Intervall in Sekunden für sdd obsidian watch."
+    },
+    "auto_wiki_links": {
+      "type": "boolean",
+      "default": true,
+      "description": "ID-Referenzen beim Export in Wiki-Links umwandeln."
+    }
+  },
+  "additionalProperties": false
+}

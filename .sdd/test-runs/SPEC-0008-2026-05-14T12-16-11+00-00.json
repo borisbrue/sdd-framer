@@ -1,0 +1,80 @@
+{
+  "spec_id": "SPEC-0008",
+  "runner": "pytest",
+  "started_at": "2026-05-14T12:16:11+00:00",
+  "duration_s": 6.307,
+  "exit_code": 1,
+  "tests": [
+    {
+      "test_id": "TST-0028",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "failed",
+      "duration_s": 0.89,
+      "message": "==================================== ERRORS ====================================\n______________ ERROR collecting tests/unit/test_llm_providers.py _______________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/unit/test_llm_providers.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_llm_providers.py:11: in <module>\n    from sdd_cli.llm.base import CompletionResult, UsageMetadata\nE   ModuleNotFoundError: No module named 'sdd_cli'\n=========================== short test summary info ============================\nERROR tests/unit/test_llm_providers.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.25s"
+    },
+    {
+      "test_id": "TST-0029",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "failed",
+      "duration_s": 0.611,
+      "message": "==================================== ERRORS ====================================\n______________ ERROR collecting tests/unit/test_llm_providers.py _______________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/unit/test_llm_providers.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_llm_providers.py:11: in <module>\n    from sdd_cli.llm.base import CompletionResult, UsageMetadata\nE   ModuleNotFoundError: No module named 'sdd_cli'\n=========================== short test summary info ============================\nERROR tests/unit/test_llm_providers.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.14s"
+    },
+    {
+      "test_id": "TST-0030",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "failed",
+      "duration_s": 0.466,
+      "message": "==================================== ERRORS ====================================\n______________ ERROR collecting tests/unit/test_llm_providers.py _______________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/unit/test_llm_providers.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_llm_providers.py:11: in <module>\n    from sdd_cli.llm.base import CompletionResult, UsageMetadata\nE   ModuleNotFoundError: No module named 'sdd_cli'\n=========================== short test summary info ============================\nERROR tests/unit/test_llm_providers.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.12s"
+    },
+    {
+      "test_id": "TST-0031",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "failed",
+      "duration_s": 0.47,
+      "message": "==================================== ERRORS ====================================\n______________ ERROR collecting tests/unit/test_llm_providers.py _______________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/unit/test_llm_providers.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_llm_providers.py:11: in <module>\n    from sdd_cli.llm.base import CompletionResult, UsageMetadata\nE   ModuleNotFoundError: No module named 'sdd_cli'\n=========================== short test summary info ============================\nERROR tests/unit/test_llm_providers.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.12s"
+    },
+    {
+      "test_id": "TST-0032",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "failed",
+      "duration_s": 0.475,
+      "message": "==================================== ERRORS ====================================\n______________ ERROR collecting tests/unit/test_llm_providers.py _______________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/unit/test_llm_providers.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_llm_providers.py:11: in <module>\n    from sdd_cli.llm.base import CompletionResult, UsageMetadata\nE   ModuleNotFoundError: No module named 'sdd_cli'\n=========================== short test summary info ============================\nERROR tests/unit/test_llm_providers.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.12s"
+    },
+    {
+      "test_id": "TST-0033",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.842,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0034",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.811,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0035",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.803,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0036",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.807,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0022": true,
+    "CON-0023": false,
+    "CON-0024": true
+  },
+  "passed": 4,
+  "failed": 5,
+  "skipped": 0
+}

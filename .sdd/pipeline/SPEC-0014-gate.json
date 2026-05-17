@@ -1,0 +1,67 @@
+{
+  "spec_id": "SPEC-0014",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok",
+      "proposed": ["CON-0025", "CON-0026", "CON-0027", "CON-0028", "CON-0029", "CON-0030"]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok",
+      "conflicts_found": 3,
+      "conflicts_resolved": 2,
+      "conflicts_acknowledged": 1
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok",
+      "files_generated": [
+        "tests/contract/test_con-0025.py",
+        "tests/contract/test_con-0026.py",
+        "tests/contract/test_con-0027.py",
+        "tests/contract/test_con-0028.py",
+        "tests/contract/test_con-0029.py",
+        "tests/contract/test_con-0030.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok",
+      "notes": "97 unit tests pass, 44 schema tests pass (CON-0029/0030). 32 impl-pending tests expected ImportError. 12 pre-existing integration failures unrelated to SPEC-0014."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "11/11",
+        "scenarios_covered": "25/25",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-14T00:00:00Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": ".sdd/conflict-reports/SPEC-0014-conflicts.json",
+  "override": null
+}

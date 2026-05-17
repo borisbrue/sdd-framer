@@ -1,0 +1,74 @@
+{
+  "spec_id": "SPEC-0021",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-16T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-16T21:10:18Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-16T21:10:33Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0065",
+        "CON-0066",
+        "CON-0067",
+        "CON-0068"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-16T21:11:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-16T21:19:18Z",
+      "result": "ok",
+      "conflicts_found": 24,
+      "conflicts_high": 6
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-16T21:20:48Z",
+      "result": "ok",
+      "files_generated": [
+        ".sdd/tests/contract/test_con-0065.py",
+        ".sdd/tests/contract/test_con-0066.py",
+        ".sdd/tests/contract/test_con-0067.py",
+        ".sdd/tests/contract/test_con-0068.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-16T21:25:00Z",
+      "result": "ok",
+      "notes": "16/16 contract tests pass (CON-0065: 8, CON-0066: 5, CON-0067: 2, CON-0068: 1). Alle 6 HIGH-Konflikte aufgelöst."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-16T21:21:28Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "8/8",
+        "scenarios_covered": "26/26",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-16T21:21:28Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

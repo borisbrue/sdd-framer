@@ -1,0 +1,263 @@
+"""Eigenständiger Evaluator für Holdout-Szenarien (Dark Factory Pattern).
+
+Architektur-Invariante: Dieser Prozess hat KEINEN Zugriff auf den Sourcecode.
+Er liest nur HOL-Dokumente aus .sdd/holdout/ und sendet HTTP-Requests gegen
+einen konfigurierbaren base_url.
+
+Ablauf pro Szenario:
+  1. LLM leitet HTTP-Request aus Plain-English-Beschreibung ab
+  2. Request wird gegen base_url ausgeführt
+  3. LLM bewertet Response (Szenario erfüllt? ja/nein)
+  4. 3 Runs, min. 2/3 müssen bestehen
+"""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from .config import SddConfig
+from .frontmatter import parse_safe
+from .llm.base import CompletionProvider
+
+
+PASS_THRESHOLD = 2
+RUNS_PER_SCENARIO = 3
+
+
+@dataclass
+class ScenarioRun:
+    run: int
+    passed: bool
+    request: dict[str, Any]
+    response_status: int | None
+    response_body: str | None
+    llm_verdict: str
+    llm_reasoning: str
+
+
+@dataclass
+class ScenarioResult:
+    hol_id: str
+    title: str
+    contract: str
+    runs: list[ScenarioRun] = field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        return sum(1 for r in self.runs if r.passed) >= PASS_THRESHOLD
+
+    @property
+    def pass_count(self) -> int:
+        return sum(1 for r in self.runs if r.passed)
+
+
+@dataclass
+class EvaluationReport:
+    timestamp: str
+    base_url: str
+    scenarios: list[ScenarioResult] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return len(self.scenarios)
+
+    @property
+    def passed(self) -> int:
+        return sum(1 for s in self.scenarios if s.passed)
+
+    @property
+    def pass_rate(self) -> float:
+        return (self.passed / self.total) if self.total else 0.0
+
+    def to_dict(self) -> dict:
+        d = {
+            "timestamp": self.timestamp,
+            "base_url": self.base_url,
+            "summary": {
+                "total": self.total,
+                "passed": self.passed,
+                "failed": self.total - self.passed,
+                "pass_rate": round(self.pass_rate, 4),
+            },
+            "scenarios": [],
+        }
+        for s in self.scenarios:
+            d["scenarios"].append({
+                "hol_id": s.hol_id,
+                "title": s.title,
+                "contract": s.contract,
+                "passed": s.passed,
+                "pass_count": s.pass_count,
+                "runs": [asdict(r) for r in s.runs],
+            })
+        return d
+
+
+def _load_holdout_docs(config: SddConfig) -> list:
+    docs = []
+    if not config.holdout_dir.exists():
+        return docs
+    for md in sorted(config.holdout_dir.rglob("*.md")):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id", "").startswith("HOL-"):
+            if doc.frontmatter.get("status", "active") == "active":
+                docs.append(doc)
+    return docs
+
+
+def _build_plan_prompt(scenario_title: str, scenario_body: str, base_url: str) -> str:
+    return f"""You are an API test planner. Your task is to derive a single HTTP request
+from the following plain-English scenario description. The service runs at: {base_url}
+
+Scenario: {scenario_title}
+
+{scenario_body}
+
+Respond with a JSON object and nothing else. Format:
+{{
+  "method": "GET|POST|PUT|PATCH|DELETE",
+  "path": "/api/...",
+  "headers": {{}},
+  "body": null
+}}"""
+
+
+def _build_eval_prompt(scenario_title: str, scenario_body: str,
+                       request: dict, response_status: int, response_body: str) -> str:
+    return f"""You are a neutral evaluator. Decide if the HTTP response satisfies the scenario.
+
+Scenario: {scenario_title}
+{scenario_body}
+
+Request sent:
+{json.dumps(request, indent=2)}
+
+Response:
+Status: {response_status}
+Body: {response_body[:2000]}
+
+Answer with a JSON object and nothing else:
+{{
+  "passed": true|false,
+  "reasoning": "<one sentence>"
+}}"""
+
+
+def _call_llm(provider: CompletionProvider, prompt: str) -> dict:
+    """Ruft den LLM-Provider auf und gibt das geparste JSON zurück."""
+    result = provider.complete(prompt)
+    raw = result.text.strip()
+    # Robustes JSON-Parsing: extrahiere erstes {...}-Block
+    start = raw.find("{")
+    end = raw.rfind("}") + 1
+    return json.loads(raw[start:end])
+
+
+def _run_scenario_once(
+    run_num: int,
+    title: str,
+    body: str,
+    base_url: str,
+    http: "httpx.Client",
+    provider: CompletionProvider,
+) -> ScenarioRun:
+    # Schritt 1: LLM plant HTTP-Request
+    plan_prompt = _build_plan_prompt(title, body, base_url)
+    try:
+        request_plan = _call_llm(provider, plan_prompt)
+    except Exception as exc:
+        return ScenarioRun(
+            run=run_num, passed=False,
+            request={}, response_status=None, response_body=None,
+            llm_verdict="error", llm_reasoning=f"LLM-Planungsfehler: {exc}",
+        )
+
+    method = request_plan.get("method", "GET").upper()
+    path = request_plan.get("path", "/")
+    headers = request_plan.get("headers") or {}
+    body_payload = request_plan.get("body")
+
+    # Schritt 2: HTTP-Request ausführen
+    url = base_url.rstrip("/") + path
+    try:
+        resp = http.request(method, url, headers=headers,
+                            json=body_payload if body_payload else None,
+                            timeout=10.0)
+        status_code = resp.status_code
+        resp_body = resp.text
+    except Exception as exc:
+        return ScenarioRun(
+            run=run_num, passed=False,
+            request=request_plan, response_status=None, response_body=None,
+            llm_verdict="error", llm_reasoning=f"HTTP-Fehler: {exc}",
+        )
+
+    # Schritt 3: LLM bewertet Response
+    eval_prompt = _build_eval_prompt(title, body, request_plan, status_code, resp_body)
+    try:
+        verdict = _call_llm(provider, eval_prompt)
+        passed = bool(verdict.get("passed", False))
+        reasoning = verdict.get("reasoning", "")
+    except Exception as exc:
+        passed = False
+        reasoning = f"LLM-Evaluierungsfehler: {exc}"
+
+    return ScenarioRun(
+        run=run_num, passed=passed,
+        request=request_plan, response_status=status_code, response_body=resp_body,
+        llm_verdict="pass" if passed else "fail", llm_reasoning=reasoning,
+    )
+
+
+def run_evaluation(config: SddConfig, base_url: str,
+                   hol_ids: list[str] | None = None) -> EvaluationReport:
+    """Führt alle aktiven HOL-Szenarien gegen base_url aus."""
+    from .llm import get_completion_provider
+    provider = get_completion_provider(config, "evaluator")
+
+    docs = _load_holdout_docs(config)
+    if hol_ids:
+        docs = [d for d in docs if d.frontmatter.get("id") in hol_ids]
+
+    report = EvaluationReport(
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        base_url=base_url,
+    )
+
+    try:
+        import httpx
+    except ImportError as e:
+        raise RuntimeError(
+            "Das httpx-Paket ist nicht installiert. "
+            "Führe `pip install 'sdd-cli[evaluate]'` aus."
+        ) from e
+
+    with httpx.Client(follow_redirects=True) as http:
+        for doc in docs:
+            fm = doc.frontmatter
+            hol_id = fm["id"]
+            title = fm.get("title", hol_id)
+            contract = fm.get("contract", "")
+            body_text = doc.body.strip()
+
+            result = ScenarioResult(hol_id=hol_id, title=title, contract=contract)
+            for i in range(1, RUNS_PER_SCENARIO + 1):
+                run = _run_scenario_once(i, title, body_text, base_url, http, provider)
+                result.runs.append(run)
+
+            report.scenarios.append(result)
+
+    return report
+
+
+def persist_report(config: SddConfig, report: EvaluationReport) -> Path:
+    """Speichert den Report als JSON in .sdd/evaluations/."""
+    config.evaluations_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    path = config.evaluations_dir / f"{ts}.json"
+    path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False),
+                    encoding="utf-8")
+    return path

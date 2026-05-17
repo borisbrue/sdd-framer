@@ -1,0 +1,184 @@
+{
+  "name": "sdd-framer",
+  "displayName": "SDD Framer",
+  "description": "Spec-Driven Development – Specs, Contracts und Tests direkt in VS Code",
+  "version": "0.3.0",
+  "publisher": "boris",
+  "engines": {
+    "vscode": "^1.118.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/.sdd/config.yaml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "sdd.newSpec",            "title": "SDD: New Spec" },
+      { "command": "sdd.newContract",        "title": "SDD: New Contract" },
+      { "command": "sdd.newTest",            "title": "SDD: New Test" },
+      { "command": "sdd.newAdr",             "title": "SDD: New ADR" },
+      { "command": "sdd.validate",           "title": "SDD: Validate" },
+      { "command": "sdd.updateTrace",        "title": "SDD: Update Trace Matrix" },
+      { "command": "sdd.refresh",            "title": "SDD: Refresh Tree", "icon": "$(refresh)" },
+      { "command": "sdd.analyzeDoc",         "title": "SDD: KI-Analyse starten", "icon": "$(sparkle)" },
+      { "command": "sdd.analyzeReset",       "title": "SDD: Analyse-Session zurücksetzen" },
+      { "command": "sdd.startWebUI",         "title": "SDD: Start Web UI", "icon": "$(play)" },
+      { "command": "sdd.stopWebUI",          "title": "SDD: Stop Web UI", "icon": "$(debug-stop)" },
+      { "command": "sdd.restartWebUI",       "title": "SDD: Restart Web UI" },
+      { "command": "sdd.openWebUI",          "title": "SDD: Open Web UI", "icon": "$(browser)" },
+      { "command": "sdd.executeSpec",        "title": "SDD: Execute Spec" },
+      { "command": "sdd.executeCurrentSpec", "title": "SDD: Execute Current Spec", "icon": "$(play-circle)" },
+      { "command": "sdd.abortPipeline",      "title": "SDD: Abort Pipeline", "icon": "$(debug-stop)" },
+      { "command": "sdd.reviewContract",     "title": "SDD: Review Contract" },
+      { "command": "sdd.reviewPending",      "title": "SDD: Review Pending Contracts" },
+      { "command": "sdd.estimateCurrentSpec","title": "SDD: Estimate Current Spec" },
+      { "command": "sdd.statusCheck",        "title": "SDD: Status Check" },
+      { "command": "sdd.obsidianExport",     "title": "SDD: Obsidian Export" },
+      { "command": "sdd.obsidianImport",     "title": "SDD: Obsidian Import" },
+      { "command": "sdd.showOutput",         "title": "SDD: Show Output" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sdd-explorer",
+          "title": "SDD",
+          "icon": "images/sdd-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "sdd-explorer": [
+        {
+          "id": "sddTree",
+          "name": "Specs & Contracts"
+        },
+        {
+          "id": "sddAnalyze",
+          "name": "KI-Analyse",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "sdd.refresh",
+          "when": "view == sddTree",
+          "group": "navigation"
+        },
+        {
+          "command": "sdd.startWebUI",
+          "when": "view == sddTree",
+          "group": "navigation"
+        },
+        {
+          "command": "sdd.analyzeDoc",
+          "when": "view == sddAnalyze",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sdd.executeCurrentSpec",
+          "when": "view == sddTree && viewItem == spec-approved",
+          "group": "inline"
+        },
+        {
+          "command": "sdd.abortPipeline",
+          "when": "view == sddTree && viewItem == spec-running",
+          "group": "inline"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "sdd.analyzeDoc",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        },
+        {
+          "command": "sdd.executeCurrentSpec",
+          "when": "resourceExtname == .md",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "SDD Framer",
+      "properties": {
+        "sdd.cliPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absoluter Pfad zur `sdd`-CLI. Leer = automatische Suche in PATH."
+        },
+        "sdd.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "markdownDescription": "Python-Interpreter für Port-Ermittlung und Server-Start. Muss dieselbe venv wie `sdd` nutzen."
+        },
+        "sdd.validateOnSave": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "`sdd validate` bei jedem Speichern einer `.md`-Datei ausführen."
+        },
+        "sdd.showCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Code Lens über Spec-Überschriften anzeigen."
+        },
+        "sdd.treeViewRefreshInterval": {
+          "type": "number",
+          "default": 0,
+          "markdownDescription": "Auto-Refresh-Intervall der TreeView in Sekunden. 0 = deaktiviert."
+        },
+        "sdd.webApiUrl": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "markdownDescription": "Fallback-URL der Web API wenn kein Server über die Extension gestartet wurde."
+        },
+        "sdd.analyzeOnSave": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "KI-Analyse automatisch beim Speichern einer Spec- oder Contract-Datei auslösen."
+        },
+        "sdd.webUi.port": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 65535,
+          "markdownDescription": "Port für den SDD Web UI Server. `0` = freier Port automatisch ermitteln (empfohlen). Fixer Wert z.B. `8000` = fixer Port."
+        },
+        "sdd.webUi.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Web UI Server automatisch starten wenn ein SDD-Projekt erkannt wird."
+        },
+        "sdd.webUi.openBrowser": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Systembrowser automatisch öffnen nachdem der Server erfolgreich gestartet ist."
+        },
+        "sdd.pipeline.pollInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 30000,
+          "markdownDescription": "Polling-Intervall für Pipeline-Statusabfragen in Millisekunden."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -p ./ --watch",
+    "package": "vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.40",
+    "@types/vscode": "^1.118.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.9.3"
+  }
+}

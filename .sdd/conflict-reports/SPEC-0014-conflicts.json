@@ -1,0 +1,62 @@
+{
+  "spec_id": "SPEC-0014",
+  "generated_at": "2026-05-14T00:00:00Z",
+  "new_contracts": ["CON-0025", "CON-0026", "CON-0027", "CON-0028", "CON-0029", "CON-0030"],
+  "conflicts": [
+    {
+      "id": "CF-0014-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0025",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 G-01: POST /api/orchestrate gibt HTTP 422 zurück wenn 'status != approved' — mehr nicht. CON-0025 INV-01 verlangt zusätzlich 'pipeline_phase == execute-unlocked'. Eine SPEC mit status=approved + pipeline_phase=contracts-review würde von CON-0021 akzeptiert, von CON-0025 aber geblockt. Das Execution Gate wäre über die Web UI einfach zu umgehen.",
+      "affected_specs": ["SPEC-0007"],
+      "required_action": "CON-0021 um HTTP 409 erweitern: POST /api/orchestrate prüft zusätzlich pipeline_phase. Wenn phase != execute-unlocked und kein --force: HTTP 409 mit Gate-Status im Body.",
+      "status": "resolved",
+      "resolution": {
+        "action": "extend",
+        "reason": "CON-0021 wird um Gate-Check erweitert: POST /api/orchestrate gibt HTTP 409 zurück wenn pipeline_phase != execute-unlocked (außer --force mit override-reason). Dadurch ist das Gate auch über die Web UI nicht umgehbar.",
+        "resolved_at": "2026-05-14T00:00:00Z"
+      }
+    },
+    {
+      "id": "CF-0014-002",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0025",
+      "conflicting_contract": "CON-0020",
+      "detail": "CON-0020 INV-01 definiert Execute-Gate als 'status == approved' — als hinreichende Bedingung. CON-0025 INV-01 erweitert diese Bedingung um 'pipeline_phase == execute-unlocked'. Ohne explizite Erweiterungsreferenz entstehen zwei widersprüchliche Definitionen desselben Begriffs 'Execute-Gate' in zwei aktiven Contracts.",
+      "affected_specs": ["SPEC-0007"],
+      "required_action": "CON-0020 INV-01 anpassen: Execute-Gate referenziert CON-0025 als erweiternden Contract.",
+      "status": "resolved",
+      "resolution": {
+        "action": "extend",
+        "reason": "CON-0020 INV-01 wird aktualisiert: 'status == approved' bleibt notwendige Bedingung; CON-0025 definiert die hinreichende Bedingung (zusätzlich pipeline_phase == execute-unlocked). Hierarchie: CON-0020 ist Basis, CON-0025 ist Erweiterung.",
+        "resolved_at": "2026-05-14T00:00:00Z"
+      }
+    },
+    {
+      "id": "CF-0014-003",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0027",
+      "conflicting_contract": "CON-0007",
+      "detail": "CON-0007 ist der generelle Web-API-Umbrella-Contract (SPEC-0003). CON-0027 definiert neue /api/gate/-Routen, ohne in CON-0007 formal registriert zu sein. Kein inhaltlicher Widerspruch, aber fehlende Umbrella-Referenz kann zu unvollständiger API-Dokumentation führen.",
+      "affected_specs": ["SPEC-0003"],
+      "required_action": "CON-0027 deklariert sich als Sub-Contract von CON-0007 (bereits in CON-0027-Text dokumentiert). CON-0007 in separatem PR um $ref auf CON-0027 erweitern.",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0027 deklariert sich explizit als Sub-Contract von CON-0007 im Zweck-Abschnitt. Der /api/gate/-Prefix ist disjunkt zu allen bestehenden Routen. CON-0007-Update erfolgt als MINOR-Bump in separatem Follow-up (kein Blocker für SPEC-0014).",
+        "resolved_at": "2026-05-14T00:00:00Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 3,
+    "high": 1,
+    "medium": 1,
+    "low": 1,
+    "affected_specs_count": 2
+  }
+}

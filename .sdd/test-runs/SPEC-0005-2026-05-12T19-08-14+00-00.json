@@ -1,0 +1,23 @@
+{
+  "spec_id": "SPEC-0005",
+  "runner": "pytest",
+  "started_at": "2026-05-12T19:08:14+00:00",
+  "duration_s": 1.403,
+  "exit_code": 1,
+  "tests": [
+    {
+      "test_id": "TST-0013",
+      "artifact": "tests/integration/test_analyze_endpoint.py",
+      "status": "failed",
+      "duration_s": 1.373,
+      "message": "_________ ERROR collecting tests/integration/test_analyze_endpoint.py __________\n.venv/lib/python3.13/site-packages/starlette/testclient.py:38: in <module>\n    import httpx\nE   ModuleNotFoundError: No module named 'httpx'\nDuring handling of the above exception, another exception occurred:\ntests/integration/test_analyze_endpoint.py:29: in <module>\n    from fastapi.testclient import TestClient  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: in <module>\n    from starlette.testclient import TestClient as TestClient  # noqa\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.13/site-packages/starlette/testclient.py:40: in <module>\n    raise RuntimeError(\nE   RuntimeError: The starlette.testclient module requires the httpx package to be installed.\nE   You can install this with:\nE       $ pip install httpx\n=========================== short test summary info ============================\nERROR tests/integration/test_analyze_endpoint.py - RuntimeError: The starlett...\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.67s"
+    }
+  ],
+  "contract_coverage": {
+    "CON-0013": false,
+    "CON-0014": false
+  },
+  "passed": 0,
+  "failed": 1,
+  "skipped": 0
+}

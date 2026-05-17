@@ -1,0 +1,30 @@
+{
+  "spec_id": "SPEC-0003",
+  "runner": "pytest",
+  "started_at": "2026-05-12T15:52:03+00:00",
+  "duration_s": 0.023,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0008",
+      "artifact": "tests/contract/test_web_api_contract.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/contract/test_web_api_contract.py"
+    },
+    {
+      "test_id": "TST-0009",
+      "artifact": "tests/acceptance/test_web_ui_acceptance.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/acceptance/test_web_ui_acceptance.py"
+    }
+  ],
+  "contract_coverage": {
+    "CON-0007": false,
+    "CON-0008": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 2
+}

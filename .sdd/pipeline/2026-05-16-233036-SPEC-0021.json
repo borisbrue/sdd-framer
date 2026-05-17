@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-05-16T21:28:06.715228+00:00",
+  "spec_id": "SPEC-0021",
+  "final_status": "failed",
+  "issue_url": null,
+  "attempts": [
+    {
+      "attempt": 1,
+      "branch": "sdd/SPEC-0021-attempt-1",
+      "build_passed": null,
+      "eval_pass_rate": null,
+      "pr_url": null,
+      "error": "claude CLI Fehler (exit 1)",
+      "explanation": ""
+    },
+    {
+      "attempt": 2,
+      "branch": "sdd/SPEC-0021-attempt-2",
+      "build_passed": null,
+      "eval_pass_rate": null,
+      "pr_url": null,
+      "error": "claude CLI Fehler (exit 1)",
+      "explanation": ""
+    },
+    {
+      "attempt": 3,
+      "branch": "sdd/SPEC-0021-attempt-3",
+      "build_passed": null,
+      "eval_pass_rate": null,
+      "pr_url": null,
+      "error": "claude CLI Fehler (exit 1)",
+      "explanation": ""
+    }
+  ]
+}

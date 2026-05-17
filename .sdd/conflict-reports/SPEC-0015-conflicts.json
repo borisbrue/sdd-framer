@@ -1,0 +1,417 @@
+{
+  "spec_id": "SPEC-0015",
+  "generated_at": "2026-05-15T07:41:19Z",
+  "new_contracts": [
+    "CON-0045",
+    "CON-0046",
+    "CON-0047",
+    "CON-0048"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0015-001",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0029",
+      "detail": "CON-0045 INV-01 definiert severity ∈ {info, warn, violation} für SOLID-Findings. CON-0029 (Conflict Report JSON Schema) verwendet wahrscheinlich severity ∈ {low, medium, high} (konsistent mit dem im System verwendeten Conflict-Detection-Format). Werden SOLID-Findings in Conflict Reports integriert, entsteht ein Schema-Widerspruch.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Intentional separation: SOLID findings use {info,warn,violation} (qualitative severity), conflict reports use {low,medium,high} (impact severity). SOLID findings are never embedded in conflict reports – they are separate output artifacts.",
+        "resolved_at": "2026-05-15T07:42:28Z"
+      }
+    },
+    {
+      "id": "CF-0015-002",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0026",
+      "detail": "CON-0026 (Contract Conflict Detection) und CON-0045 (SOLID Analyzer) analysieren beide SPECs und Contracts und liefern strukturierte Finding-Listen zurück. Die Grenze zwischen 'SOLID-Verletzung in einem Contract' und 'Conflict zwischen Contracts' ist nicht klar abgegrenzt – z.B. ein OCP-Verstoß durch nachträgliche Felderweiterung kann gleichzeitig ein Conflict sein. Es fehlt ein gemeinsames Finding-Basisschema.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "The domains are orthogonal: CON-0045 analyzes ONE artifact against SOLID principles (single-artifact analysis). CON-0026 detects conflicts BETWEEN contracts (multi-artifact relationship analysis). An OCP violation in a contract is a design issue, not a contract conflict. No shared base schema is needed.",
+        "resolved_at": "2026-05-15T07:42:33Z"
+      }
+    },
+    {
+      "id": "CF-0015-003",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 definiert den Analyzer als CLI-Subprocess mit Session-Management. CON-0045 führt einen eigenständigen SolidAnalyzer mit 5 Strategy-Checkern ein. Die Beziehung ist nicht spezifiziert: Ist SolidAnalyzer ein Untermodul des Analyzers? Nutzt er dessen Session-Infrastruktur? Läuft er als separater Prozess? Ohne diese Klärung entstehen doppelte Ausführungspfade.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SolidAnalyzer runs as a Python library call within the sdd CLI process – it does NOT use CON-0013's subprocess/session infrastructure. The two are independent execution paths in the same CLI binary. No architectural conflict.",
+        "resolved_at": "2026-05-15T07:43:17Z"
+      }
+    },
+    {
+      "id": "CF-0015-004",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0014",
+      "detail": "CON-0014 definiert POST /api/docs/{id}/analyze als Dokument-Analyse-Endpoint, aber das Response-Schema enthält (basierend auf dem Contract-Titel) keine SOLID-Findings. CON-0045 spezifiziert ein vollständiges Finding-Modell inkl. overall_solid_score, das nicht in der API-Antwort von CON-0014 abgebildet ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0014 /api/docs/{id}/analyze is for document content analysis (existing feature). SolidAnalyzer (CON-0045) is invoked via CLI, not via that API endpoint. SOLID findings are never exposed through the analyze API in v0.1.0 – separate concerns.",
+        "resolved_at": "2026-05-15T07:43:18Z"
+      }
+    },
+    {
+      "id": "CF-0015-005",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0028",
+      "detail": "CON-0045 stellt als Garantie auf, dass jedes Gherkin-Szenario durch einen automatisierten Test abgedeckt sein MUSS. CON-0028 (Auto Test Generation) definiert das Test-Generierungsverhalten – unklar ist, ob CON-0028 Gherkin-basierte Behavior-Contracts als Input für die Test-Generierung behandelt. Wenn nicht, besteht ein Widerspruch: CON-0045 fordert Testabdeckung, CON-0028 liefert sie möglicherweise nicht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0045 requires test coverage for its own Gherkin scenarios (TST-0001). CON-0028 auto-generates tests from contract definitions. These are compatible: CON-0045's Gherkin IS the input for CON-0028-style test generation in Phase 6.",
+        "resolved_at": "2026-05-15T07:43:18Z"
+      }
+    },
+    {
+      "id": "CF-0015-006",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0045",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline) definiert die Phasen Spec → Code → PR → Eval → Retry. Der SolidAnalyzer aus CON-0045 passt nicht in eine explizite Phase dieser Pipeline. Unklar, ob SOLID-Prüfung eine eigene Phase wird, Teil von Eval ist oder pre-flight vor Code-Generierung läuft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SOLID check is a pre-execution quality tool, not an orchestrator pipeline phase. It runs standalone or as part of spec/contract review – outside the Spec→Code→PR→Eval→Retry pipeline. Intentional design.",
+        "resolved_at": "2026-05-15T07:43:18Z"
+      }
+    },
+    {
+      "id": "CF-0015-007",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0026",
+      "detail": "CON-0026 (Contract Conflict Detection) und CON-0046 (Pattern Suggestion Schema) werden beide während 'sdd contract review' (Phase 5c) ausgelöst. CON-0026 definiert das Analyse-Verhalten für Konflikt-Erkennung in Phase 5c, CON-0046 definiert den Pattern-Suggestion-Output ebenfalls für Phase 5c. Die Grenze zwischen Konflikt-Analyse-Ausgabe und Pattern-Suggestion-Ausgabe ist nicht klar abgegrenzt: Es ist unklar, ob pattern suggestions Teil des Conflict Reports sind oder ein separates Artefakt. Ohne explizite Abgrenzung können beide Contracts inkompatibler Output für dieselbe Phase-Aktion beanspruchen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "split: CON-0026 output goes to .sdd/conflict-reports/SPEC-XXXX-conflicts.json (persisted). CON-0046 pattern suggestions are CLI stdout only during review – persisted ONLY via sdd pattern-accept. The two outputs are separate files with separate triggers. Phase 5c runs conflict analysis first (CON-0026), then pattern suggestions (CON-0046) sequentially.",
+        "resolved_at": "2026-05-15T07:42:38Z"
+      }
+    },
+    {
+      "id": "CF-0015-008",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0029",
+      "detail": "CON-0029 (Conflict Report JSON Schema) definiert das Ausgabeformat des Conflict Reports. Wenn CON-0029 ein Feld für pattern_suggestions oder ähnliches enthält (naheliegend, da Pattern-Vorschläge als Reaktion auf erkannte Konflikte sinnvoll sind), würde dessen Feldstruktur möglicherweise von CON-0046's Schema abweichen (z.B. andere Feldnamen, fehlendes 'refactoring_guru_url', abweichende Enum-Werte für 'category' oder 'effort'). Selbst wenn CON-0029 kein solches Feld hat, entsteht eine strukturelle Lücke: der Conflict Report referenziert keine Pattern-Vorschläge, obwohl SPEC-0015 diese als Review-Output vorsieht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Pattern suggestions are CLI stdout during review, not part of the conflict report JSON (CON-0029). If pattern suggestions are ever added to conflict reports, CON-0029 will be extended separately. No structural conflict in v0.1.0.",
+        "resolved_at": "2026-05-15T07:43:28Z"
+      }
+    },
+    {
+      "id": "CF-0015-009",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0046 referenziert Phase 2c ('sdd spec review') und Phase 5c ('sdd contract review') als Ausführungskontexte. CON-0030 (Pipeline Phase State JSON Schema) definiert die validen Pipeline-Phasen-Zustände. Wenn CON-0030 keine Sub-Phasen 2c und 5c als diskrete Zustände modelliert, führt CON-0046 Phasen-Bezeichner ohne formale Definition im Schema ein. Das Pattern-Suggestion-Feature hätte keinen verankerten Phasenzustand, was Traceability und State-Tracking bricht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Sub-phases 2c and 5c are logical groupings within the review command output, not discrete pipeline phase states in CON-0030. The pipeline JSON tracks major phases (spec-review, contracts-review) – sub-steps are implementation detail.",
+        "resolved_at": "2026-05-15T07:43:29Z"
+      }
+    },
+    {
+      "id": "CF-0015-010",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate – Phase State Machine) definiert, welche Phasübergänge erlaubt sind und welche Gates passiert werden müssen. CON-0046 setzt voraus, dass Phase 2c und 5c existieren und der LLM-Aufruf für Pattern-Suggestions innerhalb dieser Phasen stattfindet. Wenn die State Machine Phase 2c/5c nicht als valide Zustände kennt oder keinen Transition-Arc für den Pattern-Suggestion-Schritt enthält, fehlt das Execution Gate für CON-0046's Auslöser – der Befehl 'sdd pattern-suggest' hat dann keine definierte Einbettung in den Gate-Mechanismus.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd pattern-suggest is a standalone command outside the gate flow. It does not require a gate arc in CON-0025. Pattern suggestions enrich the review output but do not constitute a blocking gate phase in v0.1.0.",
+        "resolved_at": "2026-05-15T07:43:29Z"
+      }
+    },
+    {
+      "id": "CF-0015-011",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0028",
+      "detail": "CON-0028 (Auto Test Generation) und CON-0046 (Pattern Suggestion) werden beide während 'sdd spec review' (Phase 2c) ausgelöst. Beide produzieren LLM-generierten strukturierten Output in derselben Phase. Es ist nicht spezifiziert, ob die Outputs sequenziell, parallel oder als gemischtes Dokument erzeugt werden, und ob der Pattern-Suggestion-Output das Test-Generation-Verhalten beeinflusst (z.B. sollen Pattern-Vorschläge die Testgenerierung lenken?). Die Abgrenzung der Verantwortlichkeiten beider Outputs in Phase 2c fehlt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Both are review-phase enrichments but produce separate output streams. Pattern suggestions (CON-0046) are generated after conflict analysis sequentially. Test generation (CON-0028) is Phase 6 – it does not run during spec-review Phase 2. No overlap in execution.",
+        "resolved_at": "2026-05-15T07:43:29Z"
+      }
+    },
+    {
+      "id": "CF-0015-012",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0046",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0046 setzt voraus, dass der LLM strukturierten JSON-Output erzeugt, der exakt dem definierten Schema entspricht (inkl. Enum-Constraints für 'category', 'effort', 'priority'). CON-0023 (llm-Konfigurationsschema / unified provider config) definiert Provider-Parameter, enthält aber vermutlich keine Output-Format-Constraints oder JSON-Mode-Konfiguration pro Befehl. Es fehlt ein Mechanismus, der sicherstellt, dass der konfigurierte Provider JSON-Mode oder strukturierten Output unterstützt – HuggingFace-Provider (CON-0031/0032) z.B. unterstützt JSON-Mode möglicherweise nicht zuverlässig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "LLM JSON mode is provider-dependent. The implementation will use structured output where supported (Anthropic/OpenAI) and prompt-based JSON extraction as fallback. This is an implementation concern, not a contract conflict. CON-0046 defines the expected schema; the provider abstraction (CON-0023) handles delivery.",
+        "resolved_at": "2026-05-15T07:43:38Z"
+      }
+    },
+    {
+      "id": "CF-0015-013",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 definiert die Phase State Machine des Execution Gate (SPEC-0014). CON-0047 führt einen eigenen Pattern-Review-Zustand ein (under-review → accepted/rejected), der – wenn SPEC-0015 in den Review-Workflow von SPEC-0014 integriert ist – als neue Gate-Phase in CON-0025 abgebildet sein müsste. Derzeit fehlt die Pattern-Phase in der State Machine vollständig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Pattern decisions (under-review → accepted/rejected) are optional documentation, NOT blocking gate phases. The ExecutionGate state machine (SPEC-0014/CON-0025) controls execution blocking. Pattern registry is a soft quality artifact – no gate extension needed in v0.1.0. This is an explicit design choice: patterns are recommended, not mandatory.",
+        "resolved_at": "2026-05-15T07:42:44Z"
+      }
+    },
+    {
+      "id": "CF-0015-014",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 definiert das Pipeline Phase State JSON Schema. Der Pattern-Review-Status (under-review, accepted, rejected) aus CON-0047 ist ein neuer Phasenzustand, der in CON-0030 nicht modelliert ist. Ohne Erweiterung kann der Orchestrator den Pattern-Gate-Fortschritt nicht persistent verfolgen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Pattern registry status (under-review/accepted/rejected) is stored in .sdd/patterns/, NOT in the pipeline JSON (CON-0030). The pattern registry is a separate persistence layer. No extension of CON-0030 needed.",
+        "resolved_at": "2026-05-15T07:43:38Z"
+      }
+    },
+    {
+      "id": "CF-0015-015",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0026",
+      "detail": "CON-0026 (Contract Conflict Detection) prüft Konflikte zwischen Contracts, deckt aber keine Cross-SPEC-Pattern-Konflikte ab: dasselbe Pattern könnte in SPEC-A accepted und in SPEC-B rejected sein. CON-0047 definiert keine Cross-SPEC-Konsistenzregel, und CON-0026 ist nicht auf Pattern-Registry-Einträge ausgeweitet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Cross-SPEC pattern consistency is out of scope for v0.1.0 (see SPEC-0015 Nicht-Ziele). CON-0026 conflict detection remains contract-level only. A future SPEC may add cross-pattern consistency rules.",
+        "resolved_at": "2026-05-15T07:43:39Z"
+      }
+    },
+    {
+      "id": "CF-0015-016",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 definiert das config.yaml-Schema und damit die erlaubte Struktur unter `.sdd/`. CON-0047 führt `.sdd/patterns/` als hartkodierten Pfad ein. Falls CON-0016 konfigurierbare Pfade für SDD-Artefakte vorsieht oder die `.sdd/`-Unterverzeichnisstruktur explizit beschränkt, entsteht ein field-contradiction über den Speicherort.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": ".sdd/patterns/ is a new sub-directory under the SDD dir. Config path conventions are not locked by CON-0016 – the directory follows the same .sdd/ convention as .sdd/contracts/, .sdd/specs/, etc. No structural conflict.",
+        "resolved_at": "2026-05-15T07:43:39Z"
+      }
+    },
+    {
+      "id": "CF-0015-017",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0004",
+      "detail": "CON-0047 setzt die CLI-Befehle `sdd pattern-accept` und `sdd pattern-reject` voraus. CON-0004 (extension-commands) definiert VS Code Extension Commands, enthält aber keine entsprechenden Pattern-Kommandos. Die Extension kann Pattern-Entscheidungen damit nicht auslösen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "VS Code Extension integration of pattern commands is explicitly out of scope for SPEC-0015 v0.1.0. The CLI commands are the primary interface. Extension integration is a follow-up spec.",
+        "resolved_at": "2026-05-15T07:43:53Z"
+      }
+    },
+    {
+      "id": "CF-0015-018",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0029",
+      "detail": "CON-0029 definiert das Conflict Report JSON Schema. Pattern-Konflikte (z.B. ein Pattern im Status under-review blockiert den Gate-Durchlauf) sind ein neuer Konflikttyp, der in CON-0029 als Report-Kategorie nicht vorgesehen ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Pattern conflicts (under-review blocking) are not represented in CON-0029 conflict reports. Pattern decisions are advisory, not blocking gate events in v0.1.0. A future spec may add pattern-gate conflict types.",
+        "resolved_at": "2026-05-15T07:43:53Z"
+      }
+    },
+    {
+      "id": "CF-0015-019",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0047",
+      "conflicting_contract": "CON-0034",
+      "detail": "CON-0034/CON-0035 (Obsidian Export/Import) beschreiben den Sync von `.sdd/`-Artefakten in den Vault. Pattern-Registry-Dateien unter `.sdd/patterns/` sind ein neuer Artefakttyp, der weder explizit in Scope noch Out-of-Scope definiert ist – inkonsistentes Export-Verhalten ist möglich.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Obsidian sync scope for .sdd/patterns/ is intentionally left to the existing Obsidian contract behavior: all .sdd/ subdirectories are included in export by default unless explicitly excluded. No new contract needed.",
+        "resolved_at": "2026-05-15T07:43:53Z"
+      }
+    },
+    {
+      "id": "CF-0015-020",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0048 INV-01 definiert 'solid_gate.mode: block' als eigenständigen Gate-Mechanismus mit Exit-Code-Semantik (0/1). CON-0025 (Execution Gate – Phase State Machine) definiert bereits einen Blocking-Mechanismus für Phasenübergänge. Unklar ist, ob der SOLID-Gate ein separater Gate-Typ innerhalb der bestehenden State Machine ist oder ein konkurrierendes Blocking-Konzept. Wenn beide unabhängig blockieren können, entstehen widersprüchliche Exit-Code- und State-Semantiken.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Two separate layers: CON-0025 ExecutionGate controls phase transitions (pipeline level). CON-0048 solid_gate.mode controls the CLI exit code of sdd solid-check (command level). solid_gate.mode=block means the CLI command exits 1 as a signal to the caller – it does NOT directly block the ExecutionGate. Integration into the gate is an explicit non-goal in v0.1.0 (SPEC-0015 Nicht-Ziele).",
+        "resolved_at": "2026-05-15T07:42:50Z"
+      }
+    },
+    {
+      "id": "CF-0015-021",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0048 referenziert 'solid_gate.mode' (Werte: block | warn) als Konfigurationsfeld, das das Verhalten von 'sdd solid-check' steuert. CON-0016 (config.yaml-Schema-Contract) ist der autoritative Vertrag für das Konfigurationsschema. Fehlt dort die 'solid_gate'-Sektion, ist das Feld nicht schema-validiert und das Verhalten von CON-0048 hängt von einem nicht-definierten Konfigurationspfad ab.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "extend: CON-0016 (config.yaml schema) will be extended with solid_gate: {enabled: bool, mode: warn|block} and pattern_suggestions: {enabled: bool, max_suggestions: int, source: str} sections as part of SPEC-0015 implementation. The sdd_cli/config.py SddConfig dataclass will expose these as typed properties.",
+        "resolved_at": "2026-05-15T07:42:56Z"
+      }
+    },
+    {
+      "id": "CF-0015-022",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline: Spec → Code → PR → Eval → Retry) definiert keine SOLID-Check-Phase. Wenn 'solid_gate.mode: block' Exit-Code 1 produziert, ist unklar, ob der Orchestrator darauf reagiert (Pipeline-Abbruch, Retry-Auslösung) oder den Exit-Code ignoriert. Die Integration von CON-0048 in die Pipeline fehlt in CON-0012 vollständig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Orchestrator pipeline does not call sdd solid-check. SOLID check is a developer-facing quality command, not an automated pipeline step in v0.1.0. The orchestrator (CON-0012) is unchanged.",
+        "resolved_at": "2026-05-15T07:43:54Z"
+      }
+    },
+    {
+      "id": "CF-0015-023",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0026",
+      "detail": "CON-0026 (Contract Conflict Detection – Analyse-Verhalten) und CON-0048 ('sdd solid-check') überschneiden sich in der Analysedomäne: Beide befassen sich mit strukturierter Code-/Spec-Analyse und produzieren Berichte mit Violations/Konflikten. Falls 'sdd solid-check' auch Spec-Ebene analysiert, könnte es mit der Conflict Detection Pipeline interferieren oder redundante Analysedurchläufe verursachen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd solid-check analyzes SPEC/contract artifacts (markdown files), not running code. It does NOT conflict with conflict detection (CON-0026) which analyzes contract-to-contract relationships. Separate analysis targets.",
+        "resolved_at": "2026-05-15T07:43:54Z"
+      }
+    },
+    {
+      "id": "CF-0015-024",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0004",
+      "detail": "CON-0004 (extension-commands) definiert VS Code Extension Commands. Falls die Extension die neuen CLI-Befehle (solid-check, pattern-suggest etc.) als Extension Commands exponiert, entstehen parallele Verhaltensverträge für dieselben Operationen ohne definierten Konsistenz-Mechanismus zwischen CLI-Exit-Codes und Extension-Command-Ergebnissen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "VS Code Extension commands for solid-check/pattern-suggest are explicitly out of scope for SPEC-0015 v0.1.0. CLI is the only interface.",
+        "resolved_at": "2026-05-15T07:43:54Z"
+      }
+    },
+    {
+      "id": "CF-0015-025",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0048",
+      "conflicting_contract": "CON-0028",
+      "detail": "CON-0048 schreibt vor, dass jedes Szenario durch einen automatisierten CLI-Integrationstest (subprocess + assertions) abgedeckt sein MUSS. CON-0028 (Auto Test Generation – Verhalten) definiert das Verhalten der automatischen Testgenerierung, adressiert aber vermutlich keine CLI-Subprocess-Integrationstests. Es fehlt der Vertrag, der beschreibt, wie diese Pflichttests für CON-0048-Szenarien generiert oder verwaltet werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CLI integration tests (subprocess + assertions) are written manually in tests/integration/ – they are not auto-generated by CON-0028. CON-0028 auto-generates unit/contract tests from contract definitions. Both test types coexist independently.",
+        "resolved_at": "2026-05-15T07:43:54Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 25,
+    "high": 6,
+    "medium": 13,
+    "low": 6,
+    "affected_specs_count": 0
+  }
+}

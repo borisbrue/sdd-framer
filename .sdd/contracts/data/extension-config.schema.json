@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDD Extension Configuration",
+  "description": "VS Code settings.json entries contributed by the sdd-framer extension",
+  "type": "object",
+  "properties": {
+    "sdd.cliPath": {
+      "type": "string",
+      "description": "Absoluter Pfad zur sdd-CLI. Leer = automatische Suche in PATH.",
+      "default": ""
+    },
+    "sdd.validateOnSave": {
+      "type": "boolean",
+      "description": "sdd validate bei jedem Speichern einer .md-Datei ausführen.",
+      "default": true
+    },
+    "sdd.treeViewRefreshInterval": {
+      "type": "integer",
+      "description": "Automatisches Refresh-Intervall der TreeView in Sekunden. 0 = deaktiviert.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3600
+    },
+    "sdd.showCodeLens": {
+      "type": "boolean",
+      "description": "Code Lens über Spec-Überschriften anzeigen (Anzahl Contracts / Tests).",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

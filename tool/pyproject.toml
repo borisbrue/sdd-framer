@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdd-cli"
+version = "0.1.0"
+description = "Spec-Driven Development CLI – Blueprint für sprachneutrales SDD"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Boris" }]
+license = { text = "MIT" }
+dependencies = [
+    "click>=8.1",
+    "pyyaml>=6.0",
+    "jsonschema>=4.21",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+evaluate = [
+    "anthropic>=0.40",
+    "httpx>=0.27",
+]
+lm-studio = [
+    "openai>=1.0",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+sdd = "sdd_cli.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sdd_cli*"]

@@ -1,0 +1,23 @@
+{
+  "spec_id": "SPEC-0005",
+  "runner": "pytest",
+  "started_at": "2026-05-12T19:17:46+00:00",
+  "duration_s": 3.028,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0013",
+      "artifact": "tests/integration/test_analyze_endpoint.py",
+      "status": "passed",
+      "duration_s": 3.0,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0013": false,
+    "CON-0014": true
+  },
+  "passed": 1,
+  "failed": 0,
+  "skipped": 0
+}

@@ -1,0 +1,56 @@
+name: SDD Orchestrator
+
+on:
+  push:
+    paths:
+      - 'specs/**.md'
+    branches:
+      - main
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install sdd-cli
+        run: pip install 'sdd-cli[evaluate]'
+
+      - name: Configure git
+        run: |
+          git config user.name "SDD Orchestrator"
+          git config user.email "sdd-bot@users.noreply.github.com"
+
+      - name: Detect changed specs
+        id: specs
+        run: |
+          SPECS=$(git diff --name-only HEAD~1 HEAD -- 'specs/*.md' \
+            | xargs -I{} python -c \
+              "import yaml; fm=open('{}').read().split('---')[1]; print(yaml.safe_load(fm).get('id',''))" \
+              2>/dev/null | tr '\n' ' ')
+          echo "ids=$SPECS" >> $GITHUB_OUTPUT
+
+      - name: Run orchestrator for each changed spec
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SDD_EVAL_BASE_URL: ${{ vars.SDD_EVAL_BASE_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for SPEC_ID in ${{ steps.specs.outputs.ids }}; do
+            echo "→ Orchestrating $SPEC_ID"
+            sdd orchestrate --spec "$SPEC_ID" \
+              --max-retries 3 \
+              ${{ vars.SDD_EVAL_BASE_URL && '--base-url $SDD_EVAL_BASE_URL' || '' }}
+          done

@@ -1,0 +1,87 @@
+import { useEffect, useState } from "react";
+import { api, Status, ValidationResult } from "../api";
+
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; }
+
+export default function StatusBar({ onShowAiUsage, onShowSettings }: Props) {
+  const [status, setStatus] = useState<Status | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [result, setResult] = useState<ValidationResult | null>(null);
+
+  useEffect(() => {
+    api.getStatus().then(setStatus).catch(console.error);
+  }, []);
+
+  async function handleValidate() {
+    setValidating(true);
+    setResult(null);
+    try {
+      const r = await api.validate();
+      setResult(r);
+      const s = await api.getStatus();
+      setStatus(s);
+    } finally {
+      setValidating(false);
+    }
+  }
+
+  async function handleTrace() {
+    await api.trace();
+    alert("Traceability-Matrix aktualisiert.");
+  }
+
+  return (
+    <div style={{ borderBottom: "1px solid var(--border)", background: "var(--surface)", padding: "10px 20px", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+      <span style={{ fontWeight: 700, color: "var(--accent)", fontSize: 16 }}>SDD Framer</span>
+
+      {status && (
+        <>
+          <Stat label="Specs" value={status.specs} />
+          <Stat label="Contracts" value={status.contracts} />
+          <Stat label="Tests" value={status.tests} />
+          <span className={status.gaps > 0 ? "gap" : "ok"}>
+            {status.gaps > 0 ? `⚠ ${status.gaps} Lücken` : "✓ vollständig"}
+          </span>
+        </>
+      )}
+
+      <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <button onClick={handleValidate} disabled={validating}>
+          {validating ? "…" : "▶ Validate"}
+        </button>
+        <button onClick={handleTrace}>↻ Trace</button>
+        <button onClick={onShowAiUsage} style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
+          ✦ KI-Kosten
+        </button>
+        <button onClick={onShowSettings} style={{ color: "var(--muted)", borderColor: "var(--border)" }}>
+          ⚙ Einstellungen
+        </button>
+      </div>
+
+      {result && (
+        <div style={{ width: "100%", marginTop: 6 }}>
+          {result.ok && !result.warnings.length
+            ? <span className="ok">✓ Alles in Ordnung</span>
+            : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {result.errors.map((e, i) => (
+                  <span key={i} className="gap">✗ {e.file}: {e.message}</span>
+                ))}
+                {result.warnings.map((w, i) => (
+                  <span key={i} style={{ color: "var(--yellow)" }}>⚠ {w.file}: {w.message}</span>
+                ))}
+              </div>
+            )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <span style={{ color: "var(--muted)", fontSize: 13 }}>
+      {label}: <strong style={{ color: "var(--text)" }}>{value}</strong>
+    </span>
+  );
+}

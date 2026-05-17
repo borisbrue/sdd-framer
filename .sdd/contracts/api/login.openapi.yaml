@@ -1,0 +1,116 @@
+openapi: 3.1.0
+info:
+  title: Login API
+  version: 1.0.0
+  description: |
+    Contract CON-0001 zu SPEC-0001 (User Login).
+    Verbindliches Interface für die Authentifizierung registrierter Nutzer.
+  contact:
+    name: Auth-Team
+
+servers:
+  - url: https://api.example.com
+    description: Production
+
+paths:
+  /v1/auth/login:
+    post:
+      operationId: login
+      summary: Authentifiziert einen Nutzer mit E-Mail und Passwort
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Erfolgreich authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Validierungsfehler im Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Ungültige Credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "invalid_credentials"
+                message: "Invalid credentials"
+        "423":
+          description: Account gesperrt (Brute-Force-Schutz)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Sekunden bis zur erneuten Freigabe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate-Limit überschritten
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          minLength: 8
+          maxLength: 1024
+
+    LoginResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in]
+      properties:
+        access_token:
+          type: string
+          description: JWT (ES256), gültig 15 Minuten
+        refresh_token:
+          type: string
+          description: Opaque Token, gültig 30 Tage, rotierend
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          description: Restlaufzeit des access_token in Sekunden
+          const: 900
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [invalid_credentials, validation_error, account_locked, rate_limited]
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              issue: { type: string }

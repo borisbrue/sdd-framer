@@ -1,0 +1,732 @@
+openapi: 3.1.0
+info:
+  title: "SDD Web API"
+  version: "0.3.0"
+  description: |
+    REST-API des SDD Web UI Servers (SPEC-0003, CON-0007).
+    Läuft lokal auf http://localhost:8000. Kein Auth erforderlich.
+  contact:
+    name: "Boris"
+servers:
+  - url: "http://localhost:8000/api"
+    description: "Lokaler Dev-Server"
+
+paths:
+
+  # ── Projects ──────────────────────────────────────────────────────────────
+
+  /projects:
+    get:
+      operationId: listProjects
+      summary: "Alle Projekte auflisten"
+      responses:
+        "200":
+          description: "Liste aller Projekte"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+    post:
+      operationId: createProject
+      summary: "Neues Projekt anlegen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: "Projekt angelegt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{project_id}:
+    get:
+      operationId: getProject
+      summary: "Einzelnes Projekt abrufen"
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      responses:
+        "200":
+          description: "Projekt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /projects/{project_id}/level:
+    patch:
+      operationId: setProjectLevel
+      summary: "Autonomy Level eines Projekts setzen (1|2|3|3.5|4)"
+      parameters:
+        - $ref: "#/components/parameters/ProjectId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetLevelRequest"
+      responses:
+        "200":
+          description: "Level aktualisiert"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Specs ─────────────────────────────────────────────────────────────────
+
+  /specs:
+    get:
+      operationId: listSpecs
+      summary: "Alle Specs auflisten"
+      responses:
+        "200":
+          description: "Liste aller Specs"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Spec"
+
+    post:
+      operationId: createSpec
+      summary: "Neue Spec anlegen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecCreate"
+      responses:
+        "201":
+          description: "Spec angelegt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedArtifact"
+
+  /specs/{spec_id}:
+    get:
+      operationId: getSpec
+      summary: "Spec mit Body abrufen"
+      parameters:
+        - $ref: "#/components/parameters/SpecId"
+      responses:
+        "200":
+          description: "Spec inkl. Markdown-Body"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Contracts ─────────────────────────────────────────────────────────────
+
+  /contracts:
+    get:
+      operationId: listContracts
+      summary: "Alle Contracts auflisten"
+      responses:
+        "200":
+          description: "Liste aller Contracts"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+
+    post:
+      operationId: createContract
+      summary: "Neuen Contract anlegen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractCreate"
+      responses:
+        "201":
+          description: "Contract angelegt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedArtifact"
+
+  /contracts/{contract_id}:
+    get:
+      operationId: getContract
+      summary: "Contract mit Body und Artifact-Inhalt abrufen"
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: "Contract inkl. Body"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Tests ─────────────────────────────────────────────────────────────────
+
+  /tests:
+    get:
+      operationId: listTests
+      summary: "Alle Tests auflisten"
+      responses:
+        "200":
+          description: "Liste aller Tests"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Test"
+
+    post:
+      operationId: createTest
+      summary: "Neuen Test anlegen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestCreate"
+      responses:
+        "201":
+          description: "Test angelegt"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedArtifact"
+
+  /tests/{test_id}:
+    get:
+      operationId: getTest
+      summary: "Test mit Body abrufen"
+      parameters:
+        - $ref: "#/components/parameters/TestId"
+      responses:
+        "200":
+          description: "Test inkl. Body"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Commands ──────────────────────────────────────────────────────────────
+
+  /status:
+    get:
+      operationId: getStatus
+      summary: "Projektübersicht (Anzahl Specs, Contracts, Tests, Lücken)"
+      responses:
+        "200":
+          description: "Projektübersicht"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStatus"
+
+  /validate:
+    post:
+      operationId: runValidate
+      summary: "sdd validate ausführen"
+      responses:
+        "200":
+          description: "Validierungsergebnis"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationResult"
+
+  /trace:
+    post:
+      operationId: runTrace
+      summary: "Traceability-Matrix aktualisieren"
+      responses:
+        "200":
+          description: "Traceability-Matrix aktualisiert"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean }
+                  file: { type: string }
+
+  /formats:
+    get:
+      operationId: listFormats
+      summary: "Verfügbare Contract-Formate"
+      responses:
+        "200":
+          description: "Liste der Formate"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+
+  /open:
+    post:
+      operationId: openInEditor
+      summary: "Datei in VS Code öffnen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenRequest"
+      responses:
+        "200":
+          description: "Datei geöffnet"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:     { type: boolean }
+                  opened: { type: string }
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /maintenance:
+    get:
+      operationId: getMaintenance
+      summary: "Drift-Sweep ausführen (veraltete Specs, fehlende Contracts/Tests)"
+      responses:
+        "200":
+          description: "Maintenance-Report"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MaintenanceReport"
+
+  # ── AI ────────────────────────────────────────────────────────────────────
+
+  /ai/generate-spec:
+    post:
+      operationId: aiGenerateSpec
+      summary: "Spec aus Titel + Kontext generieren"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiGenerateSpec"
+      responses:
+        "200":
+          description: "Generierter Spec-Text"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiResponse"
+
+  /ai/improve-spec:
+    post:
+      operationId: aiImproveSpec
+      summary: "Bestehende Spec nach Anweisung verbessern"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiImproveSpec"
+      responses:
+        "200":
+          description: "Verbesserter Spec-Text"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiResponse"
+
+  /ai/suggest-contracts:
+    post:
+      operationId: aiSuggestContracts
+      summary: "Contract-Typen für eine Spec vorschlagen"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiSuggestContracts"
+      responses:
+        "200":
+          description: "Vorgeschlagene Contracts"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiResponse"
+
+  /ai/usage:
+    get:
+      operationId: getAiUsage
+      summary: "KI-Nutzungsstatistiken (Token, Kosten)"
+      responses:
+        "200":
+          description: "Nutzungsstatistiken"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiUsage"
+
+  # ── Analyze ───────────────────────────────────────────────────────────────
+
+  /docs/{doc_id}/analyze:
+    put:
+      operationId: analyzeDoc
+      summary: "Interaktive KI-Analyse eines Dokuments (Q&A)"
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: "Analyse-Ergebnis mit Fragen und Vorschlägen"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+
+components:
+
+  parameters:
+    ProjectId:
+      name: project_id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^PRJ-[0-9]{4,}$" }
+    SpecId:
+      name: spec_id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^SPEC-[0-9]{4,}$" }
+    ContractId:
+      name: contract_id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^CON-[0-9]{4,}$" }
+    TestId:
+      name: test_id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^TST-[0-9]{4,}[a-z]?$" }
+
+  schemas:
+
+    Project:
+      type: object
+      required: [id, name, owner, status, description, created, autonomy_level]
+      properties:
+        id:             { type: string, example: "PRJ-0001" }
+        name:           { type: string }
+        owner:          { type: string }
+        status:         { type: string, enum: [active, archived, planning] }
+        description:    { type: string }
+        created:        { type: string, format: date }
+        autonomy_level:
+          type: number
+          enum: [1, 2, 3, 3.5, 4]
+          description: "Dark Factory Autonomy Level (SPEC-0004)"
+
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name:        { type: string }
+        owner:       { type: string, default: "" }
+        status:      { type: string, enum: [active, archived, planning], default: active }
+        description: { type: string, default: "" }
+
+    SetLevelRequest:
+      type: object
+      required: [level]
+      properties:
+        level:
+          type: number
+          enum: [1, 2, 3, 3.5, 4]
+
+    Spec:
+      type: object
+      required: [id, title, status]
+      properties:
+        id:         { type: string, example: "SPEC-0001" }
+        project:    { type: string }
+        title:      { type: string }
+        status:     { type: string, enum: [draft, review, approved, implemented, deprecated] }
+        priority:   { type: string, enum: [low, medium, high, critical] }
+        owner:      { type: string }
+        contracts:  { type: array, items: { type: string } }
+        tests:      { type: array, items: { type: string } }
+        adrs:       { type: array, items: { type: string } }
+        depends_on: { type: array, items: { type: string } }
+        tags:       { type: array, items: { type: string } }
+        version:    { type: string }
+        created:    { type: string }
+        updated:    { type: string }
+        file:       { type: string }
+        abs_file:   { type: string }
+
+    SpecDetail:
+      allOf:
+        - $ref: "#/components/schemas/Spec"
+        - type: object
+          properties:
+            body: { type: string, description: "Markdown-Body ohne Frontmatter" }
+
+    SpecCreate:
+      type: object
+      required: [title]
+      properties:
+        title:      { type: string }
+        owner:      { type: string, default: "" }
+        priority:   { type: string, default: medium }
+        project_id: { type: string, default: "" }
+
+    Contract:
+      type: object
+      required: [id, title, type, format, spec, status]
+      properties:
+        id:           { type: string, example: "CON-0001" }
+        title:        { type: string }
+        type:         { type: string, enum: [api, behavior, data, performance] }
+        format:       { type: string }
+        spec:         { type: string }
+        status:       { type: string, enum: [draft, active, deprecated] }
+        version:      { type: string }
+        artifact:     { type: string }
+        abs_artifact: { type: string }
+        tests:        { type: array, items: { type: string } }
+        file:         { type: string }
+        abs_file:     { type: string }
+
+    ContractDetail:
+      allOf:
+        - $ref: "#/components/schemas/Contract"
+        - type: object
+          properties:
+            body:             { type: string }
+            artifact_content: { type: string, nullable: true }
+
+    ContractCreate:
+      type: object
+      required: [spec_id, format]
+      properties:
+        spec_id: { type: string }
+        format:  { type: string }
+        title:   { type: string, default: "" }
+
+    Test:
+      type: object
+      required: [id, title, level, spec, contract, status]
+      properties:
+        id:        { type: string, example: "TST-0001" }
+        title:     { type: string }
+        level:     { type: string, enum: [unit, integration, contract, acceptance, performance, property] }
+        spec:      { type: string }
+        contract:  { type: string }
+        status:    { type: string, enum: [planned, implemented, passing, failing, skipped] }
+        framework: { type: string }
+        file:      { type: string }
+        abs_file:  { type: string }
+
+    TestDetail:
+      allOf:
+        - $ref: "#/components/schemas/Test"
+        - type: object
+          properties:
+            body: { type: string }
+
+    TestCreate:
+      type: object
+      required: [spec_id, contract_id, level]
+      properties:
+        spec_id:     { type: string }
+        contract_id: { type: string }
+        level:       { type: string, enum: [unit, integration, contract, acceptance, performance, property] }
+        title:       { type: string, default: "" }
+
+    CreatedArtifact:
+      type: object
+      required: [id, file]
+      properties:
+        id:       { type: string }
+        file:     { type: string }
+        abs_file: { type: string }
+
+    ProjectStatus:
+      type: object
+      required: [project, specs, contracts, tests, gaps]
+      properties:
+        project:   { type: string }
+        specs:     { type: integer }
+        contracts: { type: integer }
+        tests:     { type: integer }
+        gaps:      { type: integer, description: "Specs ohne Contract oder Test" }
+
+    ValidationIssue:
+      type: object
+      required: [severity, file, message]
+      properties:
+        severity:    { type: string, enum: [error, warning] }
+        file:        { type: string }
+        message:     { type: string }
+        instruction: { type: string, description: "Maschinenlesbare Korrektur-Anweisung für Agenten" }
+
+    ValidationResult:
+      type: object
+      required: [ok, errors, warnings]
+      properties:
+        ok:       { type: boolean }
+        errors:   { type: array, items: { $ref: "#/components/schemas/ValidationIssue" } }
+        warnings: { type: array, items: { $ref: "#/components/schemas/ValidationIssue" } }
+
+    MaintenanceIssue:
+      type: object
+      required: [severity, spec_id, file, message, action]
+      properties:
+        severity: { type: string, enum: [stale, missing_contract, missing_test, drift] }
+        spec_id:  { type: string }
+        file:     { type: string }
+        message:  { type: string }
+        action:   { type: string, description: "Empfohlener CLI-Befehl zur Behebung" }
+
+    MaintenanceReport:
+      type: object
+      required: [stale_after_weeks, total_issues, stale_specs, drift_issues, issues]
+      properties:
+        stale_after_weeks: { type: integer }
+        total_issues:      { type: integer }
+        stale_specs:       { type: integer }
+        drift_issues:      { type: integer }
+        issues:
+          type: array
+          items: { $ref: "#/components/schemas/MaintenanceIssue" }
+
+    OpenRequest:
+      type: object
+      required: [abs_file]
+      properties:
+        abs_file: { type: string }
+        line:     { type: integer, default: 1 }
+
+    AiGenerateSpec:
+      type: object
+      required: [title]
+      properties:
+        title:       { type: string }
+        description: { type: string, default: "" }
+        context:     { type: string, default: "" }
+
+    AiImproveSpec:
+      type: object
+      required: [spec_id, current_content, instructions]
+      properties:
+        spec_id:         { type: string }
+        current_content: { type: string }
+        instructions:    { type: string }
+
+    AiSuggestContracts:
+      type: object
+      required: [spec_id, spec_content]
+      properties:
+        spec_id:      { type: string }
+        spec_content: { type: string }
+
+    AiUsageEntry:
+      type: object
+      properties:
+        ts:                    { type: string, format: date-time }
+        provider:              { type: string }
+        operation:             { type: string }
+        model:                 { type: string }
+        input_tokens:          { type: integer }
+        output_tokens:         { type: integer }
+        cache_creation_tokens: { type: integer }
+        cache_read_tokens:     { type: integer }
+        cost_usd:              { type: number }
+
+    AiResponse:
+      type: object
+      required: [result, usage]
+      properties:
+        result: { type: string }
+        usage:  { $ref: "#/components/schemas/AiUsageEntry" }
+
+    AiUsage:
+      type: object
+      properties:
+        summary: { type: object }
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/AiUsageEntry" }
+
+    AnalyzeRequest:
+      type: object
+      required: [content, doc_type]
+      properties:
+        content:            { type: string }
+        doc_type:           { type: string, enum: [spec, contract] }
+        session_id:         { type: string, nullable: true }
+        answered_questions: { type: array, items: { type: object } }
+
+    AnalyzeResponse:
+      type: object
+      properties:
+        session_id:  { type: string }
+        questions:   { type: array, items: { type: object } }
+        issues:      { type: array, items: { type: object } }
+        suggestions: { type: array, items: { type: object } }
+        usage:       { $ref: "#/components/schemas/AiUsageEntry" }
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+  responses:
+    NotFound:
+      description: "Nicht gefunden"
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    BadRequest:
+      description: "Ungültiger Request"
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ServiceUnavailable:
+      description: "Externer Dienst nicht verfügbar (z.B. VS Code nicht gefunden)"
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }

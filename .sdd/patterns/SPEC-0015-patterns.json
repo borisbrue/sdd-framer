@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0015",
+  "generated_at": "2026-05-15T07:58:31Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-05-15T07:58:31Z",
+      "acceptance_reason": "Jeder SOLID-Checker ist ein unabhängiger Algorithmus – Strategy erlaubt unabhängiges Testen ohne Änderung am Aufrufer",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Null Object",
+      "status": "accepted",
+      "decided_at": "2026-05-15T07:58:31Z",
+      "acceptance_reason": "Verhindert if-Checks im aufrufenden Code wenn solid_gate deaktiviert ist",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/null-object"
+    },
+    {
+      "pattern_name": "Decorator",
+      "status": "accepted",
+      "decided_at": "2026-05-15T07:58:32Z",
+      "acceptance_reason": "Erweitert spec/contract review ohne Änderung am bestehenden Review-Code (OCP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/decorator"
+    },
+    {
+      "pattern_name": "Template Method",
+      "status": "rejected",
+      "decided_at": "2026-05-15T07:58:32Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Checker teilen keine gemeinsame Algorithmus-Basisstruktur – nur das Interface ist gemeinsam",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    }
+  ]
+}

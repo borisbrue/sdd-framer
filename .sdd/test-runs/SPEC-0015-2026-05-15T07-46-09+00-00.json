@@ -1,0 +1,46 @@
+{
+  "spec_id": "SPEC-0015",
+  "runner": "pytest",
+  "started_at": "2026-05-15T07:46:09+00:00",
+  "duration_s": 1.81,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0001",
+      "artifact": ".sdd/tests/contract/test_con-0045.py",
+      "status": "passed",
+      "duration_s": 0.494,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0002",
+      "artifact": ".sdd/tests/contract/test_con-0046.py",
+      "status": "passed",
+      "duration_s": 0.469,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0003",
+      "artifact": ".sdd/tests/contract/test_con-0047.py",
+      "status": "passed",
+      "duration_s": 0.445,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0004",
+      "artifact": ".sdd/tests/contract/test_con-0048.py",
+      "status": "passed",
+      "duration_s": 0.391,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0045": true,
+    "CON-0046": true,
+    "CON-0047": true,
+    "CON-0048": true
+  },
+  "passed": 4,
+  "failed": 0,
+  "skipped": 0
+}

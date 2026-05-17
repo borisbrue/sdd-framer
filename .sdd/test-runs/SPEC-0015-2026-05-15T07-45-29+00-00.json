@@ -1,0 +1,46 @@
+{
+  "spec_id": "SPEC-0015",
+  "runner": "pytest",
+  "started_at": "2026-05-15T07:45:29+00:00",
+  "duration_s": 0.015,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0001",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0001."
+    },
+    {
+      "test_id": "TST-0002",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0002."
+    },
+    {
+      "test_id": "TST-0003",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0003."
+    },
+    {
+      "test_id": "TST-0004",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0004."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0045": false,
+    "CON-0046": false,
+    "CON-0047": false,
+    "CON-0048": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 4
+}

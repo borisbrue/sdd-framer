@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PatternRegistryBundle",
+  "description": "Kombiniertes Schema für SPEC-spezifische und Catalog-Registry (SPEC-0015, CON-0047).",
+  "oneOf": [
+    { "$ref": "#/$defs/SpecPatternRegistry" },
+    { "$ref": "#/$defs/PatternCatalog" }
+  ],
+  "$defs": {
+    "SpecPatternRegistry": {
+      "title": "SpecPatternRegistry",
+      "description": "Pattern-Entscheidungen für eine spezifische SPEC (.sdd/patterns/SPEC-XXXX-patterns.json).",
+      "type": "object",
+      "required": ["spec_id", "generated_at", "patterns"],
+      "additionalProperties": false,
+      "properties": {
+        "spec_id": {
+          "type": "string",
+          "pattern": "^SPEC-[0-9]{4,}$"
+        },
+        "generated_at": {
+          "type": "string",
+          "description": "ISO 8601 UTC"
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pattern_name", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "pattern_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": ["accepted", "rejected", "under-review"]
+              },
+              "decided_at": {
+                "type": ["string", "null"]
+              },
+              "acceptance_reason": {
+                "type": ["string", "null"]
+              },
+              "rejection_reason": {
+                "type": ["string", "null"]
+              },
+              "refactoring_guru_url": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "PatternCatalog": {
+      "title": "PatternCatalog",
+      "description": "Aggregierter Überblick aller akzeptierten Patterns (.sdd/patterns/_catalog.json).",
+      "type": "object",
+      "required": ["last_updated", "accepted_patterns"],
+      "additionalProperties": false,
+      "properties": {
+        "last_updated": {
+          "type": "string"
+        },
+        "accepted_patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pattern_name", "spec_id", "accepted_at"],
+            "additionalProperties": false,
+            "properties": {
+              "pattern_name": {
+                "type": "string"
+              },
+              "spec_id": {
+                "type": "string",
+                "pattern": "^SPEC-[0-9]{4,}$"
+              },
+              "accepted_at": {
+                "type": "string"
+              },
+              "acceptance_reason": {
+                "type": ["string", "null"]
+              },
+              "refactoring_guru_url": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

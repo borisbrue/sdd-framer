@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/contract-frontmatter.schema.json",
+  "title": "SDD Contract Frontmatter",
+  "type": "object",
+  "required": ["id", "title", "type", "format", "spec", "version", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CON-[0-9]{4,}$"
+    },
+    "title": { "type": "string" },
+    "type": {
+      "type": "string",
+      "enum": ["api", "data", "behavior", "performance"]
+    },
+    "format": {
+      "type": "string",
+      "enum": ["openapi", "asyncapi", "graphql", "grpc", "json-schema", "avro", "protobuf", "gherkin", "markdown", "slo-yaml"]
+    },
+    "spec": {
+      "type": "string",
+      "pattern": "^SPEC-[0-9]{4,}$",
+      "description": "Zugehörige Spec-ID (Pflicht)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "review", "active", "approved", "deprecated"]
+    },
+    "artifact": {
+      "type": "string",
+      "description": "Pfad zur eigentlichen Contract-Datei (z.B. openapi.yaml), relativ zum Repo-Root"
+    },
+    "tests": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^TST-[0-9]{4,}$" }
+    }
+  }
+}

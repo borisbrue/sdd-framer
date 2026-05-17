@@ -1,0 +1,397 @@
+{
+  "spec_id": "SPEC-0021",
+  "generated_at": "2026-05-16T21:19:18Z",
+  "new_contracts": [
+    "CON-0065",
+    "CON-0066",
+    "CON-0067",
+    "CON-0068"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0021-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0060",
+      "detail": "SPEC-0019 (TDD-Implementierungsphase) definiert 'sdd start SPEC-XXXX' als Statusübergang zu 'in-progress' mit TDD-Checkliste und 24h-Warnung. CON-0065 redefines denselben Befehl für atomares Docker-Container- + Git-Branch-Management. Gleiche CLI-Syntax, vollständig divergierende Semantik.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "Neuer Befehl sdd dev start/exec/close/pr — kein Konflikt mehr mit sdd start (SPEC-0019/CON-0060)",
+        "resolved_at": "2026-05-16T21:20:16Z"
+      }
+    },
+    {
+      "id": "CF-0021-002",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate Phase State Machine) kontrolliert, wann eine Spec in eine Ausführungsphase eintreten darf. CON-0065 G-01 erlaubt 'sdd start' das direkte Erstellen von Branch + Container ohne Referenz auf Gate-Checks oder Phase-Transitionen, was die State-Machine-Invarianten umgeht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "sdd dev start erstellt Branch dev/SPEC-XXXX für interaktiven Pfad; Orchestrator (CON-0012) nutzt eigene Branch-Strategie — orthogonale Zuständigkeiten",
+        "resolved_at": "2026-05-16T21:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0021-003",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline: Spec → Code → PR → Eval → Retry) beansprucht Branch-Operationen als Teil der Pipeline-Steuerung. CON-0065 G-01 führt atome Branch-Erstellung ('spec/SPEC-XXXX' aus main) als Teil von 'sdd start' ein — überlappende Verantwortlichkeit für Git-Branch-Lifecycle ohne Abgrenzung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:26Z"
+      }
+    },
+    {
+      "id": "CF-0021-004",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0020",
+      "detail": "CON-0020 (Execute Flow – UI State Transitions) modelliert keine Docker-Container-Zustände (starting/running/stopped/removed). CON-0065 G-03/G-04 implizieren persistente Container-States über Sessions hinweg. 'Executing' in CON-0020 ist semantisch unklar, ob Container-running Voraussetzung ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:27Z"
+      }
+    },
+    {
+      "id": "CF-0021-005",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0054",
+      "detail": "CON-0054 (extension-server-management) deckt Server-Lifecycle-Management aus der Extension ab. CON-0065 führt Container-Lifecycle ('sdd start'/'sdd close') als CLI-Befehle ein. Beide Contracts können Verantwortung für Prozess-/Service-Verwaltung beanspruchen (SPEC-0017 und SPEC-0021 überlappen).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:27Z"
+      }
+    },
+    {
+      "id": "CF-0021-006",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 (config.yaml-Schema-Contract) definiert keine docker-Sektion. CON-0065 G-02 setzt Volume-Mount $(pwd):/workspace, Image-Name ('sdd-spec-xxxx'), Env-Variablen SPEC_ID und GIT_BRANCH voraus — diese Runtime-Konfiguration hat keine Schema-Grundlage in config.yaml.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:27Z"
+      }
+    },
+    {
+      "id": "CF-0021-007",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 (Pipeline Phase State JSON Schema) modelliert keine Container-States. CON-0065 G-03/G-04 unterscheiden 'aktiver Container' vs. 'gestoppter Container' vs. 'entfernter Container' — ein Zustandsschema für den Docker-Lifecycle fehlt vollständig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Konfigurierbarkeit via config.yaml geplant (v0.2); Holdout-Isolation: CON-0009-Konformität als explizite NFR dokumentiert",
+        "resolved_at": "2026-05-16T21:20:31Z"
+      }
+    },
+    {
+      "id": "CF-0021-008",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0065",
+      "conflicting_contract": "CON-0055",
+      "detail": "CON-0055 (extension-pipeline-control) steuert Pipeline-Ausführung aus der Extension. 'sdd exec' (Ausführung im Container) kann mit Pipeline-Control-Verantwortlichkeiten überlappen, wenn Pipeline-Schritte containerisiert laufen sollen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Konfigurierbarkeit via config.yaml geplant (v0.2); Holdout-Isolation: CON-0009-Konformität als explizite NFR dokumentiert",
+        "resolved_at": "2026-05-16T21:20:31Z"
+      }
+    },
+    {
+      "id": "CF-0021-009",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0066",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate – Phase State Machine, SPEC-0014) definiert die Zustands­übergänge und Gate-Bedingungen für alle Pipeline-Phasen. CON-0066 definiert eigenständige Blocking-Bedingungen für das PR-Gate (G-01: Tests, G-02: sdd validate, G-03: uncommitted changes) ohne Referenz auf die State Machine. Falls CON-0025 den PR-Übergang bereits mit eigenen Preconditions modelliert, sind die Blocking-Regeln doppelt und potenziell widersprüchlich definiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0066 referenziert CON-0025 explizit als Voraussetzung und ergänzt Laufzeit-Prüfungen — kein Ersatz, keine Duplizierung",
+        "resolved_at": "2026-05-16T21:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0021-010",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0066",
+      "conflicting_contract": "CON-0027",
+      "detail": "CON-0027 (Execution Gate – Web API Endpoints, SPEC-0014) exponiert Gate-Logik über HTTP-Endpunkte. CON-0066 implementiert das PR-Gate als reine CLI-Logik in `sdd pr` ohne Verweis auf diese API. Wenn `sdd pr` intern die Gate-API aufrufen soll (Konsistenz mit dem Web-UI-Flow aus SPEC-0007/CON-0020), definiert CON-0066 parallele und möglicherweise abweichende Gate-Semantik auf CLI-Ebene.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:27Z"
+      }
+    },
+    {
+      "id": "CF-0021-011",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0066",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline Spec → Code → PR → Eval → Retry) beschreibt die PR-Phase als Teil des Orchestrator-Ablaufs. CON-0066 definiert ebenfalls das Verhalten der PR-Phase, aber aus Sicht des eigenständigen CLI-Befehls. Beide Contracts legen fest, was im PR-Schritt passiert – ohne gegenseitige Referenzierung entsteht Redundanz und Drift-Gefahr bei Änderungen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:28Z"
+      }
+    },
+    {
+      "id": "CF-0021-012",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0066",
+      "conflicting_contract": "CON-0028",
+      "detail": "CON-0066 G-01 blockiert wenn Tests 'noch nicht ausgeführt wurden'. CON-0028 (Auto Test Generation) definiert, wie Tests auto-generiert werden, aber nicht, ob sie danach automatisch ausgeführt werden. Es fehlt eine explizite Dependency: CON-0066 setzt ausgeführte Test-Ergebnisse voraus, die CON-0028 nicht garantiert zu liefern – ein unerfülltes Precondition-Gap.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:28Z"
+      }
+    },
+    {
+      "id": "CF-0021-013",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0066",
+      "conflicting_contract": "CON-0018",
+      "detail": "CON-0066 G-01 referenziert implizit Test-Ergebniszustände ('fehlgeschlagen', 'noch nicht ausgeführt'), die in CON-0018 (Test Run Results Behavior) formal definiert sind. CON-0066 deklariert keine explizite Abhängigkeit auf CON-0018, was bedeutet, dass die Terminologie ('nicht ausgeführt' vs. mögliche States in CON-0018) divergieren kann.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:28Z"
+      }
+    },
+    {
+      "id": "CF-0021-014",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0067 setzt voraus, dass das PR-Dokument nach 'erfolgreichem Gate' erstellt wird und ein test_result-Feld enthält. CON-0025 (Execution Gate – Phase State Machine) definiert die Gate-Zustände, spezifiziert aber nicht, welche Daten (test_result-Struktur, diff_stat) beim Gate-Success an 'sdd pr' übergeben werden. Das Output-Interface der Gate-Phase ist nicht als Contract verankert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:28Z"
+      }
+    },
+    {
+      "id": "CF-0021-015",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 (Pipeline Phase State JSON Schema) modelliert Phasenzustände inkl. Test-Ausgaben auf Pipeline-Ebene. CON-0067 definiert test_result als Pflichtfeld im PR-Frontmatter. Ohne geteilte Typ-Definition (Enum-Werte, Struktur, pass/fail vs. strukturiertes Objekt) entstehen zwei divergierende Darstellungen desselben Konzepts in unterschiedlichen Schemas.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0067 referenziert jetzt explizit CON-0025 für spec_id-Format und CON-0017 für test_result-Format",
+        "resolved_at": "2026-05-16T21:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0021-016",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0017",
+      "detail": "CON-0017 (Test Run Results API) modelliert Test-Ergebnisse als OpenAPI-Response-Schema. CON-0067 persistiert test_result im PR-Frontmatter. Wenn Enum-Werte oder Feldstruktur zwischen API-Response und gespeichertem Wert divergieren, entstehen zwei inkompatible Wahrheitsquellen für 'Test erfolgreich'.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0067 Abhängigkeit zu CON-0017 (Test Run Results API) explizit dokumentiert",
+        "resolved_at": "2026-05-16T21:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0021-017",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline: Spec→Code→PR→Eval→Retry) beschreibt den PR-Schritt als Teil der Pipeline, ohne dessen Ausgabe-Artefakt zu referenzieren. CON-0067 definiert genau dieses Artefakt. Fehlende explizite Referenz führt dazu, dass CON-0012 das PR-Format implizit vorschreiben könnte, ohne CON-0067 zu kennen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:28Z"
+      }
+    },
+    {
+      "id": "CF-0021-018",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0018",
+      "detail": "CON-0018 (Test Run Results Behavior) definiert das Systemverhalten bei Test-Ergebnissen. CON-0067 G-01 fordert ein test_result-Pflichtfeld aus demselben Lauf. Ohne gemeinsamen Typ-Contract kann CON-0018 ein Ergebnis als 'passed' kodieren, während CON-0067 einen anderen Wert oder eine andere Struktur erwartet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:29Z"
+      }
+    },
+    {
+      "id": "CF-0021-019",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0067",
+      "conflicting_contract": "CON-0009",
+      "detail": "CON-0009 (Holdout-Verzeichnisstruktur und HOL-Isolation) definiert die .sdd/-Verzeichnishierarchie. CON-0067 schreibt den Pfad .sdd/prs/PR-SPEC-XXXX.md vor. Falls CON-0009 kein prs/-Unterverzeichnis vorsieht, besteht ein Widerspruch in der Verzeichnisstruktur.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:29Z"
+      }
+    },
+    {
+      "id": "CF-0021-020",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0068",
+      "conflicting_contract": "CON-0054",
+      "detail": "CON-0054 (extension-server-management, SPEC-0017) definiert Verhaltensvorgaben für Server-/Container-Start via VS Code Extension. CON-0068 legt SLOs für `sdd start` (Wall-Clock < 30 s) fest, die implizit auch für Extension-getriggerte Starts gelten. CON-0054 referenziert diese SLO-Grenze nicht, sodass behaviour-Spec und Performance-Constraint disjunkt spezifiziert sind.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:29Z"
+      }
+    },
+    {
+      "id": "CF-0021-021",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0068",
+      "conflicting_contract": "CON-0055",
+      "detail": "CON-0055 (extension-pipeline-control, SPEC-0017) steuert Pipeline-Phasen, die `sdd exec <befehl>` intern nutzen dürften. Der <500 ms Overhead-SLO aus CON-0068 gilt dann für jeden pipeline-kontrollierten exec-Aufruf, wird in CON-0055 aber weder referenziert noch als Designbedingung berücksichtigt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:29Z"
+      }
+    },
+    {
+      "id": "CF-0021-022",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0068",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline, Spec → Code → PR → Eval → Retry) ruft `sdd start` und `sdd exec` als Teil des Pipeline-Flows auf. CON-0068 setzt als Messbedingung voraus, dass das Docker-Image bereits lokal vorhanden ist. In frischen CI-Umgebungen oder nach einem Orchestrator-Reset kann diese Precondition nicht garantiert sein – der Scope der SLO-Messung ist gegenüber dem Orchestrator-Nutzungsszenario nicht abgegrenzt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:30Z"
+      }
+    },
+    {
+      "id": "CF-0021-023",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0068",
+      "conflicting_contract": "CON-0003",
+      "detail": "CON-0003 (Login Performance SLOs) ist der einzige aktive Performance-SLO-Contract im selben Format (slo-yaml). CON-0068 führt ein zweites SLO-Dokument ein, ohne das Mess-Framework (Werkzeug, Reporting-Format, CI-Integration) aus CON-0003 zu referenzieren oder zu übernehmen. Abweichende Methodiken können zu inkonsistenten SLO-Auswertungen führen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "SLO-Endpunkt klar definiert: docker exec true antwortet mit Exit-Code 0; CON-0054 Health-Checks explizit ausgeschlossen",
+        "resolved_at": "2026-05-16T21:20:18Z"
+      }
+    },
+    {
+      "id": "CF-0021-024",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0068",
+      "conflicting_contract": "CON-0010",
+      "detail": "CON-0010 (Evaluator – Standalone Python-Prozess) nutzt wahrscheinlich `sdd exec` zum Aufruf von Evaluierungsbefehlen. Der Evaluator-Prozess selbst erzeugt Startup-Overhead (Python-Interpreter, Abhängigkeiten), der in den gemessenen <500 ms Overhead gegenüber lokalem Aufruf einfließt, aber in CON-0068 nicht als Sonderfall ausgewiesen ist. Ohne Ausnahmeregel für Evaluator-invozierte exec-Aufrufe ist unklar, ob SLO-Verletzungen dem SDD-Kern oder dem Evaluator zugerechnet werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bekannte Überschneidung, kein Handlungsbedarf für v0.1 — wird in Folge-Specs oder v0.2 adressiert",
+        "resolved_at": "2026-05-16T21:20:30Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 24,
+    "high": 6,
+    "medium": 13,
+    "low": 5,
+    "affected_specs_count": 0
+  }
+}

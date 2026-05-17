@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npx @vscode/vsce package --no-dependencies)",
+      "Bash(node -e \"const p = require\\('./node_modules/@types/vscode/package.json'\\); console.log\\(p.version, p.engines\\)\")",
+      "Bash(code --install-extension /run/media/deck/SM512/Development/sdd-framer/vscode-extension/sdd-framer-0.1.0.vsix)",
+      "Bash(code --help)",
+      "Bash(/app/bin/code --install-extension /run/media/deck/SM512/Development/sdd-framer/vscode-extension/sdd-framer-0.1.0.vsix)",
+      "Bash(sdd validate *)",
+      "Bash(sdd trace *)",
+      "Bash(sdd status *)",
+      "Bash(python -m pytest tests/unit/test_tst_0082.py -x --tb=short)",
+      "Bash(python -m pytest --co -q)",
+      "Bash(python -m pytest --co tests/unit/test_tst_0074.py -q)",
+      "Bash(python -c \"import sys; [print\\(p\\) for p in sys.path if 'sdd' in p.lower\\(\\)]\")",
+      "Bash(python -m pytest tests/unit/test_tst_0083.py -x --tb=short)",
+      "Bash(python -m pytest tests/ --ignore=tests/contract/test_login_openapi.py --tb=short -q)",
+      "Bash(python -m pytest tests/unit/test_tst_0074.py::test_tc01_normal_start -x --tb=long)",
+      "Bash(python -m pytest tests/unit/test_tst_0074.py -x --tb=short)",
+      "Bash(python -m pytest tests/unit/test_tst_0077.py -x --tb=short)",
+      "Bash(python -m pytest tests/unit/test_tst_0077.py tests/unit/test_tst_0074.py tests/unit/test_tst_0075.py tests/unit/test_tst_0076.py tests/unit/test_tst_0078.py --tb=short -q)",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git add *)"
+    ]
+  }
+}

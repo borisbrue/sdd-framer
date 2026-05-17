@@ -1,0 +1,54 @@
+{
+  "spec_id": "SPEC-0004",
+  "runner": "pytest",
+  "started_at": "2026-05-12T15:52:13+00:00",
+  "duration_s": 0.868,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0010",
+      "artifact": "tests/integration/test_evaluator.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/integration/test_evaluator.py"
+    },
+    {
+      "test_id": "TST-0010b",
+      "artifact": "tests/unit/test_prompt_isolation.py",
+      "status": "passed",
+      "duration_s": 0.788,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0011",
+      "artifact": "tests/unit/test_agents_md_validation.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_agents_md_validation.py"
+    },
+    {
+      "test_id": "TST-0012",
+      "artifact": "tests/integration/test_orchestrator.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/integration/test_orchestrator.py"
+    },
+    {
+      "test_id": "TST-0015",
+      "artifact": "tests/unit/test_config_yaml_schema.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_config_yaml_schema.py"
+    }
+  ],
+  "contract_coverage": {
+    "CON-0009": true,
+    "CON-0010": false,
+    "CON-0011": false,
+    "CON-0012": false,
+    "CON-0016": false
+  },
+  "passed": 1,
+  "failed": 0,
+  "skipped": 4
+}

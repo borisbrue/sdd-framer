@@ -1,0 +1,330 @@
+openapi: "3.1.0"
+info:
+  title: SDD Execution Gate API
+  version: "0.1.0"
+  description: |
+    Sub-Contract von CON-0007 (web-api). Alle Routen unter /api/gate/ steuern
+    den Execution-Gate-Prozess (SPEC-0014): Phasenstatus abfragen, Phasen
+    auslösen, Konflikte verwalten.
+
+servers:
+  - url: http://localhost:8080
+    description: Lokale sdd-web-api
+
+paths:
+
+  /api/gate/{spec_id}/status:
+    get:
+      operationId: getGateStatus
+      summary: Phasenstatus und phase_history einer SPEC lesen
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^SPEC-[0-9]{4,}$"
+      responses:
+        "200":
+          description: Phasenstatus (auch wenn kein Pipeline-JSON existiert)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateStatus"
+        "404":
+          description: SPEC nicht gefunden
+
+  /api/gate/{spec_id}/spec-review:
+    post:
+      operationId: triggerSpecReview
+      summary: Phase 2 – LLM-SPEC-Review auslösen (SSE)
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE-Stream mit Critique-Items
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "409":
+          description: Vorgängerphase (Phase 1) noch nicht abgeschlossen
+
+  /api/gate/{spec_id}/contract-propose:
+    post:
+      operationId: triggerContractPropose
+      summary: Phase 3 – Contract-Vorschläge generieren
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liste der vorgeschlagenen Contracts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractProposalList"
+        "409":
+          description: Phase 2 noch nicht abgeschlossen
+
+  /api/gate/{spec_id}/contract-review:
+    post:
+      operationId: triggerContractReview
+      summary: Phase 5 – Konflikt-Analyse starten (SSE)
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE-Stream + Konfliktbericht als letztes Event
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "409":
+          description: Phase 4 noch nicht abgeschlossen
+
+  /api/gate/{spec_id}/test-generate:
+    post:
+      operationId: triggerTestGeneration
+      summary: Phase 6 – Tests aus Contracts generieren
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Liste der generierten Testdateien
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestGenerationResult"
+        "409":
+          description: Phase 5 noch nicht abgeschlossen (offene Konflikte)
+
+  /api/gate/{spec_id}/approve:
+    post:
+      operationId: triggerSpecApprove
+      summary: Phase 8 – Finalen Konsistenzcheck auslösen
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Konsistenzcheck-Ergebnis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApproveResult"
+        "409":
+          description: Phase 7 noch nicht abgeschlossen
+
+  /api/gate/{spec_id}/conflicts:
+    get:
+      operationId: listConflicts
+      summary: Alle Konflikte einer SPEC auflisten
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, resolved, acknowledged]
+      responses:
+        "200":
+          description: Konfliktliste
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictList"
+        "404":
+          description: Kein Konfliktbericht für diese SPEC
+
+  /api/gate/{spec_id}/conflicts/{cf_id}:
+    patch:
+      operationId: updateConflict
+      summary: Konflikt auflösen oder acknowledgen
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cf_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^CF-[0-9]+-[0-9]+$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConflictUpdate"
+      responses:
+        "200":
+          description: Aktualisierter Konflikt
+        "404":
+          description: Konflikt nicht gefunden
+        "422":
+          description: reason fehlt bei acknowledge-Aktion
+
+components:
+  schemas:
+
+    GateStatus:
+      type: object
+      required: [spec_id, pipeline_phase, phase_history, blocking_issues]
+      properties:
+        spec_id:
+          type: string
+        pipeline_phase:
+          type: ["string", "null"]
+        phase_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseEntry"
+        blocking_issues:
+          type: array
+          items:
+            type: string
+        conflict_report_ref:
+          type: ["string", "null"]
+
+    PhaseEntry:
+      type: object
+      required: [phase, completed_at, result]
+      properties:
+        phase:
+          type: string
+        completed_at:
+          type: string
+          format: date-time
+        result:
+          type: string
+          enum: [ok, failed]
+
+    ContractProposalList:
+      type: object
+      required: [proposals]
+      properties:
+        proposals:
+          type: array
+          items:
+            type: object
+            required: [suggested_id, type, format, title, rationale]
+            properties:
+              suggested_id:
+                type: string
+              type:
+                type: string
+                enum: [api, data, behavior, performance]
+              format:
+                type: string
+              title:
+                type: string
+              rationale:
+                type: string
+
+    TestGenerationResult:
+      type: object
+      required: [generated_files]
+      properties:
+        generated_files:
+          type: array
+          items:
+            type: object
+            required: [contract_id, path, test_count]
+            properties:
+              contract_id:
+                type: string
+              path:
+                type: string
+              test_count:
+                type: integer
+
+    ApproveResult:
+      type: object
+      required: [consistent, issues]
+      properties:
+        consistent:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: string
+
+    ConflictList:
+      type: object
+      required: [conflicts, impact_summary]
+      properties:
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conflict"
+        impact_summary:
+          type: object
+
+    Conflict:
+      type: object
+      required: [id, type, severity, new_contract, conflicting_contract, detail, affected_specs, status]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [endpoint-overlap, field-contradiction, behavior-contradiction, scope-overlap, dependency-gap]
+        severity:
+          type: string
+          enum: [low, medium, high]
+        new_contract:
+          type: string
+        conflicting_contract:
+          type: string
+        detail:
+          type: string
+        affected_specs:
+          type: array
+          items:
+            type: string
+        required_action:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, acknowledged]
+        resolution:
+          type: ["object", "null"]
+
+    ConflictUpdate:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [resolve, acknowledge]
+        resolve_strategy:
+          type: string
+          enum: [refactor, extend, version, split]
+        reason:
+          type: string

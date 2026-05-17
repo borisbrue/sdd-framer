@@ -1,0 +1,26 @@
+{
+  "last_updated": "2026-05-15T07:58:32Z",
+  "accepted_patterns": [
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0015",
+      "accepted_at": "2026-05-15T07:58:31Z",
+      "acceptance_reason": "Jeder SOLID-Checker ist ein unabhängiger Algorithmus – Strategy erlaubt unabhängiges Testen ohne Änderung am Aufrufer",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Null Object",
+      "spec_id": "SPEC-0015",
+      "accepted_at": "2026-05-15T07:58:31Z",
+      "acceptance_reason": "Verhindert if-Checks im aufrufenden Code wenn solid_gate deaktiviert ist",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/null-object"
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0015",
+      "accepted_at": "2026-05-15T07:58:32Z",
+      "acceptance_reason": "Erweitert spec/contract review ohne Änderung am bestehenden Review-Code (OCP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/decorator"
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+"""sdd dev – Isolierte Docker-Entwicklungsumgebung pro Spec (SPEC-0021/0022).
+
+Facade Pattern: DevContainerManager kapselt docker/git-Befehle.
+Strategy Pattern:
+  - PRStrategy: austauschbar (local → github in v0.2)
+  - ContainerRuntime: docker | podman, Runtime-Auswahl über config.yaml
+Observer Pattern: LogStreamer → LogEventBus → WebSocket-Clients (SPEC-0022)
+"""
+from __future__ import annotations
+
+import abc
+import datetime
+import subprocess
+import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from .config import SddConfig
+from .frontmatter import parse_safe
+
+if TYPE_CHECKING:
+    from .log_streamer import LogStreamer
+
+
+# ── Naming conventions ────────────────────────────────────────────────────────
+
+def container_name(spec_id: str) -> str:
+    return f"sdd-dev-{spec_id.lower().replace('_', '-')}"
+
+
+def branch_name(spec_id: str) -> str:
+    return f"dev/{spec_id}"
+
+
+# ── Shell helpers ─────────────────────────────────────────────────────────────
+
+def _run(args: list[str], *, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        args,
+        capture_output=capture,
+        text=True,
+        check=check,
+    )
+
+
+def _git(args: list[str], *, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
+    return _run(["git"] + args, capture=capture, check=check)
+
+
+# ── ContainerRuntime (Strategy Pattern) ──────────────────────────────────────
+
+class ContainerRuntime(abc.ABC):
+    @abc.abstractmethod
+    def cli(self) -> str:
+        """Returns the CLI executable name: 'docker' or 'podman'."""
+
+    def _cmd(self, args: list[str], *, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [self.cli()] + args,
+            capture_output=capture,
+            text=True,
+            check=check,
+        )
+
+    def inspect_status(self, name: str) -> str | None:
+        result = self._cmd(
+            ["inspect", "--format", "{{.State.Status}}", name],
+            capture=True, check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip() or None
+
+    def build(self, image: str, dockerfile: str) -> None:
+        self._cmd(["build", "-t", image, "-f", dockerfile, "."])
+
+    def push(self, target: str) -> None:
+        self._cmd(["push", target])
+
+    def compose_up(self, compose_file: str) -> None:
+        self._cmd(["compose", "-f", compose_file, "up", "-d"])
+
+    def compose_down(self, compose_file: str) -> None:
+        self._cmd(["compose", "-f", compose_file, "down"])
+
+    def start(self, name: str) -> None:
+        self._cmd(["start", name])
+
+    def stop(self, name: str, *, check: bool = False) -> None:
+        self._cmd(["stop", name], check=check)
+
+    def rm(self, name: str, *, check: bool = False) -> None:
+        self._cmd(["rm", name], check=check)
+
+    def run_container(
+        self,
+        name: str,
+        image: str,
+        *,
+        volume: str,
+        env: dict[str, str],
+    ) -> None:
+        args = ["run", "-d", "--name", name, "-v", volume]
+        for k, v in env.items():
+            args += ["-e", f"{k}={v}"]
+        args += [image, "tail", "-f", "/dev/null"]
+        self._cmd(args)
+
+    def exec_in(self, name: str, cmd: list[str]) -> subprocess.CompletedProcess:
+        return self._cmd(["exec", name] + cmd, capture=False, check=False)
+
+    def logs_popen(self, name: str) -> subprocess.Popen:
+        return subprocess.Popen(
+            [self.cli(), "logs", "--follow", name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+
+class DockerRuntime(ContainerRuntime):
+    def cli(self) -> str:
+        return "docker"
+
+
+class PodmanRuntime(ContainerRuntime):
+    def cli(self) -> str:
+        return "podman"
+
+    def run_container(
+        self,
+        name: str,
+        image: str,
+        *,
+        volume: str,
+        env: dict[str, str],
+    ) -> None:
+        args = ["run", "-d", "--name", name, "--userns=keep-id", "-v", volume]
+        for k, v in env.items():
+            args += ["-e", f"{k}={v}"]
+        args += [image, "tail", "-f", "/dev/null"]
+        self._cmd(args)
+
+
+_RUNTIME_MAP: dict[str, type[ContainerRuntime]] = {
+    "docker": DockerRuntime,
+    "podman": PodmanRuntime,
+}
+
+
+def get_runtime(cfg: SddConfig) -> ContainerRuntime:
+    runtime_name = cfg.raw.get("docker", {}).get("runtime", "docker")
+    cls = _RUNTIME_MAP.get(runtime_name)
+    if cls is None:
+        print(
+            f"✗ Ungültige Runtime '{runtime_name}'. Erlaubt: docker, podman",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return cls()
+
+
+def validate_docker_config(docker_cfg: dict) -> None:
+    runtime = docker_cfg.get("runtime", "docker")
+    if runtime not in _RUNTIME_MAP:
+        raise ValueError(f"Ungültige Runtime '{runtime}'. Erlaubt: docker, podman")
+
+    log_stream = docker_cfg.get("log_stream", {})
+    max_lines = log_stream.get("max_lines", 500)
+    if not (1 <= max_lines <= 10000):
+        raise ValueError(f"log_stream.max_lines muss zwischen 1 und 10000 liegen, ist: {max_lines}")
+
+
+# ── Git helpers ───────────────────────────────────────────────────────────────
+
+def _branch_exists(branch: str) -> bool:
+    result = _git(["rev-parse", "--verify", branch], capture=True, check=False)
+    return result.returncode == 0
+
+
+# ── PR Strategy (Strategy Pattern) ───────────────────────────────────────────
+
+class PRStrategy(abc.ABC):
+    @abc.abstractmethod
+    def create(self, spec_id: str, cfg: SddConfig) -> None: ...
+
+
+class LocalGitStrategy(PRStrategy):
+    def create(self, spec_id: str, cfg: SddConfig) -> None:
+        branch = branch_name(spec_id)
+
+        result = _git(["diff", f"main..{branch}", "--stat"], capture=True, check=False)
+        diff_stat = result.stdout.strip() if result.returncode == 0 else "(diff nicht verfügbar)"
+
+        test_result, tests_passed, tests_total = _load_last_test_result(cfg, spec_id)
+        merge_cmd = f"git checkout main && git merge {branch}"
+
+        pr_dir = cfg.root / ".sdd" / "prs"
+        pr_dir.mkdir(parents=True, exist_ok=True)
+        pr_path = pr_dir / f"PR-{spec_id}.md"
+
+        today = datetime.date.today().isoformat()
+        pr_path.write_text(
+            f"---\n"
+            f"spec_id: {spec_id}\n"
+            f"branch: {branch}\n"
+            f"created: {today}\n"
+            f"test_result: {test_result}\n"
+            f"tests_passed: {tests_passed}\n"
+            f"tests_total: {tests_total}\n"
+            f'merge_command: "{merge_cmd}"\n'
+            f"diff_stat: |\n  {diff_stat}\n"
+            f"pr_strategy: local\n"
+            f"---\n\n"
+            f"# PR: {spec_id}\n\n"
+            f"## Diff\n\n```\n{diff_stat}\n```\n\n"
+            f"## Merge\n\n```bash\n{merge_cmd}\n```\n",
+            encoding="utf-8",
+        )
+        print(f"✓ PR-Dokument erstellt: {pr_path}")
+        print(f"\nMerge-Anleitung:\n  {merge_cmd}")
+
+
+# ── Test-result persistence ───────────────────────────────────────────────────
+
+def _test_result_path(cfg: SddConfig, spec_id: str) -> Path:
+    return cfg.root / ".sdd" / "test-results" / f"{spec_id}.json"
+
+
+def save_test_result(cfg: SddConfig, spec_id: str, *, passed: int, total: int) -> None:
+    import json
+    p = _test_result_path(cfg, spec_id)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    result = "passed" if passed == total and total > 0 else "failed"
+    p.write_text(
+        json.dumps({"spec_id": spec_id, "result": result, "passed": passed, "total": total}),
+        encoding="utf-8",
+    )
+
+
+def _load_last_test_result(cfg: SddConfig, spec_id: str) -> tuple[str, int, int]:
+    import json
+    p = _test_result_path(cfg, spec_id)
+    if not p.exists():
+        return "skipped", 0, 0
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        return data.get("result", "skipped"), data.get("passed", 0), data.get("total", 0)
+    except Exception:
+        return "skipped", 0, 0
+
+
+# ── DevContainerManager (Facade) ─────────────────────────────────────────────
+
+class DevContainerManager:
+    def __init__(
+        self,
+        cfg: SddConfig,
+        pr_strategy: PRStrategy | None = None,
+        runtime: ContainerRuntime | None = None,
+        log_streamer: LogStreamer | None = None,
+    ) -> None:
+        self.cfg = cfg
+        self._pr_strategy = pr_strategy or LocalGitStrategy()
+        self._runtime = runtime or get_runtime(cfg)
+        self._log_streamer = log_streamer
+
+    def _docker_cfg(self) -> dict:
+        return self.cfg.raw.get("docker", {})
+
+    def _docker_image(self) -> str:
+        return self._docker_cfg().get("image", "sdd-dev:latest")
+
+    def _dockerfile(self) -> str:
+        return self._docker_cfg().get("dockerfile", ".sdd/Dockerfile")
+
+    def _compose_file(self) -> str:
+        return self._docker_cfg().get("compose_file", "")
+
+    def _registry_url(self) -> str:
+        return self._docker_cfg().get("registry", {}).get("url", "")
+
+    def _log_stream_enabled(self) -> bool:
+        return self._docker_cfg().get("log_stream", {}).get("enabled", True)
+
+    # ── SPEC-0022 commands ────────────────────────────────────────────────────
+
+    def build(self) -> None:
+        dockerfile = self._dockerfile()
+        if not Path(dockerfile).exists():
+            print(f"✗ Dockerfile nicht gefunden: {dockerfile}", file=sys.stderr)
+            sys.exit(1)
+        image = self._docker_image()
+        self._runtime.build(image, dockerfile)
+        print(f"✓ Image gebaut: {image}")
+
+    def push(self) -> None:
+        registry_url = self._registry_url()
+        if not registry_url:
+            print("✗ Keine Registry konfiguriert (docker.registry.url)", file=sys.stderr)
+            sys.exit(1)
+        image = self._docker_image()
+        target = f"{registry_url}/{image}"
+        self._runtime.push(target)
+        print(f"✓ Image gepusht: {target}")
+
+    def up(self, spec_id: str) -> None:
+        compose_file = self._compose_file()
+        if not compose_file:
+            print(
+                "✗ Kein compose_file konfiguriert (docker.compose_file). "
+                "Nutze 'sdd dev start' für einzelne Container.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        self._runtime.compose_up(compose_file)
+        print(f"✓ Compose-Stack gestartet für {spec_id}")
+        if self._log_stream_enabled() and self._log_streamer is not None:
+            cname = container_name(spec_id)
+            self._log_streamer.attach(spec_id, cname)
+            print(f"✓ LogStreamer aktiv für {spec_id}")
+
+    def down(self, spec_id: str) -> None:
+        compose_file = self._compose_file()
+        if not compose_file:
+            print(
+                "✗ Kein compose_file konfiguriert (docker.compose_file).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        self._runtime.compose_down(compose_file)
+        print(f"✓ Compose-Stack gestoppt für {spec_id}")
+        if self._log_streamer is not None:
+            self._log_streamer.detach(spec_id)
+
+    # ── SPEC-0021 commands ────────────────────────────────────────────────────
+
+    def start(self, spec_id: str) -> None:
+        if self._compose_file():
+            self.up(spec_id)
+            return
+
+        cname = container_name(spec_id)
+        bname = branch_name(spec_id)
+        status = self._runtime.inspect_status(cname)
+
+        if status == "running":
+            print(f"[WARN] Container {cname} läuft bereits – kein zweiter Start.", file=sys.stderr)
+            return
+
+        if status == "exited":
+            self._runtime.start(cname)
+            print(f"✓ Container {cname} wieder gestartet (war gestoppt).")
+            return
+
+        branch_created = False
+        try:
+            if not _branch_exists(bname):
+                _git(["checkout", "-b", bname, "main"])
+                branch_created = True
+
+            image = self._docker_image()
+            self._runtime.run_container(
+                cname,
+                image,
+                volume=f"{self.cfg.root}:/workspace",
+                env={"SPEC_ID": spec_id, "GIT_BRANCH": bname},
+            )
+            print(f"✓ Container {cname} gestartet | Branch {bname} | Image {image}")
+        except subprocess.CalledProcessError as exc:
+            if branch_created:
+                _git(["checkout", "main"], check=False)
+                _git(["branch", "-D", bname], check=False)
+            print(f"✗ Runtime-Fehler – Rollback abgeschlossen: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+    def exec_cmd(self, spec_id: str, cmd: list[str]) -> None:
+        cname = container_name(spec_id)
+        if self._runtime.inspect_status(cname) != "running":
+            print(
+                f"✗ Container {cname} läuft nicht. Führe 'sdd dev start {spec_id}' aus.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        result = self._runtime.exec_in(cname, cmd)
+        sys.exit(result.returncode)
+
+    def close(self, spec_id: str, *, delete_branch: bool = False) -> None:
+        cname = container_name(spec_id)
+        bname = branch_name(spec_id)
+        self._runtime.stop(cname)
+        self._runtime.rm(cname)
+        print(f"✓ Container {cname} gestoppt und entfernt.")
+        if delete_branch and _branch_exists(bname):
+            _git(["branch", "-D", bname])
+            print(f"✓ Branch {bname} gelöscht.")
+
+    def pr(self, spec_id: str) -> None:
+        test_result, passed, total = _load_last_test_result(self.cfg, spec_id)
+
+        if test_result == "skipped":
+            print(
+                f"✗ Kein Test-Ergebnis für {spec_id} – führe "
+                f"'sdd dev exec {spec_id} pytest' aus.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        if test_result == "failed":
+            print(
+                f"✗ Tests nicht grün – führe 'sdd dev exec {spec_id} pytest' aus.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        result = _run(["sdd", "validate"], capture=True, check=False)
+        if result.returncode != 0:
+            print("✗ sdd validate meldet Fehler:", file=sys.stderr)
+            print(result.stdout, file=sys.stderr)
+            sys.exit(1)
+
+        uncommitted = _git(["status", "--porcelain"], capture=True, check=False)
+        if uncommitted.stdout.strip():
+            print("[WARN] Uncommitted changes vorhanden – bitte committen.", file=sys.stderr)
+
+        self._pr_strategy.create(spec_id, self.cfg)

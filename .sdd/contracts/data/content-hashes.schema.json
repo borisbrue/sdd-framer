@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/content-hashes.schema.json",
+  "title": "SDD Content-Hashes",
+  "description": "Mapping von Artefakt-ID zu SHA-256-Hash des bereinigten Inhalts (SPEC-0010 CON-0038)",
+  "type": "object",
+  "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+  },
+  "examples": [
+    {
+      "SPEC-0001": "a3f1b2c9d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1"
+    }
+  ]
+}

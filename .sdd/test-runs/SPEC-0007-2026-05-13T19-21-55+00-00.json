@@ -1,0 +1,37 @@
+{
+  "spec_id": "SPEC-0007",
+  "runner": "pytest",
+  "started_at": "2026-05-13T19:21:55+00:00",
+  "duration_s": 3.211,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0025",
+      "artifact": "tests/integration/test_orchestrate_endpoints.py",
+      "status": "passed",
+      "duration_s": 2.06,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0026",
+      "artifact": "tests/unit/test_execute_flow.py",
+      "status": "passed",
+      "duration_s": 0.557,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0027",
+      "artifact": "tests/unit/test_execute_flow.py",
+      "status": "passed",
+      "duration_s": 0.529,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0020": true,
+    "CON-0021": true
+  },
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0
+}

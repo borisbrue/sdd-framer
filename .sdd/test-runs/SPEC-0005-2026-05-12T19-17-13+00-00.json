@@ -1,0 +1,23 @@
+{
+  "spec_id": "SPEC-0005",
+  "runner": "pytest",
+  "started_at": "2026-05-12T19:17:13+00:00",
+  "duration_s": 1.431,
+  "exit_code": 1,
+  "tests": [
+    {
+      "test_id": "TST-0013",
+      "artifact": "tests/integration/test_analyze_endpoint.py",
+      "status": "failed",
+      "duration_s": 1.393,
+      "message": "_________ ERROR collecting tests/integration/test_analyze_endpoint.py __________\nImportError while importing test module '/run/media/deck/SM512/Development/sdd-framer/tests/integration/test_analyze_endpoint.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/integration/test_analyze_endpoint.py:30: in <module>\n    from main import app  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^\nweb/api/main.py:25: in <module>\n    from routes.ai import router as ai_router  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nweb/api/routes/ai.py:9: in <module>\n    import anthropic\nE   ModuleNotFoundError: No module named 'anthropic'\n=========================== short test summary info ============================\nERROR tests/integration/test_analyze_endpoint.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.70s"
+    }
+  ],
+  "contract_coverage": {
+    "CON-0013": false,
+    "CON-0014": false
+  },
+  "passed": 0,
+  "failed": 1,
+  "skipped": 0
+}

@@ -1,0 +1,199 @@
+openapi: "3.1.0"
+info:
+  title: "SDD Orchestrate API"
+  version: "0.2.0"
+  description: |
+    Orchestrate-Endpunkte für den Web UI Execute Flow.
+    CON-0021 · SPEC-0007
+
+paths:
+  /api/orchestrate:
+    post:
+      operationId: startOrchestrate
+      summary: "Pipeline starten"
+      description: |
+        Startet einen Orchestrator-Lauf für eine Spec als Background-Task.
+        Die Spec muss `status: approved` haben.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrchestrateRequest"
+      responses:
+        "202":
+          description: "Pipeline gestartet"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrchestrateResponse"
+        "404":
+          description: "Spec nicht gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "409":
+          description: "Lauf für diese Spec-ID bereits aktiv"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "422":
+          description: "Spec hat nicht status=approved"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+        "503":
+          description: "claude CLI nicht verfügbar"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+
+  /api/pipeline/active:
+    get:
+      operationId: getActivePipelineRun
+      summary: "Aktiven Lauf für eine Spec"
+      description: |
+        Gibt den aktuell laufenden Pipeline-Run für eine Spec zurück.
+        Nur Läufe mit `status=running` werden zurückgegeben.
+      parameters:
+        - name: spec_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "SPEC-0007"
+      responses:
+        "200":
+          description: "Aktiver Lauf gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunState"
+        "404":
+          description: "Kein aktiver Lauf für diese spec_id"
+
+  /api/pipeline/{run_id}:
+    get:
+      operationId: getPipelineRun
+      summary: "Pipeline-Status abfragen"
+      description: |
+        Gibt den aktuellen Status eines Pipeline-Runs zurück.
+        Abgeschlossene Runs bleiben 1 Stunde (TTL) abrufbar.
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "SPEC-0007-1747084800000"
+      responses:
+        "200":
+          description: "Run-Status"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunState"
+        "404":
+          description: "run_id nicht gefunden (abgelaufen oder ungültig)"
+
+components:
+  schemas:
+    OrchestrateRequest:
+      type: object
+      required: [spec_id]
+      properties:
+        spec_id:
+          type: string
+          description: "ID der auszuführenden Spec"
+          example: "SPEC-0007"
+        project_id:
+          type: string
+          description: "Projekt-ID für Autonomy-Level-Tracking (optional; Fallback aus Spec-Frontmatter)"
+          example: "PRJ-0001"
+        dry_run:
+          type: boolean
+          default: false
+          description: "Kein Git-Commit, kein PR — zeigt nur generierten Code"
+        no_pr:
+          type: boolean
+          default: false
+          description: "Code und Branch werden erstellt, aber kein PR geöffnet"
+        base_url:
+          type: string
+          default: ""
+          description: "Base-URL für den Evaluator (leer = kein Evaluator)"
+          example: "http://localhost:8000"
+
+    OrchestrateResponse:
+      type: object
+      required: [run_id]
+      properties:
+        run_id:
+          type: string
+          description: "Eindeutige Run-ID im Format {spec_id}-{unix_timestamp_ms}"
+          example: "SPEC-0007-1747084800000"
+
+    PipelineStatus:
+      type: string
+      enum: [running, labeled, merged, failed, dry_run]
+
+    PipelineAttempt:
+      type: object
+      properties:
+        attempt:
+          type: integer
+        branch:
+          type: string
+          example: "sdd/SPEC-0007-attempt-1"
+        build_passed:
+          type: boolean
+          nullable: true
+        eval_pass_rate:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1
+        pr_url:
+          type: string
+          nullable: true
+          example: "https://github.com/org/repo/pull/42"
+        error:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+
+    PipelineRunState:
+      type: object
+      required: [run_id, spec_id, status, attempts]
+      properties:
+        run_id:
+          type: string
+          example: "SPEC-0007-1747084800000"
+        spec_id:
+          type: string
+          example: "SPEC-0007"
+        status:
+          $ref: "#/components/schemas/PipelineStatus"
+        current_step:
+          type: string
+          description: "Aktueller Fortschritts-Text; nur befüllt wenn status=running"
+          example: "Code wird generiert… (Attempt 1/3)"
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PipelineAttempt"
+        issue_url:
+          type: string
+          nullable: true
+          description: "GitHub-Issue-URL; nur befüllt wenn status=failed"
+
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string

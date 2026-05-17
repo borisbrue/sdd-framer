@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/llm-tst-frontmatter.schema.json",
+  "title": "LLM-Generated TST Frontmatter",
+  "description": "Pflichtfelder einer von sdd review-contract generierten TST-Datei (SPEC-0010 CON-0039)",
+  "type": "object",
+  "required": ["id", "title", "level", "spec", "contract", "status", "generated_by"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TST-[0-9]{4,}$"
+    },
+    "title": { "type": "string" },
+    "level": {
+      "type": "string",
+      "enum": ["unit", "integration", "contract", "acceptance", "performance", "property"]
+    },
+    "spec": {
+      "type": "string",
+      "pattern": "^SPEC-[0-9]{4,}$"
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^CON-[0-9]{4,}$"
+    },
+    "status": {
+      "type": "string",
+      "const": "draft"
+    },
+    "generated_by": {
+      "type": "string",
+      "const": "llm"
+    }
+  }
+}

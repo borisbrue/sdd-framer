@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: "Test Run Results API"
+  version: "1.0.0"
+  description: |
+    Contract für SPEC-0006 / CON-0017.
+    Definiert GET /specs/{spec_id}/test-results und POST /specs/{spec_id}/test-run.
+  contact:
+    name: "Boris"
+
+servers:
+  - url: "http://localhost:8000"
+    description: "Local Dev"
+
+paths:
+  /specs/{spec_id}/test-results:
+    get:
+      operationId: getTestResults
+      summary: "Letzten Test-Run einer Spec abrufen"
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^SPEC-\\d{4}$"
+          example: "SPEC-0006"
+      responses:
+        "200":
+          description: "Letzter gespeicherter Run-Report"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunReport"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /specs/{spec_id}/test-run:
+    post:
+      operationId: triggerTestRun
+      summary: "Test-Run für eine Spec auslösen"
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^SPEC-\\d{4}$"
+          example: "SPEC-0006"
+      responses:
+        "200":
+          description: "Run abgeschlossen – Report wird zurückgegeben"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunReport"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  schemas:
+    TestStatus:
+      type: string
+      enum: [passed, failed, error, missing, skipped]
+
+    TestResult:
+      type: object
+      required: [test_id, artifact, status]
+      properties:
+        test_id:
+          type: string
+          example: "TST-0019"
+        artifact:
+          type: string
+          example: "tests/unit/test_run_results.py"
+        status:
+          $ref: "#/components/schemas/TestStatus"
+        duration_s:
+          type: number
+          minimum: 0
+          example: 0.42
+        message:
+          type: string
+          example: ""
+
+    RunReport:
+      type: object
+      required: [spec_id, runner, started_at, duration_s, exit_code, tests, passed, failed, skipped]
+      properties:
+        spec_id:
+          type: string
+          example: "SPEC-0006"
+        runner:
+          type: string
+          example: "pytest"
+        started_at:
+          type: string
+          format: date-time
+          example: "2026-05-12T15:00:00+00:00"
+        duration_s:
+          type: number
+          minimum: 0
+          example: 1.23
+        exit_code:
+          type: integer
+          enum: [0, 1, 2]
+        tests:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestResult"
+        contract_coverage:
+          type: object
+          additionalProperties:
+            type: boolean
+          example:
+            CON-0017: true
+            CON-0018: false
+        passed:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+  responses:
+    NotFound:
+      description: "Kein Run-Report vorhanden"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnprocessableEntity:
+      description: "Spec nicht gefunden oder keine Tests verknüpft"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: "Runner-Fehler (z.B. pytest nicht installiert)"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

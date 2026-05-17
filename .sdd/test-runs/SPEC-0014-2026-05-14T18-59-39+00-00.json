@@ -1,0 +1,62 @@
+{
+  "spec_id": "SPEC-0014",
+  "runner": "pytest",
+  "started_at": "2026-05-14T18:59:39+00:00",
+  "duration_s": 4.67,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0031",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "passed",
+      "duration_s": 0.655,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0032",
+      "artifact": "tests/unit/test_llm_providers.py",
+      "status": "passed",
+      "duration_s": 0.493,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0033",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.873,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0034",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.843,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0035",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.862,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0036",
+      "artifact": "tests/unit/test_llm_characterization.py",
+      "status": "passed",
+      "duration_s": 0.864,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0025": false,
+    "CON-0026": false,
+    "CON-0027": false,
+    "CON-0028": false,
+    "CON-0029": false,
+    "CON-0030": false
+  },
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0
+}

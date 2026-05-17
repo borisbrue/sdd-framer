@@ -1,0 +1,58 @@
+apiVersion: sdd.local/v1
+kind: ServiceLevelObjectives
+metadata:
+  id: CON-0003
+  spec: SPEC-0001
+  service: auth
+  endpoint: POST /v1/auth/login
+
+objectives:
+  - name: latency_p95
+    sli:
+      metric: http_request_duration_seconds
+      labels:
+        route: /v1/auth/login
+        method: POST
+      aggregation: histogram_quantile_0.95
+    target:
+      operator: "<"
+      value: 0.300
+      unit: seconds
+    window: 30d
+    on_violation: alert_warning
+
+  - name: latency_p99
+    sli:
+      metric: http_request_duration_seconds
+      aggregation: histogram_quantile_0.99
+    target:
+      operator: "<"
+      value: 0.800
+      unit: seconds
+    window: 30d
+    on_violation: alert_info
+
+  - name: availability
+    sli:
+      metric: http_requests_total
+      formula: "1 - (sum(status=~'5..') / sum(status))"
+    target:
+      operator: ">="
+      value: 0.999
+    window: 30d
+    on_violation: incident_review
+
+  - name: error_rate_5xx
+    sli:
+      metric: http_requests_total
+      formula: "sum(status=~'5..') / sum(status)"
+    target:
+      operator: "<"
+      value: 0.001
+    window: 24h
+    on_violation: page_oncall
+
+error_budget:
+  policy: feature_freeze
+  scope: auth
+  trigger: availability_below_target

@@ -1,0 +1,73 @@
+{
+  "spec_id": "SPEC-0006",
+  "runner": "pytest",
+  "started_at": "2026-05-12T16:13:11+00:00",
+  "duration_s": 4.773,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0017",
+      "artifact": "tests/contract/test_run_results_api_contract.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/contract/test_run_results_api_contract.py"
+    },
+    {
+      "test_id": "TST-0018",
+      "artifact": "contracts/behavior/test-run-results-behavior.feature",
+      "status": "skipped",
+      "duration_s": 0.0,
+      "message": "Runner für .feature-Artefakte nicht unterstützt."
+    },
+    {
+      "test_id": "TST-0019",
+      "artifact": "tests/unit/test_run_results.py",
+      "status": "passed",
+      "duration_s": 0.606,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0020",
+      "artifact": "tests/unit/test_run_results.py",
+      "status": "passed",
+      "duration_s": 0.589,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0021",
+      "artifact": "tests/unit/test_run_results.py",
+      "status": "passed",
+      "duration_s": 0.586,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0022",
+      "artifact": "tests/unit/test_run_results.py",
+      "status": "passed",
+      "duration_s": 0.64,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0023",
+      "artifact": "tests/acceptance/test_run_results_acceptance.py",
+      "status": "passed",
+      "duration_s": 2.259,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0024",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0024."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0017": true,
+    "CON-0018": true,
+    "CON-0019": false
+  },
+  "passed": 5,
+  "failed": 0,
+  "skipped": 3
+}

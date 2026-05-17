@@ -1,0 +1,45 @@
+{
+  "spec_id": "SPEC-0001",
+  "runner": "pytest",
+  "started_at": "2026-05-12T15:51:56+00:00",
+  "duration_s": 0.035,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0001",
+      "artifact": "tests/contract/test_login_openapi.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/contract/test_login_openapi.py"
+    },
+    {
+      "test_id": "TST-0002",
+      "artifact": "tests/acceptance/features/login.feature",
+      "status": "skipped",
+      "duration_s": 0.0,
+      "message": "Runner für .feature-Artefakte nicht unterstützt."
+    },
+    {
+      "test_id": "TST-0003",
+      "artifact": "tests/unit/test_auth_primitives.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_auth_primitives.py"
+    },
+    {
+      "test_id": "TST-0004",
+      "artifact": "tests/performance/login.k6.js",
+      "status": "skipped",
+      "duration_s": 0.0,
+      "message": "Runner für .js-Artefakte nicht unterstützt."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0001": false,
+    "CON-0002": false,
+    "CON-0003": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 4
+}

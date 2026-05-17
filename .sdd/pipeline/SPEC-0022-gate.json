@@ -1,0 +1,76 @@
+{
+  "spec_id": "SPEC-0022",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-17T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-17T06:33:58Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-17T06:34:01Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0069",
+        "CON-0070",
+        "CON-0071",
+        "CON-0072",
+        "CON-0073"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-17T06:34:30Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-17T07:10:00Z",
+      "result": "ok",
+      "conflicts_resolved": 5,
+      "conflicts_acknowledged": 15
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-17T06:48:50Z",
+      "result": "ok",
+      "files_generated": [
+        ".sdd/tests/contract/test_con-0069.py",
+        ".sdd/tests/contract/test_con-0070.py",
+        ".sdd/tests/contract/test_con-0071.py",
+        ".sdd/tests/contract/test_con-0072.py",
+        ".sdd/tests/contract/test_con-0073.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-17T07:15:00Z",
+      "result": "ok",
+      "note": "673 passed, 3 pre-existing failures (placeholder tests, unrelated to SPEC-0022)"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-17T06:50:05Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "10/10",
+        "scenarios_covered": "20/20",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-17T06:50:05Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

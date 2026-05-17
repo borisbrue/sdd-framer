@@ -1,0 +1,335 @@
+{
+  "spec_id": "SPEC-0022",
+  "generated_at": "2026-05-17T06:40:24Z",
+  "new_contracts": [
+    "CON-0069",
+    "CON-0070",
+    "CON-0071",
+    "CON-0072",
+    "CON-0073"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0022-001",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0069",
+      "conflicting_contract": "CON-0065",
+      "detail": "CON-0065 (docker-spec-lifecycle) und CON-0069 (dev-stack-lifecycle) beschreiben beide Docker/Container-Lebenszyklus-Verhalten für sdd-Befehle. Build- und Push-Operationen (G-01, G-03) könnten in CON-0065 ebenfalls szenario-seitig abgedeckt sein, was zu doppelten oder widersprüchlichen Feature-Definitionen führt. Keine explizite Demarkation zwischen den beiden Contracts vorhanden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0065 deckt sdd dev start/exec/close/pr ab (Laufzeitoperationen auf einem einzelnen Container). CON-0069 deckt sdd dev build/push/up/down ab (Image-Lifecycle und Multi-Service-Stacks). Explizite Demarkation: CON-0065 = Container-Runtime-Lifecycle, CON-0069 = Image- und Stack-Lifecycle. Kein Overlap.",
+        "resolved_at": "2026-05-17T06:42:53Z"
+      }
+    },
+    {
+      "id": "CF-0022-002",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0069",
+      "conflicting_contract": "CON-0065",
+      "detail": "CON-0069-Zweck listet `sdd dev up` und `sdd dev down` als abgedeckte Befehle, G-04 referenziert jedoch `sdd dev start`. Falls CON-0065 `sdd dev start` oder `sdd dev up` eigenständig definiert, entsteht eine Benennungs- und Verhaltens-Inkonsistenz — unklar ob `up` und `start` Aliase oder separate Commands sind.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:27Z"
+      }
+    },
+    {
+      "id": "CF-0022-003",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0069",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0069 referenziert fünf docker.*-Konfigurationsfelder (docker.dockerfile, docker.image, docker.runtime, docker.registry.url, docker.compose_file). Sind diese nicht in CON-0016 (config.yaml-Schema-Contract) deklariert, fehlt die Schema-Absicherung für alle Garantien G-01 bis G-04. Kein expliziter Verweis auf CON-0016 im Contract.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0072 ist der docker:-Namespace-Contract und definiert alle docker.*-Konfigurationsfelder. CON-0069 hängt von CON-0072 ab, nicht direkt von CON-0016. CON-0016 erlaubt zusätzliche Namespaces (additionalProperties auf Top-Level). Keine Schema-Lücke.",
+        "resolved_at": "2026-05-17T06:42:58Z"
+      }
+    },
+    {
+      "id": "CF-0022-004",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0069",
+      "conflicting_contract": "CON-0068",
+      "detail": "CON-0069 spezifiziert `sdd dev up`-Verhalten (Container-Start) ohne Verweis auf CON-0068 (container-start-slo). Eine konforme Implementierung kann alle Garantien von CON-0069 erfüllen und dennoch die SLO-Zeitgrenzen aus CON-0068 verletzen — die vertragliche Verknüpfung fehlt vollständig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:27Z"
+      }
+    },
+    {
+      "id": "CF-0022-005",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0069",
+      "conflicting_contract": "CON-0066",
+      "detail": "CON-0066 (sdd-dev-pr-validation-gate) reguliert Validierungsschritte für sdd-dev-Befehle. G-03 definiert den Push-Fehlerpfad bei leerem registry.url (Exit != 0), was mit möglichen Pre-Push-Validierungsregeln in CON-0066 überlappt. Kein Trennungs-Statement zwischen Validation-Gate-Logik und runtime-seitigem Fehlerpfad.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:27Z"
+      }
+    },
+    {
+      "id": "CF-0022-006",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0070 referenziert `log_stream.enabled` und `log_stream.max_lines` als Config-Felder, aber CON-0016 (config.yaml-Schema-Contract, status=active) muss diese Sektion explizit definieren. Fehlen die Felder dort, sind sie schema-seitig undeklarariert und können nicht validiert werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "log_stream.* ist Teil des docker:-Namespace aus CON-0072. CON-0070 hängt von CON-0072 ab, das die Felder log_stream.enabled und log_stream.max_lines deklariert. Kein direkter CON-0016-Gap.",
+        "resolved_at": "2026-05-17T06:43:01Z"
+      }
+    },
+    {
+      "id": "CF-0022-007",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0065",
+      "detail": "Beide Contracts beschreiben Verhalten bei `sdd dev up/start` und `sdd dev down/close`. CON-0065 (docker-spec-lifecycle) definiert den Container-Lifecycle; CON-0070 G-01/G-04 fügen innerhalb derselben Lifecycle-Events Log-Streaming-Start/-Stop hinzu. Ohne explizite Sequenzierung (wer triggert wen, in welcher Reihenfolge) entsteht ein Verantwortungskonflikt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0065 definiert den Container-Lifecycle (start/stop als atomare Operationen). CON-0070 definiert LogStreamer als Post-Condition-Hook: Sequenz ist CON-0065-start abgeschlossen → danach CON-0070 LogStreamer.attach(). CON-0065 triggert CON-0070, keine Verantwortungsüberschneidung.",
+        "resolved_at": "2026-05-17T06:43:07Z"
+      }
+    },
+    {
+      "id": "CF-0022-008",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0054",
+      "detail": "CON-0054 (extension-server-management) verwaltet die Server-Infrastruktur der Extension, vermutlich inklusive WebSocket-Schicht. CON-0070 führt einen `LogEventBus` mit WebSocket-Multicast ein, ohne zu klären, ob dieser einen eigenen WebSocket-Server öffnet oder auf den von CON-0054 verwalteten aufsetzt. Ownership der WS-Verbindungen ist unklar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:28Z"
+      }
+    },
+    {
+      "id": "CF-0022-009",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0068",
+      "detail": "G-02 definiert eine 1-Sekunden-Latenz-Garantie für Log-Delivery – das ist ein SLO, das in einem behavior-Contract (Gherkin) landet statt in einem dedizierten performance-Contract wie CON-0068 (container-start-slo, format=slo-yaml). Die Garantie ist damit nicht messbar/traceable durch das SLO-Framework und wird von CON-0068 nicht abgedeckt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:28Z"
+      }
+    },
+    {
+      "id": "CF-0022-010",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 (Analyzer) beschreibt die Verwaltung von Claude Code CLI Subprocesses inklusive Session-Management und vermutlich Output-Capture. CON-0070 definiert `LogStreamer` als zuständig für Container-Log-Capture und -Streaming. Die Grenze zwischen Subprocess-Output (CON-0013) und Container-Logs (CON-0070) ist nicht abgegrenzt – bei containerisierten Analyzer-Sessions würden beide Contracts denselben Output beanspruchen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:28Z"
+      }
+    },
+    {
+      "id": "CF-0022-011",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0070",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – Lokale Pipeline) koordiniert Spec → Code → PR → Eval → Retry. Jede Phase kann Container-Operationen auslösen, deren Logs per CON-0070 streambar sein müssten. CON-0012 referenziert aber keinen `LogStreamer.attach(spec_id)`-Aufruf, sodass unklar bleibt, ob und wann Log-Streaming in Pipeline-Phasen aktiv ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:28Z"
+      }
+    },
+    {
+      "id": "CF-0022-012",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0072",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 (config.yaml-Schema-Contract, status=active) definiert das übergeordnete Schema für .sdd/config.yaml. CON-0072 erweitert dieselbe Datei um einen docker:-Namespace, ohne dass eine explizite Erweiterungsklausel in CON-0016 sichtbar ist. Da CON-0016 aktiv ist, muss geprüft werden, ob additionalProperties erlaubt oder ob der docker:-Block bereits als verbotenes/undefiniertes Feld behandelt wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0072 ist explizit eine Erweiterung von CON-0016 für den docker:-Namespace. CON-0016 erlaubt additionalProperties auf Top-Level. CON-0072 hat alleinige Autorität über den docker:-Namespace. Keine widersprüchlichen Validierungsregeln.",
+        "resolved_at": "2026-05-17T06:43:14Z"
+      }
+    },
+    {
+      "id": "CF-0022-013",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0072",
+      "conflicting_contract": "CON-0065",
+      "detail": "CON-0065 (docker-spec-lifecycle, behavior/gherkin, status=draft) beschreibt Lifecycle-Ereignisse rund um Docker-Specs und referenziert vermutlich Konfigurationsfelder aus dem docker:-Block. CON-0072 ist selbst noch draft und liefert keine finalisierten Feldnamen/Defaults, auf die CON-0065's Gherkin-Szenarien validieren können. Eine Lücke entsteht, wenn CON-0065 Felder wie volumes, ports oder build_args voraussetzt, die im Auszug von CON-0072 nicht sichtbar sind.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:29Z"
+      }
+    },
+    {
+      "id": "CF-0022-014",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0072",
+      "conflicting_contract": "CON-0068",
+      "detail": "CON-0068 (container-start-slo, performance/slo-yaml, status=draft) definiert SLOs für Container-Starts. Die gemessenen Metriken (z. B. Start-Timeout-Schwellen) setzen implizit voraus, dass das Schema Felder für Ressourcenlimits oder Timeout-Konfiguration enthält. Im sichtbaren Auszug von CON-0072 fehlen diese Felder (runtime, image, dockerfile reichen dafür nicht aus), was zu einem Gap zwischen SLO-Messung und konfigurierbaren Parametern führt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:29Z"
+      }
+    },
+    {
+      "id": "CF-0022-015",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0072",
+      "conflicting_contract": "CON-0036",
+      "detail": "CON-0036 (Obsidian Config Schema, data/json-schema, status=draft) definiert ebenfalls einen Namespace innerhalb von config.yaml (obsidian:). Beide Contracts verwenden dasselbe Trägerdokument ohne erkennbare gemeinsame Basis-Schema-Referenz oder $ref-Hierarchie. Inkonsistente Validierungsregeln (z. B. unterschiedliche additionalProperties-Policies) zwischen den Namespace-Schemas können zu widersprüchlichem Verhalten beim gesamten config.yaml-Validierungslauf führen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:29Z"
+      }
+    },
+    {
+      "id": "CF-0022-016",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0072",
+      "conflicting_contract": "CON-0066",
+      "detail": "CON-0066 (sdd-dev-pr-validation-gate, behavior/gherkin, status=draft) operiert gegen das Image sdd-dev, das in CON-0072 als Default-Wert (image: 'sdd-dev:latest') hinterlegt ist. Falls CON-0066 das Image hardcoded referenziert statt aus der Konfiguration zu lesen, entsteht eine implicit-coupling, die bei Image-Umbenennungen oder -Versionsänderungen im Schema zu Widersprüchen führt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:29Z"
+      }
+    },
+    {
+      "id": "CF-0022-017",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0073",
+      "conflicting_contract": "CON-0068",
+      "detail": "CON-0073 misst Latenz ab 'Container-Ausgabe', definiert jedoch nicht, ab welchem Lifecycle-Zustand des Containers die SLO-Messung beginnt. CON-0068 (container-start-slo) regelt Container-Startzeiten, referenziert aber keinen Übergabepunkt an CON-0073. Startup-Logs haben typisch höhere Latenz und können das p95 < 500 ms verfehlen, ohne dass klar ist, ob sie in-scope sind.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:30Z"
+      }
+    },
+    {
+      "id": "CF-0022-018",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0073",
+      "conflicting_contract": "CON-0054",
+      "detail": "Das Buffer-History-SLO (< 2 s für 500 Zeilen pro Connect) impliziert eine Anforderung an die WebSocket-Serververfügbarkeit und Handshake-Zeit beim Reconnect. CON-0054 (extension-server-management) regelt den WebSocket-Server-Lifecycle, referenziert aber keine Latenzbudgets für den initialen History-Flush. Der 2-s-Wert schluckt Verbindungsaufbau + Übertragung ohne explizite Abgrenzung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:30Z"
+      }
+    },
+    {
+      "id": "CF-0022-019",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0073",
+      "conflicting_contract": "CON-0065",
+      "detail": "CON-0065 (docker-spec-lifecycle) definiert Container-Zustandsübergänge (vermutlich inkl. initializing/stopping), in denen Log-Output gebuffert oder verzögert sein kann. CON-0073 spezifiziert SLOs ohne Ausnahme für Lifecycle-Transitionen. Wenn CON-0065 bestimmte Phasen mit erhöhter Output-Latenz erlaubt, entsteht ein direkter Widerspruch zu den Test-Failure-Grenzen in CON-0073.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:30Z"
+      }
+    },
+    {
+      "id": "CF-0022-020",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0073",
+      "conflicting_contract": "CON-0013",
+      "detail": "Der Analyzer verwaltet Claude Code CLI als Subprocess (CON-0013). Falls dieser Subprocess in einem Container läuft oder containerisierte Artefakte produziert, fällt sein Log-Output unter CON-0073. CON-0013 definiert Session- und Output-Handling ohne Verweis auf Latenz-SLOs – eine implizite Anforderung bleibt undokumentiert und untestbar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "MEDIUM/LOW: kein Blocker für SPEC-0022-Implementierung; wird in v0.2 oder beim jeweiligen referenzierten Contract adressiert.",
+        "resolved_at": "2026-05-17T06:48:30Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 20,
+    "high": 5,
+    "medium": 11,
+    "low": 4,
+    "affected_specs_count": 0
+  }
+}

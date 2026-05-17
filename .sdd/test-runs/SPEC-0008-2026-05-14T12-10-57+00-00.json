@@ -1,0 +1,80 @@
+{
+  "spec_id": "SPEC-0008",
+  "runner": "pytest",
+  "started_at": "2026-05-14T12:10:57+00:00",
+  "duration_s": 0.276,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0028",
+      "artifact": "tests/unit/test_llm_provider_factory.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_llm_provider_factory.py"
+    },
+    {
+      "test_id": "TST-0029",
+      "artifact": "tests/unit/test_openai_compat_completion.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_openai_compat_completion.py"
+    },
+    {
+      "test_id": "TST-0030",
+      "artifact": "tests/unit/test_openai_compat_code_gen.py",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "Artefakt-Datei nicht gefunden: tests/unit/test_openai_compat_code_gen.py"
+    },
+    {
+      "test_id": "TST-0031",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0031 nicht gefunden."
+    },
+    {
+      "test_id": "TST-0032",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0032 nicht gefunden."
+    },
+    {
+      "test_id": "TST-0033",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0033 nicht gefunden."
+    },
+    {
+      "test_id": "TST-0034",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0034 nicht gefunden."
+    },
+    {
+      "test_id": "TST-0035",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0035 nicht gefunden."
+    },
+    {
+      "test_id": "TST-0036",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "TST-Dokument TST-0036 nicht gefunden."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0022": false,
+    "CON-0023": false,
+    "CON-0024": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 9
+}

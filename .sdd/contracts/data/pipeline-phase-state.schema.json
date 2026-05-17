@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/pipeline-phase-state.schema.json",
+  "title": "SDD Pipeline Phase State",
+  "description": "Erweiterung des Pipeline-JSON um Execution-Gate-Felder (CON-0030)",
+  "type": "object",
+  "required": ["spec_id", "pipeline_phase", "phase_history", "blocking_issues"],
+  "properties": {
+    "spec_id": {
+      "type": "string",
+      "pattern": "^SPEC-[0-9]{4,}$"
+    },
+    "pipeline_phase": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": [
+            "spec-draft",
+            "spec-review",
+            "contracts-proposed",
+            "contracts-draft",
+            "contracts-review",
+            "tests-generated",
+            "regression-ok",
+            "spec-approved",
+            "execute-unlocked"
+          ]
+        }
+      ]
+    },
+    "phase_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phase", "completed_at", "result"],
+        "properties": {
+          "phase": { "type": "string" },
+          "completed_at": { "type": "string", "format": "date-time" },
+          "result": { "type": "string", "enum": ["ok", "failed"] },
+          "dismissed_items": { "type": "integer", "minimum": 0 },
+          "proposed": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^CON-[0-9]{4,}$" }
+          },
+          "pre_flight_conflicts": {
+            "type": "array",
+            "items": { "type": "object" }
+          }
+        }
+      }
+    },
+    "blocking_issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflict_report_ref": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" }
+      ]
+    },
+    "override": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["triggered_at", "reason", "blocked_phase"],
+          "properties": {
+            "triggered_at": { "type": "string", "format": "date-time" },
+            "reason":        { "type": "string", "minLength": 1 },
+            "blocked_phase": { "type": "string" },
+            "operator":      { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}
