@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-05-17T08:39:42.447054+00:00",
+  "spec_id": "SPEC-0022",
+  "final_status": "labeled",
+  "issue_url": null,
+  "attempts": [
+    {
+      "attempt": 1,
+      "branch": "sdd/SPEC-0022-attempt-1",
+      "build_passed": true,
+      "eval_pass_rate": null,
+      "pr_url": null,
+      "error": null,
+      "explanation": "- `web/ui/src/components/SpecDetail.tsx` — integrated `LogPanel` after TestRunPanel"
+    }
+  ]
+}
