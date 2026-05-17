@@ -1,0 +1,25 @@
+services:
+  dev:
+    image: sdd-dev:latest
+    # Build locally if image not present: run `sdd dev build` first
+    container_name: sdd-dev-spec-${SPEC_ID:-0000}
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    environment:
+      SPEC_ID: ${SPEC_ID:-}
+      GIT_BRANCH: ${GIT_BRANCH:-}
+    # Override services per spec with docker-compose.override.yml
+    # command: tail -f /dev/null  # default from Dockerfile CMD
+
+  # Optional: add services your spec depends on here.
+  # Example database service (uncomment and adapt):
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: sdd_dev
+  #     POSTGRES_USER: dev
+  #     POSTGRES_PASSWORD: dev
+  #   ports:
+  #     - "5432:5432"

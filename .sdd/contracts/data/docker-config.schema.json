@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDD docker: config namespace",
+  "description": "Schema for the docker: section in .sdd/config.yaml (SPEC-0022 / CON-0072)",
+  "type": "object",
+  "properties": {
+    "runtime": {
+      "type": "string",
+      "enum": ["docker", "podman"],
+      "default": "docker",
+      "description": "Container-Runtime: docker or podman"
+    },
+    "image": {
+      "type": "string",
+      "default": "sdd-dev:latest",
+      "description": "Image name including tag"
+    },
+    "dockerfile": {
+      "type": "string",
+      "default": ".sdd/Dockerfile",
+      "description": "Path to Dockerfile relative to project root"
+    },
+    "registry": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "default": "",
+          "description": "Registry URL; empty string disables push"
+        },
+        "auth_env": {
+          "type": "string",
+          "default": "",
+          "description": "Name of the environment variable holding registry credentials"
+        }
+      },
+      "additionalProperties": false
+    },
+    "compose_file": {
+      "type": "string",
+      "default": "",
+      "description": "Path to docker-compose.yml; empty string disables Compose mode"
+    },
+    "log_stream": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic log streaming after sdd dev up/start"
+        },
+        "max_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 500,
+          "description": "Maximum log lines kept in the in-memory buffer"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

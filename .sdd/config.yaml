@@ -125,3 +125,16 @@ pattern_suggestions:
   enabled: true
   max_suggestions: 4
   source: refactoring-guru   # Katalog-Referenz für Pattern-Links
+
+# Dev-Container-Stack (SPEC-0022)
+docker:
+  runtime: docker              # docker | podman
+  image: sdd-dev:latest        # Image-Name inkl. Tag
+  dockerfile: .sdd/Dockerfile  # Pfad zum Dockerfile (relativ zum Projekt-Root)
+  registry:
+    url: ""                    # Registry-URL, leer = kein Push
+    auth_env: ""               # Env-Var-Name mit Registry-Credentials
+  compose_file: ""             # Pfad zu docker-compose.yml, leer = kein Compose
+  log_stream:
+    enabled: true
+    max_lines: 500             # Maximale Log-Zeilen im UI-Buffer (1–10000)

@@ -1,0 +1,57 @@
+id: CON-0073
+title: log-latency-slo
+spec: SPEC-0022
+version: "0.1.0"
+status: draft
+
+# Service Level Objectives for container log streaming (SPEC-0022 FR-08/FR-09)
+
+slos:
+  - id: SLO-01
+    name: log-latency-max
+    description: Container log line → WebSocket client within 1 second
+    indicator:
+      type: latency
+      measurement: recv_ts - container_output_ts
+      unit: seconds
+    target:
+      threshold: 1.0
+      comparison: lt
+      window: per_line
+    on_breach: test_failure
+
+  - id: SLO-02
+    name: log-latency-p95
+    description: 95th percentile latency across 100 consecutive lines
+    indicator:
+      type: latency_percentile
+      percentile: 95
+      measurement: recv_ts - container_output_ts
+      unit: seconds
+      sample_size: 100
+    target:
+      threshold: 0.5
+      comparison: lt
+    on_breach: optimization_task
+
+  - id: SLO-03
+    name: buffer-history-transfer
+    description: Transfer of 500 buffered lines to a new WebSocket client
+    indicator:
+      type: duration
+      measurement: time_to_receive_all_buffered_lines
+      unit: seconds
+      line_count: 500
+    target:
+      threshold: 2.0
+      comparison: lt
+      window: per_connect
+    on_breach: test_failure
+
+measurement:
+  method: |
+    Test client measures recv_ts - container_output_ts in the same process
+    for deterministic, low-noise timing.
+  ci_test: TST-0083
+  ci_runs: 100
+  ci_slo_check: SLO-02

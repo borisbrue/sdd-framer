@@ -1,0 +1,77 @@
+openapi: "3.1.0"
+info:
+  title: SDD WebSocket Logs Endpoint
+  version: "0.1.0"
+  description: |
+    WebSocket endpoint for live container log streaming per spec.
+    Contract: CON-0071 · Spec: SPEC-0022
+
+paths:
+  /ws/logs/{spec_id}:
+    get:
+      summary: Live container log stream for a spec (WebSocket upgrade)
+      description: |
+        Upgrades to a WebSocket connection. On connect, sends buffered history
+        (buffered=true), then streams live log lines from the running container.
+        If no stream is active for spec_id, sends an error message and closes.
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          description: |
+            Spec ID in the format SPEC-[0-9]{4}.
+            Invalid format results in HTTP 400 before the WebSocket upgrade.
+          schema:
+            type: string
+            pattern: "^SPEC-\\d{4}$"
+            example: "SPEC-0022"
+      responses:
+        "101":
+          description: WebSocket upgrade successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogMessage"
+        "400":
+          description: Invalid spec_id format
+
+components:
+  schemas:
+    LogMessage:
+      type: object
+      required: [ts, line, spec_id, buffered]
+      properties:
+        ts:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp with milliseconds (UTC)
+          example: "2026-05-17T10:00:00.123Z"
+        line:
+          type: string
+          description: Log line content (max 4096 bytes; truncated if longer)
+          example: "pytest: 12 passed in 0.4s"
+        spec_id:
+          type: string
+          description: Spec ID this log line belongs to
+          example: "SPEC-0022"
+        buffered:
+          type: boolean
+          description: true for history lines sent on connect, false for live lines
+          example: false
+        truncated:
+          type: boolean
+          description: Present and true when line was truncated to 4096 bytes
+          example: false
+
+    LogError:
+      type: object
+      required: [error, spec_id]
+      properties:
+        error:
+          type: string
+          enum: [no_stream]
+          description: Error code when no active log stream exists for spec_id
+        spec_id:
+          type: string
+          description: The requested spec_id
+          example: "SPEC-0022"

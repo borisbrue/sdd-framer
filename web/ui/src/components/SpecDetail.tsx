@@ -3,6 +3,7 @@ import { api, Contract, SpecDetail as SpecDetailType, Test } from "../api";
 import AiPanel from "./AiPanel";
 import AnalyzePanel from "./AnalyzePanel";
 import ExecutePanel from "./ExecutePanel";
+import LogPanel from "./LogPanel";
 import TestRunPanel from "./TestRunPanel";
 import ContractForm from "./ContractForm";
 import IdChip from "./IdChip";
@@ -151,6 +152,9 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
 
       {/* Test Results */}
       <TestRunPanel specId={specId} />
+
+      {/* Live Container Logs (SPEC-0022) */}
+      <LogPanel specId={specId} />
 
       {/* Markdown Body */}
       {detail.body.trim() && (
