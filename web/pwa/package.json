@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "deno test --no-check --unstable-sloppy-imports --allow-read --allow-env src/__tests__/"
   },
   "dependencies": {
     "jsqr": "^1.4.0",

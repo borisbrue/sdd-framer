@@ -1,20 +1,17 @@
 # TST-0102 – CON-0092: Service Worker Push-Handler
-# Contract: CON-0092
-# Spec: SPEC-0024
-# Generiert von 'sdd start' – TODO: implementieren nach SPEC-0023
+# Contract: CON-0092 | Spec: SPEC-0024
+# Implementiert als Deno-Tests: web/pwa/src/__tests__/tst_0102.test.ts
+# Ausführen: cd web/pwa && deno test --no-check --unstable-sloppy-imports --allow-read --allow-env src/__tests__/
 
 import pytest
 
 
 class TestTST0102:
-    # CON-0092: Push-Payload-Format korrekt (type, spec_id, message)
     def test_push_payload_format(self) -> None:
-        raise NotImplementedError
+        pytest.skip("client-side TypeScript — see web/pwa/src/__tests__/tst_0102.test.ts")
 
-    # CON-0092: POST /api/push/subscribe akzeptiert Subscription-Objekt
     def test_push_subscribe_endpoint(self) -> None:
-        raise NotImplementedError
+        pytest.skip("client-side TypeScript — see web/pwa/src/__tests__/tst_0102.test.ts")
 
-    # CON-0092: Kein doppeltes Notifizieren (Vordergrund → InApp, Hintergrund → Push)
     def test_no_double_notification(self) -> None:
-        raise NotImplementedError
+        pytest.skip("client-side TypeScript — see web/pwa/src/__tests__/tst_0102.test.ts")
