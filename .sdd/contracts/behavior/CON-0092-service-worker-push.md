@@ -70,9 +70,12 @@ Feature: Service Worker Push-Handler
 
 ## Payload-Format
 
+Das Payload-Schema ist kanonisch in **CON-0077** (push-notification-payload) definiert.
+Dieser Contract referenziert es nur zur Illustration. Bei Widersprüchen gilt CON-0077. (CF-0023-011 resolved)
+
 ```json
 {
-  "type": "orchestrate_done" | "build_failed" | "spec_implemented",
+  "type": "orchestrate_done" | "build_done" | "build_failed" | "spec_implemented",
   "spec_id": "SPEC-XXXX",
   "message": "Menschenlesbare Zusammenfassung"
 }

@@ -1,0 +1,352 @@
+{
+  "spec_id": "SPEC-0023",
+  "generated_at": "2026-05-18T06:56:00Z",
+  "new_contracts": [
+    "CON-0074",
+    "CON-0075",
+    "CON-0076",
+    "CON-0077",
+    "CON-0078"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0023-001",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0090",
+      "detail": "CON-0090 G-02 löscht sdd_config und setzt ConnectionStore auf 'setup_required' bei HTTP 401 — behandelt aber WS-Close-Code 4001 (CON-0074 G-01) nur als generisches onclose-Event (G-08: 'disconnected'). Ein ungültiger Token auf /ws/chat führt damit clientseitig in den falschen Zustand: 'disconnected' statt 'setup_required'. Der Setup-Guard greift nicht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0090 Fehlerbehandlung: WS close code 4001 → sdd_config löschen + setup_required",
+        "resolved_at": "2026-05-18T06:57:25Z"
+      }
+    },
+    {
+      "id": "CF-0023-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0075",
+      "detail": "Beide Contracts beschreiben subprocess-Output-Zeilen mit unterschiedlichen Schemas: CON-0074 G-04 verwendet {\"type\": \"command_output\", \"line\": \"...\"}; CON-0075 G-04 verwendet {\"type\": \"line\", \"data\": \"...\", \"stream\": \"stdout\"|\"stderr\"}. Feldname 'line' vs 'data' und fehlendes 'stream'-Feld in CON-0074 — ein generischer Client, der beide Kanäle verarbeitet, muss zwei unterschiedliche Schemas für identische Nutzdaten kennen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Trennung: CON-0074 WS-Frame hat kein 'stream'-Feld (kein stderr-Kanal im Chat), CON-0075 SSE hat vollständiges Stream-Feld. Unterschiedliche Clients, unterschiedliche Schemas.",
+        "resolved_at": "2026-05-18T06:57:40Z"
+      }
+    },
+    {
+      "id": "CF-0023-003",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0075",
+      "detail": "Abschluss-Frame inkonsistent: CON-0074 G-05 sendet {\"type\": \"done\"} ohne exit_code; CON-0075 G-05 sendet {\"type\": \"done\", \"exit_code\": 0|-1}. Clients am /ws/chat-Kanal erhalten keinen Hinweis, ob ein chat-getriggerter SDD-Command (z. B. orchestrate) erfolgreich war oder mit Fehler endete.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "WS-Chat-Clients brauchen keinen exit_code — Command-Erfolg ist aus dem Command-Output ersichtlich. Keine Änderung erforderlich.",
+        "resolved_at": "2026-05-18T06:57:40Z"
+      }
+    },
+    {
+      "id": "CF-0023-004",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0075",
+      "detail": "CON-0075 G-06/G-07 garantiert: PushStore.broadcast wird nach 'orchestrate' und 'dev'-Commands aufgerufen. CON-0074 delegiert erkannte Intents (orchestrate, dev build/up/down) intern an den CommandDispatcher → SddRunService, schweigt aber vollständig über Push-Notifications. Unklar ob chat-getriggerte Commands denselben Push-Trigger-Pfad durchlaufen wie direkte /api/sdd/run-Aufrufe. Wenn nicht, fehlt die Push-Notification bei chat-initiiertem Orchestrate.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Chat-getriggerte Commands laufen über SddRunService (selber Pfad wie /api/sdd/run) → PushStore.broadcast wird aufgerufen. Wird in der Implementierung durch gemeinsame SddRunService-Instanz sichergestellt.",
+        "resolved_at": "2026-05-18T06:57:40Z"
+      }
+    },
+    {
+      "id": "CF-0023-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0090",
+      "detail": "CON-0090 G-03 'connectChat()' öffnet WebSocket zu /ws/chat ohne zu spezifizieren, welche der beiden Auth-Methoden aus CON-0074 G-01 verwendet wird (first-Frame {\"auth\": \"...\"} vs. HTTP-Header). Da Browser-WebSocket-APIs das Setzen von HTTP-Headern nicht nativ unterstützen, ist die First-Frame-Methode die einzig praktikable — dies ist jedoch im Client-Contract nicht festgelegt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Browser WebSocket unterstützt keine Custom Headers. First-Frame-Auth ist der einzige praktikable Pfad — SPEC-0023 FR-08 und CON-0074 G-01 decken das ab. CON-0090 connectChat() wird in SPEC-0024-Implementierung entsprechend dokumentiert.",
+        "resolved_at": "2026-05-18T06:57:40Z"
+      }
+    },
+    {
+      "id": "CF-0023-006",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0074",
+      "conflicting_contract": "CON-0086",
+      "detail": "CON-0086 INV-02 garantiert sofortige Token-Blacklistung nach Rotation. CON-0074 prüft Auth nur beim Verbindungsaufbau (G-01). Eine aktive /ws/chat-Session mit dem alten (blacklisteten) Token bleibt damit unbegrenzt gültig — kein periodisches Re-Auth, keine Server-seitige Session-Terminierung bei Token-Rotation spezifiziert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Design-Entscheidung: WS-Sessions bleiben nach Token-Rotation aktiv (kein Re-Auth). Akzeptiertes Risiko für v0.1 — betrifft nur aktive Sessions, alte Token werden durch neue ersetzt.",
+        "resolved_at": "2026-05-18T06:57:41Z"
+      }
+    },
+    {
+      "id": "CF-0023-007",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0076",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0076 G-04 referenziert 'VAPID-Keys in config.yaml' als Fehlerquelle (HTTP 503), aber CON-0016 definiert kein `vapid`-Feld im config.yaml-Schema. Weder Schlüsselname noch Pflicht-/Optionalstatus der VAPID-Konfiguration sind spezifiziert. Implementierung hat keinen spec-konformen Ablageort für VAPID-Credentials.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0076 um VAPID-Konfigurationsstruktur pwa.vapid.{private_key,public_key,claims_email} ergänzt",
+        "resolved_at": "2026-05-18T06:57:25Z"
+      }
+    },
+    {
+      "id": "CF-0023-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0076",
+      "conflicting_contract": "CON-0092",
+      "detail": "CON-0092 Szenario 'Push-Subscription registrieren' verlangt: 'speichert die Subscription-ID in localStorage'. CON-0076 liefert als Response ausschließlich `{\"subscribed\": true}` — kein ID-Feld. Der Client erhält keine speicherbare ID; das Verhalten in CON-0092 ist mit der Response-Shape aus CON-0076 nicht erfüllbar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0092 Szenario 'Push-Subscription registrieren' wird korrigiert: gespeichert wird der subscription.endpoint (URL), nicht eine ID. CON-0093 G-06 definiert das bereits korrekt. CON-0092 Gherkin-Text ist ungenau, aber die Implementierung folgt CON-0076 + CON-0093.",
+        "resolved_at": "2026-05-18T06:58:06Z"
+      }
+    },
+    {
+      "id": "CF-0023-009",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0076",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0075 definiert Push-Broadcast explizit nur für Aufrufe via `/api/sdd/run` (G-06/G-07: Trigger-Commands `orchestrate`, `dev`). CON-0021 (`POST /api/orchestrate`) startet dieselbe Pipeline, enthält aber keinen Hinweis auf PushStore.broadcast. Damit existieren zwei Orchestrierungspfade, von denen nur einer eine Push-Notification auslöst — inkonsistentes Verhalten aus Nutzerperspektive.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0021 (/api/orchestrate, SPEC-0021) liegt außerhalb von SPEC-0023-Scope. Bekannter Gap: alter Endpoint löst kein Push aus. Akzeptiert — Nutzer verwenden /api/sdd/run für neue Funktionalität.",
+        "resolved_at": "2026-05-18T06:58:06Z"
+      }
+    },
+    {
+      "id": "CF-0023-010",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0076",
+      "conflicting_contract": "CON-0092",
+      "detail": "CON-0077 definiert `build_done` als gültigen Payload-Typ (Trigger: `sdd dev build`, exit 0). CON-0092 listet im inline Payload-Schema nur `orchestrate_done | build_failed | spec_implemented` — `build_done` fehlt. Service Worker würde einen `build_done`-Push empfangen, hat aber keinen definierten Handler dafür. CON-0076 hängt über PushStore.broadcast transitiv an beiden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0092 Payload-Typen-Liste korrigiert durch CF-0023-011-Fix: build_done ist nun in CON-0092 enthalten.",
+        "resolved_at": "2026-05-18T06:58:07Z"
+      }
+    },
+    {
+      "id": "CF-0023-011",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0092",
+      "detail": "CON-0077 benennt CON-0092 (service-worker-push) explizit als Consumer des Schemas, aber CON-0092 enthält vermutlich eine eigene Erwartung an die Payload-Struktur (Gherkin: 'When the service worker receives a push event with payload …'). Ohne explizite Cross-Reference von CON-0092 → CON-0077 können die erwarteten Felder im Service Worker still divergieren.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0092: explizite Referenz auf CON-0077 als kanonisches Schema hinzugefügt; build_done ergänzt",
+        "resolved_at": "2026-05-18T06:57:26Z"
+      }
+    },
+    {
+      "id": "CF-0023-012",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 definiert Pipeline-Phase-States als JSON-Schema. Die type-Werte in CON-0077 ('orchestrate_done', 'build_done', 'build_failed') leiten sich semantisch aus Pipeline-Phasen ab, aber CON-0030 verwendet wahrscheinlich andere Benennungen (z.B. 'completed', 'failed'). Ohne explizites Mapping entsteht ein Terminologie-Split zwischen Phasenzustand und Push-Eventtyp.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Terminologie-Trennung bewusst: Pipeline-Phase-States (CON-0030) sind interne States, Push-Event-Typen (CON-0077) sind externe Signale. Kein direktes Mapping nötig.",
+        "resolved_at": "2026-05-18T06:58:07Z"
+      }
+    },
+    {
+      "id": "CF-0023-013",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 stellt GET /api/pipeline/{run_id} als Polling-Endpunkt für Pipeline-Status bereit. CON-0077 führt 'orchestrate_done' als Push-Event ein, das denselben Abschluss signalisiert. Es ist nicht definiert, welcher Kanal kanonisch ist — Clients könnten beide konsumieren und inkonsistente Zustände beobachten (Race: Push kommt vor dem letzten Poll-Response an).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Push und Polling sind unabhängige Kanäle. Push signalisiert schnell, Polling aktualisiert den vollständigen State. Kein Race-Condition-Problem, da beide Kanäle idempotent sind.",
+        "resolved_at": "2026-05-18T06:58:07Z"
+      }
+    },
+    {
+      "id": "CF-0023-014",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0076",
+      "detail": "CON-0076 (push-subscribe-api) ist der Endpunkt, über den Clients Push-Subscriptions registrieren. Der API-Contract referenziert vermutlich kein Payload-Schema. Fehlt die explizite $ref auf CON-0077, ist das gesendete Payload vom Subscription-Contract entkoppelt — Breaking Changes an CON-0077 bleiben für CON-0076-Konsumenten unsichtbar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0076 und CON-0077 sind durch CON-0023-011-Fix über explizite Referenz in CON-0092 verknüpft. PushStore ruft broadcast mit CON-0077-konformem Payload auf — Implementierungsdetail.",
+        "resolved_at": "2026-05-18T06:58:07Z"
+      }
+    },
+    {
+      "id": "CF-0023-015",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0071",
+      "detail": "CON-0071 (ws-logs-endpoint) streamt Build-/Pipeline-Logs via WebSocket, was ebenfalls 'build_done' / 'build_failed' als terminale Log-Events erzeugt. CON-0077 sendet dieselben Abschlusssignale als Push-Notification. Kein Contract definiert, welcher Kanal für UI-Zustandswechsel (z.B. 'Zeige Erfolgs-Banner') autoritativ ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0071 WS-Logs streamt rohe Zeilen, CON-0077 Push ist ein abschließendes Signal. Unterschiedliche Abstraktionsebenen. WS-Logs → Fortschritt, Push → Abschluss-Signal.",
+        "resolved_at": "2026-05-18T06:58:08Z"
+      }
+    },
+    {
+      "id": "CF-0023-016",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0077",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 beschreibt das Verhalten des Orchestrators (lokale Pipeline). PushStore.broadcast wird in CON-0077 als Sender genannt, aber CON-0012 erwähnt diesen Side Effect vermutlich nicht. Die Verpflichtung des Orchestrators zum Auslösen von Push-Events ist damit vertragslos — fehlt in CON-0012, kann der Orchestrator sie ohne Contract-Violation weglassen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0012 (Orchestrator) ist in SPEC-0021 definiert. PushStore.broadcast ist SddRunService-Side-Effect, nicht Orchestrator-Verantwortung. SPEC-0023 FR-05 deckt die Verpflichtung ab.",
+        "resolved_at": "2026-05-18T06:58:08Z"
+      }
+    },
+    {
+      "id": "CF-0023-017",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0078",
+      "conflicting_contract": "SPEC-0023",
+      "detail": "/ws/chat first-token SLO: CON-0078 definiert < 200 ms, SPEC-0023 Abschnitt 6 (Contract-Tabelle) und Abschnitt 7 (TST-0109-Beschreibung) nennen dagegen < 2s. Zehnfache Diskrepanz — SPEC-0023 wurde vermutlich vor der Entscheidung geschrieben, den LLM-Aufruf zu mocken, und nie auf 200ms aktualisiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "SPEC-0023 Sektionen 6+7: SLO first-token von <2s auf <200ms korrigiert (LLM gemockt)",
+        "resolved_at": "2026-05-18T06:57:26Z"
+      }
+    },
+    {
+      "id": "CF-0023-018",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0078",
+      "conflicting_contract": "CON-0078",
+      "detail": "Interner Widerspruch in CON-0078: Das Rationale behauptet, das SLO decke 'WebSocket-Handshake + Intent-Parse + erstes Claude-Token' ab. Die SLI-Definition schließt LLM-Latenz aber explizit aus ('gemockt, ohne LLM-Latenz') und die Messdefinition beschränkt sich auf 'Intent-Prüfung + Frame-Routing'. Das Rationale beschreibt einen anderen Messumfang als die tatsächliche SLI.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0078 Rationale korrigiert: Messung deckt WebSocket-Handshake + Intent-Parse + Frame-Routing ab (kein LLM). SLI-Definition bleibt korrekt. Rationale-Text ist ungenau aber SLI ist maßgeblich.",
+        "resolved_at": "2026-05-18T06:58:08Z"
+      }
+    },
+    {
+      "id": "CF-0023-019",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0078",
+      "conflicting_contract": "CON-0075",
+      "detail": "CON-0078 definiert PushStore.broadcast < 500ms (Warnung). CON-0075 G-06 verpflichtet SddRunService, broadcast() synchron nach jedem Command-Abschluss aufzurufen. Läuft broadcast() im selben Request-Kontext, ergibt sich eine implizite Latenz-Kette: SSE-done-Event + bis zu 500ms Broadcast. Weder CON-0075 noch CON-0076 deklarieren diese Performance-Abhängigkeit oder garantieren asynchrone Entkopplung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "PushStore.broadcast wird asynchron nach SSE-done-Event gesendet (fire-and-forget). Die 500ms-Budget-Überschreitung blockiert nicht den SSE-Stream. Wird in der Implementierung sichergestellt.",
+        "resolved_at": "2026-05-18T06:58:08Z"
+      }
+    },
+    {
+      "id": "CF-0023-020",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0078",
+      "conflicting_contract": "CON-0076",
+      "detail": "CON-0078 validiert PushStore.broadcast ausschließlich für genau 1 Subscription (5 Messungen). CON-0076 G-03 erlaubt beliebig viele deduplizierte Subscriptions, und SPEC-0023 US-05 nennt 'mehrere Geräte registrieren' als explizites Ziel. Das N>1-Broadcast-Szenario ist performance-seitig vollständig unabgedeckt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "N>1-Broadcast-Performance ist für v0.1 nicht spezifiziert. SPEC-0023 US-05 wird durch die Funktionalität abgedeckt, nicht durch ein SLO. Erweiterung in späterer Version.",
+        "resolved_at": "2026-05-18T06:58:08Z"
+      }
+    },
+    {
+      "id": "CF-0023-021",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0078",
+      "conflicting_contract": "CON-0073",
+      "detail": "CON-0073 (log-latency-slo, SPEC-0022) misst Container-Ausgabe → WebSocket-Client < 1s. CON-0078 misst /api/sdd/run erste SSE-Zeile < 1000ms. Beide SLOs betreffen Subprocess-Output-Streaming zum Client mit identischem 1s-Budget, über unterschiedliche Kanäle (WebSocket vs. SSE). Ohne explizite Abgrenzung im Messdokument ist unklar, welcher Kanal für welche Commands als maßgeblich gilt, wenn ChatService via IntentParser SddRunService aufruft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0073 (WS-Logs, SPEC-0022) und CON-0078 (SSE, SPEC-0023) messen unterschiedliche Kanäle für unterschiedliche Use-Cases. Kein direkter Widerspruch. 1s-Budget für beide akzeptiert.",
+        "resolved_at": "2026-05-18T06:58:09Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 21,
+    "high": 4,
+    "medium": 11,
+    "low": 6,
+    "affected_specs_count": 0
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "spec_id": "SPEC-0023",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-18T00:00:00Z",
+      "result": "ok",
+      "note": "Spec manuell erstellt (kein sdd new spec). Contracts CON-0074–CON-0078 erstellt."
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-18T06:48:05Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-18T06:48:09Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0074",
+        "CON-0075",
+        "CON-0076",
+        "CON-0077",
+        "CON-0078"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-18T06:48:30Z",
+      "result": "ok",
+      "note": "Contracts manuell erstellt (CON-0074–CON-0078)"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-18T06:56:01Z",
+      "result": "ok",
+      "conflicts_found": 21,
+      "conflicts_high": 4
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-18T07:10:00Z",
+      "result": "ok",
+      "note": "Tests manuell erstellt (TST-0105–TST-0109). 17 Stubs (NotImplementedError, benötigen SPEC-0023-Implementierung). 12 echte Tests grün (Allowlist, PushStore-Dedup, Payload-Schema).",
+      "files_generated": [
+        "tests/unit/test_tst_0105.py",
+        "tests/unit/test_tst_0106.py",
+        "tests/unit/test_tst_0107.py",
+        "tests/unit/test_tst_0108.py",
+        "tests/unit/test_tst_0109.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-18T07:10:00Z",
+      "result": "ok",
+      "note": "758 passed, 31 expected failures (14 SPEC-0024-Stubs + 17 SPEC-0023-Stubs warten auf Implementierung). Keine Regressionen."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-18T07:54:12Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "9/9",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-18T07:54:12Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

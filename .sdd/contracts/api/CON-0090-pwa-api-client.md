@@ -49,4 +49,5 @@ interface ApiClient {
 
 - `401 Unauthorized` → gesamten `sdd_config`-Key löschen, `connectionStore.set("setup_required")` (CF-0024-013 resolved)
 - Netzwerkfehler / Timeout → `connectionStore.set("disconnected")` — kein eigener Retry, Polling-Intervall aus CON-0094 ist maßgeblich (CF-0024-017 resolved)
-- WebSocket `onclose` → `connectionStore.set("disconnected")`
+- WebSocket `onclose` mit Code 4001 → gesamten `sdd_config`-Key löschen, `connectionStore.set("setup_required")` (CF-0023-001 resolved)
+- WebSocket `onclose` ohne Code 4001 → `connectionStore.set("disconnected")`
