@@ -170,7 +170,7 @@ class TestFactory:
         """Unbekannte Komponente → ValueError."""
         config = _make_config({})
         with pytest.raises(ValueError, match="unknown-comp"):
-            get_completion_provider(config, "unknown-comp")  # type: ignore[arg-type]
+            get_completion_provider(config, "unknown-comp")
 
     def test_field_for_field_merge_not_section_replace(self):
         """Felder werden einzeln geerbt — andere Komponenten-Overrides beeinflussen sich nicht."""

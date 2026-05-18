@@ -14,8 +14,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 
-from sdd_cli.frontmatter import parse, patch_status          # noqa: E402
-from sdd_cli.orchestrator import _call_code_gen_agent        # noqa: E402
+from sdd_cli.frontmatter import parse, patch_status
+from sdd_cli.orchestrator import _call_code_gen_agent
 
 CLAUDE_BIN = "/usr/bin/claude"
 

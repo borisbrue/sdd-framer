@@ -20,7 +20,7 @@ function ConfigEditor({ onSaved }) {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     // Form state
-    const [projectName, setProjectName] = useState("");
+    const [projectTitle, setProjectName] = useState("");
     const [evaluatorUrl, setEvaluatorUrl] = useState("");
     const [maxRetries, setMaxRetries] = useState(3);
     const [lifecycle, setLifecycle] = useState([]);
@@ -32,7 +32,7 @@ function ConfigEditor({ onSaved }) {
         api.getConfig()
             .then(d => {
             setData(d);
-            setProjectName(d.project_name);
+            setProjectName(d.title);
             setEvaluatorUrl(d.evaluator_base_url);
             setMaxRetries(d.max_retries);
             setLifecycle(d.spec_lifecycle);
@@ -47,7 +47,7 @@ function ConfigEditor({ onSaved }) {
         setSuccess(false);
         try {
             await api.patchConfig({
-                project_name: projectName,
+                title: projectTitle,
                 evaluator_base_url: evaluatorUrl,
                 max_retries: maxRetries,
                 spec_lifecycle: lifecycle,
@@ -103,7 +103,7 @@ function ConfigEditor({ onSaved }) {
                         color: tab === t ? "var(--accent)" : "var(--muted)",
                         background: "none",
                         cursor: "pointer",
-                    }, children: t === "form" ? "Felder" : "YAML (Erweitert)" }, t))) }), tab === "form" && (_jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [_jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Projektname" }), _jsx("input", { value: projectName, onChange: e => setProjectName(e.target.value), placeholder: "My Project", style: { width: "100%" } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Evaluator-URL" }), _jsx("input", { value: evaluatorUrl, onChange: e => setEvaluatorUrl(e.target.value), placeholder: "http://localhost:8000", style: { width: "100%" } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Max. Retries (Orchestrator)" }), _jsx("input", { type: "number", min: 1, max: 10, value: maxRetries, onChange: e => setMaxRetries(Number(e.target.value)), style: { width: 80 } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Spec-Lifecycle" }), _jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }, children: [lifecycle.map(tag => (_jsxs("span", { style: {
+                    }, children: t === "form" ? "Felder" : "YAML (Erweitert)" }, t))) }), tab === "form" && (_jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 12 }, children: [_jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Projekttitel" }), _jsx("input", { value: projectTitle, onChange: e => setProjectName(e.target.value), placeholder: "My Project", style: { width: "100%" } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Evaluator-URL" }), _jsx("input", { value: evaluatorUrl, onChange: e => setEvaluatorUrl(e.target.value), placeholder: "http://localhost:8000", style: { width: "100%" } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Max. Retries (Orchestrator)" }), _jsx("input", { type: "number", min: 1, max: 10, value: maxRetries, onChange: e => setMaxRetries(Number(e.target.value)), style: { width: 80 } })] }), _jsxs("div", { children: [_jsx("label", { style: labelStyle, children: "Spec-Lifecycle" }), _jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }, children: [lifecycle.map(tag => (_jsxs("span", { style: {
                                             display: "flex", alignItems: "center", gap: 4,
                                             background: "var(--surface)", border: "1px solid var(--border)",
                                             borderRadius: 4, padding: "2px 8px", fontSize: 12,

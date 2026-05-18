@@ -1,6 +1,5 @@
 ---
 id: SPEC-0006
-project: PRJ-0001
 title: "Test Run Results"
 status: implemented     # draft | review | approved | implemented | deprecated
 owner: "Boris"

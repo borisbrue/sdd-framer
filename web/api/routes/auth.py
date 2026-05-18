@@ -48,7 +48,7 @@ def _write_config_atomic(config_path, raw: dict) -> None:
 async def server_info():
     """CON-0085: Öffentlich, kein Auth. Gibt Metadaten des laufenden Servers zurück."""
     config = sdd_context.get_config()
-    name = config.raw.get("project", {}).get("name", "SDD Project")
+    name = config.raw.get("title", "SDD Project")
     external_url = sdd_context.get_external_url()
     token = _get_current_token(config)
     # CON-0085 G-03: nur die ersten 8 Zeichen des SHA-256-Hashes — nie der Token selbst
@@ -65,7 +65,7 @@ async def qr_payload():
     externe URL konfiguriert ist.
     """
     config = sdd_context.get_config()
-    name = config.raw.get("project", {}).get("name", "SDD Project")
+    name = config.raw.get("title", "SDD Project")
     external_url = sdd_context.get_external_url()
     token = _get_current_token(config)
     if not token:
@@ -73,6 +73,22 @@ async def qr_payload():
     if not external_url:
         raise HTTPException(status_code=404, detail="no_external_url_configured")
     return {"sdd": 1, "name": name, "url": external_url, "token": token}
+
+
+@router.post("/auth/generate-token", status_code=201)
+async def generate_token():
+    """Erstellt den ersten Token wenn noch keiner existiert. Kein Auth nötig."""
+    with _rotation_lock:
+        config = sdd_context.get_config()
+        if _get_current_token(config):
+            raise HTTPException(status_code=409, detail="token_already_exists")
+        new_token = secrets.token_hex(32)
+        raw = copy.deepcopy(config.raw)
+        raw.setdefault("pwa", {}).setdefault("auth", {})["token"] = new_token
+        config_path = config.root / ".sdd" / "config.yaml"
+        _write_config_atomic(config_path, raw)
+        sdd_context.reload_config()
+    return {"ok": True}
 
 
 @router.post("/auth/rotate-token")

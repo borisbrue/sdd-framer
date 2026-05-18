@@ -21,13 +21,13 @@ sys.path.insert(0, str(REPO_ROOT / "tool"))
 
 os.environ.setdefault("SDD_PROJECT_ROOT", str(REPO_ROOT))
 
-import analyzer  # noqa: E402
-import sdd_context  # noqa: E402
+import analyzer
+import sdd_context
 
 sdd_context.init(REPO_ROOT)
 
-from fastapi.testclient import TestClient  # noqa: E402
-from main import app  # noqa: E402
+from fastapi.testclient import TestClient
+from main import app
 
 client = TestClient(app)
 

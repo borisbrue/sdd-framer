@@ -160,7 +160,7 @@ class TestGenerator:
                 functions.append(
                     f"\ndef {fn}():\n"
                     f'    """Happy-path für {path} ({con_id})."""\n'
-                    "    import httpx  # noqa\n"
+                    "    import httpx\n"
                     "    # TODO: configure base_url and assert response\n"
                     "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 )
@@ -168,7 +168,7 @@ class TestGenerator:
                 functions = [
                     "\ndef test_tc01_endpoint():\n"
                     '    """API contract test ({con_id})."""\n'
-                    "    import httpx  # noqa\n"
+                    "    import httpx\n"
                     "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 ]
             return header + "".join(functions) + "\n"

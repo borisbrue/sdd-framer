@@ -12,8 +12,6 @@ async function req(method, path, body) {
     return res.json();
 }
 export const api = {
-    getProjects: () => req("GET", "/projects"),
-    createProject: (b) => req("POST", "/projects", b),
     getStatus: () => req("GET", "/status"),
     getSpecs: () => req("GET", "/specs"),
     getSpec: (id) => req("GET", `/specs/${id}`),
@@ -27,7 +25,6 @@ export const api = {
     validate: () => req("POST", "/validate"),
     trace: () => req("POST", "/trace"),
     maintenance: () => req("GET", "/maintenance"),
-    setLevel: (project_id, level) => req("PATCH", `/projects/${project_id}/level`, { level }),
     getFormats: () => req("GET", "/formats"),
     openInEditor: (abs_file, line) => req("POST", "/open", { abs_file, line: line ?? 1 }),
     aiGenerateSpec: (b) => req("POST", "/ai/generate-spec", b),
@@ -38,12 +35,21 @@ export const api = {
     copilotImproveSpec: (b) => req("POST", "/copilot/improve-spec", b),
     copilotSuggestContracts: (b) => req("POST", "/copilot/suggest-contracts", b),
     analyzeDoc: (docId, b) => req("PUT", `/docs/${docId}/analyze`, b),
+    analyzeStart: (docId, b) => req("POST", `/docs/${docId}/analyze/start`, b),
+    analyzeStatus: (docId, jobId) => req("GET", `/docs/${docId}/analyze/status/${jobId}`),
+    listAnalyses: (docId) => req("GET", `/docs/${docId}/analyses`),
+    getAnalysis: (docId, resultId) => req("GET", `/docs/${docId}/analyses/${resultId}`),
+    dismissItem: (docId, resultId, itemId, dismissed) => req("PATCH", `/docs/${docId}/analyses/${resultId}/dismiss`, { item_id: itemId, dismissed }),
     getTestResults: (specId) => req("GET", `/specs/${specId}/test-results`),
     triggerTestRun: (specId) => req("POST", `/specs/${specId}/test-run`),
     orchestrate: (b) => req("POST", "/orchestrate", b),
     getPipelineRun: (runId) => req("GET", `/pipeline/${runId}`),
     getActivePipeline: (specId) => req("GET", `/pipeline/active?spec_id=${specId}`),
     abortPipeline: (runId) => req("POST", `/pipeline/${runId}/abort`),
+    // SPEC-0025: Server-Info und QR-Payload
+    serverInfo: () => req("GET", "/server-info"),
+    qrPayload: () => req("GET", "/auth/qr-payload"),
+    generateToken: () => req("POST", "/auth/generate-token"),
     getConfig: () => req("GET", "/config"),
     saveConfigRaw: (yaml) => req("PUT", "/config", { yaml }),
     patchConfig: (fields) => req("PATCH", "/config", fields),

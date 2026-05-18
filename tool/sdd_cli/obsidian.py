@@ -425,7 +425,7 @@ def watch(cfg: SddConfig, vault_override: str | None = None,
     # Sauberer Shutdown auf SIGINT
     _running = [True]
 
-    def _stop(signum, frame):  # noqa: ARG001
+    def _stop(signum, frame):
         _running[0] = False
 
     signal.signal(signal.SIGINT, _stop)

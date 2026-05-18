@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-import usage_store  # noqa: E402
+import usage_store
 
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 

@@ -1,6 +1,5 @@
 ---
 id: SPEC-0007
-project: PRJ-0001
 title: "Web UI Execute Flow – Spec-zu-Code Automatisierung"
 status: implemented
 owner: "Boris"

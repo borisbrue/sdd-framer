@@ -14,8 +14,6 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 }
 
 export const api = {
-  getProjects:     () => req<Project[]>("GET", "/projects"),
-  createProject:   (b: CreateProject) => req<Project>("POST", "/projects", b),
   getStatus:       () => req<Status>("GET", "/status"),
   getSpecs:        () => req<Spec[]>("GET", "/specs"),
   getSpec:         (id: string) => req<SpecDetail>("GET", `/specs/${id}`),
@@ -29,8 +27,6 @@ export const api = {
   validate:        () => req<ValidationResult>("POST", "/validate"),
   trace:           () => req<{ok: boolean; file: string}>("POST", "/trace"),
   maintenance:     () => req<MaintenanceReport>("GET", "/maintenance"),
-  setLevel:        (project_id: string, level: number) =>
-                     req<Project>("PATCH", `/projects/${project_id}/level`, { level }),
   getFormats:      () => req<string[]>("GET", "/formats"),
   openInEditor:    (abs_file: string, line?: number) =>
                      req<{ok: boolean}>("POST", "/open", { abs_file, line: line ?? 1 }),
@@ -61,6 +57,7 @@ export const api = {
   // SPEC-0025: Server-Info und QR-Payload
   serverInfo:       () => req<ServerInfo>("GET", "/server-info"),
   qrPayload:        () => req<QrPayload>("GET", "/auth/qr-payload"),
+  generateToken:    () => req<{ok: boolean}>("POST", "/auth/generate-token"),
 
   getConfig:        () => req<ConfigData>("GET", "/config"),
   saveConfigRaw:    (yaml: string) => req<{ok: boolean}>("PUT", "/config", { yaml }),
@@ -140,7 +137,7 @@ export interface AnalyzeResponse {
 }
 
 export interface Status {
-  project: string;
+  title: string;
   specs: number;
   contracts: number;
   tests: number;
@@ -150,21 +147,8 @@ export interface Status {
   project_root?: string;
 }
 
-export interface Project {
-  id: string;
-  name: string;
-  owner: string;
-  status: string;
-  description: string;
-  created: string;
-  file: string;
-  autonomy_level: 1 | 2 | 3 | 3.5 | 4;
-}
-export interface CreateProject { name: string; owner?: string; status?: string; description?: string; }
-
 export interface Spec {
   id: string;
-  project: string;
   title: string;
   status: string;
   priority: string;
@@ -250,7 +234,7 @@ export interface MaintenanceReport {
   issues: MaintenanceIssue[];
 }
 
-export interface CreateSpec     { title: string; owner?: string; priority?: string; project_id?: string; }
+export interface CreateSpec     { title: string; owner?: string; priority?: string; }
 export interface CreateContract { spec_id: string; format: string; title?: string; }
 export interface CreateTest     { spec_id: string; contract_id: string; level: string; title?: string; }
 
@@ -333,14 +317,14 @@ export interface QrPayload {
 
 export interface ConfigData {
   yaml:               string;
-  project_name:       string;
+  title:              string;
   evaluator_base_url: string;
   max_retries:        number;
   spec_lifecycle:     string[];
 }
 
 export interface ConfigPatch {
-  project_name?:       string;
+  title?:              string;
   evaluator_base_url?: string;
   max_retries?:        number;
   spec_lifecycle?:     string[];

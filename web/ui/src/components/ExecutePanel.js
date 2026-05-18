@@ -9,12 +9,13 @@ export default function ExecutePanel({ spec, onStatusChange }) {
     const [logLines, setLogLines] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [baseUrl, setBaseUrl] = useState("");
-    const [projectId, setProjectId] = useState(spec.project ?? "");
+    const [projectId, setProjectId] = useState("");
     const [dryRun, setDryRun] = useState(false);
     const [noPr, setNoPr] = useState(false);
     const [hasClaudeCli, setHasClaudeCli] = useState(true);
     const [projectRoot, setProjectRoot] = useState("");
     const [starting, setStarting] = useState(false);
+    const [staleResult, setStaleResult] = useState(false);
     const pollRef = useRef(null);
     const esRef = useRef(null);
     const logRef = useRef(null);
@@ -50,20 +51,18 @@ export default function ExecutePanel({ spec, onStatusChange }) {
                 }
             })
                 .catch(() => {
+                // run_id in sessionStorage but API returns 404 (TTL expired or server restart)
+                // → show stale banner per spec §4.2 rule 3 and §6
                 sessionStorage.removeItem(SESSION_KEY(spec.id));
-                tryActiveRun();
+                setStaleResult(true);
             });
         }
         else {
-            tryActiveRun();
+            api.getActivePipeline(spec.id)
+                .then(r => { setRun(r); startPolling(r.run_id); startStreaming(r.run_id); })
+                .catch(() => { });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [spec.id]);
-    function tryActiveRun() {
-        api.getActivePipeline(spec.id)
-            .then(r => { setRun(r); startPolling(r.run_id); startStreaming(r.run_id); })
-            .catch(() => { });
-    }
     function startStreaming(runId) {
         if (esRef.current) {
             esRef.current.close();
@@ -90,8 +89,13 @@ export default function ExecutePanel({ spec, onStatusChange }) {
                 }
             }
             catch {
+                // 404 means run_id expired (TTL) or server restarted → stale banner per spec §4.2 rule 3
                 clearInterval(pollRef.current);
                 pollRef.current = null;
+                sessionStorage.removeItem(SESSION_KEY(spec.id));
+                setRun(null);
+                setLogLines([]);
+                setStaleResult(true);
             }
         }, POLL_INTERVAL);
     }
@@ -104,6 +108,9 @@ export default function ExecutePanel({ spec, onStatusChange }) {
         }
     }, []);
     async function handleExecute() {
+        // Clear any previous state per spec §4.2 rule 2
+        sessionStorage.removeItem(SESSION_KEY(spec.id));
+        setStaleResult(false);
         setStarting(true);
         try {
             const { run_id } = await api.orchestrate({
@@ -154,7 +161,12 @@ export default function ExecutePanel({ spec, onStatusChange }) {
                                         overflowY: "auto",
                                         marginBottom: isDone ? 8 : 0,
                                         border: "1px solid #504945",
-                                    }, children: [logLines.map((line, i) => (_jsx("div", { style: { color: lineColor(line), whiteSpace: "pre-wrap" }, children: line }, i))), !isDone && (_jsx("span", { style: { color: "var(--accent)", opacity: 0.7 }, children: "\u258C" }))] })), isDone && _jsx(AttemptSummary, { attempts: run.attempts, status: run.status, issueUrl: run.issue_url })] }), isDone && (_jsx("button", { style: { fontSize: 12, marginLeft: 8 }, onClick: () => { setRun(null); setLogLines([]); }, children: "\u2715" }))] }) })), !isDone && (_jsx("div", { style: { display: "flex", justifyContent: "flex-end" }, children: _jsx("button", { className: "primary", disabled: isRunning, onClick: () => setShowModal(true), style: { minWidth: 110 }, children: isRunning ? "⚙ läuft…" : "▶ Execute" }) })), showModal && (_jsx("div", { style: modalOverlay, onClick: () => setShowModal(false), children: _jsxs("div", { style: modalBox, onClick: e => e.stopPropagation(), children: [_jsx("h3", { style: { marginBottom: 12 }, children: "Pipeline starten" }), _jsxs("div", { style: { fontSize: 13, color: "var(--muted)", marginBottom: 16 }, children: [_jsx("code", { style: { color: "var(--accent)" }, children: spec.id }), " \u2014 ", spec.title] }), !hasClaudeCli && (_jsxs("div", { style: { background: "color-mix(in srgb, var(--red) 15%, transparent)", border: "1px solid var(--red)", borderRadius: "var(--radius)", padding: "8px 12px", marginBottom: 14, fontSize: 12, color: "var(--red)" }, children: ["\u26A0 Claude Code CLI nicht gefunden. Stelle sicher, dass ", _jsx("code", { children: "claude" }), " im PATH installiert und eingeloggt ist."] })), projectRoot && (_jsxs("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 14 }, children: ["Code wird geschrieben nach: ", _jsx("code", { style: { color: "var(--text)" }, children: projectRoot })] })), _jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }, children: [_jsxs("div", { children: [_jsx("label", { children: "Base-URL f\u00FCr Evaluator (leer = kein Evaluator)" }), _jsx("input", { value: baseUrl, onChange: e => setBaseUrl(e.target.value), placeholder: "http://localhost:8000" })] }), _jsxs("div", { children: [_jsx("label", { children: "Project ID (optional)" }), _jsx("input", { value: projectId, onChange: e => setProjectId(e.target.value), placeholder: spec.project ?? "" })] }), _jsxs("label", { style: { display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--text)" }, children: [_jsx("input", { type: "checkbox", checked: dryRun, onChange: e => setDryRun(e.target.checked) }), "Dry-run (kein Git-Commit, kein PR)"] }), _jsxs("label", { style: { display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--text)" }, children: [_jsx("input", { type: "checkbox", checked: noPr, onChange: e => setNoPr(e.target.checked) }), "Ohne PR erstellen (--no-pr)"] })] }), _jsxs("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [_jsx("button", { onClick: () => setShowModal(false), children: "Abbrechen" }), _jsx("button", { className: "primary", disabled: starting, onClick: handleExecute, children: starting ? "Startet…" : "Execute" })] })] }) }))] }));
+                                    }, children: [logLines.map((line, i) => (_jsx("div", { style: { color: lineColor(line), whiteSpace: "pre-wrap" }, children: line }, i))), !isDone && (_jsx("span", { style: { color: "var(--accent)", opacity: 0.7 }, children: "\u258C" }))] })), isDone && _jsx(AttemptSummary, { attempts: run.attempts, status: run.status, issueUrl: run.issue_url })] }), isDone && (_jsx("button", { style: { fontSize: 12, marginLeft: 8 }, onClick: () => { setRun(null); setLogLines([]); }, children: "\u2715" }))] }) })), staleResult && (_jsxs("div", { style: {
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    background: "color-mix(in srgb, var(--yellow) 12%, transparent)",
+                    border: "1px solid var(--yellow)", borderRadius: "var(--radius)",
+                    padding: "8px 12px", fontSize: 12, color: "var(--yellow)",
+                }, children: [_jsx("span", { children: "Ergebnis nicht mehr verf\u00FCgbar (Server-Neustart oder Timeout)." }), _jsx("button", { style: { fontSize: 11, padding: "2px 6px" }, onClick: () => setStaleResult(false), children: "\u2715" })] })), !isDone && (_jsx("div", { style: { display: "flex", justifyContent: "flex-end" }, children: _jsx("button", { className: "primary", disabled: isRunning, onClick: () => setShowModal(true), style: { minWidth: 110 }, children: isRunning ? "⚙ läuft…" : "▶ Execute" }) })), showModal && (_jsx("div", { style: modalOverlay, onClick: () => setShowModal(false), children: _jsxs("div", { style: modalBox, onClick: e => e.stopPropagation(), children: [_jsx("h3", { style: { marginBottom: 12 }, children: "Pipeline starten" }), _jsxs("div", { style: { fontSize: 13, color: "var(--muted)", marginBottom: 16 }, children: [_jsx("code", { style: { color: "var(--accent)" }, children: spec.id }), " \u2014 ", spec.title] }), !hasClaudeCli && (_jsxs("div", { style: { background: "color-mix(in srgb, var(--red) 15%, transparent)", border: "1px solid var(--red)", borderRadius: "var(--radius)", padding: "8px 12px", marginBottom: 14, fontSize: 12, color: "var(--red)" }, children: ["\u26A0 Claude Code CLI nicht gefunden. Stelle sicher, dass ", _jsx("code", { children: "claude" }), " im PATH installiert und eingeloggt ist."] })), projectRoot && (_jsxs("div", { style: { fontSize: 11, color: "var(--muted)", marginBottom: 14 }, children: ["Code wird geschrieben nach: ", _jsx("code", { style: { color: "var(--text)" }, children: projectRoot })] })), _jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }, children: [_jsxs("div", { children: [_jsx("label", { children: "Base-URL f\u00FCr Evaluator (leer = kein Evaluator)" }), _jsx("input", { value: baseUrl, onChange: e => setBaseUrl(e.target.value), placeholder: "http://localhost:8000" })] }), _jsxs("div", { children: [_jsx("label", { children: "Project ID (optional)" }), _jsx("input", { value: projectId, onChange: e => setProjectId(e.target.value), placeholder: "" })] }), _jsxs("label", { style: { display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--text)" }, children: [_jsx("input", { type: "checkbox", checked: dryRun, onChange: e => setDryRun(e.target.checked) }), "Dry-run (kein Git-Commit, kein PR)"] }), _jsxs("label", { style: { display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--text)" }, children: [_jsx("input", { type: "checkbox", checked: noPr, onChange: e => setNoPr(e.target.checked) }), "Ohne PR erstellen (--no-pr)"] })] }), _jsxs("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [_jsx("button", { onClick: () => setShowModal(false), children: "Abbrechen" }), _jsx("button", { className: "primary", disabled: starting, onClick: handleExecute, children: starting ? "Startet…" : "Execute" })] })] }) }))] }));
 }
 function AttemptSummary({ attempts, status, issueUrl }) {
     const lastPr = [...attempts].reverse().find(a => a.pr_url)?.pr_url;

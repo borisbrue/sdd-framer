@@ -1,11 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import { api } from "../api";
-export default function SpecForm({ projects, defaultProjectId = "", onCreated, onCancel }) {
+export default function SpecForm({ onCreated, onCancel }) {
     const [title, setTitle] = useState("");
     const [owner, setOwner] = useState("");
     const [priority, setPriority] = useState("medium");
-    const [projectId, setProjectId] = useState(defaultProjectId);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     async function handleSubmit(e) {
@@ -15,7 +14,7 @@ export default function SpecForm({ projects, defaultProjectId = "", onCreated, o
         setLoading(true);
         setError("");
         try {
-            const res = await api.createSpec({ title, owner, priority, project_id: projectId });
+            const res = await api.createSpec({ title, owner, priority });
             onCreated(res.id);
         }
         catch (err) {
@@ -25,5 +24,5 @@ export default function SpecForm({ projects, defaultProjectId = "", onCreated, o
             setLoading(false);
         }
     }
-    return (_jsxs("form", { onSubmit: handleSubmit, className: "card", style: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }, children: [_jsx("h3", { style: { fontSize: 14, fontWeight: 700 }, children: "Neue Spec" }), _jsxs("div", { children: [_jsx("label", { children: "Projekt" }), _jsxs("select", { value: projectId, onChange: e => setProjectId(e.target.value), children: [_jsx("option", { value: "", children: "(kein Projekt)" }), projects.map(p => (_jsxs("option", { value: p.id, children: [p.id, " \u2013 ", p.name] }, p.id)))] })] }), _jsxs("div", { children: [_jsx("label", { children: "Titel *" }), _jsx("input", { value: title, onChange: e => setTitle(e.target.value), placeholder: "z.B. User Registrierung", autoFocus: true, required: true })] }), _jsxs("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, children: [_jsxs("div", { children: [_jsx("label", { children: "Owner" }), _jsx("input", { value: owner, onChange: e => setOwner(e.target.value), placeholder: "Name oder Team" })] }), _jsxs("div", { children: [_jsx("label", { children: "Priorit\u00E4t" }), _jsxs("select", { value: priority, onChange: e => setPriority(e.target.value), children: [_jsx("option", { value: "low", children: "low" }), _jsx("option", { value: "medium", children: "medium" }), _jsx("option", { value: "high", children: "high" }), _jsx("option", { value: "critical", children: "critical" })] })] })] }), error && _jsx("p", { style: { color: "var(--red)", fontSize: 13 }, children: error }), _jsxs("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [_jsx("button", { type: "button", onClick: onCancel, children: "Abbrechen" }), _jsx("button", { type: "submit", className: "primary", disabled: loading || !title.trim(), children: loading ? "Anlegen…" : "Spec anlegen" })] })] }));
+    return (_jsxs("form", { onSubmit: handleSubmit, className: "card", style: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }, children: [_jsx("h3", { style: { fontSize: 14, fontWeight: 700 }, children: "Neue Spec" }), _jsxs("div", { children: [_jsx("label", { children: "Titel *" }), _jsx("input", { value: title, onChange: e => setTitle(e.target.value), placeholder: "z.B. User Registrierung", autoFocus: true, required: true })] }), _jsxs("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, children: [_jsxs("div", { children: [_jsx("label", { children: "Owner" }), _jsx("input", { value: owner, onChange: e => setOwner(e.target.value), placeholder: "Name oder Team" })] }), _jsxs("div", { children: [_jsx("label", { children: "Priorit\u00E4t" }), _jsxs("select", { value: priority, onChange: e => setPriority(e.target.value), children: [_jsx("option", { value: "low", children: "low" }), _jsx("option", { value: "medium", children: "medium" }), _jsx("option", { value: "high", children: "high" }), _jsx("option", { value: "critical", children: "critical" })] })] })] }), error && _jsx("p", { style: { color: "var(--red)", fontSize: 13 }, children: error }), _jsxs("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" }, children: [_jsx("button", { type: "button", onClick: onCancel, children: "Abbrechen" }), _jsx("button", { type: "submit", className: "primary", disabled: loading || !title.trim(), children: loading ? "Anlegen…" : "Spec anlegen" })] })] }));
 }

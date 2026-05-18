@@ -1,6 +1,5 @@
 ---
 id: SPEC-0023
-project: PRJ-0001
 title: Remote Control Backend — Chat, SDD-Run & Push-Notifications
 status: in-progress
 owner: Boris

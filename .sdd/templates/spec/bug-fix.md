@@ -1,6 +1,5 @@
 ---
 id: SPEC-XXXX
-project: ""             # PRJ-XXXX
 title: "<Kurze Symptombeschreibung>"
 type: bug-fix           # feature | bug-fix
 status: draft           # draft | review | approved | implemented | deprecated

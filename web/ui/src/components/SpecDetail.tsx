@@ -58,9 +58,6 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{detail.title}</h2>
             <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--muted)", flexWrap: "wrap" }}>
-              {detail.project && (
-                <span>Projekt: <code style={{ color: "var(--yellow)", fontSize: 11, background: "var(--surface)", padding: "1px 6px", borderRadius: 4 }}>{detail.project}</code></span>
-              )}
               {detail.owner && <span>Owner: <strong style={{ color: "var(--text)" }}>{detail.owner}</strong></span>}
               {detail.version && <span>v{detail.version}</span>}
               {detail.created && <span>Erstellt: {detail.created}</span>}

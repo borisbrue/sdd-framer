@@ -9,8 +9,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-import usage_store  # noqa: E402
-from sdd_context import get_config  # noqa: E402
+import usage_store
+from sdd_context import get_config
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 

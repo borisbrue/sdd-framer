@@ -1,6 +1,5 @@
 ---
 id: SPEC-0012
-project: PRJ-0001
 title: Nachrichtenserver-Anbindung – Bidirektionale Kommunikation mit dem SDD-System
 status: draft
 owner: Boris
@@ -17,8 +16,10 @@ tags:
 - communication
 depends_on:
 - SPEC-0009
-contracts: []
-tests: []
+contracts:
+  - CON-0079
+tests:
+  - TST-0110
 adrs: []
 ---
 # Nachrichtenserver-Anbindung – Bidirektionale Kommunikation mit dem SDD-System

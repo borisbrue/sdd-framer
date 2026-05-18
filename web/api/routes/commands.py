@@ -55,7 +55,7 @@ def project_status() -> dict[str, Any]:
     )
 
     return {
-        "project": cfg.raw.get("project", {}).get("name", "SDD Project"),
+        "title": cfg.raw.get("title", "SDD Project"),
         "specs": len(specs),
         "contracts": len(contracts),
         "tests": len(tests),
@@ -113,7 +113,7 @@ class ConfigRaw(BaseModel):
 
 
 class ConfigPatch(BaseModel):
-    project_name: str | None = None
+    title: str | None = None
     evaluator_base_url: str | None = None
     max_retries: int | None = None
     spec_lifecycle: list[str] | None = None
@@ -127,7 +127,7 @@ def get_config_content() -> dict[str, Any]:
     raw = config_file.read_text(encoding="utf-8") if config_file.exists() else ""
     return {
         "yaml": raw,
-        "project_name": cfg.raw.get("project", {}).get("name", ""),
+        "title": cfg.raw.get("title", ""),
         "evaluator_base_url": cfg.raw.get("evaluator", {}).get("base_url", ""),
         "max_retries": cfg.raw.get("orchestrator", {}).get("max_retries", 3),
         "spec_lifecycle": cfg.raw.get("spec_lifecycle", ["draft", "review", "approved", "implemented", "deprecated"]),
@@ -155,8 +155,8 @@ def patch_config_fields(body: ConfigPatch) -> dict[str, Any]:
     config_file = cfg.root / ".sdd" / "config.yaml"
     data: dict = dict(cfg.raw)
 
-    if body.project_name is not None:
-        data.setdefault("project", {})["name"] = body.project_name
+    if body.title is not None:
+        data["title"] = body.title
     if body.evaluator_base_url is not None:
         data.setdefault("evaluator", {})["base_url"] = body.evaluator_base_url
     if body.max_retries is not None:
@@ -187,7 +187,7 @@ def open_in_editor(body: OpenRequest) -> dict[str, Any]:
         raise HTTPException(status_code=503, detail="VS Code nicht gefunden.")
 
     try:
-        subprocess.Popen(  # noqa: S603
+        subprocess.Popen(
             [code_bin, "--goto", f"{path}:{body.line}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

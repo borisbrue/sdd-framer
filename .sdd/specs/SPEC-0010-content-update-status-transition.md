@@ -1,6 +1,5 @@
 ---
 id: SPEC-0010
-project: PRJ-0001
 title: Content-Update-Lifecycle – Statusübergänge und LLM-gestützte Contract-Absicherung
 status: implemented
 owner: Boris

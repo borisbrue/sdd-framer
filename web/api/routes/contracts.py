@@ -46,7 +46,6 @@ def _contract_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict
     abs_artifact = str(cfg_root / artifact) if artifact else ""
     d: dict[str, Any] = {
         "id": fm.get("id"),
-        "project": fm.get("project", ""),
         "title": fm.get("title", ""),
         "type": fm.get("type", ""),
         "format": fm.get("format", ""),

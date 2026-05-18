@@ -10,3 +10,6 @@ build/
 node_modules/
 web/ui/dist/
 .sdd/holdout/
+
+# TLS-Zertifikate (mkcert)
+.certs/

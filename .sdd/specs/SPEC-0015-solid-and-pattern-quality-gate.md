@@ -1,6 +1,5 @@
 ---
 id: SPEC-0015
-project: PRJ-0001
 title: SOLID & Design Pattern Quality Gate – Architekturprüfung in Spec- und Contract-Workflow
 status: implemented
 owner: Boris

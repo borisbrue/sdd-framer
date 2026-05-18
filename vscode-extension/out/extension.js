@@ -166,7 +166,7 @@ async function activate(context) {
         if (server.getStatus() === "running" || server.getStatus() === "starting") {
             const choice = await vscode.window.showQuickPick(["Browser öffnen", "Neustarten", "Abbrechen"], { placeHolder: `Server läuft auf Port ${server.getPort()}` });
             if (choice === "Browser öffnen") {
-                vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+                vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()));
             }
             else if (choice === "Neustarten") {
                 vscode.commands.executeCommand("sdd.restartWebUI");
@@ -176,7 +176,9 @@ async function activate(context) {
         try {
             await server.start(root);
             if (vscode.workspace.getConfiguration("sdd").get("webUi.openBrowser", true)) {
-                vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+                const url = server.getBaseUrl();
+                out.appendLine(`[SDD] openExternal → ${url}`);
+                vscode.env.openExternal(vscode.Uri.parse(url));
             }
         }
         catch (e) {
@@ -200,7 +202,7 @@ async function activate(context) {
         try {
             await server.start(root);
             if (vscode.workspace.getConfiguration("sdd").get("webUi.openBrowser", true)) {
-                vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+                vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()));
             }
         }
         catch (e) {
@@ -225,7 +227,7 @@ async function activate(context) {
                 return;
             }
         }
-        vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+        vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()));
     }), vscode.commands.registerCommand("sdd.showOutput", () => out.show(true)), 
     // ── Pipeline Execute ──────────────────────────────────────────────────
     vscode.commands.registerCommand("sdd.executeCurrentSpec", async (node) => {
@@ -518,7 +520,7 @@ function updateStatusBar(item, server) {
             break;
         case "running":
             item.text = `$(zap) SDD :${server.getPort()}`;
-            item.tooltip = `SDD Server läuft auf http://localhost:${server.getPort()} – klicken zum Öffnen`;
+            item.tooltip = `SDD Server läuft auf ${server.getBaseUrl()} – klicken zum Öffnen`;
             item.command = "sdd.openWebUI";
             item.backgroundColor = undefined;
             break;

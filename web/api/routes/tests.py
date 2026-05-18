@@ -34,7 +34,6 @@ def _test_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str
     fm = doc.frontmatter
     d: dict[str, Any] = {
         "id": fm.get("id"),
-        "project": fm.get("project", ""),
         "title": fm.get("title", ""),
         "level": fm.get("level", ""),
         "spec": fm.get("spec", ""),

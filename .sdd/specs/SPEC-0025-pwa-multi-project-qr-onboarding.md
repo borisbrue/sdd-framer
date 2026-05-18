@@ -1,6 +1,5 @@
 ---
 id: SPEC-0025
-project: PRJ-0001
 title: 'PWA Multi-Projekt, QR-Onboarding & Token-Rotation'
 status: implemented
 owner: Boris

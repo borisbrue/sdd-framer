@@ -1,6 +1,5 @@
 ---
 id: SPEC-0021
-project: PRJ-0001
 title: Isolierte Docker-Entwicklungsumgebung pro Spec
 status: implemented
 owner: Boris

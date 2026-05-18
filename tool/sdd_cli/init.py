@@ -134,7 +134,7 @@ def copy_skill_files(
 
 def init_project(
     target: Path,
-    project_name: str,
+    title: str,
     force: bool = False,
     skill_provider: str = "claude",
     force_skills: bool = False,
@@ -184,7 +184,7 @@ def init_project(
     if not config_dst.exists() or force:
         config_src = src_root / ".sdd" / "config.yaml"
         text = config_src.read_text(encoding="utf-8")
-        text = text.replace("<PROJECT_NAME>", project_name)
+        text = text.replace("<PROJECT_TITLE>", title)
         config_dst.write_text(text, encoding="utf-8")
         created.append(config_dst)
 

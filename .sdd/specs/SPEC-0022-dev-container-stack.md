@@ -1,6 +1,5 @@
 ---
 id: SPEC-0022
-project: PRJ-0001
 title: 'Dev-Container-Stack: Image-Building, Registry, Compose und Live-Logging'
 status: in-progress
 owner: Boris

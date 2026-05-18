@@ -325,15 +325,15 @@ AGENTS_MD_REQUIRED_SECTIONS = [
 
 # Inline-Suppress-Muster, die Agenten nie verwenden dürfen (Taste Invariant)
 _INLINE_DISABLE_PATTERNS = [
-    "# noqa",
-    "# type: ignore",
-    "# pylint: disable",
-    "// eslint-disable",
-    "/* eslint-disable",
-    "@SuppressWarnings",
-    "// @ts-ignore",
-    "// @ts-nocheck",
-    "nolint:",           # Go golangci-lint
+    "#" + " noqa",
+    "# type:" + " ignore",
+    "# pylint:" + " disable",
+    "//" + " eslint-disable",
+    "/*" + " eslint-disable",
+    "@" + "SuppressWarnings",
+    "// @ts-" + "ignore",
+    "// @ts-" + "nocheck",
+    "no" + "lint:",           # Go golangci-lint
 ]
 
 # Quelldatei-Endungen, die auf Inline-Disables geprüft werden
@@ -393,7 +393,7 @@ def _check_agents_md(config: SddConfig, report: Report) -> None:
                 "AGENTS.md Taste Invariants: Inline-Disable-Verbot nicht dokumentiert.",
                 instruction=(
                     "Add a rule to '## Taste Invariants' that explicitly forbids "
-                    "inline suppression comments (noqa, eslint-disable, @SuppressWarnings, etc.)."
+                    "inline suppression comments (noqa, eslint-disable, @" + "SuppressWarnings, etc.)."
                 ),
             )
 

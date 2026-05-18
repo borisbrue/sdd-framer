@@ -150,6 +150,11 @@
           "maximum": 65535,
           "markdownDescription": "Port für den SDD Web UI Server. `0` = freier Port automatisch ermitteln (empfohlen). Fixer Wert z.B. `8000` = fixer Port."
         },
+        "sdd.webUi.externalUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Externe URL für QR-Code-Onboarding (z.B. `http://192.168.1.10:8000` oder Tailscale-URL). Leer = automatisch aus LAN-IP ermitteln."
+        },
         "sdd.webUi.autoStart": {
           "type": "boolean",
           "default": false,

@@ -1,6 +1,5 @@
 ---
 id: SPEC-0008
-project: PRJ-0001
 title: Pluggable LLM-Provider – SOLID-Abstraktionsschicht für alle KI-Komponenten
 status: implemented
 owner: Boris

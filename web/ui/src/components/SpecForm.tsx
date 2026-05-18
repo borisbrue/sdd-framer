@@ -1,18 +1,15 @@
 import { useState } from "react";
-import { api, Project } from "../api";
+import { api } from "../api";
 
 interface Props {
-  projects: Project[];
-  defaultProjectId?: string;
   onCreated: (id: string) => void;
   onCancel: () => void;
 }
 
-export default function SpecForm({ projects, defaultProjectId = "", onCreated, onCancel }: Props) {
+export default function SpecForm({ onCreated, onCancel }: Props) {
   const [title, setTitle]       = useState("");
   const [owner, setOwner]       = useState("");
   const [priority, setPriority] = useState("medium");
-  const [projectId, setProjectId] = useState(defaultProjectId);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
 
@@ -22,7 +19,7 @@ export default function SpecForm({ projects, defaultProjectId = "", onCreated, o
     setLoading(true);
     setError("");
     try {
-      const res = await api.createSpec({ title, owner, priority, project_id: projectId });
+      const res = await api.createSpec({ title, owner, priority });
       onCreated(res.id);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Fehler beim Anlegen.");
@@ -34,16 +31,6 @@ export default function SpecForm({ projects, defaultProjectId = "", onCreated, o
   return (
     <form onSubmit={handleSubmit} className="card" style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }}>
       <h3 style={{ fontSize: 14, fontWeight: 700 }}>Neue Spec</h3>
-
-      <div>
-        <label>Projekt</label>
-        <select value={projectId} onChange={e => setProjectId(e.target.value)}>
-          <option value="">(kein Projekt)</option>
-          {projects.map(p => (
-            <option key={p.id} value={p.id}>{p.id} – {p.name}</option>
-          ))}
-        </select>
-      </div>
 
       <div>
         <label>Titel *</label>

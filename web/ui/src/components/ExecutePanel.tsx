@@ -15,7 +15,7 @@ export default function ExecutePanel({ spec, onStatusChange }: Props) {
   const [logLines, setLogLines] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [baseUrl, setBaseUrl] = useState("");
-  const [projectId, setProjectId] = useState(spec.project ?? "");
+  const [projectId, setProjectId] = useState("");
   const [dryRun, setDryRun] = useState(false);
   const [noPr, setNoPr] = useState(false);
   const [hasClaudeCli, setHasClaudeCli] = useState(true);
@@ -64,16 +64,11 @@ export default function ExecutePanel({ spec, onStatusChange }: Props) {
           setStaleResult(true);
         });
     } else {
-      tryActiveRun();
+      api.getActivePipeline(spec.id)
+        .then(r => { setRun(r); startPolling(r.run_id); startStreaming(r.run_id); })
+        .catch(() => {});
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec.id]);
-
-  function tryActiveRun() {
-    api.getActivePipeline(spec.id)
-      .then(r => { setRun(r); startPolling(r.run_id); startStreaming(r.run_id); })
-      .catch(() => {});
-  }
 
   function startStreaming(runId: string) {
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
@@ -265,7 +260,7 @@ export default function ExecutePanel({ spec, onStatusChange }: Props) {
               </div>
               <div>
                 <label>Project ID (optional)</label>
-                <input value={projectId} onChange={e => setProjectId(e.target.value)} placeholder={spec.project ?? ""} />
+                <input value={projectId} onChange={e => setProjectId(e.target.value)} placeholder="" />
               </div>
               <label style={{ display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontSize: 13, color: "var(--text)" }}>
                 <input type="checkbox" checked={dryRun} onChange={e => setDryRun(e.target.checked)} />

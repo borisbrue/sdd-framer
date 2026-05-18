@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Project, ProjectRegistry } from "./config";
 import { fetchSpecs, fetchStatus, SddSpec, SddStatus } from "./api";
 import ProjectSwitcher from "./components/ProjectSwitcher";
 import AddProjectScreen from "./components/AddProjectScreen";
+import SpecDetailScreen from "./components/SpecDetailScreen";
 
 type Tab = "dashboard" | "projects" | "add";
 
@@ -12,6 +13,7 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("dashboard");
   const [addVisible, setAddVisible] = useState(false);
+  const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
 
   useEffect(() => {
     ProjectRegistry.init();
@@ -19,11 +21,11 @@ export default function App() {
     setReady(true);
   }, []);
 
-  function reload() {
+  const reload = useCallback(() => {
     const all = ProjectRegistry.getAll();
     setProjects(all);
     setActiveId(ProjectRegistry.getActiveId());
-  }
+  }, []);
 
   function handleActivate(id: string) {
     setActiveId(id);
@@ -52,7 +54,7 @@ export default function App() {
       <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         <AddProjectScreen
           onAdded={handleAdded}
-          onCancel={() => undefined} // kein Abbrechen ohne Projekte
+          onCancel={() => undefined}
         />
       </div>
     );
@@ -69,13 +71,26 @@ export default function App() {
     );
   }
 
+  if (selectedSpecId && activeProject) {
+    return (
+      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <SpecDetailScreen
+          project={activeProject}
+          specId={selectedSpecId}
+          onBack={() => setSelectedSpecId(null)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", paddingTop: "env(safe-area-inset-top)" }}>
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {tab === "dashboard" && (
           <DashboardTab
             project={activeProject}
             onProjectReload={reload}
+            onSelectSpec={setSelectedSpecId}
           />
         )}
         {tab === "projects" && (
@@ -118,9 +133,11 @@ export default function App() {
 function DashboardTab({
   project,
   onProjectReload,
+  onSelectSpec,
 }: {
   project: Project | null;
   onProjectReload: () => void;
+  onSelectSpec: (id: string) => void;
 }) {
   const [status, setStatus] = useState<SddStatus | null>(null);
   const [specs, setSpecs] = useState<SddSpec[]>([]);
@@ -129,30 +146,29 @@ function DashboardTab({
 
   useEffect(() => {
     if (!project) return;
-    load(project);
-  }, [project?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function load(p: Project) {
-    setLoading(true);
-    setError("");
-    try {
-      const [s, sp] = await Promise.all([fetchStatus(p), fetchSpecs(p)]);
-      setStatus(s);
-      setSpecs(sp);
-    } catch (e: unknown) {
-      const err = e as { status?: number; message?: string };
-      if (err.status === 401) {
-        // CON-0087 G-06: 401 → nur dieses Projekt markieren, nicht alle löschen
-        ProjectRegistry.update(p.id, { auth_required: true });
-        onProjectReload();
-        setError("Authentifizierung abgelaufen. Bitte QR-Code erneut scannen.");
-      } else {
-        setError("Server nicht erreichbar.");
+    async function load(p: Project) {
+      setLoading(true);
+      setError("");
+      try {
+        const [s, sp] = await Promise.all([fetchStatus(p), fetchSpecs(p)]);
+        setStatus(s);
+        setSpecs(sp);
+      } catch (e: unknown) {
+        const err = e as { status?: number; message?: string };
+        if (err.status === 401) {
+          // CON-0087 G-06: 401 → nur dieses Projekt markieren, nicht alle löschen
+          ProjectRegistry.update(p.id, { auth_required: true });
+          onProjectReload();
+          setError("Authentifizierung abgelaufen. Bitte QR-Code erneut scannen.");
+        } else {
+          setError("Server nicht erreichbar.");
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
-  }
+    load(project);
+  }, [project?.id, onProjectReload]);
 
   if (!project) {
     return (
@@ -210,21 +226,27 @@ function DashboardTab({
             Specs ({specs.length})
           </div>
           {specs.map(spec => (
-            <div key={spec.id} style={{
-              background: "var(--surface)", borderRadius: 8, padding: "10px 14px",
-              marginBottom: 6, border: "1px solid var(--border)",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
+            <div key={spec.id}
+              onClick={() => onSelectSpec(spec.id)}
+              style={{
+                background: "var(--surface)", borderRadius: 8, padding: "10px 14px",
+                marginBottom: 6, border: "1px solid var(--border)",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                cursor: "pointer",
+              }}>
               <div>
                 <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--accent)" }}>{spec.id}</span>
                 <div style={{ fontSize: 13, color: "var(--text)", marginTop: 2 }}>{spec.title}</div>
               </div>
-              <span style={{
-                fontSize: 11, padding: "2px 8px", borderRadius: 10,
-                background: "var(--bg)", color: "var(--muted)", border: "1px solid var(--border)",
-              }}>
-                {spec.status}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{
+                  fontSize: 11, padding: "2px 8px", borderRadius: 10,
+                  background: "var(--bg)", color: "var(--muted)", border: "1px solid var(--border)",
+                }}>
+                  {spec.status}
+                </span>
+                <span style={{ color: "var(--muted)", fontSize: 16 }}>›</span>
+              </div>
             </div>
           ))}
         </div>

@@ -209,42 +209,47 @@ class SddTreeProvider {
     }
     childrenOfSpec(specPath) {
         const fm = (0, frontmatter_1.parseFrontmatter)(specPath);
-        const nodes = [];
-        for (const cid of fm.contracts ?? []) {
-            const fp = this.findById(cid, path.join(this._root, ".sdd", "contracts"));
-            const label = fp ? `${cid}  ${(0, frontmatter_1.parseFrontmatter)(fp).title ?? ""}` : `${cid}  (fehlt!)`;
-            nodes.push(new SddNode(label, "contract", fp ?? undefined, cid));
+        const specId = fm.id;
+        if (!specId) {
+            return [];
         }
-        for (const tid of fm.tests ?? []) {
-            const fp = this.findById(tid, path.join(this._root, "tests"));
-            const label = fp ? `${tid}  ${(0, frontmatter_1.parseFrontmatter)(fp).title ?? ""}` : `${tid}  (fehlt!)`;
-            nodes.push(new SddNode(label, "test", fp ?? undefined, tid));
+        const nodes = [];
+        for (const fp of this.collectMdFiles(path.join(this._root, ".sdd", "contracts"))) {
+            const cfm = (0, frontmatter_1.parseFrontmatter)(fp);
+            if (cfm.spec === specId) {
+                const cid = cfm.id ?? path.basename(fp);
+                nodes.push(new SddNode(`${cid}  ${cfm.title ?? ""}`, "contract", fp, cid));
+            }
+        }
+        for (const fp of this.collectMdFiles(path.join(this._root, ".sdd", "tests"))) {
+            const tfm = (0, frontmatter_1.parseFrontmatter)(fp);
+            if (tfm.spec === specId) {
+                const tid = tfm.id ?? path.basename(fp);
+                nodes.push(new SddNode(`${tid}  ${tfm.title ?? ""}`, "test", fp, tid));
+            }
         }
         return nodes;
     }
-    findById(id, base) {
-        if (!fs.existsSync(base)) {
-            return null;
+    collectMdFiles(dir) {
+        if (!fs.existsSync(dir)) {
+            return [];
         }
+        const result = [];
         try {
-            const entries = fs.readdirSync(base, { withFileTypes: true });
-            for (const e of entries) {
-                const full = path.join(base, e.name);
+            for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, e.name);
                 if (e.isDirectory()) {
-                    const found = this.findById(id, full);
-                    if (found) {
-                        return found;
-                    }
+                    result.push(...this.collectMdFiles(full));
                 }
-                else if (e.name.startsWith(id) && e.name.endsWith(".md")) {
-                    return full;
+                else if (e.name.endsWith(".md")) {
+                    result.push(full);
                 }
             }
         }
         catch {
             // ignore
         }
-        return null;
+        return result;
     }
 }
 exports.SddTreeProvider = SddTreeProvider;

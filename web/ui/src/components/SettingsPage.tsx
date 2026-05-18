@@ -31,7 +31,7 @@ function ConfigEditor({ onSaved }: { onSaved: () => void }) {
   const [success, setSuccess]       = useState(false);
 
   // Form state
-  const [projectName, setProjectName]         = useState("");
+  const [projectTitle, setProjectName]         = useState("");
   const [evaluatorUrl, setEvaluatorUrl]       = useState("");
   const [maxRetries, setMaxRetries]           = useState(3);
   const [lifecycle, setLifecycle]             = useState<string[]>([]);
@@ -45,7 +45,7 @@ function ConfigEditor({ onSaved }: { onSaved: () => void }) {
     api.getConfig()
       .then(d => {
         setData(d);
-        setProjectName(d.project_name);
+        setProjectName(d.title);
         setEvaluatorUrl(d.evaluator_base_url);
         setMaxRetries(d.max_retries);
         setLifecycle(d.spec_lifecycle);
@@ -61,7 +61,7 @@ function ConfigEditor({ onSaved }: { onSaved: () => void }) {
     setSuccess(false);
     try {
       await api.patchConfig({
-        project_name:       projectName,
+        title:       projectTitle,
         evaluator_base_url: evaluatorUrl,
         max_retries:        maxRetries,
         spec_lifecycle:     lifecycle,
@@ -135,9 +135,9 @@ function ConfigEditor({ onSaved }: { onSaved: () => void }) {
       {tab === "form" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div>
-            <label style={labelStyle}>Projektname</label>
+            <label style={labelStyle}>Projekttitel</label>
             <input
-              value={projectName}
+              value={projectTitle}
               onChange={e => setProjectName(e.target.value)}
               placeholder="My Project"
               style={{ width: "100%" }}

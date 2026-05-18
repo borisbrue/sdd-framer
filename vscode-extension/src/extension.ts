@@ -132,7 +132,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           { placeHolder: `Server läuft auf Port ${server.getPort()}` }
         );
         if (choice === "Browser öffnen") {
-          vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+          vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()!));
         } else if (choice === "Neustarten") {
           vscode.commands.executeCommand("sdd.restartWebUI");
         }
@@ -142,7 +142,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       try {
         await server.start(root);
         if (vscode.workspace.getConfiguration("sdd").get<boolean>("webUi.openBrowser", true)) {
-          vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+          const url = server.getBaseUrl()!;
+          out.appendLine(`[SDD] openExternal → ${url}`);
+          vscode.env.openExternal(vscode.Uri.parse(url));
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -166,7 +168,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       try {
         await server.start(root);
         if (vscode.workspace.getConfiguration("sdd").get<boolean>("webUi.openBrowser", true)) {
-          vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+          vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()!));
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -190,7 +192,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           return;
         }
       }
-      vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${server.getPort()}`));
+      vscode.env.openExternal(vscode.Uri.parse(server.getBaseUrl()!));
     }),
 
     vscode.commands.registerCommand("sdd.showOutput", () => out.show(true)),
@@ -508,7 +510,7 @@ function updateStatusBar(item: vscode.StatusBarItem, server: ServerManager): voi
       break;
     case "running":
       item.text = `$(zap) SDD :${server.getPort()}`;
-      item.tooltip = `SDD Server läuft auf http://localhost:${server.getPort()} – klicken zum Öffnen`;
+      item.tooltip = `SDD Server läuft auf ${server.getBaseUrl()} – klicken zum Öffnen`;
       item.command = "sdd.openWebUI";
       item.backgroundColor = undefined;
       break;

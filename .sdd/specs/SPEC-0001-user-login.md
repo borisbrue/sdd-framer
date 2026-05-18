@@ -2,7 +2,6 @@
 id: SPEC-0001
 title: User Login mit E-Mail und Passwort
 status: implemented
-project: PRJ-0002
 owner: Auth-Team
 created: 2026-05-11
 updated: '2026-05-16'

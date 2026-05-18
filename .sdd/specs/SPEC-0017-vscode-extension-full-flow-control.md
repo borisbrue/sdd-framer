@@ -1,7 +1,6 @@
 ---
 id: SPEC-0017
 title: "VS Code Extension – Full Flow Control & Dynamic Web UI"
-project: PRJ-0001
 status: review
 owner: "Boris"
 created: 2026-05-16

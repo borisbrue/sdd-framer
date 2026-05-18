@@ -1,6 +1,5 @@
 ---
 id: SPEC-0024
-project: PRJ-0001
 title: Dedicated PWA Shell — Remote SDD Client für iOS & Android
 status: approved
 owner: Boris

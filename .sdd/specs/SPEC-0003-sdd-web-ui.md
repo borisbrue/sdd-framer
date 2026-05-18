@@ -2,7 +2,6 @@
 id: SPEC-0003
 title: "SDD Web UI"
 status: implemented
-project: PRJ-0001
 owner: "Boris"
 created: 2026-05-11
 updated: 2026-05-12

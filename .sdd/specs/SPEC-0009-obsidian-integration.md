@@ -1,6 +1,5 @@
 ---
 id: SPEC-0009
-project: PRJ-0001
 title: Obsidian-Integration – Bidirektionale Vault-Synchronisation für LLM-freies Arbeiten
 status: implemented
 owner: Boris

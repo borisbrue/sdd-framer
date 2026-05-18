@@ -18,6 +18,8 @@ export default function QrScanner({ onDetected, onError }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
   const detectedRef = useRef(false);
+  const onDetectedRef = useRef(onDetected);
+  onDetectedRef.current = onDetected;
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -64,7 +66,7 @@ export default function QrScanner({ onDetected, onError }: Props) {
 
       if (code) {
         detectedRef.current = true;
-        onDetected(code.data);
+        onDetectedRef.current(code.data);
         return; // kein weiterer Frame nach Fund
       }
 
@@ -77,7 +79,7 @@ export default function QrScanner({ onDetected, onError }: Props) {
       cancelAnimationFrame(rafRef.current);
       stream?.getTracks().forEach(t => t.stop());
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={styles.wrapper}>

@@ -203,42 +203,50 @@ export class SddTreeProvider implements vscode.TreeDataProvider<SddNode> {
 
   private childrenOfSpec(specPath: string): SddNode[] {
     const fm = parseFrontmatter(specPath);
+    const specId = fm.id as string | undefined;
+    if (!specId) {
+      return [];
+    }
+
     const nodes: SddNode[] = [];
 
-    for (const cid of (fm.contracts as string[] | undefined) ?? []) {
-      const fp = this.findById(cid, path.join(this._root!, ".sdd", "contracts"));
-      const label = fp ? `${cid}  ${parseFrontmatter(fp).title ?? ""}` : `${cid}  (fehlt!)`;
-      nodes.push(new SddNode(label, "contract", fp ?? undefined, cid));
+    for (const fp of this.collectMdFiles(path.join(this._root!, ".sdd", "contracts"))) {
+      const cfm = parseFrontmatter(fp);
+      if (cfm.spec === specId) {
+        const cid = (cfm.id as string | undefined) ?? path.basename(fp);
+        nodes.push(new SddNode(`${cid}  ${cfm.title ?? ""}`, "contract", fp, cid));
+      }
     }
-    for (const tid of (fm.tests as string[] | undefined) ?? []) {
-      const fp = this.findById(tid, path.join(this._root!, "tests"));
-      const label = fp ? `${tid}  ${parseFrontmatter(fp).title ?? ""}` : `${tid}  (fehlt!)`;
-      nodes.push(new SddNode(label, "test", fp ?? undefined, tid));
+
+    for (const fp of this.collectMdFiles(path.join(this._root!, ".sdd", "tests"))) {
+      const tfm = parseFrontmatter(fp);
+      if (tfm.spec === specId) {
+        const tid = (tfm.id as string | undefined) ?? path.basename(fp);
+        nodes.push(new SddNode(`${tid}  ${tfm.title ?? ""}`, "test", fp, tid));
+      }
     }
+
     return nodes;
   }
 
-  private findById(id: string, base: string): string | null {
-    if (!fs.existsSync(base)) {
-      return null;
+  private collectMdFiles(dir: string): string[] {
+    if (!fs.existsSync(dir)) {
+      return [];
     }
+    const result: string[] = [];
     try {
-      const entries = fs.readdirSync(base, { withFileTypes: true }) as fs.Dirent[];
-      for (const e of entries) {
-        const full = path.join(base, e.name);
+      for (const e of fs.readdirSync(dir, { withFileTypes: true }) as fs.Dirent[]) {
+        const full = path.join(dir, e.name);
         if (e.isDirectory()) {
-          const found = this.findById(id, full);
-          if (found) {
-            return found;
-          }
-        } else if (e.name.startsWith(id) && e.name.endsWith(".md")) {
-          return full;
+          result.push(...this.collectMdFiles(full));
+        } else if (e.name.endsWith(".md")) {
+          result.push(full);
         }
       }
     } catch {
       // ignore
     }
-    return null;
+    return result;
   }
 }
 

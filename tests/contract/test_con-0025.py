@@ -71,7 +71,7 @@ def unlocked_pipeline_json(tmp_path):
 
 def test_tc01_execute_blocked_when_phase_not_unlocked(pipeline_json, tmp_path):
     """sdd execute gibt Exit-Code 2 zurück wenn phase != execute-unlocked (CON-0025 INV-01)."""
-    from sdd_cli.gate import ExecutionGate  # noqa: F401 — wird implementiert
+    from sdd_cli.gate import ExecutionGate
     gate = ExecutionGate(repo_root=tmp_path)
     result = gate.check("SPEC-TEST")
     assert result.blocked is True

@@ -1,6 +1,5 @@
 ---
 id: SPEC-0016
-project: PRJ-0001
 title: Asynchrone & persistente KI-Analyse – Hintergrundjobs, Benachrichtigungen und Verlauf
 status: implemented
 owner: Boris

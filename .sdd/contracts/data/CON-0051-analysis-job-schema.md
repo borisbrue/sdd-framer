@@ -3,7 +3,7 @@ id: CON-0051
 project: PRJ-0001
 title: "AnalysisJob – In-Memory-Datenstruktur"
 type: data
-format: dataclass
+format: json-schema
 spec: SPEC-0016
 version: 0.1.0
 status: draft

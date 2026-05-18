@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+from typing import Any
 
 import click
 from rich.console import Console
@@ -45,14 +46,14 @@ def cli() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command(help="Initialisiert die SDD-Struktur im aktuellen oder angegebenen Verzeichnis.")
 @click.option("--path", "target", default=".", help="Zielverzeichnis (Default: aktuelles).")
-@click.option("--name", "project_name", default="MyProject", help="Projektname.")
+@click.option("--title", "project_title", default="", help="Projekttitel (Default: Ordnername).")
 @click.option("--force", is_flag=True, help="Überschreibt vorhandene Dateien.")
 @click.option("--provider", default="claude", show_default=True,
               help="Skill-Provider für AI-Assistenten-Integration. "
                    "Verfügbar: claude, copilot, openai.")
 @click.option("--force-skills", is_flag=True,
               help="Überschreibt vorhandene Skill-Dateien im Ziel-Projekt (SPEC-0018 FR-03).")
-def init(target: str, project_name: str, force: bool,
+def init(target: str, project_title: str, force: bool,
          provider: str, force_skills: bool) -> None:
     from .init import get_skill_provider, SKILL_PROVIDERS
     try:
@@ -61,8 +62,10 @@ def init(target: str, project_name: str, force: bool,
         console.print(f"[red]✗[/] {exc}")
         sys.exit(1)
 
+    title = project_title or Path(target).resolve().name
+
     result = init_project(
-        Path(target), project_name,
+        Path(target), title,
         force=force,
         skill_provider=provider,
         force_skills=force_skills,
@@ -771,22 +774,41 @@ def maintenance_cmd(output_json: bool, auto_pr: bool, spec_id: str | None) -> No
 @cli.command(help="Startet den SDD Web UI Server. Mit --watch: Vite Dev Server + HMR.")
 @click.option("--project", "project_root", default=".",
               help="SDD-Projektverzeichnis (Default: aktuelles).")
-@click.option("--port", default=8000, show_default=True,
-              help="Port für den Server (nur ohne --watch).")
+@click.option("--port", default=0, show_default=True,
+              help="Port für den Server (nur ohne --watch). 0 = freier Port automatisch.")
 @click.option("--watch", is_flag=True,
               help="Watch-Modus: Vite Dev Server (Port 5173) + FastAPI (Port 8000) mit Auto-Reload.")
 @click.option("--no-browser", is_flag=True,
               help="Browser nicht automatisch öffnen.")
-def ui_cmd(project_root: str, port: int, watch: bool, no_browser: bool) -> None:
+@click.option("--external-url", "external_url", default="",
+              help="Externe URL für QR-Code (z.B. http://192.168.1.10:8000). Leer = auto.")
+def ui_cmd(project_root: str, port: int, watch: bool, no_browser: bool, external_url: str) -> None:
     start_server(
         project_root=project_root,
         port=port,
         watch=watch,
         open_browser=not no_browser,
+        external_url=external_url,
     )
 
 
 cli.add_command(ui_cmd, name="ui")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd hub
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group(help="SDD Hub – Multi-Projekt-Dashboard auf Port 8000.")
+def hub() -> None:
+    pass
+
+
+@hub.command("start", help="Startet den SDD Hub (Multi-Projekt-Dashboard).")
+@click.option("--port", default=8000, show_default=True, help="Port für den Hub.")
+@click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
+def hub_start(port: int, no_browser: bool) -> None:
+    from .ui import start_hub
+    start_hub(port=port, open_browser=not no_browser)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1871,21 +1893,20 @@ def solid_check(artifact_id: str, output_json: bool, principle: str | None) -> N
         sys.exit(1)
 
 
-def _print_solid_report(report: "object", mode: str) -> None:
-    from .solid import SolidReport, PRINCIPLE_LABELS
+def _print_solid_report(report: Any, mode: str) -> None:
+    from .solid import PRINCIPLE_LABELS
 
-    r: SolidReport = report  # type: ignore[assignment]
     score_color = {"compliant": "green", "warn": "yellow", "violation": "red"}.get(
-        r.overall_solid_score, "white"
+        report.overall_solid_score, "white"
     )
     console.print(
-        f"\n[bold]{r.artifact_id}[/] · SOLID-Analyse "
-        f"([{score_color}]{r.overall_solid_score}[/])"
+        f"\n[bold]{report.artifact_id}[/] · SOLID-Analyse "
+        f"([{score_color}]{report.overall_solid_score}[/])"
     )
     console.print("─" * 70)
 
     by_principle: dict[str, list] = {p: [] for p in "SOLID"}
-    for f in r.findings:
+    for f in report.findings:
         if f.principle in by_principle:
             by_principle[f.principle].append(f)
 
@@ -1907,8 +1928,8 @@ def _print_solid_report(report: "object", mode: str) -> None:
         else:
             console.print(f"  [green]✓[/] {p} – {label}")
 
-    if r.summary:
-        console.print(f"\n  [dim]{r.summary}[/]")
+    if report.summary:
+        console.print(f"\n  [dim]{report.summary}[/]")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1943,18 +1964,14 @@ def pattern_suggest_cmd(artifact_id: str) -> None:
     )
 
 
-def _print_pattern_suggestions(result: "object") -> None:
-    from .pattern import PatternSuggestionResult
-
-    r: PatternSuggestionResult = result  # type: ignore[assignment]
-
-    if not r.pattern_suggestions:
+def _print_pattern_suggestions(result: Any) -> None:
+    if not result.pattern_suggestions:
         console.print("[dim]Keine Pattern-Vorschläge generiert.[/]")
         return
 
-    console.print(f"\n[bold]Pattern-Vorschläge[/] für {r.artifact_id}:\n")
+    console.print(f"\n[bold]Pattern-Vorschläge[/] für {result.artifact_id}:\n")
     priority_color = {"recommended": "green", "optional": "cyan", "consider": "dim"}
-    for i, s in enumerate(r.pattern_suggestions, 1):
+    for i, s in enumerate(result.pattern_suggestions, 1):
         color = priority_color.get(s.priority, "white")
         console.print(
             f"  [{i}] [bold]{s.pattern_name}[/] ({s.category}) "
@@ -2061,23 +2078,23 @@ def pattern_list(spec_id: str | None) -> None:
 # SOLID-Integration: spec review / contract review Erweiterung (SPEC-0015 §6.1)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_solid_phase(cfg: "object", artifact_id: str, artifact_type: str) -> None:
+def _run_solid_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     """Sub-Phase 2b/5b: SOLID-Analyse. Gibt Findings aus, blockiert ggf. bei block-Modus."""
-    from .solid import create_analyzer, find_artifact as _find, PRINCIPLE_LABELS
+    from .solid import create_analyzer, find_artifact as _find
 
-    artifact = _find(cfg, artifact_id)  # type: ignore[arg-type]
+    artifact = _find(cfg, artifact_id)
     if artifact is None:
         console.print(f"[yellow]![/] SOLID-Analyse: Artefakt {artifact_id} nicht gefunden.")
         return
 
     artifact_text, _ = artifact
-    analyzer = create_analyzer(cfg)  # type: ignore[arg-type]
+    analyzer = create_analyzer(cfg)
     report = analyzer.analyze(artifact_text, artifact_id, artifact_type)
 
     console.print("\n── SOLID-Analyse ──────────────────────────────────────────")
-    _print_solid_report(report, cfg.solid_gate_mode())  # type: ignore[attr-defined]
+    _print_solid_report(report, cfg.solid_gate_mode())
 
-    if cfg.solid_gate_mode() == "block" and report.has_violations():  # type: ignore[attr-defined]
+    if cfg.solid_gate_mode() == "block" and report.has_violations():
         console.print(
             "\n[red]✗ SOLID-Violation blockiert Phasenübergang[/] "
             "(solid_gate.mode: block)"
@@ -2085,16 +2102,16 @@ def _run_solid_phase(cfg: "object", artifact_id: str, artifact_type: str) -> Non
         sys.exit(2)
 
 
-def _run_pattern_phase(cfg: "object", artifact_id: str, artifact_type: str) -> None:
+def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     """Sub-Phase 2c/5c: Pattern-Vorschläge ausgeben (kein Block)."""
     from .solid import find_artifact as _find
     from .pattern import create_suggester
 
-    suggester = create_suggester(cfg)  # type: ignore[arg-type]
+    suggester = create_suggester(cfg)
     if suggester is None:
         return
 
-    artifact = _find(cfg, artifact_id)  # type: ignore[arg-type]
+    artifact = _find(cfg, artifact_id)
     if artifact is None:
         return
 

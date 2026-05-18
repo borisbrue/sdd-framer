@@ -1,6 +1,5 @@
 ---
 id: SPEC-XXXX
-project: ""             # PRJ-XXXX
 title: "<Kurzer, prägnanter Titel des Features>"
 type: feature           # feature | bug-fix
 status: draft           # draft | review | approved | implemented | deprecated

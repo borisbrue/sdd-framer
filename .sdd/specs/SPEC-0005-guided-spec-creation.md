@@ -1,6 +1,5 @@
 ---
 id: SPEC-0005
-project: PRJ-0001
 title: "KI-gestützte geführte Spec- und Contract-Erstellung"
 status: implemented
 owner: "Boris"

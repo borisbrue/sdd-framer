@@ -10,6 +10,8 @@ export default function ServerInfoPanel({ onClose }: Props) {
   const [info, setInfo] = useState<ServerInfo | null>(null);
   const [qrPayload, setQrPayload] = useState<QrPayload | null>(null);
   const [loadingQr, setLoadingQr] = useState(false);
+  const [generatingToken, setGeneratingToken] = useState(false);
+  const [rawPayload, setRawPayload] = useState<QrPayload | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -17,6 +19,22 @@ export default function ServerInfoPanel({ onClose }: Props) {
       .then(setInfo)
       .catch(() => setError("Server-Info konnte nicht geladen werden."));
   }, []);
+
+  async function handleGenerateToken() {
+    setGeneratingToken(true);
+    setError("");
+    try {
+      await api.generateToken();
+      const updated = await api.serverInfo();
+      setInfo(updated);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message !== "token_already_exists") {
+        setError("Token konnte nicht generiert werden.");
+      }
+    } finally {
+      setGeneratingToken(false);
+    }
+  }
 
   async function handleShowQr() {
     setLoadingQr(true);
@@ -85,18 +103,52 @@ export default function ServerInfoPanel({ onClose }: Props) {
             </div>
           )}
 
-          <button
-            onClick={handleShowQr}
-            disabled={loadingQr || !info?.externalUrl || !info?.tokenHash}
-            className="primary"
-            style={{ width: "100%" }}
-            title={!info?.externalUrl ? "Starte den Server mit --external-url" : undefined}
-          >
-            {loadingQr ? "Generiere…" : "QR-Code anzeigen"}
-          </button>
+          {info && !info.tokenHash && (
+            <button
+              onClick={handleGenerateToken}
+              disabled={generatingToken}
+              style={{ width: "100%" }}
+            >
+              {generatingToken ? "Generiere…" : "Token generieren"}
+            </button>
+          )}
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={handleShowQr}
+              disabled={loadingQr || !info?.externalUrl || !info?.tokenHash}
+              className="primary"
+              style={{ flex: 1 }}
+              title={!info?.externalUrl ? "Starte den Server mit --external-url" : undefined}
+            >
+              {loadingQr ? "Generiere…" : "QR-Code"}
+            </button>
+            <button
+              onClick={async () => {
+                if (rawPayload) { setRawPayload(null); return; }
+                try {
+                  const p = await api.qrPayload();
+                  setRawPayload(p);
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Fehler");
+                }
+              }}
+              disabled={!info?.externalUrl || !info?.tokenHash}
+              style={{ flex: 1 }}
+            >
+              {rawPayload ? "Ausblenden" : "Manuell"}
+            </button>
+          </div>
+
+          {rawPayload && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <CopyRow label="URL" value={rawPayload.url} />
+              <CopyRow label="Token" value={rawPayload.token} mono />
+            </div>
+          )}
 
           <p style={{ color: "var(--muted)", fontSize: 11, margin: 0, lineHeight: 1.4 }}>
-            Der Token im QR-Code wird nach dem Scan durch die PWA sofort rotiert.
+            Der Token wird nach dem Scan / Verbinden sofort rotiert.
           </p>
         </div>
       </div>
@@ -118,6 +170,32 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
         {label}
       </span>
       <span style={{ fontSize: 13, color: "var(--text)", wordBreak: "break-all" }}>{value}</span>
+    </div>
+  );
+}
+
+function CopyRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5 }}>
+        {label}
+      </span>
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <span style={{
+          fontSize: 11, color: "var(--text)", wordBreak: "break-all", flex: 1,
+          fontFamily: mono ? "monospace" : undefined,
+          background: "var(--surface-2, #161b22)", padding: "4px 6px", borderRadius: 4,
+        }}>
+          {value}
+        </span>
+        <button
+          onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+          style={{ flexShrink: 0, padding: "3px 8px", fontSize: 11 }}
+        >
+          {copied ? "✓" : "Kopieren"}
+        </button>
+      </div>
     </div>
   );
 }

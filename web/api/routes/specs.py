@@ -21,7 +21,10 @@ class SpecCreate(BaseModel):
     title: str
     owner: str = ""
     priority: str = "medium"
-    project_id: str = ""
+
+
+class SpecUpdate(BaseModel):
+    body: str
 
 
 def _spec_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str, Any]:
@@ -31,7 +34,6 @@ def _spec_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str
     fm = doc.frontmatter
     d: dict[str, Any] = {
         "id": fm.get("id"),
-        "project": fm.get("project", ""),
         "title": fm.get("title", ""),
         "status": fm.get("status", "draft"),
         "priority": fm.get("priority", "medium"),
@@ -75,6 +77,25 @@ def get_spec(spec_id: str) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail=f"{spec_id} nicht gefunden.")
 
 
+@router.put("/specs/{spec_id}", summary="Spec-Body aktualisieren")
+def update_spec(spec_id: str, payload: SpecUpdate) -> dict[str, Any]:
+    cfg = get_config()
+    for md in cfg.specs_dir.rglob("*.md"):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id") == spec_id:
+            # Frontmatter-Block aus Original behalten, Body ersetzen
+            raw = md.read_text(encoding="utf-8")
+            if raw.startswith("---"):
+                end = raw.find("---", 3)
+                if end != -1:
+                    frontmatter_block = raw[: end + 3]
+                    md.write_text(frontmatter_block + "\n" + payload.body, encoding="utf-8")
+                    return _spec_dict(md, cfg.root, with_body=True)
+            md.write_text(payload.body, encoding="utf-8")
+            return _spec_dict(md, cfg.root, with_body=True)
+    raise HTTPException(status_code=404, detail=f"{spec_id} nicht gefunden.")
+
+
 @router.post("/specs", status_code=201, summary="Neue Spec anlegen")
 def create_spec(body: SpecCreate) -> dict[str, Any]:
     cfg = get_config()
@@ -84,7 +105,7 @@ def create_spec(body: SpecCreate) -> dict[str, Any]:
     target.parent.mkdir(parents=True, exist_ok=True)
 
     tmpl, _ = load_template(cfg, "spec")
-    text = render(tmpl, {"id": sid, "title": body.title, "owner": body.owner, "project": body.project_id})
+    text = render(tmpl, {"id": sid, "title": body.title, "owner": body.owner})
     target.write_text(text, encoding="utf-8")
 
     return {"id": sid, "file": str(target.relative_to(cfg.root)), "abs_file": str(target)}

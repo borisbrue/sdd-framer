@@ -152,6 +152,7 @@ const styles = {
   header: {
     display: "flex", alignItems: "center", gap: 12,
     padding: "14px 16px",
+    paddingTop: "calc(14px + env(safe-area-inset-top))",
     borderBottom: "1px solid var(--border)",
     background: "var(--surface)",
   },

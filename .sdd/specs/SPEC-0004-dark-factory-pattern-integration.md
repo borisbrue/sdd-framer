@@ -1,6 +1,5 @@
 ---
 id: SPEC-0004
-project: PRJ-0001       # PRJ-XXXX – zu vergeben sobald ein sdd-framer-Projekt existiert
 title: "Dark Factory Pattern Integration"
 status: implemented
 owner: "Boris"

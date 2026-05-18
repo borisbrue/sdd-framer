@@ -1,6 +1,5 @@
 ---
 id: SPEC-0014
-project: PRJ-0001
 title: "Staged SPEC Execution Gate – Geführter Qualitätsprozess mit Contract-Konflikt-Analyse"
 status: implemented
 owner: Boris

@@ -10,8 +10,10 @@ export function resolveCliPath(): string {
   if (configured && fs.existsSync(configured)) {
     return configured;
   }
-  // Suche in PATH-typischen Orten
+  // Suche in PATH-typischen Orten (uv-Tool hat Priorität – nutzt richtigen Python mit allen Deps)
   const candidates = [
+    "/var/data/uv/tools/sdd-framer/bin/sdd",  // uv tool install (Flatpak-Pfad)
+    path.join(process.env["HOME"] ?? "", ".var/app/com.visualstudio.code/data/uv/tools/sdd-framer/bin/sdd"),
     "/var/data/python/bin/sdd",
     "/usr/local/bin/sdd",
     "/usr/bin/sdd",

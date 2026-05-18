@@ -16,6 +16,7 @@
 
 html, body, #root {
   height: 100%;
+  height: 100dvh;
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
@@ -65,6 +66,8 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--surface);
   position: sticky;
   bottom: 0;
+  /* Safe area: Home Indicator / Notch unten */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .tab-bar button {
@@ -87,3 +90,9 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 .tab-bar .tab-icon { font-size: 20px; }
+
+/* Safe-area Utilities */
+.safe-top    { padding-top:    env(safe-area-inset-top);    }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left   { padding-left:   env(safe-area-inset-left);   }
+.safe-right  { padding-right:  env(safe-area-inset-right);  }

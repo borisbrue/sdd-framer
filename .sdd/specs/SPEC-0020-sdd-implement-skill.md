@@ -1,6 +1,5 @@
 ---
 id: SPEC-0020
-project: PRJ-0001
 title: "/sdd-implement – Claude Skill für geführte TDD-Implementierung"
 status: implemented
 owner: Boris

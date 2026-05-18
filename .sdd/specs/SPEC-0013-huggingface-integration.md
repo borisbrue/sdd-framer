@@ -1,6 +1,5 @@
 ---
 id: SPEC-0013
-project: PRJ-0001
 title: Hugging Face Provider – LLM-Anbindung über die HF Inference API
 status: implemented
 owner: Boris

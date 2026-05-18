@@ -1,6 +1,5 @@
 ---
 id: SPEC-0011
-project: PRJ-0001
 title: Token-Kostenschätzung – Implementierungsaufwand pro Spec auf Basis gelernter Daten
 status: implemented
 owner: Boris

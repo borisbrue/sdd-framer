@@ -36,6 +36,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServerManager = void 0;
 exports.getServerUrl = getServerUrl;
 const vscode = __importStar(require("vscode"));
+const http = __importStar(require("http"));
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
 const child_process_1 = require("child_process");
 const cli_1 = require("./cli");
 let _globalInstance;
@@ -43,6 +46,8 @@ class ServerManager {
     constructor(_out) {
         this._out = _out;
         this._port = null;
+        this._root = null;
+        this._detectedScheme = null;
         this._status = "stopped";
         this._onDidChangeStatus = new vscode.EventEmitter();
         this.onDidChangeStatus = this._onDidChangeStatus.event;
@@ -59,9 +64,16 @@ class ServerManager {
     getStatus() {
         return this._status;
     }
+    _hasCert() {
+        if (!this._root) {
+            return false;
+        }
+        return fs.existsSync(path.join(this._root, ".certs", "cert.pem"));
+    }
     getBaseUrl() {
         if (this._status === "running" && this._port) {
-            return `http://localhost:${this._port}`;
+            const scheme = this._detectedScheme ?? (this._hasCert() ? "https" : "http");
+            return `${scheme}://localhost:${this._port}`;
         }
         return null;
     }
@@ -78,32 +90,39 @@ class ServerManager {
         catch {
             port = 8000;
         }
-        // sdd ui findet die web-API relativ zum installierten Paket (ui.py: parents[2]/web)
-        // und setzt SDD_PROJECT_ROOT auf das Projektverzeichnis.
-        // Das funktioniert für jedes Projekt das `sdd` installiert hat – nicht nur sdd-framer selbst.
+        this._root = root;
         const sddBin = (0, cli_1.resolveCliPath)();
-        this._out.appendLine(`[SDD Server] sdd ui --project ${root} --port ${port} --no-browser`);
-        const proc = (0, child_process_1.spawn)(sddBin, ["ui", "--project", root, "--port", String(port), "--no-browser"], {
-            cwd: root,
-        });
+        const externalUrl = vscode.workspace.getConfiguration("sdd").get("webUi.externalUrl", "");
+        const spawnArgs = ["ui", "--project", root, "--port", String(port), "--no-browser"];
+        if (externalUrl) {
+            spawnArgs.push("--external-url", externalUrl);
+        }
+        this._out.appendLine(`[SDD Server] sdd ${spawnArgs.join(" ")}`);
+        this._out.appendLine(`[SDD Server] HTTPS: ${this._hasCert()}`);
+        const proc = (0, child_process_1.spawn)(sddBin, spawnArgs, { cwd: root });
         this._proc = proc;
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
-                reject(new Error("Server-Start-Timeout nach 10 s"));
+                reject(new Error("Server-Start-Timeout nach 30 s"));
                 this._setStatus("error");
-            }, 10000);
+            }, 30000);
             const onData = (data) => {
                 const text = data.toString();
                 this._out.append(text);
-                // sdd ui prefixiert uvicorn-Zeilen mit "[api] " – daher beide Varianten prüfen
+                // Schema direkt aus Uvicorn-Output lesen: "Uvicorn running on https://..."
+                const uvicornMatch = text.match(/Uvicorn running on (https?):/);
+                if (uvicornMatch) {
+                    this._detectedScheme = uvicornMatch[1];
+                }
                 const isReady = text.includes("Application startup complete") ||
-                    text.includes("Uvicorn running") ||
-                    text.includes("Server gestartet →");
+                    text.includes("Uvicorn running on");
                 if (isReady) {
                     clearTimeout(timer);
                     this._port = port;
                     this._setStatus("running");
-                    this._out.appendLine(`[SDD Server] Gestartet auf Port ${port}`);
+                    const scheme = this._detectedScheme ?? (this._hasCert() ? "https" : "http");
+                    this._out.appendLine(`[SDD Server] Gestartet auf Port ${port} (${scheme})`);
+                    this._hubPost("/api/hub/register", { port, name: path.basename(root), root, scheme });
                     resolve();
                 }
             };
@@ -146,6 +165,9 @@ class ServerManager {
                 this._setStatus("stopped");
                 resolve();
             });
+            if (this._port) {
+                this._hubPost("/api/hub/deregister", { port: this._port });
+            }
             proc.kill("SIGTERM");
         });
     }
@@ -157,6 +179,20 @@ class ServerManager {
     _setStatus(s) {
         this._status = s;
         this._onDidChangeStatus.fire(s);
+    }
+    _hubPost(endpoint, body) {
+        const data = JSON.stringify(body);
+        const hubPort = vscode.workspace.getConfiguration("sdd").get("hub.port", 8000);
+        const req = http.request({
+            hostname: "localhost",
+            port: hubPort,
+            path: endpoint,
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(data) },
+        });
+        req.on("error", () => { });
+        req.write(data);
+        req.end();
     }
     _python() {
         return vscode.workspace.getConfiguration("sdd").get("pythonPath", "python");
@@ -177,7 +213,7 @@ class ServerManager {
 exports.ServerManager = ServerManager;
 function getServerUrl() {
     if (_globalInstance?.getStatus() === "running" && _globalInstance.getPort()) {
-        return `http://localhost:${_globalInstance.getPort()}`;
+        return _globalInstance.getBaseUrl();
     }
     return vscode.workspace.getConfiguration("sdd").get("webApiUrl", "http://localhost:8000");
 }

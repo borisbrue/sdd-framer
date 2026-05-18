@@ -1,140 +1,111 @@
-# SDD Blueprint Configuration
-# Diese Datei steuert das Verhalten der sdd-CLI und definiert Konventionen.
-
-version: "1.0.0"
+version: 1.0.0
 project:
-  name: "<PROJECT_NAME>"
-  description: "<PROJECT_DESCRIPTION>"
+  name: SDD-Framer
+  description: <PROJECT_DESCRIPTION>
   owners:
-    - "<TEAM_OR_PERSON>"
-
-# Konventionen für IDs (werden bei `sdd new` automatisch vergeben)
+  - Boris
 ids:
-  spec_prefix: "SPEC"        # z.B. SPEC-0001
-  contract_prefix: "CON"     # z.B. CON-0001
-  test_prefix: "TST"         # z.B. TST-0001
-  adr_prefix: "ADR"          # z.B. ADR-0001
-  holdout_prefix: "HOL"      # z.B. HOL-0001 (Holdout-Szenarien, isoliert vom Code-Agenten)
-  padding: 4                 # 4-stellige Nummern
-
-# Erlaubte Status-Werte im Lifecycle einer Spec
+  spec_prefix: SPEC
+  contract_prefix: CON
+  test_prefix: TST
+  adr_prefix: ADR
+  holdout_prefix: HOL
+  padding: 4
 spec_lifecycle:
-  - draft
-  - review
-  - approved
-  - in-progress
-  - implemented
-  - deprecated
-
-# Welche Contract-Formate sind erlaubt? (sprachneutral, mehrere parallel möglich)
+- draft
+- review
+- approved
+- in-progress
+- implemented
+- deprecated
 contract_formats:
   api:
-    - openapi      # OpenAPI 3.x (.yaml / .json)
-    - asyncapi     # AsyncAPI 2.x / 3.x
-    - graphql      # GraphQL SDL
-    - grpc         # Protocol Buffers
+  - openapi
+  - asyncapi
+  - graphql
+  - grpc
   data:
-    - json-schema  # JSON Schema Draft 2020-12
-    - avro         # Apache Avro
-    - protobuf     # Protocol Buffers
+  - json-schema
+  - avro
+  - protobuf
   behavior:
-    - gherkin      # .feature-Dateien
-    - markdown     # Pre-/Postconditions in Markdown
+  - gherkin
+  - markdown
   performance:
-    - slo-yaml     # Eigene YAML-Struktur (siehe schemas/slo.schema.json)
-
-# Validierungsregeln
+  - slo-yaml
 validation:
-  require_contract_per_spec: true   # Jede Spec MUSS mindestens einen Contract referenzieren
-  require_test_per_contract: true   # Jeder Contract MUSS mindestens einen Test referenzieren
-  fail_on_orphans: true             # Contracts/Tests ohne Spec-Bezug = Fehler
-  allowed_statuses_for_implementation: ["approved", "implemented"]
-
-# Traceability-Matrix
+  require_contract_per_spec: true
+  require_test_per_contract: true
+  fail_on_orphans: true
+  allowed_statuses_for_implementation:
+  - approved
+  - implemented
 traceability:
-  output_format: "markdown"         # markdown | csv | json
-  output_path: "docs/traceability.md"
-
-# Evaluator (Dark Factory Pattern – Holdout-Szenarien prüfen)
+  output_format: markdown
+  output_path: docs/traceability.md
 evaluator:
-  model: claude-sonnet-4-6          # LLM für Pass/Fail-Entscheidung (überschreibbar)
-  base_url: http://localhost:8000   # Basis-URL des zu prüfenden Service
-  timeout_per_scenario: 60          # Sekunden; Überschreitung = Run failed
-  runs_per_scenario: 3              # Anzahl Runs pro HOL-Szenario
-  pass_threshold: 2                 # Min. Runs die bestehen müssen (von runs_per_scenario)
-  cost_alert_usd: 1.00              # Hard-Stop wenn Gesamtkosten diesen Betrag überschreiten
-
-# Orchestrator (Dark Factory Pattern)
+  model: claude-sonnet-4-6
+  base_url: http://localhost:8000
+  timeout_per_scenario: 60
+  runs_per_scenario: 3
+  pass_threshold: 2
+  cost_alert_usd: 1.0
 orchestrator:
-  build_command: ""                 # Shell-Befehl für Build + Tests, z.B. "npm test"
-  auto_merge: false                 # true: PR automatisch mergen wenn Pass-Rate >= 90 %
-  auto_merge_strategy: label        # "label" (sdd:approved setzen) | "direct" (gh merge)
-  max_retries: 3                    # Maximale Retry-Versuche bei Fehlschlag
-
-# Maintenance Agents (Dark Factory Pattern §3.8)
+  build_command: ''
+  auto_merge: false
+  auto_merge_strategy: label
+  max_retries: 3
 maintenance:
-  stale_after_weeks: 4              # Spec gilt als veraltet nach N Wochen ohne Update
-
-# Obsidian Vault Synchronisation (SPEC-0009)
+  stale_after_weeks: 4
 obsidian:
-  vault_path: "/home/deck/Documents/Obsidian/Vault 33/Development"                    # Absoluter oder ~-relativer Pfad, z.B. "~/Documents/MyVault"
-  subfolder: "SDD Framer"                  # Unterordner im Vault; Default "SDD"
-  watch_interval_secs: 5            # Polling-Intervall für `sdd obsidian watch`; min 1
-  auto_wiki_links: true             # ID-Referenzen beim Export in Wiki-Links umwandeln
-
-# Test Runner (SPEC-0006)
+  vault_path: /home/deck/Documents/Obsidian/Vault 33/Development
+  subfolder: SDD Framer
+  watch_interval_secs: 5
+  auto_wiki_links: true
 test_runner:
-  command: pytest                   # Ausführbarer Befehl; nur pytest wird aktiv unterstützt
-  extra_args: []                    # Zusätzliche Argumente, z.B. ["-x", "--tb=short"]
-  timeout_per_spec: 120             # Sekunden; Überschreitung = Run failed
-
-# Token-Kostenschätzung (SPEC-0011)
+  command: pytest
+  extra_args: []
+  timeout_per_spec: 120
 cost_estimation:
   model_prices:
     claude-haiku-4-5-20251001:
-      input_per_million: 0.80
-      output_per_million: 4.00
-      cache_write_per_million: 1.00
+      input_per_million: 0.8
+      output_per_million: 4.0
+      cache_write_per_million: 1.0
       cache_read_per_million: 0.08
     claude-sonnet-4-6:
-      input_per_million: 3.00
-      output_per_million: 15.00
+      input_per_million: 3.0
+      output_per_million: 15.0
       cache_write_per_million: 3.75
-      cache_read_per_million: 0.30
+      cache_read_per_million: 0.3
     default:
-      input_per_million: 3.00
-      output_per_million: 15.00
+      input_per_million: 3.0
+      output_per_million: 15.0
       cache_write_per_million: 3.75
-      cache_read_per_million: 0.30
-  budget_alert_usd: 5.00
+      cache_read_per_million: 0.3
+  budget_alert_usd: 5.0
   default_model: claude-haiku-4-5-20251001
-
-# Skill-Provider (SPEC-0018/SPEC-0020) – claude | copilot | openai
 skills:
-  provider: claude            # Aktiver Provider; steuert welche Skill-Dateien sdd init kopiert
-  version: "0.1.0"           # Version der aktuell installierten Skill-Dateien
-
-# SOLID & Design Pattern Quality Gate (SPEC-0015)
+  provider: claude
+  version: 0.1.0
 solid_gate:
   enabled: true
-  mode: warn          # warn | block
-  # 'warn':  SOLID-Violations erscheinen im Review-Output, blockieren nicht
-  # 'block': SOLID-Violations mit severity 'violation' blockieren den Gate-Übergang
-
+  mode: warn
 pattern_suggestions:
   enabled: true
   max_suggestions: 4
-  source: refactoring-guru   # Katalog-Referenz für Pattern-Links
-
-# Dev-Container-Stack (SPEC-0022)
+  source: refactoring-guru
 docker:
-  runtime: docker              # docker | podman
-  image: sdd-dev:latest        # Image-Name inkl. Tag
-  dockerfile: .sdd/Dockerfile  # Pfad zum Dockerfile (relativ zum Projekt-Root)
+  runtime: docker
+  image: sdd-dev:latest
+  dockerfile: .sdd/Dockerfile
   registry:
-    url: ""                    # Registry-URL, leer = kein Push
-    auth_env: ""               # Env-Var-Name mit Registry-Credentials
-  compose_file: ""             # Pfad zu docker-compose.yml, leer = kein Compose
+    url: ''
+    auth_env: ''
+  compose_file: ''
   log_stream:
     enabled: true
-    max_lines: 500             # Maximale Log-Zeilen im UI-Buffer (1–10000)
+    max_lines: 500
+pwa:
+  auth:
+    token: 145df2f201b58e75bfc92e790af5ae8b8dac4ed3d0e31e7a88188291c3ab3e10

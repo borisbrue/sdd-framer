@@ -1,6 +1,5 @@
 ---
 id: SPEC-0019
-project: PRJ-0001
 title: "TDD-Implementierungsphase – status: in-progress + sdd start als formalisierter Entwicklungsschritt"
 status: implemented
 owner: Boris

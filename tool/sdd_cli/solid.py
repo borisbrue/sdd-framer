@@ -137,23 +137,23 @@ class BatchLlmSolidChecker:
 
 
 # Named factory functions matching the spec's class-alias pattern
-def SrpChecker(provider: object) -> LlmSolidChecker:  # noqa: N802
+def SrpChecker(provider: object) -> LlmSolidChecker:
     return LlmSolidChecker("S", provider)
 
 
-def OcpChecker(provider: object) -> LlmSolidChecker:  # noqa: N802
+def OcpChecker(provider: object) -> LlmSolidChecker:
     return LlmSolidChecker("O", provider)
 
 
-def LspChecker(provider: object) -> LlmSolidChecker:  # noqa: N802
+def LspChecker(provider: object) -> LlmSolidChecker:
     return LlmSolidChecker("L", provider)
 
 
-def IspChecker(provider: object) -> LlmSolidChecker:  # noqa: N802
+def IspChecker(provider: object) -> LlmSolidChecker:
     return LlmSolidChecker("I", provider)
 
 
-def DipChecker(provider: object) -> LlmSolidChecker:  # noqa: N802
+def DipChecker(provider: object) -> LlmSolidChecker:
     return LlmSolidChecker("D", provider)
 
 

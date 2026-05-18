@@ -1,7 +1,6 @@
 ---
 id: SPEC-0002
 title: "SDD VS Code Extension"
-project: PRJ-0001
 status: implemented
 owner: "Boris"
 created: 2026-05-11
