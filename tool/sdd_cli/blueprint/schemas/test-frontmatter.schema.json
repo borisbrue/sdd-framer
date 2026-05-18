@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/test-frontmatter.schema.json",
+  "title": "SDD Test Frontmatter",
+  "type": "object",
+  "required": ["id", "title", "level", "spec", "contract", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TST-[0-9]{4,}[a-z]?$",
+      "description": "Eindeutige Test-ID. Optionales Kleinbuchstaben-Suffix erlaubt (z.B. TST-0010b)"
+    },
+    "title": { "type": "string" },
+    "level": {
+      "type": "string",
+      "enum": ["unit", "integration", "contract", "acceptance", "performance", "property"]
+    },
+    "spec": {
+      "type": "string",
+      "pattern": "^SPEC-[0-9]{4,}$"
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^CON-[0-9]{4,}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "planned", "implemented", "passing", "failing", "skipped"]
+    },
+    "framework": {
+      "type": "string",
+      "description": "z.B. pytest, vitest, junit, schemathesis – frei wählbar pro Projekt"
+    },
+    "artifact": {
+      "type": "string",
+      "description": "Pfad zur eigentlichen Testdatei"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

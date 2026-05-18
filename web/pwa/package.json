@@ -10,7 +10,9 @@
     "test": "deno test --no-check --unstable-sloppy-imports --allow-read --allow-env src/__tests__/"
   },
   "dependencies": {
+    "@types/marked": "^5.0.2",
     "jsqr": "^1.4.0",
+    "marked": "^18.0.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },

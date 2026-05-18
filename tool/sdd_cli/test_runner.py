@@ -62,10 +62,11 @@ class RunReport:
 
 
 def _find_tst_doc(config: SddConfig, tst_id: str) -> Path | None:
-    for md in config.tests_dir.rglob("*.md"):
-        doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id") == tst_id:
-            return md
+    for base in config.all_test_dirs:
+        for md in base.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == tst_id:
+                return md
     return None
 
 
@@ -151,12 +152,15 @@ def _compute_contract_coverage(config: SddConfig, spec_id: str, results: list[Te
     for con_id in contracts:
         # Contract gilt als covered wenn mind. ein grüner Test ihn referenziert
         covered = False
-        for md in config.tests_dir.rglob("*.md"):
-            doc = parse_safe(md)
-            if doc and doc.frontmatter.get("id") in passed_tst_ids:
-                if doc.frontmatter.get("contract") == con_id:
-                    covered = True
-                    break
+        for base in config.all_test_dirs:
+            for md in base.rglob("*.md"):
+                doc = parse_safe(md)
+                if doc and doc.frontmatter.get("id") in passed_tst_ids:
+                    if doc.frontmatter.get("contract") == con_id:
+                        covered = True
+                        break
+            if covered:
+                break
         coverage[con_id] = covered
 
     return coverage

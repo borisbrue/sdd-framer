@@ -21,6 +21,7 @@ Python-Paket `sdd-cli` — der Kern des Systems. Alle anderen Komponenten delegi
 - KI-gestützte Analyse, SOLID-Prüfung, Pattern-Vorschläge
 - Lifecycle-Management (draft → approved → in-progress → implemented)
 - Isolierte Docker-Entwicklungsumgebung pro Spec
+- **LLM Task Distribution Engine**: Spec → Tasks → parallele LLM-Ausführung → PR
 
 ### 2. Web API + Web UI (`web/`)
 
@@ -443,6 +444,78 @@ sdd dev down  <SPEC-XXXX>            # Compose-Stack stoppen
 
 ---
 
+### `sdd decompose` — Spec in Tasks zerlegen
+
+```bash
+sdd decompose <SPEC-XXXX> [--yes]
+```
+
+Analysiert eine Spec via LLM und zerlegt sie in atomare, klassifizierte Tasks:
+
+- **Komplexität:** `low` / `medium` / `high`
+- **Kontextgröße:** `S` / `M` / `L`
+- **Typ:** `code` / `test` / `config` / `doc`
+
+Der Entwickler bestätigt die Task-Liste interaktiv vor der Ausführung. Ergebnis wird in `.sdd/tasks/SPEC-XXXX.json` gespeichert.
+
+---
+
+### `sdd distribute` — Tasks an LLM-Pool verteilen
+
+```bash
+sdd distribute <SPEC-XXXX> [--dry-run]
+```
+
+Vollautomatische Verteilung der Tasks an passende LLMs:
+
+1. Git-Branch `spec/SPEC-XXXX` anlegen
+2. Tasks anhand Klassifizierung dem optimalen LLM zuweisen (lokal bevorzugt, Kontext-Limit beachtet)
+3. Jeden Task in einem isolierten Container ausführen (ein oder mehrere Tasks pro Container)
+4. Ergebnis durch **ReviewPipeline** prüfen: Syntax → Unit-Tests → Claude-Review
+5. Bei Fehler: automatischer Retry mit erweitertem Fehlerkontext (max. 3 Versuche)
+6. Valide Tasks als Commit auf Branch; blockierte Tasks mit Entwickler-Benachrichtigung
+7. PR erstellen → Tests → Merge → `status: implemented`
+
+LLM-Pool in `config.yaml` konfigurieren (`llm_pool`-Abschnitt):
+
+```yaml
+llm_pool:
+  - id: ollama-mistral
+    type: local
+    model: mistral
+    cost_tier: cheap
+    max_context_tokens: 8192
+  - id: claude-sonnet
+    type: remote
+    model: claude-sonnet-4-6
+    cost_tier: powerful
+    max_context_tokens: 200000
+```
+
+`--dry-run`: Kein echter Git-Commit und kein PR — nur lokale Simulation.
+
+---
+
+### `sdd task-status` — Fortschritt anzeigen
+
+```bash
+sdd task-status <SPEC-XXXX>
+```
+
+Zeigt den aktuellen Status aller Tasks einer laufenden Distribution:
+
+```
+Tasks für SPEC-0026 (8):
+  committed   Implementiere TaskLifecycle State Machine
+  committed   Erstelle LLM-Pool-Registry
+  running     ReviewPipeline Chain of Responsibility
+  retrying    sdd decompose CLI-Command (retry 1)
+  blocked     Container-Netzwerk-Isolation
+  pending     PR-Workflow End-to-End
+```
+
+---
+
 ## Web API — Endpunkte
 
 Die API ist unter `http://localhost:8000/api/...` erreichbar. Interaktive Dokumentation: `http://localhost:8000/docs`
@@ -672,6 +745,12 @@ tests/
 
 tool/
   sdd_cli/             # Python-Paket – CLI-Kern
+    task_model.py      # Task Dataclass + Enums (SPEC-0026)
+    task_lifecycle.py  # State Machine – Zustandsübergänge
+    llm_pool.py        # LLM-Pool-Registry + Selector (Strategy)
+    decompose.py       # TaskDecomposer via LLM
+    review_pipeline.py # ReviewPipeline (Chain of Responsibility)
+    dist_orchestrator.py # DistributionOrchestrator (Mediator)
 
 web/
   api/                 # FastAPI – Web API

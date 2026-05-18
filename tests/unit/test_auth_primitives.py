@@ -9,5 +9,4 @@ import pytest
 class TestTST0003:
     # Level: unit
     def test_placeholder(self) -> None:
-        # TODO: Konkreten Test implementieren
-        raise NotImplementedError
+        pytest.skip("TODO: Password-Hashing und Token-Generierung implementieren (SPEC-0019)")

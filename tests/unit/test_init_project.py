@@ -17,7 +17,8 @@ class TestInitProject:
             assert (tmp_path / rel).is_dir(), f"Verzeichnis fehlt: {rel}"
 
     def test_returns_list_of_created_paths(self, tmp_path):
-        created = init_project(tmp_path, "TestProject")
+        result = init_project(tmp_path, "TestProject")
+        created = result["created"]
         assert isinstance(created, list)
         assert len(created) > 0
         for p in created:
@@ -25,11 +26,11 @@ class TestInitProject:
 
     def test_idempotent_no_duplicate_dirs(self, tmp_path):
         init_project(tmp_path, "TestProject")
-        created_second = init_project(tmp_path, "TestProject")
+        result_second = init_project(tmp_path, "TestProject")
         # Second run creates nothing new (dirs already exist, no force)
         # config.yaml exists and force=False → not created again
         # Templates already exist → not copied again
-        for p in created_second:
+        for p in result_second["created"]:
             # All paths returned on second run must be files (templates if any new)
             assert p.exists()
 

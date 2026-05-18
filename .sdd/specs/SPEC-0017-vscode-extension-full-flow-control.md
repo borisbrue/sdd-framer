@@ -1,22 +1,22 @@
 ---
 id: SPEC-0017
 title: "VS Code Extension – Full Flow Control & Dynamic Web UI"
-status: review
+status: implemented
 owner: "Boris"
 created: 2026-05-16
-updated: 2026-05-16
-version: 0.1.0
+updated: 2026-05-18
+version: 0.2.1
 priority: high
 tags: [vscode, web-ui, orchestration, dynamic-port, full-flow, developer-experience]
 depends_on: [SPEC-0002, SPEC-0003, SPEC-0007, SPEC-0014, SPEC-0015, SPEC-0016]
 contracts: [CON-0054, CON-0055, CON-0056]
-tests: [TST-0060, TST-0061, TST-0062]
+tests: [TST-0111, TST-0112, TST-0113]
 adrs: []
 ---
 
 # VS Code Extension – Full Flow Control & Dynamic Web UI
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+> **Status:** implemented · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
@@ -309,9 +309,9 @@ Feature: Workspace-Cleanup
 
 | Test-ID  | Level      | Was prüft der Test?                                                    |
 |----------|------------|------------------------------------------------------------------------|
-| TST-0060 | unit       | ServerManager: Port-Ermittlung, start/stop/dispose, Status-Übergänge  |
-| TST-0061 | unit       | PipelineClient: HTTP-Requests, Polling-Logik, Abort                    |
-| TST-0062 | acceptance | Gherkin-Szenarien aus CON-0054 + CON-0055 im Extension-Host            |
+| TST-0111 | unit       | ServerManager: Port-Ermittlung, start/stop/dispose, Status-Übergänge  |
+| TST-0112 | unit       | PipelineClient: HTTP-Requests, Polling-Logik, Abort                    |
+| TST-0113 | acceptance | Gherkin-Szenarien aus CON-0054 + CON-0055 im Extension-Host            |
 
 ## 10. Implementierungs-Reihenfolge
 
@@ -368,3 +368,4 @@ Phase E: Settings + package.json
 |------------|---------|---------|---------------------|
 | 2026-05-16 | 0.1.0   | Boris   | Initiale Erstellung |
 | 2026-05-16 | 0.2.0   | Boris   | Implementiert: server.ts, pipeline.ts, tree.ts (Pfadfix + PipelineState), extension.ts (alle Commands), package.json (Settings + Menus) |
+| 2026-05-18 | 0.2.1   | Boris   | FR-05: Python-Pfad im Running-Tooltip; FR-08: Abort via QuickPick statt InputBox; TST-IDs korrigiert (0111/0112/0113) |

@@ -1,14 +1,16 @@
 """`sdd init` – legt die Blueprint-Struktur in einem Projekt an."""
 from __future__ import annotations
 
+import re
 import shutil
 from dataclasses import dataclass
+from importlib.resources import files as _pkg_files
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-# Mitgelieferte Blueprint-Ressourcen liegen relativ zum Paket
-PACKAGE_ROOT = Path(__file__).resolve().parent
-BLUEPRINT_ROOT = PACKAGE_ROOT.parent.parent  # tool/ → sdd-blueprint/
+
+def _blueprint_root() -> Path:
+    return Path(str(_pkg_files("sdd_cli").joinpath("blueprint")))
 
 
 REQUIRED_DIRS = [
@@ -106,7 +108,7 @@ def copy_skill_files(
     """
     prov = get_skill_provider(provider)
     src_dir = (
-        blueprint_root / ".sdd" / "templates" / "agents-md" / prov.source_subdir
+        blueprint_root / "templates" / "agents-md" / prov.source_subdir
     )
     if not src_dir.exists():
         return [], []
@@ -156,16 +158,15 @@ def init_project(
             created.append(d)
 
     # Templates und Schemas kopieren
-    src_root = BLUEPRINT_ROOT
-    for sub in [".sdd/templates", ".sdd/schemas"]:
+    src_root = _blueprint_root()
+    for sub in ["templates", "schemas"]:
         src = src_root / sub
-        dst = target / sub
         if src.exists():
             for src_file in src.rglob("*"):
                 if src_file.is_dir():
                     continue
                 rel = src_file.relative_to(src)
-                dst_file = dst / rel
+                dst_file = (target / ".sdd" / sub) / rel
                 if dst_file.exists() and not force:
                     continue
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
@@ -182,9 +183,11 @@ def init_project(
     # config.yaml anlegen (mit ausgefülltem Projektnamen)
     config_dst = target / ".sdd" / "config.yaml"
     if not config_dst.exists() or force:
-        config_src = src_root / ".sdd" / "config.yaml"
+        config_src = src_root / "config.yaml"
         text = config_src.read_text(encoding="utf-8")
         text = text.replace("<PROJECT_TITLE>", title)
+        # Replace the project name value regardless of what the template contains
+        text = re.sub(r'^(  name: ).*$', rf'\g<1>{title}', text, count=1, flags=re.MULTILINE)
         config_dst.write_text(text, encoding="utf-8")
         created.append(config_dst)
 

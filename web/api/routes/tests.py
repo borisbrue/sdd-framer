@@ -53,20 +53,22 @@ def _test_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str
 def list_tests() -> list[dict[str, Any]]:
     cfg = get_config()
     result = []
-    for md in sorted(cfg.tests_dir.rglob("*.md")):
-        d = _test_dict(md, cfg.root)
-        if d.get("id"):
-            result.append(d)
+    for base in cfg.all_test_dirs:
+        for md in sorted(base.rglob("*.md")):
+            d = _test_dict(md, cfg.root)
+            if d.get("id"):
+                result.append(d)
     return result
 
 
 @router.get("/tests/{test_id}", summary="Einen Test abrufen")
 def get_test(test_id: str) -> dict[str, Any]:
     cfg = get_config()
-    for md in cfg.tests_dir.rglob("*.md"):
-        doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id") == test_id:
-            return _test_dict(md, cfg.root, with_body=True)
+    for base in cfg.all_test_dirs:
+        for md in base.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == test_id:
+                return _test_dict(md, cfg.root, with_body=True)
     raise HTTPException(status_code=404, detail=f"{test_id} nicht gefunden.")
 
 

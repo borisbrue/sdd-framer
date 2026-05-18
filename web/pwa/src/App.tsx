@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Project, ProjectRegistry } from "./config";
 import { fetchSpecs, fetchStatus, SddSpec, SddStatus } from "./api";
 import ProjectSwitcher from "./components/ProjectSwitcher";
@@ -143,6 +143,19 @@ function DashboardTab({
   const [specs, setSpecs] = useState<SddSpec[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  useEffect(() => { setStatusFilter(null); }, [project?.id]);
+
+  const availableStatuses = useMemo(
+    () => [...new Set(specs.map(s => s.status))].sort(),
+    [specs],
+  );
+
+  const visibleSpecs = useMemo(() => {
+    const sorted = [...specs].sort((a, b) => b.updated.localeCompare(a.updated));
+    return statusFilter ? sorted.filter(s => s.status === statusFilter) : sorted;
+  }, [specs, statusFilter]);
 
   useEffect(() => {
     if (!project) return;
@@ -222,33 +235,60 @@ function DashboardTab({
       {/* Spec-Liste */}
       {specs.length > 0 && (
         <div>
+          {/* Header + Filter-Chips */}
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>
-            Specs ({specs.length})
+            Specs ({statusFilter ? `${visibleSpecs.length} von ${specs.length}` : specs.length})
           </div>
-          {specs.map(spec => (
-            <div key={spec.id}
-              onClick={() => onSelectSpec(spec.id)}
-              style={{
-                background: "var(--surface)", borderRadius: 8, padding: "10px 14px",
-                marginBottom: 6, border: "1px solid var(--border)",
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                cursor: "pointer",
-              }}>
-              <div>
-                <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--accent)" }}>{spec.id}</span>
-                <div style={{ fontSize: 13, color: "var(--text)", marginTop: 2 }}>{spec.title}</div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{
-                  fontSize: 11, padding: "2px 8px", borderRadius: 10,
-                  background: "var(--bg)", color: "var(--muted)", border: "1px solid var(--border)",
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 12, paddingBottom: 2, scrollbarWidth: "none" }}>
+            <FilterChip
+              active={statusFilter === null}
+              onClick={() => setStatusFilter(null)}
+            >
+              Alle
+            </FilterChip>
+            {availableStatuses.map(s => (
+              <FilterChip
+                key={s}
+                active={statusFilter === s}
+                status={s}
+                onClick={() => setStatusFilter(prev => prev === s ? null : s)}
+              >
+                {s} <span style={{ opacity: 0.65 }}>({specs.filter(sp => sp.status === s).length})</span>
+              </FilterChip>
+            ))}
+          </div>
+
+          {/* Ergebnis-Liste */}
+          {visibleSpecs.length === 0 ? (
+            <p style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "16px 0" }}>
+              Keine Specs mit Status „{statusFilter}".
+            </p>
+          ) : (
+            visibleSpecs.map(spec => (
+              <div key={spec.id}
+                onClick={() => onSelectSpec(spec.id)}
+                style={{
+                  background: "var(--surface)", borderRadius: 8, padding: "10px 14px",
+                  marginBottom: 6, border: "1px solid var(--border)",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  cursor: "pointer",
                 }}>
-                  {spec.status}
-                </span>
-                <span style={{ color: "var(--muted)", fontSize: 16 }}>›</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--accent)", flexShrink: 0 }}>{spec.id}</span>
+                    {spec.updated && (
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>{spec.updated}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{spec.title}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                  <StatusBadge status={spec.status} />
+                  <span style={{ color: "var(--muted)", fontSize: 16 }}>›</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
     </div>
@@ -264,6 +304,58 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
       <div style={{ fontSize: 26, fontWeight: 700, color: accent ?? "var(--text)" }}>{value}</div>
       <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>{label}</div>
     </div>
+  );
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  draft:         "var(--muted)",
+  review:        "var(--yellow)",
+  approved:      "var(--accent)",
+  "in-progress": "var(--accent)",
+  implemented:   "var(--green)",
+  deprecated:    "var(--red)",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const color = STATUS_COLOR[status] ?? "var(--muted)";
+  return (
+    <span style={{
+      fontSize: 11, padding: "2px 8px", borderRadius: 10,
+      background: "var(--bg)", color, border: `1px solid ${color}`,
+      whiteSpace: "nowrap",
+    }}>
+      {status}
+    </span>
+  );
+}
+
+function FilterChip({
+  active, status, onClick, children,
+}: {
+  active: boolean;
+  status?: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const color = status ? (STATUS_COLOR[status] ?? "var(--muted)") : "var(--text)";
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0,
+        fontSize: 12,
+        padding: "4px 12px",
+        borderRadius: 20,
+        border: `1px solid ${active ? color : "var(--border)"}`,
+        background: active ? `color-mix(in srgb, ${color} 15%, var(--surface))` : "var(--surface)",
+        color: active ? color : "var(--muted)",
+        fontWeight: active ? 600 : 400,
+        cursor: "pointer",
+        transition: "all 0.15s",
+      }}
+    >
+      {children}
+    </button>
   );
 }
 

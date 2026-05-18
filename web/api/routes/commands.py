@@ -44,10 +44,11 @@ def project_status() -> dict[str, Any]:
         if doc and doc.frontmatter.get("id"):
             contracts.append(doc.frontmatter)
 
-    for md in sorted(cfg.tests_dir.rglob("*.md")):
-        doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id"):
-            tests.append(doc.frontmatter)
+    for base in cfg.all_test_dirs:
+        for md in sorted(base.rglob("*.md")):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id"):
+                tests.append(doc.frontmatter)
 
     gaps = sum(
         1 for s in specs

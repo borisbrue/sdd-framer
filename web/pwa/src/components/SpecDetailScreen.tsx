@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Project } from "../config";
 import { fetchSpec, updateSpec, SddSpecDetail } from "../api";
+import TestRunPanel from "./TestRunPanel";
+import MarkdownBody from "./MarkdownBody";
 
 interface Props {
   project: Project;
@@ -113,14 +115,20 @@ export default function SpecDetailScreen({ project, specId, onBack }: Props) {
           </div>
 
           {/* Body */}
-          <pre style={{
-            fontFamily: "monospace", fontSize: 13, lineHeight: 1.6,
-            color: "var(--text)", whiteSpace: "pre-wrap", wordBreak: "break-word",
+          <div style={{
             background: "var(--surface)", borderRadius: 10,
-            padding: 14, border: "1px solid var(--border)", margin: 0,
+            padding: 14, border: "1px solid var(--border)",
           }}>
-            {spec.body || <span style={{ color: "var(--muted)" }}>Kein Inhalt.</span>}
-          </pre>
+            {spec.body
+              ? <MarkdownBody content={spec.body} />
+              : <span style={{ color: "var(--muted)", fontSize: 13 }}>Kein Inhalt.</span>
+            }
+          </div>
+
+          {/* Test-Run */}
+          <div style={{ marginTop: 16 }}>
+            <TestRunPanel project={project} specId={spec.id} />
+          </div>
         </div>
       )}
 

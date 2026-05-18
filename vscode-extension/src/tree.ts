@@ -99,6 +99,16 @@ export class SddTreeProvider implements vscode.TreeDataProvider<SddNode> {
     this._onDidChangeTreeData.fire(undefined);
   }
 
+  getRunningRuns(): Array<{ specId: string; runId: string; step: string }> {
+    const result: Array<{ specId: string; runId: string; step: string }> = [];
+    for (const [specId, state] of this._pipelineRuns) {
+      if (!(TERMINAL_STATUSES as string[]).includes(state.status)) {
+        result.push({ specId, runId: state.run_id, step: state.current_step });
+      }
+    }
+    return result;
+  }
+
   getTreeItem(el: SddNode): vscode.TreeItem {
     return el;
   }

@@ -49,7 +49,7 @@ class SddConfig:
     @property
     def all_test_dirs(self) -> list[Path]:
         """Alle Verzeichnisse, in denen TST-Dokumente liegen können."""
-        return [self.tests_dir, self.project_tests_dir]
+        return [d for d in [self.tests_dir, self.project_tests_dir] if d.exists()]
 
     @property
     def docs_dir(self) -> Path:

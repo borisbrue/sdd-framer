@@ -46,7 +46,7 @@ def cli() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command(help="Initialisiert die SDD-Struktur im aktuellen oder angegebenen Verzeichnis.")
 @click.option("--path", "target", default=".", help="Zielverzeichnis (Default: aktuelles).")
-@click.option("--title", "project_title", default="", help="Projekttitel (Default: Ordnername).")
+@click.option("--title", "--name", "project_title", default="", help="Projekttitel (Default: Ordnername).")
 @click.option("--force", is_flag=True, help="Überschreibt vorhandene Dateien.")
 @click.option("--provider", default="claude", show_default=True,
               help="Skill-Provider für AI-Assistenten-Integration. "
@@ -2194,6 +2194,110 @@ def dev_down(spec_id: str) -> None:
     cfg = _ensure_project()
     from .dev_container import DevContainerManager
     DevContainerManager(cfg).down(spec_id)
+
+
+# ── SPEC-0026: LLM Task Distribution Engine ──────────────────────────────────
+
+@cli.command("decompose", help="Zerlegt eine Spec in klassifizierte Tasks (SPEC-0026).")
+@click.argument("spec_id")
+@click.option("--yes", "-y", is_flag=True, help="Automatisch bestätigen ohne Interaktion.")
+def decompose(spec_id: str, yes: bool) -> None:
+    cfg = _ensure_project()
+    from .decompose import TaskDecomposer
+    decomposer = TaskDecomposer()
+    console.print(f"[cyan]▶ Zerlege {spec_id} in Tasks …[/]")
+    try:
+        tasks = decomposer.decompose(spec_id, cfg)
+    except ValueError as exc:
+        console.print(f"[red]✗ {exc}[/]")
+        raise SystemExit(1)
+
+    console.print(f"\n[bold]Tasks ({len(tasks)}):[/]")
+    for i, t in enumerate(tasks, 1):
+        console.print(
+            f"  {i:2}. [{t.complexity.value}/{t.context_size.value}] "
+            f"[{t.type.value}] {t.title}"
+        )
+        if t.description:
+            console.print(f"      {t.description[:80]}")
+
+    if not yes:
+        click.confirm("\nTask-Liste bestätigen?", abort=True)
+
+    path = decomposer.save(tasks, cfg)
+    console.print(f"[green]✓ {len(tasks)} Tasks gespeichert → {path}[/]")
+
+
+@cli.command("distribute", help="Verteilt Tasks einer Spec an LLMs und erstellt PR (SPEC-0026).")
+@click.argument("spec_id")
+@click.option("--dry-run", is_flag=True, help="Kein echter Git-Commit, kein PR.")
+def distribute(spec_id: str, dry_run: bool) -> None:
+    cfg = _ensure_project()
+    from .decompose import TaskDecomposer
+    from .llm_pool import LlmPoolRegistry, LlmEntry, LlmType, CostTier
+    from .dist_orchestrator import DistributionOrchestrator
+
+    tasks = TaskDecomposer().load(spec_id, cfg)
+    if not tasks:
+        console.print(f"[red]✗ Keine Tasks für {spec_id}. Führe erst 'sdd decompose {spec_id}' aus.[/]")
+        raise SystemExit(1)
+
+    llm_pool_cfg = getattr(cfg, "llm_pool", []) or []
+    registry = LlmPoolRegistry()
+    for entry in llm_pool_cfg:
+        registry.register(LlmEntry(
+            id=entry.get("id", ""),
+            type=LlmType(entry.get("type", "remote")),
+            model=entry.get("model", ""),
+            cost_tier=CostTier(entry.get("cost_tier", "standard")),
+            max_context_tokens=int(entry.get("max_context_tokens", 100000)),
+        ))
+
+    if not registry.entries:
+        from .llm_pool import LlmEntry, LlmType, CostTier
+        registry.register(LlmEntry(
+            id="claude-code-cli",
+            type=LlmType.LOCAL,
+            model="claude-code",
+            cost_tier=CostTier.POWERFUL,
+            max_context_tokens=200000,
+        ))
+
+    orch = DistributionOrchestrator(cfg, registry, dry_run=dry_run)
+    console.print(f"[cyan]▶ Starte Distribution für {spec_id} ({len(tasks)} Tasks) …[/]")
+    report = orch.run(spec_id, tasks)
+
+    console.print(f"\n[bold]Report:[/]")
+    console.print(f"  Branch:    {report.branch}")
+    console.print(f"  Committed: {len(report.committed)}")
+    console.print(f"  Blocked:   {len(report.blocked)}")
+    if report.pr_url:
+        console.print(f"  PR:        {report.pr_url}")
+    if report.merged:
+        console.print(f"[green]✓ PR gemergt – {spec_id} implementiert.[/]")
+    elif report.error:
+        console.print(f"[red]✗ {report.error}[/]")
+
+
+@cli.command("task-status", help="Zeigt Status aller Tasks einer Spec (SPEC-0026).")
+@click.argument("spec_id")
+def task_status(spec_id: str) -> None:
+    cfg = _ensure_project()
+    from .decompose import TaskDecomposer
+    tasks = TaskDecomposer().load(spec_id, cfg)
+    if not tasks:
+        console.print(f"[yellow]Keine Tasks für {spec_id}.[/]")
+        return
+    console.print(f"[bold]Tasks für {spec_id} ({len(tasks)}):[/]")
+    for t in tasks:
+        color = {
+            "committed": "green", "blocked": "red",
+            "running": "cyan", "review": "yellow",
+        }.get(t.status.value, "white")
+        console.print(
+            f"  [{color}]{t.status.value:10}[/] {t.title}"
+            + (f" (retry {t.retry_count})" if t.retry_count else "")
+        )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,83 @@
+{
+  "spec_id": "SPEC-0026",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-18T00:00:00Z",
+      "result": "ok",
+      "notes": "Spec interaktiv mit Nutzer erarbeitet. 16 FRs, 7 Contracts (CON-0095–0101), 7 Tests (TST-0114–0120)."
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-18T21:48:38Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-18T21:48:44Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0095",
+        "CON-0096",
+        "CON-0097",
+        "CON-0098",
+        "CON-0099",
+        "CON-0100",
+        "CON-0101"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-18T21:49:00Z",
+      "result": "ok",
+      "notes": "7 Contracts vollständig erstellt (1 data + 5 behavior + 1 data). Claude-Code-Review abgeschlossen."
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-19T00:00:00Z",
+      "result": "ok",
+      "conflicts_found": 0,
+      "conflicts_high": 0,
+      "notes": "Konfliktanalyse durch Claude Code direkt. 7 Contracts gegengeprüft – 0 Konflikte."
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-19T00:01:00Z",
+      "result": "ok",
+      "files_generated": [
+        "tests/unit/TST-0114-task-lifecycle-unit.md",
+        "tests/unit/TST-0115-task-schema-unit.md",
+        "tests/unit/TST-0116-sdd-decompose-unit.md",
+        "tests/unit/TST-0117-llm-pool-registry-unit.md",
+        "tests/unit/TST-0118-container-lifecycle-unit.md",
+        "tests/unit/TST-0119-review-pipeline-unit.md",
+        "tests/acceptance/TST-0120-pr-workflow-acceptance.md"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-19T00:02:00Z",
+      "result": "ok",
+      "notes": "Test-Stubs angelegt (TST-0114–0120). Keine vorhandenen Tests gebrochen. Bereit für Implementierung."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-18T22:01:44Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "16/16",
+        "scenarios_covered": "28/28",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-18T22:01:44Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

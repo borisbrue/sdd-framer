@@ -1,0 +1,111 @@
+version: 1.0.0
+project:
+  name: SDD-Framer
+  description: <PROJECT_DESCRIPTION>
+  owners:
+  - Boris
+ids:
+  spec_prefix: SPEC
+  contract_prefix: CON
+  test_prefix: TST
+  adr_prefix: ADR
+  holdout_prefix: HOL
+  padding: 4
+spec_lifecycle:
+- draft
+- review
+- approved
+- in-progress
+- implemented
+- deprecated
+contract_formats:
+  api:
+  - openapi
+  - asyncapi
+  - graphql
+  - grpc
+  data:
+  - json-schema
+  - avro
+  - protobuf
+  behavior:
+  - gherkin
+  - markdown
+  performance:
+  - slo-yaml
+validation:
+  require_contract_per_spec: true
+  require_test_per_contract: true
+  fail_on_orphans: true
+  allowed_statuses_for_implementation:
+  - approved
+  - implemented
+traceability:
+  output_format: markdown
+  output_path: docs/traceability.md
+evaluator:
+  model: claude-sonnet-4-6
+  base_url: http://localhost:8000
+  timeout_per_scenario: 60
+  runs_per_scenario: 3
+  pass_threshold: 2
+  cost_alert_usd: 1.0
+orchestrator:
+  build_command: ''
+  auto_merge: false
+  auto_merge_strategy: label
+  max_retries: 3
+maintenance:
+  stale_after_weeks: 4
+obsidian:
+  vault_path: /home/deck/Documents/Obsidian/Vault 33/Development
+  subfolder: SDD Framer
+  watch_interval_secs: 5
+  auto_wiki_links: true
+test_runner:
+  command: pytest
+  extra_args: []
+  timeout_per_spec: 120
+cost_estimation:
+  model_prices:
+    claude-haiku-4-5-20251001:
+      input_per_million: 0.8
+      output_per_million: 4.0
+      cache_write_per_million: 1.0
+      cache_read_per_million: 0.08
+    claude-sonnet-4-6:
+      input_per_million: 3.0
+      output_per_million: 15.0
+      cache_write_per_million: 3.75
+      cache_read_per_million: 0.3
+    default:
+      input_per_million: 3.0
+      output_per_million: 15.0
+      cache_write_per_million: 3.75
+      cache_read_per_million: 0.3
+  budget_alert_usd: 5.0
+  default_model: claude-haiku-4-5-20251001
+skills:
+  provider: claude
+  version: 0.1.0
+solid_gate:
+  enabled: true
+  mode: warn
+pattern_suggestions:
+  enabled: true
+  max_suggestions: 4
+  source: refactoring-guru
+docker:
+  runtime: docker
+  image: sdd-dev:latest
+  dockerfile: .sdd/Dockerfile
+  registry:
+    url: ''
+    auth_env: ''
+  compose_file: ''
+  log_stream:
+    enabled: true
+    max_lines: 500
+pwa:
+  auth:
+    token: 145df2f201b58e75bfc92e790af5ae8b8dac4ed3d0e31e7a88188291c3ab3e10

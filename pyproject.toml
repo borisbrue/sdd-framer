@@ -1,6 +1,6 @@
 [project]
 name = "sdd-framer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Spec-Driven Development – CLI, Web API und Blueprint"
 requires-python = ">=3.10"
 authors = [{ name = "Boris" }]
@@ -63,6 +63,17 @@ dev = [
     "pytest>=9.0.3",
 ]
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["tool"]
 include = ["sdd_cli*"]
+
+[tool.setuptools.package-data]
+sdd_cli = [
+    "blueprint/config.yaml",
+    "blueprint/templates/*",
+    "blueprint/templates/**/*",
+    "blueprint/schemas/*",
+]
