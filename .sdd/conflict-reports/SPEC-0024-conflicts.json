@@ -1,0 +1,188 @@
+{
+  "spec_id": "SPEC-0024",
+  "generated_at": "2026-05-18T06:34:23Z",
+  "new_contracts": [
+    "CON-0090",
+    "CON-0091",
+    "CON-0092",
+    "CON-0093",
+    "CON-0094"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0024-001",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0090",
+      "conflicting_contract": "CON-0071",
+      "detail": "CON-0090 G-06 deklariert connectLogs(specId: string) ohne Format-Constraint. CON-0071 INV-01 verlangt, dass spec_id dem Pattern SPEC-[0-9]{4} entspricht — andernfalls antwortet der Server mit HTTP 400 vor dem WebSocket-Upgrade. Der ApiClient propagiert diese Einschränkung nicht (kein Validation-Layer, kein Dokumenthinweis), sodass ein Aufrufer mit freiem String-Argument silently einen 400 erhält statt eines WebSocket.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-002",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0090",
+      "conflicting_contract": null,
+      "detail": "CON-0090 G-03 definiert connectChat() → WebSocket /ws/chat, aber kein Contract im Workspace beschreibt das serverseitige Verhalten dieses Endpoints (Nachrichtenformat, Auth, Reconnect-Policy, Fehlerprotokoll). CON-0071 deckt nur /ws/logs/{spec_id} ab. Die Facade referenziert damit einen nicht-kontraktierten Server-Endpoint.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-003",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0090",
+      "conflicting_contract": "CON-0087",
+      "detail": "CON-0090 deklariert sich als Facade für 'alle Backend-Kommunikation der PWA'. CON-0087 Schritt 3 des Onboarding-Flow (rotateToken — POST /api/auth/rotate-token mit altem Token) ist ein HTTP-Backend-Call, aber die ApiClient-Schnittstelle in CON-0090 enthält keine rotateToken()-Methode. Entweder ist die Facade unvollständig oder der QR-Onboarding-Flow umgeht sie — beides widerspricht dem Facade-Anspruch und erzeugt eine undokumentierte Ausnahme.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-004",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0090",
+      "conflicting_contract": "CON-0007",
+      "detail": "CON-0090 G-05 definiert getSpecs() → GET /api/specs, Rückgabe: Spec[]. CON-0007 (web-api, SPEC-0003) ist der einzige Kandidat für einen serverseitigen API-Contract dieses Endpoints, enthält aber keinen Endpoint-Inhalt (nur Template-Platzhalter ohne Schema). Das Response-Schema für Spec[] ist damit nirgendwo kontraktiert — der Client-Contract referenziert ein Datenformat ohne bindende Server-Gegenseite.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0090",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0090 G-04 schickt runCommand(cmd, args) als POST zu /api/sdd/run (generischer SDD-Command-Dispatcher). CON-0021 definiert POST /api/orchestrate als dedizierten Orchestrierungs-Endpoint. Wenn cmd='orchestrate' über runCommand() abgesendet wird, existieren zwei konkurrierende Wege, die Orchestrierung auszulösen (/api/sdd/run vs. /api/orchestrate). Der Contract legt keine Exklusivität oder Delegation fest — die Grenze zwischen generischen SDD-Commands und dem Orchestrate-Endpoint ist uneindeutig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-006",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0092",
+      "conflicting_contract": "CON-0075",
+      "detail": "CON-0092 referenziert explizit CON-0075 ('/api/sdd/run' SSE-Output → Push-Broadcast, SPEC-0023) als serverseitigen Push-Trigger. CON-0075 existiert nicht in den Workspace-Contracts. Damit ist undefiniert, wer die Push-Notification sendet, unter welcher VAPID-Identität und mit welchem genauen Payload-Schema — der Payload-Typ 'orchestrate_done' in CON-0092 hat keinen verifizierten serverseitigen Ursprung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-007",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0092",
+      "conflicting_contract": "CON-0093",
+      "detail": "CON-0093 G-04 (und CON-0090 G-02): Bei HTTP 401 wird der gesamte 'sdd_config'-Key aus localStorage gelöscht — inklusive 'pushSubId'. CON-0092 definiert kein Szenario für diesen Fall: Die alte Subscription bleibt auf dem Server registriert (Orphan), und nach dem Re-Setup wird via 'POST /api/push/subscribe' eine neue Subscription angelegt, ohne die alte zu deregistrieren. Kein Cleanup-Flow vorhanden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-008",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0092",
+      "conflicting_contract": "CON-0091",
+      "detail": "CON-0091 definiert den kompletten Setup-Flow. Das Szenario 'Erfolgreiche Einrichtung' endet bei 'navigiert zum Dashboard-Tab' — ohne Push-Permission-Schritt. CON-0092 Szenario 'Push-Permission — iOS Safari' setzt voraus, dass dieser Schritt direkt nach Setup-Abschluss folgt ('When der Setup-Flow erfolgreich abgeschlossen ist'). Der Übergabepunkt ist nicht definiert: Weder ruft CON-0091 CON-0092 auf, noch ist klar ob der Permission-Request synchron im Setup oder asynchron danach erfolgt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-009",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0092",
+      "conflicting_contract": "CON-0090",
+      "detail": "CON-0090 G-07 definiert 'subscribePush(subscription)' sendet POST zu '<baseUrl>/api/push/subscribe'. Kein API-Contract (OpenAPI) in diesem Workspace definiert das serverseitige Schema dieses Endpoints (Request-Body-Format, Response-Codes, Subscription-Management, VAPID-Keys). Der Endpoint existiert contractuell nur client-seitig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-010",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0092",
+      "conflicting_contract": "CON-0093",
+      "detail": "CON-0092 Szenario 'Push-Subscription registrieren': 'speichert die Subscription-ID in localStorage' — der Begriff 'ID' impliziert eine opake Kurz-ID. CON-0093 G-06 stellt klar, dass 'pushSubId' den vollständigen 'subscription.endpoint'-URL speichert (z.B. 'https://fcm.googleapis.com/fcm/send/xyz'). Die unterschiedliche Terminologie ('ID' vs. vollständige URL) erzeugt Implementierungs-Ambiguität.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-011",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0094",
+      "conflicting_contract": "CON-0008",
+      "detail": "CON-0008 G-01 (web-ui-behavior, status=active) definiert bereits, dass die Sidebar Specs über GET /api/specs lädt — denselben Endpoint, den CON-0094 mit SLOs belegt. Der Contract bezieht sich auf SPEC-0003 (bestehende Web-UI), CON-0094 auf SPEC-0024 (PWA). Da beide Specs dasselbe Backend-Endpoint nutzen, gilt die SLO faktisch auch für CON-0008-Clients, ohne dass dies dokumentiert ist. Keine gegenseitige Referenz vorhanden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-012",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0094",
+      "conflicting_contract": "CON-0007",
+      "detail": "CON-0094 misst GET /api/specs, dessen einzige Endpoint-Definition CON-0007 (web-api, SPEC-0003, status=draft) wäre — dieser Contract ist jedoch ein leeres Placeholder-Dokument ohne Schema-Artifact. CON-0090 G-05 definiert getSpecs() implizit, ersetzt aber keinen formalen OpenAPI-Contract. Die SLO ist damit an einen undefinierten Endpoint-Contract gebunden: Schemaänderungen an GET /api/specs sind nicht durch einen aktiven Contract gebremst.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-013",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0094",
+      "conflicting_contract": "CON-0090",
+      "detail": "CON-0090 definiert validate() als 'GET /api/specs → 200 = ok' (Verbindungscheck beim Setup und Token-Rotation). CON-0094 bezeichnet denselben Endpoint als 'zentrales Polling-Endpoint des Dashboard-Tabs'. Beide Nutzungspfade (Polling + Health-Check) treffen denselben physischen Endpoint, aber der SLO deckt nur den Polling-Pfad ab. Validate()-Aufrufe können die p95-Messung verfälschen, da sie nicht als separate Last kategorisiert werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0024-014",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0094",
+      "conflicting_contract": "CON-0003",
+      "detail": "CON-0003 (Login Performance SLOs, status=active) und CON-0094 sind beide SLO-Contracts desselben Formats, verwenden aber inkompatible Messmethoden: CON-0003 nutzt Prometheus-Histogramme + k6-Lasttest (30-Tage-Fenster, 100 RPS gegen Staging), CON-0094 nutzt FastAPI TestClient in-process + time.monotonic() (20 Samples, kein Netzwerk). Ein gemeinsames SLO-Rahmenwerk existiert nicht — die Grenzwerte (200 ms p95 vs. 300 ms p95) sind nicht vergleichbar und können nicht in einem einheitlichen Error-Budget-Report zusammengeführt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 14,
+    "high": 2,
+    "medium": 7,
+    "low": 5,
+    "affected_specs_count": 0
+  }
+}
