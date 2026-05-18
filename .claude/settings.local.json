@@ -84,7 +84,10 @@
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); vs=p.get\\('contributes',{}\\).get\\('viewsContainers',{}\\); print\\(json.dumps\\(vs, indent=2\\)\\); views=p.get\\('contributes',{}\\).get\\('views',{}\\); print\\(json.dumps\\(list\\(views.keys\\(\\)\\), indent=2\\)\\)\")",
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); views=p.get\\('contributes',{}\\).get\\('views',{}\\); [print\\(k, ':', [v.get\\('id',''\\) for v in views[k]]\\) for k in views]\")",
       "Bash(python -m pytest tests/unit/test_tst_0079.py tests/unit/test_tst_0080.py tests/unit/test_tst_0081.py tests/unit/test_tst_0082.py tests/unit/test_tst_0083.py -x --tb=short)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(sdd dev *)",
+      "Bash(python -m pytest tests/unit/test_tst_0079.py tests/unit/test_tst_0080.py tests/unit/test_tst_0081.py tests/unit/test_tst_0082.py tests/unit/test_tst_0083.py -q --tb=short)",
+      "Bash(python -m pytest tests/unit/test_tst_0105.py tests/unit/test_tst_0106.py tests/unit/test_tst_0107.py tests/unit/test_tst_0108.py tests/unit/test_tst_0109.py -q --tb=short)"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",
