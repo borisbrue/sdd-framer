@@ -26,6 +26,7 @@ from routes.ai import router as ai_router  # noqa: E402
 from routes.analyze import router as analyze_router  # noqa: E402
 from routes.analyze_async import router as analyze_async_router  # noqa: E402
 from routes.auth import router as auth_router  # noqa: E402
+from routes.chat import router as chat_router  # noqa: E402
 from routes.commands import router as commands_router  # noqa: E402
 from routes.contracts import router as contracts_router  # noqa: E402
 from routes.copilot import router as copilot_router  # noqa: E402
@@ -33,6 +34,7 @@ from routes.gate import router as gate_router  # noqa: E402
 from routes.logs import router as logs_router  # noqa: E402
 from routes.orchestrate import router as orchestrate_router  # noqa: E402
 from routes.projects import router as projects_router  # noqa: E402
+from routes.remote import router as remote_router  # noqa: E402
 from routes.specs import router as specs_router  # noqa: E402
 from routes.tests import router as tests_router  # noqa: E402
 
@@ -72,7 +74,9 @@ app.include_router(analyze_router,       prefix="/api")
 app.include_router(analyze_async_router, prefix="/api")
 app.include_router(copilot_router,       prefix="/api")
 app.include_router(auth_router,          prefix="/api")  # SPEC-0025
-app.include_router(logs_router)  # WebSocket /ws/logs/{spec_id} – kein /api-Prefix
+app.include_router(remote_router,        prefix="/api")  # SPEC-0023
+app.include_router(logs_router)          # WebSocket /ws/logs/{spec_id} – kein /api-Prefix
+app.include_router(chat_router)          # WebSocket /ws/chat – kein /api-Prefix (SPEC-0023)
 
 # React-Build servieren (nach `npm run build`)
 UI_DIST = Path(__file__).parent.parent / "ui" / "dist"

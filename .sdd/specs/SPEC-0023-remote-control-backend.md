@@ -2,7 +2,7 @@
 id: SPEC-0023
 project: PRJ-0001
 title: Remote Control Backend — Chat, SDD-Run & Push-Notifications
-status: approved
+status: in-progress
 owner: Boris
 created: 2026-05-18
 updated: '2026-05-18'
@@ -32,6 +32,7 @@ tests:
 - TST-0108
 - TST-0109
 adrs: []
+started_at: '2026-05-18T07:55:45Z'
 ---
 # Remote Control Backend — Chat, SDD-Run & Push-Notifications
 

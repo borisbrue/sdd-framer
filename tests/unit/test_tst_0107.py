@@ -2,7 +2,15 @@
 # Contract: CON-0076
 # Spec: SPEC-0023
 
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from routes.remote import PushStore, router
 
 
 class PushStoreMock:
@@ -17,6 +25,22 @@ class PushStoreMock:
 
     def count(self) -> int:
         return len(self._subscriptions)
+
+
+def _make_app() -> FastAPI:
+    app = FastAPI()
+    app.include_router(router)
+    return app
+
+
+def _mock_ctx(token="tok", has_vapid=True):
+    ctx = MagicMock()
+    vapid = {"private_key": "key", "claims_email": "mailto:test@test.com"} if has_vapid else {}
+    ctx.get_config.return_value.raw = {
+        "pwa": {"auth": {"token": token}, "vapid": vapid}
+    }
+    ctx.is_blacklisted.return_value = False
+    return ctx
 
 
 class TestTST0107:
@@ -39,12 +63,36 @@ class TestTST0107:
 
     # CON-0076 G-01: Fehlende Auth → HTTP 401
     def test_missing_auth_returns_401(self) -> None:
-        raise NotImplementedError
+        with patch("routes.remote.sdd_context", _mock_ctx()):
+            client = TestClient(_make_app(), raise_server_exceptions=False)
+            response = client.post(
+                "/push/subscribe",
+                json={"endpoint": "https://fcm.example.com/x", "keys": {"p256dh": "a", "auth": "b"}},
+            )
+        assert response.status_code == 401
 
     # CON-0076 G-04: Fehlende VAPID-Keys → HTTP 503
     def test_missing_vapid_returns_503(self) -> None:
-        raise NotImplementedError
+        ctx = _mock_ctx(token="tok", has_vapid=False)
+        with patch("routes.remote.sdd_context", ctx):
+            client = TestClient(_make_app(), raise_server_exceptions=False)
+            response = client.post(
+                "/push/subscribe",
+                json={"endpoint": "https://fcm.example.com/x", "keys": {"p256dh": "a", "auth": "b"}},
+                headers={"Authorization": "Bearer tok"},
+            )
+        assert response.status_code == 503
+        assert response.json()["detail"] == "vapid_not_configured"
 
     # CON-0076 G-05: Erfolgreiche Registrierung → HTTP 201 {"subscribed": true}
     def test_successful_subscribe_returns_201(self) -> None:
-        raise NotImplementedError
+        ctx = _mock_ctx(token="tok", has_vapid=True)
+        with patch("routes.remote.sdd_context", ctx):
+            client = TestClient(_make_app())
+            response = client.post(
+                "/push/subscribe",
+                json={"endpoint": "https://fcm.example.com/abc", "keys": {"p256dh": "a", "auth": "b"}},
+                headers={"Authorization": "Bearer tok"},
+            )
+        assert response.status_code == 201
+        assert response.json() == {"subscribed": True}
