@@ -1,7 +1,7 @@
 ---
 id: SPEC-0023
 title: Remote Control Backend — Chat, SDD-Run & Push-Notifications
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-18
 updated: '2026-05-18'

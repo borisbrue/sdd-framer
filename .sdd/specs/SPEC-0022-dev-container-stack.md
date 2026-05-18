@@ -1,7 +1,7 @@
 ---
 id: SPEC-0022
 title: 'Dev-Container-Stack: Image-Building, Registry, Compose und Live-Logging'
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-17
 updated: '2026-05-17'

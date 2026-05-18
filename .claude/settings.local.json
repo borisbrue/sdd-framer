@@ -82,7 +82,9 @@
       "Bash(python3 -c \"import json; d=json.load\\(open\\('/tmp/specs.json'\\)\\); print\\(len\\(d\\),'specs'\\); print\\(json.dumps\\(d[0],indent=2\\)\\)\")",
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); [print\\(c.get\\('command',''\\), '-', c.get\\('title',''\\)\\) for c in p.get\\('contributes',{}\\).get\\('commands',[]\\)]\")",
       "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); vs=p.get\\('contributes',{}\\).get\\('viewsContainers',{}\\); print\\(json.dumps\\(vs, indent=2\\)\\); views=p.get\\('contributes',{}\\).get\\('views',{}\\); print\\(json.dumps\\(list\\(views.keys\\(\\)\\), indent=2\\)\\)\")",
-      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); views=p.get\\('contributes',{}\\).get\\('views',{}\\); [print\\(k, ':', [v.get\\('id',''\\) for v in views[k]]\\) for k in views]\")"
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); views=p.get\\('contributes',{}\\).get\\('views',{}\\); [print\\(k, ':', [v.get\\('id',''\\) for v in views[k]]\\) for k in views]\")",
+      "Bash(python -m pytest tests/unit/test_tst_0079.py tests/unit/test_tst_0080.py tests/unit/test_tst_0081.py tests/unit/test_tst_0082.py tests/unit/test_tst_0083.py -x --tb=short)",
+      "Bash(echo \"Exit: $?\")"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",
