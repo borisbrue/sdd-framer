@@ -94,6 +94,31 @@ def init(target: str, project_title: str, force: bool,
             f"(Vorlagen fehlen in .sdd/templates/agents-md/{prov.source_subdir}/)[/]"
         )
 
+    config_path = Path(target).resolve() / ".sdd" / "config.yaml"
+    from .config_wizard import ConfigWizard
+    from .config_manager import ConfigManager
+    cfg_data = ConfigManager(config_path).load()
+    if ConfigWizard.needs_setup(cfg_data):
+        console.print(
+            "\n[yellow]⚙[/] Die Projektkonfiguration ist noch nicht vollständig. "
+            "Soll der Konfigurations-Wizard jetzt gestartet werden? [J/n] ",
+            end="",
+        )
+        try:
+            answer = input("").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = "n"
+        if not answer or answer.startswith("j") or answer.startswith("y"):
+            wizard = ConfigWizard(config_path)
+            try:
+                wizard.run()
+                console.print("[green]✓[/] Konfiguration gespeichert.")
+            except Exception as exc:
+                console.print(f"[yellow]⚠[/] Wizard abgebrochen: {exc}")
+                console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
+        else:
+            console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
+
     console.print("\nNächste Schritte:")
     console.print("  1. [cyan]sdd new spec \"Mein erstes Feature\"[/]")
     console.print("  2. [cyan]sdd new contract --spec SPEC-0001 --format openapi[/]")
