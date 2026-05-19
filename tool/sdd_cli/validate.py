@@ -243,6 +243,8 @@ def validate(config: SddConfig) -> Report:
             sid = spec.frontmatter.get("id")
             if not sid:
                 continue
+            if spec.frontmatter.get("status") == "draft":
+                continue
             contracts_ref = spec.frontmatter.get("contracts") or []
             if not contracts_ref:
                 report.add(

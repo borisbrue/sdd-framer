@@ -4,7 +4,7 @@
   "title": "SDD Spec Frontmatter",
   "description": "Pflichtfelder im YAML-Frontmatter jeder Spec-Datei",
   "type": "object",
-  "required": ["id", "title", "status", "owner", "created", "updated", "contracts", "tests"],
+  "required": ["id", "title", "status", "owner", "created", "updated"],
   "properties": {
     "id": {
       "type": "string",
@@ -62,22 +62,20 @@
     },
     "contracts": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "string",
         "pattern": "^CON-[0-9]{4,}$"
       },
-      "description": "Mindestens eine zugehörige Contract-ID"
+      "description": "Zugehörige Contract-IDs (leer erlaubt im draft-Status)"
     },
     "tests": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "string",
         "pattern": "^TST-[0-9]{4,}[a-z]?$",
         "description": "Test-ID. Optionales Kleinbuchstaben-Suffix erlaubt (z.B. TST-0010b)"
       },
-      "description": "Mindestens eine zugehörige Test-ID"
+      "description": "Zugehörige Test-IDs (leer erlaubt im draft-Status)"
     },
     "adrs": {
       "type": "array",

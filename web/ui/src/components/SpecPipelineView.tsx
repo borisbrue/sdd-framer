@@ -106,10 +106,20 @@ function ActionButton({ action, onDone }: { action: Action; onDone: () => void }
     try {
       const res = await fetch(action.endpoint, { method: action.method ?? "POST" });
       const data = await res.json();
-      setResult(data.ok ? "✓" : "✗ " + (data.output?.split("\n").slice(-2).join(" ") ?? "Fehler"));
-      if (data.ok) setTimeout(onDone, 1500);
-    } catch {
-      setResult("✗ Verbindungsfehler");
+      if (!res.ok) {
+        setResult("✗ " + (data.detail ?? `HTTP ${res.status}`));
+        return;
+      }
+      if (data.ok) {
+        setResult("✓ " + (data.output?.split("\n")[0] ?? "OK"));
+        setTimeout(onDone, 1500);
+      } else {
+        const lines = (data.output ?? data.detail ?? "Fehler unbekannt")
+          .split("\n").filter(Boolean).slice(0, 4).join(" · ");
+        setResult("✗ " + lines);
+      }
+    } catch (e) {
+      setResult("✗ Verbindungsfehler: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }

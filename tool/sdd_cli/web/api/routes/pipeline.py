@@ -129,6 +129,17 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
                     contracts_approved += 1
                 break
 
+    # ── Gate state ─────────────────────────────────────────────────────────────
+    import json as _json
+    _gate_file = cfg.sdd_dir / "pipeline" / f"{spec_id}-gate.json"
+    _gate_data = _json.loads(_gate_file.read_text()) if _gate_file.exists() else {}
+    _phase_history: dict[str, Any] = {
+        e["phase"]: e for e in _gate_data.get("phase_history", [])
+    }
+
+    def _phase_done(phase: str) -> bool:
+        return _phase_history.get(phase, {}).get("result") == "ok"
+
     # ── Derived facts ──────────────────────────────────────────────────────────
     container_up = _container_running(spec_id)
     holdout_count = _holdout_count(spec_id)
@@ -162,24 +173,41 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     # ── Build stages ───────────────────────────────────────────────────────────
     stages: list[dict[str, Any]] = []
 
-    # 1. Spec-Erstellung
-    spec_status = _DONE if past_approved else (_ACTIVE if is_approved else _ACTIVE)
-    if is_draft:
-        spec_status = _ACTIVE
-    elif is_review:
-        spec_status = _ACTIVE
-    elif past_approved:
-        spec_status = _DONE
+    # 1. Spec-Erstellung (Gate-Phasen als Substeps)
+    _gp = _phase_done  # shorthand
+    _gate_phases = [
+        ("spec-draft",         "Draft abschließen",     "/api/specs/{}/gate-spec-draft"),
+        ("spec-review",        "Spec Review",           "/api/gate/{}/spec-review"),
+        ("contracts-proposed", "Contracts vorschlagen", "/api/gate/{}/contract-propose"),
+        ("contracts-review",   "Contract-Review",       "/api/gate/{}/contract-review"),
+        ("tests-generated",    "Tests generieren",      "/api/gate/{}/test-generate"),
+        ("spec-approved",      "Freigeben",             "/api/gate/{}/approve"),
+    ]
+    _gate_substeps = []
+    _gate_next_action: dict[str, Any] | None = None
+    for phase_key, phase_label, phase_ep in _gate_phases:
+        if _gp(phase_key):
+            sub_status = _DONE
+        elif past_approved:
+            sub_status = _DONE
+        elif _gate_next_action is None:
+            sub_status = _ACTIVE
+            _gate_next_action = {
+                "id": phase_key, "label": phase_label,
+                "endpoint": phase_ep.format(spec_id), "method": "POST",
+            }
+        else:
+            sub_status = _PENDING
+        _gate_substeps.append({"id": phase_key, "label": phase_label, "status": sub_status})
+
+    spec_status = _DONE if past_approved else _ACTIVE
     stages.append(_stage("spec", "Spec", spec_status,
         detail=f"Status: {status}",
-        substeps=[
-            {"id": "draft",    "label": "Draft",    "status": _DONE if status != "draft" else _ACTIVE},
-            {"id": "review",   "label": "Review",   "status": _DONE if past_approved or is_approved else (_ACTIVE if is_review else _PENDING)},
-            {"id": "approved", "label": "Approved", "status": _DONE if past_approved else _PENDING},
-        ],
-        actions=[] if past_approved else [
-            {"id": "approve", "label": "Gate prüfen", "endpoint": f"/api/gate/{spec_id}/status"}
-        ],
+        substeps=_gate_substeps,
+        actions=[] if past_approved else (
+            [_gate_next_action] if _gate_next_action else
+            [{"id": "gate-check", "label": "Gate prüfen", "endpoint": f"/api/specs/{spec_id}/gate-check", "method": "POST"}]
+        ),
     ))
 
     # 2. Contracts
@@ -271,8 +299,10 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
 
     # ── Next action ────────────────────────────────────────────────────────────
     next_action = None
-    if is_draft or is_review:
-        next_action = {"label": f"Gate prüfen", "command": "gate", "endpoint": f"/api/gate/{spec_id}/status"}
+    if (is_draft or is_review) and _gate_next_action:
+        next_action = _gate_next_action
+    elif is_draft or is_review:
+        next_action = {"label": "Gate prüfen", "endpoint": f"/api/specs/{spec_id}/gate-check", "method": "POST"}
     elif is_approved:
         next_action = {"label": f"sdd start {spec_id}", "command": "start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}
     elif is_progress and not tests_green:
@@ -324,3 +354,27 @@ def trigger_finalize(spec_id: str) -> dict[str, Any]:
         return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
     except FileNotFoundError:
         raise HTTPException(500, "sdd CLI nicht gefunden")
+
+
+@router.post("/specs/{spec_id}/gate-spec-draft")
+def trigger_gate_spec_draft(spec_id: str) -> dict[str, Any]:
+    try:
+        from sdd_cli.gate import ExecutionGate
+        cfg = get_config()
+        g = ExecutionGate(cfg.root)
+        g.mark_phase_started(spec_id, "spec-draft")
+        g.mark_phase_complete(spec_id, "spec-draft")
+        return {"ok": True, "output": "spec-draft abgeschlossen"}
+    except Exception as e:
+        return {"ok": False, "output": str(e)}
+
+
+@router.post("/specs/{spec_id}/gate-check")
+def trigger_gate_check(spec_id: str) -> dict[str, Any]:
+    try:
+        from sdd_cli.gate import ExecutionGate
+        cfg = get_config()
+        result = ExecutionGate(cfg.root).check(spec_id)
+        return {"ok": not result.blocked, "output": result.message}
+    except Exception as e:
+        return {"ok": False, "output": str(e)}
