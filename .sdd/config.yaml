@@ -17,6 +17,7 @@ spec_lifecycle:
 - approved
 - in-progress
 - implemented
+- evaluation-failed
 - deprecated
 contract_formats:
   api:

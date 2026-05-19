@@ -457,7 +457,12 @@ def trace() -> None:
               help="Report in .sdd/evaluations/ persistieren (Default: ja).")
 @click.option("--json", "output_json", is_flag=True,
               help="Report als JSON ausgeben statt als Rich-Tabelle.")
-def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool) -> None:
+@click.option("--spec", "spec_id", default=None,
+              help="SPEC-ID – bei finalem Fehlschlag wird Status auf evaluation-failed gesetzt.")
+@click.option("--final-attempt", is_flag=True,
+              help="Letzter Retry-Versuch – setzt SPEC auf evaluation-failed wenn Tests nicht grün.")
+def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool,
+                 spec_id: str | None, final_attempt: bool) -> None:
     cfg = _ensure_project()
 
     ids_filter = list(hol_ids) if hol_ids else None
@@ -469,14 +474,19 @@ def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool) -
         console.print(f"[red]✗[/] {e}")
         sys.exit(1)
 
+    report_path = None
     if save:
-        path = persist_report(cfg, report)
-        console.print(f"[dim]  Report gespeichert: {path.relative_to(cfg.root)}[/]")
+        report_path = persist_report(cfg, report)
+        console.print(f"[dim]  Report gespeichert: {report_path.relative_to(cfg.root)}[/]")
+
+    passed = report.pass_rate >= 0.9
 
     if output_json:
         import json as _json
         console.print(_json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
-        sys.exit(0 if report.pass_rate >= 0.9 else 1)
+        if not passed and final_attempt and spec_id:
+            _set_evaluation_failed(cfg, spec_id, report_path)
+        sys.exit(0 if passed else 1)
 
     # Rich-Ausgabe
     from rich.table import Table
@@ -494,14 +504,32 @@ def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool) -
                       str(len(s.runs)), result_text)
 
     console.print(table)
-    rate_color = "green" if report.pass_rate >= 0.9 else "red"
+    rate_color = "green" if passed else "red"
     console.print(
         f"\n[{rate_color}]Pass-Rate: {report.passed}/{report.total} "
         f"({report.pass_rate:.0%})[/]"
-        + (" · [green]Auto-Merge-Schwelle erreicht ✓[/]" if report.pass_rate >= 0.9
+        + (" · [green]Auto-Merge-Schwelle erreicht ✓[/]" if passed
            else " · [red]Unter 90 % – kein Auto-Merge[/]")
     )
-    sys.exit(0 if report.pass_rate >= 0.9 else 1)
+
+    if not passed and final_attempt and spec_id:
+        _set_evaluation_failed(cfg, spec_id, report_path)
+        console.print(
+            f"\n[red bold]✗ Evaluation nach 3 Versuchen fehlgeschlagen.[/]\n"
+            f"  SPEC [cyan]{spec_id}[/] → [red]evaluation-failed[/]\n"
+            f"  Report: [dim]{report_path}[/]\n"
+            f"  Nächster Schritt: Spec überarbeiten oder Holdout-Kriterien anpassen."
+        )
+
+    sys.exit(0 if passed else 1)
+
+
+def _set_evaluation_failed(cfg: SddConfig, spec_id: str, report_path: Path | None) -> None:
+    try:
+        from .lifecycle import mark_evaluation_failed
+        mark_evaluation_failed(cfg, spec_id, report_path or Path("(nicht gespeichert)"))
+    except ValueError as e:
+        console.print(f"[yellow]![/] Status-Update fehlgeschlagen: {e}")
 
 
 cli.add_command(evaluate_cmd, name="evaluate")

@@ -400,6 +400,21 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
     )
 
 
+def mark_evaluation_failed(config: SddConfig, spec_id: str, report_path: Path) -> None:
+    """Setzt SPEC-Status auf evaluation-failed und schreibt Audit-Log."""
+    spec_doc = _find_doc_by_id(config.specs_dir, spec_id)
+    if spec_doc is None:
+        raise ValueError(f"Spec nicht gefunden: {spec_id}")
+    old_status = spec_doc.frontmatter.get("status", "unknown")
+    now = datetime.now(timezone.utc)
+    spec_doc.frontmatter["status"] = "evaluation-failed"
+    spec_doc.frontmatter["updated"] = now.strftime("%Y-%m-%d")
+    spec_doc.frontmatter["evaluation_failed_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    spec_doc.frontmatter["evaluation_report"] = str(report_path)
+    spec_doc.write()
+    write_audit_log(config, spec_id, old_status, "evaluation-failed", "sdd-evaluate")
+
+
 def get_in_progress_specs(config: SddConfig) -> list[Document]:
     """Gibt alle Specs mit status: in-progress zurück (SPEC-0019 FR-08)."""
     result: list[Document] = []

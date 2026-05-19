@@ -32,6 +32,22 @@ def branch_name(spec_id: str) -> str:
     return f"dev/{spec_id}"
 
 
+# ── LLM env-var forwarding ───────────────────────────────────────────────────
+
+_LLM_ENV_VARS = [
+    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
+    "SDD_EVAL_BASE_URL",
+    "SDD_LLM_BASE_URL",
+]
+
+
+def _llm_env_vars() -> dict[str, str]:
+    """Sammelt LLM-API-Keys vom Host und gibt sie als Env-Dict zurück."""
+    import os
+    return {k: v for k in _LLM_ENV_VARS if (v := os.environ.get(k))}
+
+
 # ── Shell helpers ─────────────────────────────────────────────────────────────
 
 def _run(args: list[str], *, capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
@@ -411,7 +427,11 @@ class DevContainerManager:
                 cname,
                 image,
                 volume=f"{self.cfg.root}:/workspace",
-                env={"SPEC_ID": spec_id, "GIT_BRANCH": bname},
+                env={
+                    "SPEC_ID": spec_id,
+                    "GIT_BRANCH": bname,
+                    **_llm_env_vars(),
+                },
             )
             print(f"✓ Container {cname} gestartet | Branch {bname} | Image {image}")
         except subprocess.CalledProcessError as exc:

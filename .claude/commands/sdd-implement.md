@@ -89,6 +89,34 @@ Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
 Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
 erneut im Container testen (Schritt 4), dann `sdd finalize $ARGUMENTS` wiederholen.
 
+## Schritt 6: Holdout-Evaluation (im Container)
+
+Nach erfolgreichem `sdd finalize` die Holdout-Szenarien evaluieren.
+`sdd evaluate` läuft im Dev-Container (API-Key wurde beim Start übergeben).
+
+```bash
+sdd dev exec $ARGUMENTS bash -c \
+  "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
+   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS"
+```
+
+**Retry-Loop (max 3 Versuche):**
+
+| Versuch | Ergebnis | Aktion |
+|---------|----------|--------|
+| 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren, `sdd finalize` + erneut evaluieren |
+| 3 | fehlgeschlagen | `sdd evaluate ... --final-attempt` ausführen → Status → `evaluation-failed`, Bericht anzeigen, Nutzer informieren |
+| beliebig | bestanden | Fertig |
+
+Beim 3. fehlgeschlagenen Versuch `--final-attempt` setzen:
+```bash
+sdd dev exec $ARGUMENTS bash -c \
+  "sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --final-attempt"
+```
+
+Der Nutzer sieht dann einen Fehlerbericht und entscheidet ob die Spec überarbeitet
+oder die Holdout-Kriterien angepasst werden sollen.
+
 ## Konventionen
 - Keine Kommentare außer wenn WHY nicht offensichtlich
 - SOLID-Regeln aus Pattern-Register beachten
