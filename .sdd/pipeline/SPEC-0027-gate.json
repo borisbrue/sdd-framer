@@ -1,0 +1,53 @@
+{
+  "spec_id": "SPEC-0027",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-19T12:15:04Z",
+      "result": "ok",
+      "notes": "Spec interaktiv mit Nutzer erarbeitet. 16 FRs, Container-Config, LLM-Pool, Wizard, CI/CD-Modus."
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-19T13:08:49Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-19T13:09:07Z",
+      "result": "ok",
+      "notes": "CON-0102–0107 reviewed: Gherkin-Szenarien vollständig, JSON-Schema korrekt, Invarianten definiert"
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-19T13:12:24Z",
+      "result": "ok",
+      "notes": "TST-0121–TST-0126 als Stubs erstellt; je 7-8 Testfälle pro Contract"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-19T13:12:57Z",
+      "result": "ok",
+      "notes": "Neue Stubs – kein Regressions-Check erforderlich; bestehende Tests (835) unverändert"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-19T13:14:37Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-19T13:14:37Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

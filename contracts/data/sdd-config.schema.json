@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sdd-config.schema.json",
+  "title": "SDD Config – llm_pool and docker sections",
+  "type": "object",
+  "properties": {
+    "llm_pool": {
+      "type": "object",
+      "required": ["strategy", "providers"],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["cost_first", "quality_first", "local_first"],
+          "description": "LLM selection strategy"
+        },
+        "providers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/LlmProvider"
+          },
+          "description": "List of LLM providers; IDs must be unique"
+        }
+      },
+      "additionalProperties": false
+    },
+    "docker": {
+      "type": "object",
+      "required": ["runtime", "image", "dockerfile"],
+      "properties": {
+        "runtime": {
+          "type": "string",
+          "enum": ["docker", "podman"]
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dockerfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "max_parallel_containers": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 2
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "cpu_limit": {
+              "type": "string",
+              "pattern": "^[0-9]+(\\.[0-9]+)?$",
+              "description": "Docker --cpus value, e.g. '1.0'"
+            },
+            "memory_limit": {
+              "type": "string",
+              "pattern": "^[0-9]+[bkmgBKMG]$",
+              "description": "Docker --memory value, e.g. '1g', '512m'"
+            }
+          },
+          "additionalProperties": false
+        },
+        "cleanup": {
+          "type": "object",
+          "properties": {
+            "on_success": {
+              "type": "boolean",
+              "default": true
+            },
+            "on_failure": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "registry": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "auth_env": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "skip_if_unavailable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Fall back to local test execution if Docker is unavailable"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "LlmProvider": {
+      "type": "object",
+      "required": ["id", "type", "model", "cost_tier", "max_context_tokens"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique provider identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["local", "remote"]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cost_tier": {
+          "type": "string",
+          "enum": ["cheap", "standard", "powerful"]
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "base_url": {
+          "type": "string",
+          "description": "Base URL for local providers (e.g. Ollama)"
+        },
+        "api_key_env": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]+$",
+          "description": "Env var name containing the API key (never the key itself)"
+        }
+      },
+      "if": {
+        "properties": { "type": { "const": "remote" } }
+      },
+      "then": {
+        "required": ["api_key_env"]
+      },
+      "additionalProperties": false
+    }
+  }
+}

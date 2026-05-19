@@ -2300,5 +2300,158 @@ def task_status(spec_id: str) -> None:
         )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd finalize  (SPEC-0026 unified finalization)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.command("finalize", help="Container-Test + PR für eine Spec (einheitlich für alle Pfade).")
+@click.argument("spec_id")
+@click.option("--dry-run", is_flag=True, help="Kein echter Commit, kein Container, kein PR.")
+@click.option("--no-commit", is_flag=True, help="Kein git commit – Caller hat bereits committed.")
+@click.option("--branch", default=None, help="Branch-Name (Default: feat/SPEC-XXXX).")
+@click.option("--commit-msg", default="", help="Commit-Nachricht (Default: automatisch).")
+def finalize_cmd(spec_id: str, dry_run: bool, no_commit: bool,
+                 branch: str | None, commit_msg: str) -> None:
+    cfg = _ensure_project()
+    from .finalize import SpecFinalizer
+
+    console.print(f"[cyan]▶ Finalisiere {spec_id} …[/]")
+    finalizer = SpecFinalizer(cfg, dry_run=dry_run)
+    try:
+        report = finalizer.run(
+            spec_id,
+            commit_msg=commit_msg,
+            no_commit=no_commit,
+            branch=branch,
+        )
+    except RuntimeError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+    console.print(f"  Branch:  [cyan]{report.branch}[/]")
+    if report.commit_hash:
+        console.print(f"  Commit:  [dim]{report.commit_hash[:12]}[/]")
+
+    if report.tests_passed:
+        console.print("[green]✓[/] Tests im Container: grün")
+        if report.pr_url:
+            console.print(f"[green]✓[/] PR erstellt: {report.pr_url}")
+        elif report.pr_path:
+            console.print(f"[green]✓[/] PR-Dokument: [bold]{report.pr_path.relative_to(cfg.root)}[/]")
+    else:
+        console.print("[red]✗[/] Tests fehlgeschlagen:")
+        console.print(f"[dim]{report.test_output[-600:]}[/]")
+        sys.exit(1)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd config  (SPEC-0027 guided configuration)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("config", help="SDD-Konfiguration anzeigen, setzen und validieren.")
+def config_group() -> None:
+    pass
+
+
+@config_group.command("wizard", help="Interaktiver Konfigurations-Wizard.")
+@click.option("--section", default=None,
+              help="Nur diese Section konfigurieren (project|llm|docker|evaluator|orchestrator).")
+@click.option("--non-interactive", "non_interactive", is_flag=True,
+              help="Kein interaktiver Prompt – Werte aus Flags/Env-Vars.")
+def config_wizard_cmd(section: str | None, non_interactive: bool) -> None:
+    cfg = _ensure_project()
+    from .config_wizard import ConfigWizard
+    wizard = ConfigWizard(cfg.root / ".sdd" / "config.yaml")
+    try:
+        wizard.run(section=section, non_interactive=non_interactive)
+        console.print("[green]✓[/] Konfiguration gespeichert.")
+    except Exception as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@config_group.command("set", help="Setzt einen einzelnen Konfigurationswert (Dot-Notation).")
+@click.argument("assignment", metavar="KEY=VALUE")
+@click.option("--non-interactive", "non_interactive", is_flag=True)
+def config_set_cmd(assignment: str, non_interactive: bool) -> None:
+    if "=" not in assignment:
+        console.print("[red]✗[/] Format: KEY=VALUE")
+        sys.exit(1)
+    key, _, value = assignment.partition("=")
+    cfg = _ensure_project()
+    from .config_manager import ConfigManager, ConfigValidationError, _coerce
+    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
+    try:
+        mgr.set(key.strip(), _coerce(value.strip()))
+        console.print(f"[green]✓[/] {key} = {value}")
+    except ConfigValidationError as exc:
+        console.print(f"[red]✗[/] Validierungsfehler: {exc}")
+        sys.exit(1)
+
+
+@config_group.command("get", help="Liest einen einzelnen Konfigurationswert.")
+@click.argument("key")
+def config_get_cmd(key: str) -> None:
+    cfg = _ensure_project()
+    from .config_manager import ConfigManager
+    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
+    value = mgr.get(key)
+    if value is None:
+        sys.exit(1)
+    console.print(value)
+
+
+@config_group.command("show", help="Zeigt die aktuelle Konfiguration.")
+@click.option("--section", default=None,
+              help="Nur diese Section anzeigen.")
+def config_show_cmd(section: str | None) -> None:
+    cfg = _ensure_project()
+    from .config_manager import ConfigManager
+    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
+    console.print(mgr.show(section=section))
+
+
+@config_group.command("validate", help="Prüft die gesamte Konfiguration auf Vollständigkeit.")
+def config_validate_cmd() -> None:
+    cfg = _ensure_project()
+    from .config_manager import ConfigManager
+    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
+    errors = mgr.validate()
+    if not errors:
+        console.print("[green]✓[/] Konfiguration ist valide.")
+    else:
+        for e in errors:
+            console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
+
+
+@config_group.command("test-llm", help="Testet die Erreichbarkeit eines LLM-Providers.")
+@click.option("--id", "llm_id", default=None, help="Provider-ID (leer = alle testen).")
+def config_test_llm_cmd(llm_id: str | None) -> None:
+    cfg = _ensure_project()
+    from .config_manager import ConfigManager
+    from .llm_probe import probe_llm, LlmProbeError
+    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
+    data = mgr.load()
+    providers = data.get("llm_pool", {}).get("providers") or []
+    if llm_id:
+        providers = [p for p in providers if p.get("id") == llm_id]
+        if not providers:
+            console.print(f"[red]✗[/] Provider '{llm_id}' nicht gefunden.")
+            sys.exit(1)
+    if not providers:
+        console.print("[yellow]⚠[/] Keine LLM-Provider konfiguriert.")
+        sys.exit(1)
+    has_error = False
+    for prov in providers:
+        pid = prov.get("id", "?")
+        try:
+            latency = probe_llm(prov)
+            console.print(f"[green]✓[/] {pid}: OK ({latency:.0f} ms)")
+        except LlmProbeError as exc:
+            console.print(f"[red]✗[/] {pid}: {exc}")
+            has_error = True
+    if has_error:
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     cli()
