@@ -135,7 +135,7 @@ class PodmanRuntime(ContainerRuntime):
         volume: str,
         env: dict[str, str],
     ) -> None:
-        args = ["run", "-d", "--name", name, "--userns=keep-id", "-v", volume]
+        args = ["run", "-d", "--name", name, "-v", volume]
         for k, v in env.items():
             args += ["-e", f"{k}={v}"]
         args += [image, "tail", "-f", "/dev/null"]
