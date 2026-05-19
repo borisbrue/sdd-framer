@@ -11,6 +11,10 @@ export interface Project {
   baseUrl: string;
   token: string;
   addedAt: string;
+  /** Stabiler Pfad des Projekts auf dem Server – Hub-Matching-Key */
+  projectRoot?: string;
+  /** URL des Hub-Servers für automatische Port-Aktualisierung */
+  hubUrl?: string;
   /** Gesetzt wenn ein API-Call 401 zurückgab — zeigt Re-Auth-Banner (CON-0087 G-06) */
   auth_required?: boolean;
 }
@@ -99,4 +103,48 @@ export const ProjectRegistry = {
 
 function _save(projects: Project[]): void {
   localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+}
+
+interface _HubEntry {
+  root: string;
+  name: string;
+  externalUrl: string;
+  status: string;
+}
+
+/**
+ * Fragt alle bekannten Hub-URLs ab und aktualisiert baseUrl für Projekte
+ * deren Port sich geändert hat (z.B. nach Server-Neustart).
+ * Gibt die aktualisierte Projektliste zurück und persistiert sie.
+ */
+export async function refreshProjectsFromHub(projects: Project[]): Promise<Project[]> {
+  const hubUrls = [...new Set(projects.map(p => p.hubUrl).filter(Boolean))] as string[];
+  if (hubUrls.length === 0) return projects;
+
+  let updated = [...projects];
+  let changed = false;
+
+  for (const hubUrl of hubUrls) {
+    try {
+      const res = await fetch(`${hubUrl}/api/hub/projects`, { signal: AbortSignal.timeout(3000) });
+      if (!res.ok) continue;
+      const hubEntries = await res.json() as _HubEntry[];
+
+      for (const entry of hubEntries) {
+        if (entry.status !== "online" || !entry.externalUrl) continue;
+        const idx = updated.findIndex(p =>
+          (p.projectRoot && p.projectRoot === entry.root) || p.name === entry.name
+        );
+        if (idx >= 0 && updated[idx].baseUrl !== entry.externalUrl) {
+          updated[idx] = { ...updated[idx], baseUrl: entry.externalUrl };
+          changed = true;
+        }
+      }
+    } catch {
+      // Hub nicht erreichbar – still ignorieren
+    }
+  }
+
+  if (changed) _save(updated);
+  return updated;
 }

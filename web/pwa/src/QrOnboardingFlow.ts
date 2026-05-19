@@ -14,6 +14,8 @@ export interface QrData {
   name: string;
   url: string;
   token: string;
+  hub?: string;
+  root?: string;
 }
 
 export abstract class QrOnboardingFlow {
@@ -56,6 +58,8 @@ export abstract class QrOnboardingFlow {
       name: String(d.name),
       url: String(d.url).replace(/\/$/, ""),
       token: String(d.token),
+      hub: d.hub ? String(d.hub).replace(/\/$/, "") : undefined,
+      root: d.root ? String(d.root) : undefined,
     };
   }
 
@@ -70,8 +74,9 @@ export abstract class QrOnboardingFlow {
         method: "POST",
         headers: { Authorization: `Bearer ${data.token}` },
       });
-    } catch {
-      throw new Error("Server nicht erreichbar – Projekt nicht gespeichert");
+    } catch (e: unknown) {
+      const detail = e instanceof Error ? e.message : String(e);
+      throw new Error(`Server nicht erreichbar (${detail})`);
     }
 
     if (response.status === 401) {
@@ -100,6 +105,8 @@ export abstract class QrOnboardingFlow {
       baseUrl: data.url,  // QR url → baseUrl (CON-0087 G-03)
       token: newToken,
       addedAt: new Date().toISOString(),
+      hubUrl: data.hub,
+      projectRoot: data.root,
     };
     ProjectRegistry.add(project);
     ProjectRegistry.setActive(project.id);

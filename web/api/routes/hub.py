@@ -25,32 +25,40 @@ _HEALTH_TIMEOUT = 2.0   # Timeout pro Request
 # ── Registry ──────────────────────────────────────────────────────────────────
 
 class _HubRegistry:
+    """Registry keyed by project root — stable across port changes."""
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._servers: dict[int, dict[str, Any]] = {}
+        self._by_root: dict[str, dict[str, Any]] = {}
 
-    def register(self, port: int, name: str, root: str, scheme: str = "http") -> None:
+    def register(self, port: int, name: str, root: str, scheme: str = "http", external_url: str = "") -> None:
         with self._lock:
-            self._servers[port] = {
+            self._by_root[root] = {
                 "port": port,
                 "name": name,
                 "root": root,
                 "scheme": scheme,
+                "externalUrl": external_url or f"{scheme}://localhost:{port}",
                 "status": "online",
             }
 
     def deregister(self, port: int) -> None:
         with self._lock:
-            self._servers.pop(port, None)
+            for root, entry in list(self._by_root.items()):
+                if entry["port"] == port:
+                    del self._by_root[root]
+                    break
 
     def set_status(self, port: int, status: str) -> None:
         with self._lock:
-            if port in self._servers:
-                self._servers[port]["status"] = status
+            for entry in self._by_root.values():
+                if entry["port"] == port:
+                    entry["status"] = status
+                    break
 
     def all(self) -> list[dict[str, Any]]:
         with self._lock:
-            return list(self._servers.values())
+            return list(self._by_root.values())
 
 
 _registry = _HubRegistry()
@@ -63,6 +71,7 @@ class _RegisterRequest(BaseModel):
     name: str
     root: str
     scheme: str = "http"
+    externalUrl: str = ""
 
 
 class _DeregisterRequest(BaseModel):
@@ -71,7 +80,7 @@ class _DeregisterRequest(BaseModel):
 
 @router.post("/hub/register", status_code=201)
 async def hub_register(body: _RegisterRequest) -> dict:
-    _registry.register(body.port, body.name, body.root, body.scheme)
+    _registry.register(body.port, body.name, body.root, body.scheme, body.externalUrl)
     return {"registered": True}
 
 
@@ -95,14 +104,15 @@ async def hub_dashboard() -> str:
 
 async def hub_health_loop() -> None:
     """Prüft alle registrierten Projektserver periodisch auf Erreichbarkeit."""
-    async with httpx.AsyncClient(timeout=_HEALTH_TIMEOUT) as client:
+    async with httpx.AsyncClient(timeout=_HEALTH_TIMEOUT, verify=False) as client:
         while True:
             await asyncio.sleep(_HEALTH_INTERVAL)
             for server in _registry.all():
                 port = server["port"]
                 scheme = server.get("scheme", "http")
                 try:
-                    r = await client.get(f"{scheme}://localhost:{port}/api/status", verify=False)
+                    r = await client.get(f"{scheme}://localhost:{port}/api/server-info",
+                                         follow_redirects=True)
                     _registry.set_status(port, "online" if r.status_code == 200 else "offline")
                 except Exception:
                     _registry.set_status(port, "offline")

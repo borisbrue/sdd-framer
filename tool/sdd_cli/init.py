@@ -196,6 +196,18 @@ def init_project(
         target, src_root, provider=skill_provider, force=force_skills,
     )
 
+    # Globale mkcert-Zertifikate kopieren (wenn ~/.local/share/sdd/certs/ vorhanden)
+    global_certs = Path.home() / ".local/share/sdd/certs"
+    if global_certs.exists() and (global_certs / "cert.pem").exists():
+        cert_dst = target / ".certs"
+        cert_dst.mkdir(exist_ok=True)
+        for name in ("cert.pem", "key.pem", "rootCA.pem"):
+            dst_cert = cert_dst / name
+            src_cert = global_certs / name
+            if not dst_cert.exists() and src_cert.exists():
+                shutil.copy(src_cert, dst_cert)
+                created.append(dst_cert)
+
     return {
         "created": created,
         "skill_created": skill_created,

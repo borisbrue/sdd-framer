@@ -48,14 +48,16 @@ def init(project_root: str | Path | None = None) -> None:
         _allowed_origins = ["http://localhost:5173", "http://localhost:8000"]
 
     # Wenn eine LAN/externe URL bekannt ist, LAN-Host-Origins für PWA-Dev automatisch erlauben
+    # Beide Schemata erlauben – Vite-Dev kann auf http oder https laufen
     if _external_url:
         from urllib.parse import urlparse
         parsed = urlparse(_external_url)
-        lan_host = f"{parsed.scheme}://{parsed.hostname}"
+        hostname = parsed.hostname
         for dev_port in (5173, 5174):
-            origin = f"{lan_host}:{dev_port}"
-            if origin not in _allowed_origins:
-                _allowed_origins.append(origin)
+            for s in ("http", "https"):
+                origin = f"{s}://{hostname}:{dev_port}"
+                if origin not in _allowed_origins:
+                    _allowed_origins.append(origin)
 
     max_lines = _config.raw.get("docker", {}).get("log_stream", {}).get("max_lines", 500)
     _log_event_bus = LogEventBus(max_lines=max_lines)
@@ -102,7 +104,8 @@ def _detect_lan_url() -> str:
             lan_ip = s.getsockname()[0]
         if lan_ip.startswith("127."):
             return ""
-        cert_dir = Path(__file__).resolve().parents[2] / ".certs"
+        project_root = os.environ.get("SDD_PROJECT_ROOT", "")
+        cert_dir = (Path(project_root) if project_root else Path.cwd()) / ".certs"
         scheme = "https" if (cert_dir / "cert.pem").exists() else "http"
         return f"{scheme}://{lan_ip}:{port}"
     except Exception:
@@ -111,6 +114,14 @@ def _detect_lan_url() -> str:
 
 def get_external_url() -> str:
     return _external_url
+
+
+def get_root() -> str:
+    return str(_root) if _root else ""
+
+
+def get_hub_url() -> str:
+    return os.environ.get("SDD_HUB_URL", "")
 
 
 def get_allowed_origins() -> list[str]:

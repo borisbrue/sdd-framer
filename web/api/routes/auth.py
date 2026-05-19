@@ -14,6 +14,8 @@ import threading
 
 import yaml
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 import sdd_context
 
@@ -72,7 +74,10 @@ async def qr_payload():
         raise HTTPException(status_code=404, detail="no_token_configured")
     if not external_url:
         raise HTTPException(status_code=404, detail="no_external_url_configured")
-    return {"sdd": 1, "name": name, "url": external_url, "token": token}
+    hub_url = sdd_context.get_hub_url()
+    root = sdd_context.get_root()
+    return {"sdd": 1, "name": name, "url": external_url, "token": token,
+            "hub": hub_url, "root": root}
 
 
 @router.post("/auth/generate-token", status_code=201)
@@ -131,3 +136,24 @@ async def rotate_token(request: Request):
         sdd_context.reload_config()
 
     return {"token": new_token}
+
+
+@router.get("/certs/root-ca", include_in_schema=False)
+async def serve_root_ca():
+    """Liefert das mkcert Root-CA-Zertifikat zum Installieren auf dem Gerät.
+
+    Kein Auth nötig — das Zertifikat ist öffentlich (nur der Private Key ist geheim).
+    iOS Safari erkennt application/x-x509-ca-cert und startet die Profil-Installation.
+    """
+    candidates = [
+        Path.home() / ".local/share/sdd/certs/rootCA.pem",
+        Path(sdd_context.get_root()) / ".certs/rootCA.pem" if sdd_context.get_root() else None,
+    ]
+    for path in candidates:
+        if path and path.exists():
+            return FileResponse(
+                str(path),
+                media_type="application/x-x509-ca-cert",
+                filename="sdd-root-ca.pem",
+            )
+    raise HTTPException(status_code=404, detail="root_ca_not_found")

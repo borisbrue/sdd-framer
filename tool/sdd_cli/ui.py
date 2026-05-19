@@ -14,8 +14,8 @@ from typing import Callable
 
 
 def _web_root() -> Path:
-    # tool/sdd_cli/ui.py → parents[2] = repo root
-    return Path(__file__).resolve().parents[2] / "web"
+    from importlib.resources import files as _pkg_files
+    return Path(str(_pkg_files("sdd_cli").joinpath("web")))
 
 
 def _api_python(api_dir: Path) -> str:
@@ -57,17 +57,38 @@ def _stream(proc: subprocess.Popen, prefix: str, on_ready: Callable | None = Non
             on_ready = None
 
 
-def _hub_register(port: int, name: str, root: str, hub_port: int = 8000, scheme: str = "http") -> None:
+def _hub_scheme() -> str:
+    global_certs = Path.home() / ".local/share/sdd/certs"
+    return "https" if (global_certs / "cert.pem").exists() else "http"
+
+
+def _hub_urlopen(req: urllib.request.Request) -> None:
+    """Öffnet eine Hub-URL; ignoriert TLS-Verifikation für localhost (self-signed)."""
+    if req.full_url.startswith("https"):
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        urllib.request.urlopen(req, timeout=2, context=ctx)
+    else:
+        urllib.request.urlopen(req, timeout=2)
+
+
+def _hub_register(port: int, name: str, root: str, hub_port: int = 8000,
+                  scheme: str = "http", external_url: str = "") -> None:
     """Registriert diesen Projektserver beim Hub (fire-and-forget)."""
     try:
-        data = json.dumps({"port": port, "name": name, "root": root, "scheme": scheme}).encode()
+        data = json.dumps({
+            "port": port, "name": name, "root": root,
+            "scheme": scheme, "externalUrl": external_url,
+        }).encode()
         req = urllib.request.Request(
-            f"http://localhost:{hub_port}/api/hub/register",
+            f"{_hub_scheme()}://localhost:{hub_port}/api/hub/register",
             data=data,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        urllib.request.urlopen(req, timeout=2)
+        _hub_urlopen(req)
     except Exception:
         pass
 
@@ -77,12 +98,12 @@ def _hub_deregister(port: int, hub_port: int = 8000) -> None:
     try:
         data = json.dumps({"port": port}).encode()
         req = urllib.request.Request(
-            f"http://localhost:{hub_port}/api/hub/deregister",
+            f"{_hub_scheme()}://localhost:{hub_port}/api/hub/deregister",
             data=data,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        urllib.request.urlopen(req, timeout=2)
+        _hub_urlopen(req)
     except Exception:
         pass
 
@@ -100,6 +121,35 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     env.pop("SDD_PROJECT_ROOT", None)   # Hub läuft ohne Projektkontext
     env["SDD_HUB_MODE"] = "1"
 
+    # HTTPS: globale mkcert-Zertifikate nutzen wenn vorhanden
+    global_certs = Path.home() / ".local/share/sdd/certs"
+    ssl_args: list[str] = []
+    hub_scheme = "http"
+    if (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists():
+        ssl_args = [
+            "--ssl-certfile", str(global_certs / "cert.pem"),
+            "--ssl-keyfile",  str(global_certs / "key.pem"),
+        ]
+        hub_scheme = "https"
+
+    # CORS für PWA-Dev (beide Schemata für LAN und localhost)
+    try:
+        import socket as _sock
+        with _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM) as _s:
+            _s.connect(("8.8.8.8", 80))
+            _lan_ip = _s.getsockname()[0]
+        if not _lan_ip.startswith("127."):
+            _origins = [
+                "http://localhost:5173", "http://localhost:5174",
+                f"http://localhost:{port}", f"{hub_scheme}://localhost:{port}",
+                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174)],
+                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174)],
+                f"{hub_scheme}://{_lan_ip}:{port}",
+            ]
+            env["SDD_ALLOWED_ORIGINS"] = ",".join(dict.fromkeys(_origins))
+    except Exception:
+        pass
+
     procs: list[subprocess.Popen] = []
 
     def stop_all(signum=None, frame=None) -> None:
@@ -115,7 +165,7 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
 
     proc = subprocess.Popen(
         [_api_python(api_dir), "-m", "uvicorn", "main:app",
-         "--host", "0.0.0.0", "--port", str(port)],
+         "--host", "0.0.0.0", "--port", str(port)] + ssl_args,
         cwd=api_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -125,7 +175,7 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     procs.append(proc)
     threading.Thread(target=_stream, args=(proc, "hub"), daemon=True).start()
 
-    url = f"http://localhost:{port}/"
+    url = f"{hub_scheme}://localhost:{port}/"
     print(f"▶ SDD Hub gestartet → {url}")
     print(f"  Projektserver registrieren sich automatisch über die Extension.")
     print(f"  Stoppen mit Ctrl+C\n")
@@ -172,8 +222,9 @@ def start_server(
         env["SDD_EXTERNAL_URL"] = external_url
 
     # CORS: LAN-IP-Origins für PWA-Dev (Ports 5173/5174) automatisch erlauben
-    cert_dir = Path(__file__).resolve().parents[2] / ".certs"
+    cert_dir = Path(project_root) / ".certs"
     scheme = "https" if (cert_dir / "cert.pem").exists() else "http"
+    _lan_ip = ""
     try:
         import socket as _sock
         with _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM) as _s:
@@ -183,11 +234,21 @@ def start_server(
             _origins = [
                 f"http://localhost:5173", f"http://localhost:8000",
                 f"http://localhost:{port}", f"{scheme}://localhost:{port}",
-                *[f"{scheme}://{_lan_ip}:{p}" for p in (5173, 5174, port)],
+                # PWA-Dev kann auf http oder https laufen – beide Varianten erlauben
+                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174)],
+                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174)],
+                f"{scheme}://{_lan_ip}:{port}",
             ]
             env["SDD_ALLOWED_ORIGINS"] = ",".join(dict.fromkeys(_origins))
     except Exception:
         pass
+
+    # Hub-URL für QR-Code (gleiche LAN-IP, fixer Hub-Port)
+    # Hub nutzt HTTPS wenn globale mkcert-Zertifikate vorhanden
+    _global_certs = Path.home() / ".local/share/sdd/certs"
+    _hub_scheme = "https" if (_global_certs / "cert.pem").exists() else "http"
+    if _lan_ip and not _lan_ip.startswith("127."):
+        env["SDD_HUB_URL"] = f"{_hub_scheme}://{_lan_ip}:{hub_port}"
 
     procs: list[subprocess.Popen] = []
 
@@ -229,7 +290,8 @@ def start_server(
             env=env,
         )
         procs.append(api)
-        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port)
+        _ext = f"http://localhost:{port}"
+        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, "http", _ext)
         threading.Thread(target=_stream, args=(api, "api", on_ready), daemon=True).start()
 
         url = "http://localhost:5173"
@@ -245,7 +307,7 @@ def start_server(
             print("  Oder starte mit:   sdd ui --watch")
             sys.exit(1)
 
-        cert_dir = Path(__file__).resolve().parents[2] / ".certs"
+        cert_dir = Path(project_root) / ".certs"
         ssl_args = []
         scheme = "http"
         if (cert_dir / "cert.pem").exists() and (cert_dir / "key.pem").exists():
@@ -265,7 +327,9 @@ def start_server(
             env=env,
         )
         procs.append(api)
-        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, scheme)
+        _ext_url = (f"{scheme}://{_lan_ip}:{port}" if _lan_ip and not _lan_ip.startswith("127.")
+                    else f"{scheme}://localhost:{port}")
+        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, scheme, _ext_url)
         threading.Thread(target=_stream, args=(api, "api", on_ready), daemon=True).start()
 
         url = f"{scheme}://localhost:{port}"

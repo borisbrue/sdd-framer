@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Project, ProjectRegistry } from "./config";
+import { Project, ProjectRegistry, refreshProjectsFromHub } from "./config";
 import { fetchSpecs, fetchStatus, SddSpec, SddStatus } from "./api";
 import ProjectSwitcher from "./components/ProjectSwitcher";
 import AddProjectScreen from "./components/AddProjectScreen";
@@ -17,8 +17,14 @@ export default function App() {
 
   useEffect(() => {
     ProjectRegistry.init();
-    reload();
+    const all = ProjectRegistry.getAll();
+    setProjects(all);
+    setActiveId(ProjectRegistry.getActiveId());
     setReady(true);
+    // Hub-Refresh: aktualisiert baseUrl wenn Projektserver neu gestartet wurde
+    refreshProjectsFromHub(all).then(updated => {
+      setProjects(updated);
+    });
   }, []);
 
   const reload = useCallback(() => {

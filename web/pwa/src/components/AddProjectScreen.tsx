@@ -3,7 +3,7 @@ import { Project } from "../config";
 import { CameraQrFlow, ManualQrFlow } from "../QrOnboardingFlow";
 import QrScanner from "./QrScanner";
 
-type Mode = "choose" | "scan" | "manual" | "rotating" | "error";
+type Mode = "choose" | "scan" | "manual" | "rotating" | "error" | "cert";
 
 interface Props {
   onAdded: (project: Project) => void;
@@ -18,6 +18,19 @@ export default function AddProjectScreen({ onAdded, onCancel }: Props) {
   const [url, setUrl] = useState("http://");
   const [token, setToken] = useState("");
   const [name, setName] = useState("");
+
+  // Zertifikat-Onboarding — Hub-URL (Port 8000) vorausfüllen; Hub serviert /api/certs/root-ca
+  // auf einem stabilen Port, dynamische Projektports werden bewusst ersetzt.
+  function _defaultCertUrl(): string {
+    const o = window.location.origin;
+    if (o.includes("localhost") || o.includes("127.0.0.1")) return "";
+    try {
+      const u = new URL(o);
+      u.port = "8000";
+      return u.origin;
+    } catch { return ""; }
+  }
+  const [certUrl, setCertUrl] = useState(_defaultCertUrl);
 
   async function handleQrDetected(rawJson: string) {
     setMode("rotating");
@@ -62,6 +75,14 @@ export default function AddProjectScreen({ onAdded, onCancel }: Props) {
           <button onClick={() => setMode("manual")} style={{ ...styles.bigBtn, marginTop: 12 }}>
             ✎ Manuell eingeben
           </button>
+          <div style={{ marginTop: 28, borderTop: "1px solid var(--border)", paddingTop: 20 }}>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>
+              Erstes Mal auf diesem Gerät? Installiere zuerst das Zertifikat damit HTTPS funktioniert.
+            </p>
+            <button onClick={() => setMode("cert")} style={{ ...styles.bigBtn, fontSize: 13 }}>
+              🔐 Zertifikat installieren
+            </button>
+          </div>
         </div>
       )}
 
@@ -120,6 +141,60 @@ export default function AddProjectScreen({ onAdded, onCancel }: Props) {
             <button type="submit" className="primary">Verbinden</button>
             <button type="button" onClick={() => setMode("choose")}>Zurück</button>
           </form>
+        </div>
+      )}
+
+      {mode === "cert" && (
+        <div style={styles.body}>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20, lineHeight: 1.6 }}>
+            Gib die URL deines SDD-Servers ein (Hub oder Projektserver). Safari öffnet das
+            Zertifikat und bietet die Installation an.
+          </p>
+          <label style={styles.fieldLabel}>
+            Server-URL
+            <input
+              value={certUrl}
+              onChange={e => setCertUrl(e.target.value)}
+              placeholder="https://192.168.0.100:8000"
+              type="url"
+              style={styles.input}
+              autoCapitalize="none"
+            />
+          </label>
+          <a
+            href={certUrl ? `${certUrl.replace(/\/$/, "")}/api/certs/root-ca` : "#"}
+            onClick={e => { if (!certUrl) e.preventDefault(); }}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "block",
+              marginTop: 16,
+              padding: "12px 0",
+              textAlign: "center",
+              background: certUrl ? "var(--accent)" : "var(--surface-2, #21262d)",
+              color: certUrl ? "#fff" : "var(--muted)",
+              borderRadius: 8,
+              textDecoration: "none",
+              fontWeight: 600,
+              fontSize: 15,
+              pointerEvents: certUrl ? "auto" : "none",
+            }}
+          >
+            Zertifikat laden
+          </a>
+          <div style={{
+            marginTop: 20, background: "var(--surface-2, #161b22)",
+            borderRadius: 8, padding: 14, fontSize: 12,
+            color: "var(--muted)", lineHeight: 1.7,
+          }}>
+            <strong style={{ color: "var(--text)" }}>Nach dem Download (iOS):</strong><br />
+            Einstellungen → Allgemein → VPN &amp; Geräteverwaltung → Profil installieren<br />
+            Dann: Einstellungen → Allgemein → Info → Zertifikatsvertrauenseinstellungen →
+            <strong style={{ color: "var(--text)" }}> mkcert aktivieren</strong>
+          </div>
+          <button onClick={() => setMode("choose")} style={{ marginTop: 16, width: "100%" }}>
+            Zurück
+          </button>
         </div>
       )}
 
