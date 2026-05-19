@@ -68,7 +68,7 @@ class TestTST0079:
             check=True,
         )
 
-    # TC-05: PodmanRuntime.run_container enthält --userns=keep-id
+    # TC-05: PodmanRuntime.run_container uses podman (no --userns=keep-id)
     def test_podman_run_container_userns(self) -> None:
         rt = PodmanRuntime()
         with patch("subprocess.run", return_value=_mock_run()) as mock:
@@ -79,7 +79,7 @@ class TestTST0079:
                 env={"SPEC_ID": "SPEC-0022"},
             )
         args = mock.call_args[0][0]
-        assert "--userns=keep-id" in args
+        assert "--userns=keep-id" not in args
         assert "podman" == args[0]
 
     # TC-06: DockerRuntime.run_container enthält kein --userns=keep-id
