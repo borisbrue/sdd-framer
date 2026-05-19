@@ -3,7 +3,6 @@ FROM python:3.12-slim
 LABEL org.opencontainers.image.title="sdd-dev"
 LABEL org.opencontainers.image.description="SDD Dev-Container – isolierte Entwicklungsumgebung pro Spec"
 
-# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
@@ -12,11 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-# Install sdd-cli from the mounted workspace (development mode)
-# This runs when the container starts with the project volume mounted.
-# For CI builds, copy the tool directory instead:
-# COPY tool/ /app/tool/
-# RUN pip install -e /app/tool/[dev]
+# Install project dependencies from the volume-mounted workspace at runtime.
+# The entrypoint installs deps and then runs the given command.
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Keep container running for `sdd dev exec` usage
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["tail", "-f", "/dev/null"]
