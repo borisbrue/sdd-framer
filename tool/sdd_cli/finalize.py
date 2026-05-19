@@ -134,9 +134,14 @@ class SpecFinalizer:
         self._mgr.start(spec_id)
 
         # 5. Tests im Container ausführen (Output capturen)
+        # pip install im exec sichert deps unabhängig von Container-Startup-Timing
+        test_cmd = (
+            "pip install -q -e /workspace/tool/[dev] 2>/dev/null || "
+            "pip install -q pytest && "
+            "cd /workspace && pytest tests/ -x --tb=short -q"
+        )
         test_result = subprocess.run(
-            [runtime.cli(), "exec", cname,
-             "pytest", "tests/", "-x", "--tb=short", "-q"],
+            [runtime.cli(), "exec", cname, "bash", "-c", test_cmd],
             capture_output=True,
             text=True,
             cwd=root,
