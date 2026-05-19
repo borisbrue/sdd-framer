@@ -42,16 +42,16 @@ def _git(args: list[str], *, cwd: Path, capture: bool = True) -> subprocess.Comp
     return subprocess.run(["git"] + args, capture_output=capture, text=True, cwd=cwd)
 
 
-def _image_exists(image: str) -> bool:
+def _image_exists(cli: str, image: str) -> bool:
     result = subprocess.run(
-        ["docker", "image", "inspect", image],
+        [cli, "image", "inspect", image],
         capture_output=True,
     )
     return result.returncode == 0
 
 
-def _docker_available() -> bool:
-    result = subprocess.run(["docker", "info"], capture_output=True)
+def _runtime_available(cli: str) -> bool:
+    result = subprocess.run([cli, "info"], capture_output=True)
     return result.returncode == 0
 
 
@@ -73,10 +73,12 @@ class SpecFinalizer:
         no_commit: bool = False,
         branch: str | None = None,
     ) -> FinalizeReport:
-        if not _docker_available():
+        runtime = get_runtime(self._cfg)
+        cli = runtime.cli()
+        if not _runtime_available(cli):
             raise RuntimeError(
-                "Docker ist nicht verfügbar. "
-                "Starte Docker und führe 'sdd finalize' erneut aus."
+                f"'{cli}' ist nicht verfügbar. "
+                f"Starte {cli} und führe 'sdd finalize' erneut aus."
             )
 
         effective_branch = branch or f"{FINALIZE_BRANCH_PREFIX}/{spec_id}"
@@ -119,12 +121,11 @@ class SpecFinalizer:
         # 3. Container-Image bauen (wenn nicht vorhanden)
         docker_cfg = self._cfg.raw.get("docker", {})
         image = docker_cfg.get("image", "sdd-dev:latest")
-        if not _image_exists(image):
+        if not _image_exists(cli, image):
             self._mgr.build()
 
         # 4. Container starten
         cname = container_name(spec_id)
-        runtime = get_runtime(self._cfg)
         status_before = runtime.inspect_status(cname)
         if status_before == "running":
             runtime.stop(cname, check=False)

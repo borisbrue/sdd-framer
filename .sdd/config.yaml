@@ -96,7 +96,7 @@ pattern_suggestions:
   max_suggestions: 4
   source: refactoring-guru
 docker:
-  runtime: docker
+  runtime: podman
   image: sdd-dev:latest
   dockerfile: .sdd/Dockerfile
   registry:
