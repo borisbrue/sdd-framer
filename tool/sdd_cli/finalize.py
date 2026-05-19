@@ -136,7 +136,7 @@ class SpecFinalizer:
         # 5. Tests im Container ausführen (Output capturen)
         test_result = subprocess.run(
             [runtime.cli(), "exec", cname, "bash", "-c",
-             "cd /workspace && pip install -q -e 'tool/[dev]' && pytest tests/ -x --tb=short -q"],
+             "export HOME=/root && cd /workspace && pip install -q -e 'tool/[dev]' && pytest tests/ -x --tb=short -q"],
             capture_output=True,
             text=True,
             cwd=root,
