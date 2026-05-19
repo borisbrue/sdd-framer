@@ -703,7 +703,20 @@ Im Projekt sind Claude Code Skills integriert, die über die Command Palette auf
 | `/sdd-validate` | Validierung ausführen und Fehler erklären |
 | `/sdd-review` | SOLID-Analyse + Design-Pattern-Vorschläge |
 | `/sdd-status` | Lifecycle-Status und Blockaden anzeigen |
-| `/sdd-implement` | TDD-Implementierungsphase starten |
+| `/sdd-holdout SPEC-XXXX` | Holdout-Szenarien aus Spec + Contracts generieren (isolierter Kontext, kein Sourcecode) |
+| `/sdd-implement SPEC-XXXX` | TDD-Implementierungsphase im Container starten |
+| `/sdd-config` | `config.yaml` interaktiv bearbeiten |
+
+**Empfohlener Workflow:**
+
+```
+/sdd-new spec          → Spec erstellen
+/sdd-new contract      → Contracts definieren
+/sdd-new test          → Test-Stubs anlegen
+/sdd-holdout SPEC-XXXX → Holdout-Szenarien generieren (vor sdd start!)
+sdd start SPEC-XXXX    → Container starten, Implementierung beginnen
+/sdd-implement SPEC-XXXX → TDD → finalize → evaluate (alles im Container)
+```
 
 ---
 

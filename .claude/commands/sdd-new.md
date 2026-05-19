@@ -7,8 +7,11 @@ Führe den Nutzer interaktiv durch die Erstellung eines neuen SDD-Dokuments.
 `$ARGUMENTS` enthält den Typ: `spec`, `contract`, `test` oder `adr`.
 
 ## Schritt 1: Typ bestimmen
-Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr)"
-Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr.
+Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr / holdout)"
+Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr, h=holdout.
+
+Falls Typ `holdout`: verweise auf `/sdd-holdout $SPEC_ID` — Holdouts werden
+über einen eigenen Skill erstellt (isolierter Kontext, keine Sourcecode-Sicht).
 
 Prüfe ob `.sdd/config.yaml` existiert. Falls nicht: Fehlermeldung und abbrechen.
 
