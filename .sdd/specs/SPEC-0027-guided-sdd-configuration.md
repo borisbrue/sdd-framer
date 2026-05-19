@@ -1,7 +1,7 @@
 ---
 id: SPEC-0027
 title: Geführte SDD-Projektkonfiguration
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-19
 updated: '2026-05-19'
