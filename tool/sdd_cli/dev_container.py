@@ -319,6 +319,17 @@ class DevContainerManager:
     def _log_stream_enabled(self) -> bool:
         return self._docker_cfg().get("log_stream", {}).get("enabled", True)
 
+    def image_exists(self) -> bool:
+        result = subprocess.run(
+            [self._runtime.cli(), "image", "inspect", self._docker_image()],
+            capture_output=True,
+        )
+        return result.returncode == 0
+
+    def runtime_available(self) -> bool:
+        result = subprocess.run([self._runtime.cli(), "info"], capture_output=True)
+        return result.returncode == 0
+
     # ── SPEC-0022 commands ────────────────────────────────────────────────────
 
     def build(self) -> None:

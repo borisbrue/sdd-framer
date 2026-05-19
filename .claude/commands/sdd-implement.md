@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-16 -->
+<!-- skill: sdd-implement | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-19 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -14,6 +14,11 @@ in den Implementierungskontext einfließen. Dies sichert die Evaluator-Isolation
 - Lese Frontmatter der Spec. `status` muss `in-progress` sein.
   Falls nicht: "Führe zuerst 'sdd start $ARGUMENTS' aus." und abbrechen.
 - Prüfe ob sdd CLI verfügbar: `which sdd`
+- Prüfe ob der Dev-Container läuft:
+  ```bash
+  podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]' | tr '-' '-')
+  ```
+  Falls nicht `running`: "Container nicht gestartet – führe 'sdd start $ARGUMENTS' erneut aus."
 
 ## Schritt 2: Kontext laden (Allowlist – kein Holdout)
 Lese folgende Dateien (und NUR diese):
@@ -38,13 +43,18 @@ Analysiere Spec + Contracts und entwirf einen Plan:
 
 Zeige den Plan und warte auf Bestätigung bevor Code geschrieben wird.
 
-## Schritt 4: TDD-Zyklus
+## Schritt 4: TDD-Zyklus (im Container)
+
+Code wird auf dem Host-Filesystem geschrieben (Read/Edit/Write-Tools).
+Tests laufen **im Container** via `sdd dev exec` — vollständig isoliert,
+keine Host-Berechtigungen nötig.
+
 Für jede logische Einheit im Plan:
 
 1. Schreibe Implementierungscode (auf Basis von Spec + Contracts, NICHT Holdout)
-2. Führe Tests aus:
+2. Führe Tests im Container aus:
    ```bash
-   pytest tests/ -x --tb=short
+   sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short
    ```
 3. Bei Fehler: analysiere den Traceback, korrigiere den Code, wiederhole
 4. Bei >3 Iterationen ohne Fortschritt: pausiere und frage den Nutzer
@@ -52,26 +62,32 @@ Für jede logische Einheit im Plan:
 
 Zyklus endet wenn alle Test-Stubs ohne `NotImplementedError` durchlaufen.
 
+**Hinweis:** `sdd dev exec` benötigt pip-Setup nur beim ersten Aufruf. Wenn der
+Container neu ist, einmalig ausführen:
+```bash
+sdd dev exec $ARGUMENTS bash -c "pip install -q --no-user --no-cache-dir -e '/workspace/' -e '/workspace/tool/[dev]'"
+```
+
 ## Schritt 5: Finalisierung
 
 Führe zuerst `sdd validate` aus und behebe alle Fehler.
 
 Wenn die Validierung sauber ist:
 ```bash
-sdd finalize SPEC-XXXX
+sdd finalize $ARGUMENTS
 ```
 
 Dies führt einheitlich aus (gleich wie `sdd orchestrate` und `sdd distribute`):
-1. `git commit` auf Branch `feat/SPEC-XXXX`
-2. Docker-Container starten (Volume-Mount des Projekts)
+1. `git commit` auf Branch `feat/$ARGUMENTS`
+2. Container starten (wenn nicht bereits laufend)
 3. `pytest tests/ -x --tb=short` **im Container** ausführen
 4. Container entfernen
-5. PR erstellen (`gh pr create` → Fallback: `.sdd/prs/PR-SPEC-XXXX.md`)
+5. PR erstellen (`gh pr create` → Fallback: `.sdd/prs/PR-$ARGUMENTS.md`)
 
 Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
 
 Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
-erneut lokal testen (Schritt 4), dann `sdd finalize SPEC-XXXX` wiederholen.
+erneut im Container testen (Schritt 4), dann `sdd finalize $ARGUMENTS` wiederholen.
 
 ## Konventionen
 - Keine Kommentare außer wenn WHY nicht offensichtlich

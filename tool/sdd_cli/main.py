@@ -1442,8 +1442,10 @@ def _print_in_progress_section(cfg: "object") -> None:
 @click.option("--build-cmd", default=None,
               help="Build-Kommando (nur mit --auto). Überschreibt orchestrator.build_command.")
 @click.option("--no-pr", is_flag=True, help="PR-Erstellung überspringen (nur mit --auto).")
+@click.option("--no-container", is_flag=True,
+              help="Container nicht starten (z.B. in CI ohne Docker-Daemon).")
 def start_cmd(spec_id: str, auto: bool, base_url: str | None,
-              build_cmd: str | None, no_pr: bool) -> None:
+              build_cmd: str | None, no_pr: bool, no_container: bool) -> None:
     cfg = _ensure_project()
     from .lifecycle import start_spec
 
@@ -1466,6 +1468,29 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
             "erstelle erst Tests mit [cyan]sdd new test[/], dann erneut [cyan]sdd start[/]."
         )
         sys.exit(0)
+
+    # ── Container starten ────────────────────────────────────────────────────
+    if not no_container:
+        from .dev_container import DevContainerManager
+        mgr = DevContainerManager(cfg)
+        if not mgr.runtime_available():
+            console.print(
+                f"[yellow]![/] Container-Runtime nicht verfügbar – "
+                f"Container wird nicht gestartet.\n"
+                f"  Starte die Runtime und führe [cyan]sdd dev start {spec_id}[/] manuell aus.\n"
+                f"  Oder nutze [cyan]sdd start {spec_id} --no-container[/]."
+            )
+        else:
+            console.print()
+            if not mgr.image_exists():
+                console.print(f"[dim]▶ Baue Container-Image (einmalig) …[/]")
+                mgr.build()
+            console.print(f"[dim]▶ Starte Container für {spec_id} …[/]")
+            mgr.start(spec_id)
+            console.print(
+                f"[green]✓[/] Container bereit – Tests ausführen mit:\n"
+                f"  [cyan]sdd dev exec {spec_id} pytest tests/ -x --tb=short[/]"
+            )
 
     if result.stubs_created:
         console.print("[bold]Test-Stubs angelegt:[/]")
