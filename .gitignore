@@ -13,3 +13,10 @@ web/ui/dist/
 
 # TLS-Zertifikate (mkcert)
 .certs/
+
+# Cache-Verzeichnisse
+.cache/
+.local/
+
+# Wheel-Dateien
+*.whl
