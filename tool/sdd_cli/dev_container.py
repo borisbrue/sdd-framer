@@ -2,7 +2,7 @@
 
 Facade Pattern: DevContainerManager kapselt docker/git-Befehle.
 Strategy Pattern:
-  - PRStrategy: austauschbar (local → github in v0.2)
+  - PRStrategy: austauschbar (local → github via GhFallbackPRStrategy)
   - ContainerRuntime: docker | podman, Runtime-Auswahl über config.yaml
 Observer Pattern: LogStreamer → LogEventBus → WebSocket-Clients (SPEC-0022)
 """
@@ -183,6 +183,38 @@ def _branch_exists(branch: str) -> bool:
 class PRStrategy(abc.ABC):
     @abc.abstractmethod
     def create(self, spec_id: str, cfg: SddConfig) -> None: ...
+
+
+class GhFallbackPRStrategy(PRStrategy):
+    """gh pr create wenn verfügbar, sonst LocalGitStrategy als Fallback."""
+
+    def __init__(self, title: str = "", body: str = "") -> None:
+        self._title = title
+        self._body = body
+
+    def create(self, spec_id: str, cfg: SddConfig) -> str | None:
+        branch = branch_name(spec_id)
+        title = self._title or f"feat({spec_id}): Implementierung via sdd finalize"
+        body = self._body or (
+            f"Automatisch generiert von `sdd finalize {spec_id}`.\n\n"
+            f"Branch: `{branch}`"
+        )
+        result = subprocess.run(
+            ["gh", "pr", "create",
+             "--title", title,
+             "--body", body,
+             "--head", branch,
+             "--base", "main"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.splitlines():
+                if line.startswith("https://"):
+                    return line.strip()
+            return result.stdout.strip() or None
+        LocalGitStrategy().create(spec_id, cfg)
+        return None
 
 
 class LocalGitStrategy(PRStrategy):

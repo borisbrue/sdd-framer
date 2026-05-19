@@ -187,15 +187,19 @@ class DistributionOrchestrator:
             report.error = "Keine Tasks erfolgreich committed – kein PR erstellt."
             return report
 
-        pr_url = self.create_pr(spec_id, tasks)
-        report.pr_url = pr_url
-
-        if pr_url and not any(t.status == TaskStatus.BLOCKED for t in tasks):
-            tests_ok = self.run_tests()
-            if tests_ok:
-                merged = self.merge_pr(pr_url)
-                report.merged = merged
-                if merged:
-                    self.update_spec_status(spec_id)
+        # Einheitliche Finalisierung via SpecFinalizer (Container-Test + PR)
+        from .finalize import SpecFinalizer
+        finalizer = SpecFinalizer(self._config, dry_run=self._dry_run)
+        fin_report = finalizer.run(
+            spec_id,
+            no_commit=True,   # Tasks wurden bereits einzeln committed
+            branch=branch,
+        )
+        report.pr_url = fin_report.pr_url
+        report.merged = fin_report.tests_passed and fin_report.pr_url is not None
+        if not fin_report.tests_passed:
+            report.error = fin_report.error
+        elif fin_report.tests_passed:
+            self.update_spec_status(spec_id)
 
         return report

@@ -354,35 +354,44 @@ def run_pipeline(
         _create_branch_and_commit(config, branch, spec_id, explanation)
         _step(f"✓ Branch {branch} committed")
 
-        # 4. Build (optional)
-        _step(f"Build läuft… (Attempt {attempt_num}/{max_retries})")
-        build_passed: bool | None = None
-        build_output = ""
-        if effective_build_cmd:
-            rc, build_output = _run(effective_build_cmd, config.root, shell=True)
-            build_passed = (rc == 0)
-            if not build_passed:
-                _step(f"✗ Build fehlgeschlagen (Attempt {attempt_num})")
-                error_context = f"Build failed (attempt {attempt_num}):\n{build_output}"
-                report.attempts.append(PipelineAttempt(
-                    attempt=attempt_num, branch=branch,
-                    build_passed=False, eval_pass_rate=None, pr_url=None,
-                    error=build_output[:1000], explanation=explanation,
-                ))
-                continue
-            else:
-                _step("✓ Build erfolgreich")
+        # 4. Container-Test + PR via SpecFinalizer (einheitliche Finalisierung)
+        _step(f"Container-Test läuft… (Attempt {attempt_num}/{max_retries})")
+        from .finalize import SpecFinalizer
+        finalizer = SpecFinalizer(config, dry_run=dry_run)
+        try:
+            fin_report = finalizer.run(
+                spec_id,
+                no_commit=True,   # Branch + Commit bereits oben erledigt
+                branch=branch,
+            )
+        except RuntimeError as exc:
+            _step(f"✗ Finalisierung fehlgeschlagen: {exc}")
+            report.attempts.append(PipelineAttempt(
+                attempt=attempt_num, branch=branch,
+                build_passed=None, eval_pass_rate=None, pr_url=None,
+                error=str(exc), explanation=explanation,
+            ))
+            error_context = str(exc)
+            continue
 
-        # 5. PR erstellen (optional)
-        pr_url: str | None = None
-        if not no_pr:
-            _step("PR wird erstellt…")
-            pr_url = _create_pr(config, branch, spec_id, explanation)
-            if pr_url:
-                last_pr_url = pr_url
-                _step(f"✓ PR erstellt: {pr_url}")
-            else:
-                _step("PR-Erstellung übersprungen (gh nicht verfügbar)")
+        build_passed: bool | None = fin_report.tests_passed
+        if not fin_report.tests_passed:
+            _step(f"✗ Container-Tests fehlgeschlagen (Attempt {attempt_num})")
+            error_context = fin_report.test_output
+            report.attempts.append(PipelineAttempt(
+                attempt=attempt_num, branch=branch,
+                build_passed=False, eval_pass_rate=None, pr_url=None,
+                error=fin_report.test_output[:1000], explanation=explanation,
+            ))
+            continue
+        _step("✓ Container-Tests grün")
+
+        pr_url: str | None = fin_report.pr_url if not no_pr else None
+        if pr_url:
+            last_pr_url = pr_url
+            _step(f"✓ PR erstellt: {pr_url}")
+        elif not no_pr:
+            _step("PR-Erstellung übersprungen (gh nicht verfügbar oder lokal)")
 
         # 6. Evaluator (optional)
         _step(f"Evaluator läuft… (Attempt {attempt_num}/{max_retries})")

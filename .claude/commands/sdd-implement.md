@@ -52,21 +52,26 @@ Für jede logische Einheit im Plan:
 
 Zyklus endet wenn alle Test-Stubs ohne `NotImplementedError` durchlaufen.
 
-## Schritt 5: Abschluss
+## Schritt 5: Finalisierung
+
+Führe zuerst `sdd validate` aus und behebe alle Fehler.
+
+Wenn die Validierung sauber ist:
 ```bash
-sdd validate
+sdd finalize SPEC-XXXX
 ```
-Erkläre und behebe Validierungsfehler.
 
-Zeige Zusammenfassung:
-```
-✓ Implementierung abgeschlossen: SPEC-XXXX
-  N Tests grün | Validierung sauber
+Dies führt einheitlich aus (gleich wie `sdd orchestrate` und `sdd distribute`):
+1. `git commit` auf Branch `feat/SPEC-XXXX`
+2. Docker-Container starten (Volume-Mount des Projekts)
+3. `pytest tests/ -x --tb=short` **im Container** ausführen
+4. Container entfernen
+5. PR erstellen (`gh pr create` → Fallback: `.sdd/prs/PR-SPEC-XXXX.md`)
 
-Nächster Schritt (autonomer Pfad):
-  sdd orchestrate --spec SPEC-XXXX [--base-url http://localhost:8000]
-  → Evaluator prüft Holdout-Szenarien mit unabhängigem LLM
-```
+Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
+
+Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
+erneut lokal testen (Schritt 4), dann `sdd finalize SPEC-XXXX` wiederholen.
 
 ## Konventionen
 - Keine Kommentare außer wenn WHY nicht offensichtlich
