@@ -9,6 +9,7 @@ import ContractForm from "./ContractForm";
 import IdChip from "./IdChip";
 import MarkdownBody from "./MarkdownBody";
 import OpenButton from "./OpenButton";
+import SpecPipelineView from "./SpecPipelineView";
 import TestForm from "./TestForm";
 
 interface Props {
@@ -36,6 +37,9 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Pipeline-Flowchart */}
+      <SpecPipelineView specId={specId} />
+
       {/* Execute Flow (nur bei status=approved) */}
       <ExecutePanel
         spec={detail}

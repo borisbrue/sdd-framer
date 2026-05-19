@@ -35,6 +35,7 @@ from routes.copilot import router as copilot_router
 from routes.gate import router as gate_router
 from routes.logs import router as logs_router
 from routes.orchestrate import router as orchestrate_router
+from routes.pipeline import router as pipeline_router
 from routes.remote import router as remote_router
 from routes.specs import router as specs_router
 from routes.tests import router as tests_router
@@ -67,6 +68,7 @@ app.add_middleware(
 
 app.include_router(hub_router,           prefix="/api")  # Hub – vor SPA-Fallback
 app.include_router(specs_router,         prefix="/api")
+app.include_router(pipeline_router,      prefix="/api")
 app.include_router(contracts_router,     prefix="/api")
 app.include_router(tests_router,         prefix="/api")
 app.include_router(commands_router,      prefix="/api")

@@ -1,0 +1,326 @@
+"""Pipeline-State Endpoint – berechnet den aktuellen Stand einer Spec im SDD-Workflow."""
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+
+import sys
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from sdd_context import get_config
+from sdd_cli.frontmatter import parse_safe
+from sdd_cli.dev_container import container_name, get_runtime
+
+router = APIRouter()
+
+
+def _container_running(spec_id: str) -> bool:
+    try:
+        cfg = get_config()
+        runtime = get_runtime(cfg)
+        return runtime.inspect_status(container_name(spec_id)) == "running"
+    except Exception:
+        return False
+
+
+def _holdout_count(spec_id: str) -> int:
+    try:
+        cfg = get_config()
+        holdout_dir = cfg.holdout_dir
+        if not holdout_dir.exists():
+            return 0
+        count = 0
+        for f in holdout_dir.glob("HOL-*.md"):
+            doc = parse_safe(f)
+            if doc and doc.frontmatter.get("spec") == spec_id:
+                count += 1
+        return count
+    except Exception:
+        return 0
+
+
+def _last_test_result(spec_id: str) -> dict[str, Any] | None:
+    try:
+        cfg = get_config()
+        results_dir = cfg.sdd_dir / "test-results"
+        if not results_dir.exists():
+            return None
+        files = sorted(results_dir.glob(f"{spec_id}-*.json"), reverse=True)
+        if not files:
+            return None
+        import json
+        return json.loads(files[0].read_text())
+    except Exception:
+        return None
+
+
+def _last_evaluation(spec_id: str) -> dict[str, Any] | None:
+    try:
+        cfg = get_config()
+        evals_dir = cfg.sdd_dir / "evaluations"
+        if not evals_dir.exists():
+            return None
+        files = sorted(evals_dir.glob("*.json"), reverse=True)
+        for f in files:
+            import json
+            data = json.loads(f.read_text())
+            if data.get("spec_id") == spec_id or spec_id in str(f):
+                return data
+        # Fallback: return most recent evaluation
+        if files:
+            import json
+            return json.loads(files[0].read_text())
+        return None
+    except Exception:
+        return None
+
+
+def _pr_exists(spec_id: str) -> str | None:
+    try:
+        cfg = get_config()
+        pr_file = cfg.sdd_dir / "prs" / f"PR-{spec_id}.md"
+        if pr_file.exists():
+            return str(pr_file.relative_to(cfg.root))
+        return None
+    except Exception:
+        return None
+
+
+# ── Stage helpers ──────────────────────────────────────────────────────────────
+
+_DONE = "done"
+_ACTIVE = "active"
+_PENDING = "pending"
+_FAILED = "failed"
+_SKIPPED = "skipped"
+
+
+def _stage(id_: str, label: str, status: str, **kwargs) -> dict[str, Any]:
+    return {"id": id_, "label": label, "status": status, **kwargs}
+
+
+def _compute_pipeline(spec_id: str) -> dict[str, Any]:
+    cfg = get_config()
+
+    # ── Load spec ──────────────────────────────────────────────────────────────
+    spec_doc = None
+    for md in cfg.specs_dir.rglob("*.md"):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id") == spec_id:
+            spec_doc = doc
+            break
+    if spec_doc is None:
+        raise HTTPException(404, f"Spec {spec_id} nicht gefunden")
+
+    fm = spec_doc.frontmatter
+    status = fm.get("status", "draft")
+    contract_ids: list[str] = fm.get("contracts") or []
+
+    # ── Count contract statuses ────────────────────────────────────────────────
+    contracts_approved = 0
+    contracts_total = len(contract_ids)
+    for cid in contract_ids:
+        for md in cfg.contracts_dir.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == cid:
+                if doc.frontmatter.get("status") == "approved":
+                    contracts_approved += 1
+                break
+
+    # ── Derived facts ──────────────────────────────────────────────────────────
+    container_up = _container_running(spec_id)
+    holdout_count = _holdout_count(spec_id)
+    last_test = _last_test_result(spec_id)
+    last_eval = _last_evaluation(spec_id)
+    pr_path = _pr_exists(spec_id)
+
+    tests_green = (
+        last_test is not None
+        and last_test.get("passed", 0) > 0
+        and last_test.get("passed") == last_test.get("total")
+    ) if last_test else False
+
+    eval_passed = (
+        last_eval is not None and last_eval.get("pass_rate", 0) >= 0.9
+    ) if last_eval else False
+
+    eval_rate = last_eval.get("pass_rate") if last_eval else None
+
+    # ── Status predicates ──────────────────────────────────────────────────────
+    is_draft     = status == "draft"
+    is_review    = status == "review"
+    is_approved  = status == "approved"
+    is_progress  = status == "in-progress"
+    is_eval_fail = status == "evaluation-failed"
+    is_done      = status == "implemented"
+
+    past_approved  = is_approved or is_progress or is_eval_fail or is_done
+    past_progress  = is_progress or is_eval_fail or is_done
+
+    # ── Build stages ───────────────────────────────────────────────────────────
+    stages: list[dict[str, Any]] = []
+
+    # 1. Spec-Erstellung
+    spec_status = _DONE if past_approved else (_ACTIVE if is_approved else _ACTIVE)
+    if is_draft:
+        spec_status = _ACTIVE
+    elif is_review:
+        spec_status = _ACTIVE
+    elif past_approved:
+        spec_status = _DONE
+    stages.append(_stage("spec", "Spec", spec_status,
+        detail=f"Status: {status}",
+        substeps=[
+            {"id": "draft",    "label": "Draft",    "status": _DONE if status != "draft" else _ACTIVE},
+            {"id": "review",   "label": "Review",   "status": _DONE if past_approved or is_approved else (_ACTIVE if is_review else _PENDING)},
+            {"id": "approved", "label": "Approved", "status": _DONE if past_approved else _PENDING},
+        ],
+        actions=[] if past_approved else [
+            {"id": "approve", "label": "Gate prüfen", "endpoint": f"/api/gate/{spec_id}/status"}
+        ],
+    ))
+
+    # 2. Contracts
+    if contracts_total == 0:
+        con_status = _PENDING if is_draft else _ACTIVE
+        con_detail = "Keine Contracts verknüpft"
+    elif contracts_approved == contracts_total:
+        con_status = _DONE
+        con_detail = f"{contracts_total} Contract{'s' if contracts_total != 1 else ''}, alle approved"
+    else:
+        con_status = _ACTIVE if (is_draft or is_review) else _DONE
+        con_detail = f"{contracts_approved}/{contracts_total} approved"
+    stages.append(_stage("contracts", "Contracts", con_status, detail=con_detail, count=contracts_total))
+
+    # 3. Holdout-Szenarien
+    if is_done or eval_passed:
+        hol_status = _DONE
+    elif holdout_count > 0:
+        hol_status = _DONE
+    elif past_approved:
+        hol_status = _ACTIVE
+    else:
+        hol_status = _PENDING
+    stages.append(_stage("holdouts", "Holdout-Szenarien", hol_status,
+        detail=f"{holdout_count} Szenario{'s' if holdout_count != 1 else ''}" if holdout_count else "Noch keine Szenarien",
+        count=holdout_count,
+        actions=[{"id": "holdout-info", "label": "/sdd-holdout ausführen", "info": True}]
+            if hol_status == _ACTIVE else [],
+    ))
+
+    # 4. Implementierung
+    if is_done:
+        impl_status = _DONE
+    elif is_eval_fail:
+        impl_status = _DONE
+    elif is_progress:
+        impl_status = _ACTIVE
+    elif past_approved:
+        impl_status = _ACTIVE
+    else:
+        impl_status = _PENDING
+
+    impl_actions = []
+    if is_approved and not is_progress:
+        impl_actions = [{"id": "start", "label": "sdd start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}]
+
+    stages.append(_stage("implementation", "Implementierung", impl_status,
+        substeps=[
+            {"id": "container", "label": "Container",
+             "status": _DONE if container_up or is_eval_fail or is_done else (_ACTIVE if is_progress else _PENDING),
+             "detail": "läuft" if container_up else None},
+            {"id": "tdd",       "label": "Tests grün",
+             "status": _DONE if tests_green or is_eval_fail or is_done else (_ACTIVE if is_progress else _PENDING),
+             "detail": f"{last_test.get('passed')}/{last_test.get('total')} passed" if last_test else None},
+            {"id": "finalize",  "label": "Finalize + PR",
+             "status": _DONE if pr_path or is_eval_fail or is_done else _PENDING,
+             "detail": pr_path},
+        ],
+        actions=impl_actions,
+    ))
+
+    # 5. Evaluation
+    if is_done and eval_passed:
+        eval_status = _DONE
+    elif is_eval_fail:
+        eval_status = _FAILED
+    elif last_eval and eval_passed:
+        eval_status = _DONE
+    elif past_progress:
+        eval_status = _ACTIVE if (pr_path or is_eval_fail) else _PENDING
+    else:
+        eval_status = _PENDING
+
+    eval_detail = None
+    if eval_rate is not None:
+        eval_detail = f"Pass-Rate: {eval_rate:.0%}"
+    elif is_eval_fail:
+        eval_detail = "3 Versuche fehlgeschlagen"
+
+    stages.append(_stage("evaluation", "Holdout-Evaluation", eval_status,
+        detail=eval_detail,
+        pass_rate=eval_rate,
+        actions=[{"id": "evaluate", "label": "sdd evaluate", "endpoint": f"/api/specs/{spec_id}/evaluate", "method": "POST"}]
+            if eval_status == _ACTIVE else [],
+    ))
+
+    # 6. Implementiert
+    stages.append(_stage("done", "Implementiert", _DONE if is_done else _PENDING))
+
+    # ── Next action ────────────────────────────────────────────────────────────
+    next_action = None
+    if is_draft or is_review:
+        next_action = {"label": f"Gate prüfen", "command": "gate", "endpoint": f"/api/gate/{spec_id}/status"}
+    elif is_approved:
+        next_action = {"label": f"sdd start {spec_id}", "command": "start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}
+    elif is_progress and not tests_green:
+        next_action = {"label": f"/sdd-implement {spec_id}", "command": "implement", "info": True}
+    elif is_progress and tests_green and not pr_path:
+        next_action = {"label": f"sdd finalize {spec_id}", "command": "finalize", "endpoint": f"/api/specs/{spec_id}/finalize", "method": "POST"}
+    elif (is_progress or pr_path) and not eval_passed and not is_eval_fail:
+        next_action = {"label": f"sdd evaluate {spec_id}", "command": "evaluate", "endpoint": f"/api/specs/{spec_id}/evaluate", "method": "POST"}
+    elif is_eval_fail:
+        next_action = {"label": "Spec überarbeiten oder Holdouts anpassen", "command": "review", "info": True}
+    elif is_done:
+        next_action = None
+
+    return {
+        "spec_id": spec_id,
+        "status": status,
+        "stages": stages,
+        "next_action": next_action,
+        "container_running": container_up,
+        "holdout_count": holdout_count,
+        "pr_path": pr_path,
+    }
+
+
+@router.get("/specs/{spec_id}/pipeline")
+def get_pipeline(spec_id: str) -> dict[str, Any]:
+    return _compute_pipeline(spec_id)
+
+
+@router.post("/specs/{spec_id}/start")
+def trigger_start(spec_id: str) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            ["sdd", "start", spec_id],
+            capture_output=True, text=True,
+        )
+        return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
+    except FileNotFoundError:
+        raise HTTPException(500, "sdd CLI nicht gefunden")
+
+
+@router.post("/specs/{spec_id}/finalize")
+def trigger_finalize(spec_id: str) -> dict[str, Any]:
+    try:
+        result = subprocess.run(
+            ["sdd", "finalize", spec_id, "--no-commit"],
+            capture_output=True, text=True,
+        )
+        return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
+    except FileNotFoundError:
+        raise HTTPException(500, "sdd CLI nicht gefunden")
