@@ -18,6 +18,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
 evaluate = [
     "anthropic>=0.40",
     "httpx>=0.27",
