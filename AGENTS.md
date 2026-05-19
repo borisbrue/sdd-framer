@@ -75,6 +75,39 @@ vscode-extension/   # VS Code Extension (TypeScript)
 
 Keine Datenbank, kein externer Service – das System ist vollständig offline-fähig.
 
+## Container-Runtime (Podman / Docker)
+
+`sdd finalize`, `sdd dev` und `sdd orchestrate` starten isolierte Container. Die Runtime wird in `.sdd/config.yaml` konfiguriert:
+
+```yaml
+docker:
+  runtime: podman   # oder: docker
+  image: sdd-dev:latest
+  dockerfile: .sdd/Dockerfile
+```
+
+**Wichtige Eigenschaft der PodmanRuntime:** Kein `--userns=keep-id` — der Container läuft als uid=0 im rootless User-Namespace, was System-pip-Installs (`/usr/local/lib/...`) erlaubt. Mit `keep-id` würde der Container als Host-User laufen und könnte nicht in die System-Site-Packages schreiben.
+
+**Flatpak-Umgebung (VS Code aus Flatpak-Store, z.B. SteamOS):** Podman ist im Flatpak-Namespace nicht direkt erreichbar. Einmaliges Setup:
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/podman << 'EOF'
+#!/bin/bash
+flatpak-spawn --host podman "$@"
+EOF
+chmod +x ~/.local/bin/podman
+# ~/.local/bin muss vor /usr/bin in $PATH stehen (prüfen mit: which podman)
+```
+
+Danach Podman testen und Image bauen:
+
+```bash
+podman info && sdd dev build
+```
+
+Dieses Wrapper-Script ist **nicht** im Repo — es muss einmalig pro Entwickler-Maschine angelegt werden, wenn VS Code als Flatpak läuft.
+
 ## Build- und Start-Befehle
 
 ```bash

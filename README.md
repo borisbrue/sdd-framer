@@ -65,7 +65,7 @@ Progressive Web App für iOS und Android (installierbar, offline-fähig):
 | Python | 3.10 | CLI und Web API |
 | Node.js | 18 | Web UI und VS Code Extension |
 | uv | aktuell | Paketmanagement (empfohlen) |
-| Docker | 24 | Isolierte Dev-Umgebungen (optional) |
+| Docker **oder Podman** | 24 / aktuell | Isolierte Dev-Umgebungen (optional) |
 
 ### CLI installieren
 
@@ -758,6 +758,63 @@ web/
   pwa/                 # React – Progressive Web App
 
 vscode-extension/      # VS Code Extension (TypeScript)
+```
+
+---
+
+## Troubleshooting
+
+### Podman in VS Code Flatpak (SteamOS / Linux mit Flatpak)
+
+VS Code aus dem Flatpak-Store läuft in einem isolierten Namespace und kann Host-Binaries nicht direkt aufrufen. Wenn `sdd finalize` oder `sdd dev` fehlschlägt mit:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'podman'
+```
+
+oder Podman startet, wirft aber Shared-Library-Fehler (`libsubid.so.5 not found`):
+
+**Lösung:** Wrapper-Script anlegen, das `flatpak-spawn --host` nutzt.
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/podman << 'EOF'
+#!/bin/bash
+flatpak-spawn --host podman "$@"
+EOF
+chmod +x ~/.local/bin/podman
+```
+
+Sicherstellen, dass `~/.local/bin` in `$PATH` vor `/usr/bin` liegt (in `~/.bashrc` oder `~/.profile`):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Danach einmalig prüfen:
+
+```bash
+podman --version   # muss die Host-Version ausgeben
+podman info        # muss ohne Fehler durchlaufen
+```
+
+Anschließend das Container-Image einmalig bauen:
+
+```bash
+sdd dev build
+```
+
+**Hintergrund:** Das Wrapper-Script leitet alle `podman`-Aufrufe per `flatpak-spawn --host` an die Host-Installation weiter. Alle Code-seitigen Fixes (kein `--userns=keep-id`, korrekte pip-Flags, Fallback wenn `gh` fehlt) sind bereits im Repo und greifen automatisch.
+
+---
+
+### `sdd finalize` — pytest im Container nicht gefunden
+
+Wenn `sdd finalize` mit `bash: pytest: command not found` abbricht, liegt meist ein veraltetes `.local/`-Verzeichnis im Projektroot vor (aus einem fehlgeschlagenen Lauf). Bereinigen:
+
+```bash
+rm -rf .local/
+sdd finalize <SPEC-XXXX> --no-commit
 ```
 
 ---
