@@ -199,15 +199,19 @@ class GhFallbackPRStrategy(PRStrategy):
             f"Automatisch generiert von `sdd finalize {spec_id}`.\n\n"
             f"Branch: `{branch}`"
         )
-        result = subprocess.run(
-            ["gh", "pr", "create",
-             "--title", title,
-             "--body", body,
-             "--head", branch,
-             "--base", "main"],
-            capture_output=True,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                ["gh", "pr", "create",
+                 "--title", title,
+                 "--body", body,
+                 "--head", branch,
+                 "--base", "main"],
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError:
+            LocalGitStrategy().create(spec_id, cfg)
+            return None
         if result.returncode == 0:
             for line in result.stdout.splitlines():
                 if line.startswith("https://"):
