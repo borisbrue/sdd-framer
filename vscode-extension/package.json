@@ -2,7 +2,7 @@
   "name": "sdd-framer",
   "displayName": "SDD Framer",
   "description": "Spec-Driven Development – Specs, Contracts und Tests direkt in VS Code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "boris",
   "engines": {
     "vscode": "^1.118.0"

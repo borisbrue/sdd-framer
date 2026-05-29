@@ -319,10 +319,25 @@ async function activate(context) {
             vscode.window.showWarningMessage("SDD: Server läuft nicht.");
             return;
         }
-        // Find running pipelines from tree state (we'd need to track them)
-        const runId = await vscode.window.showInputBox({ prompt: "Run-ID zum Abbrechen (z.B. SPEC-0007-1747...)" });
-        if (!runId) {
+        const running = treeProvider.getRunningRuns();
+        let runId;
+        if (running.length === 0) {
+            vscode.window.showInformationMessage("SDD: Keine laufenden Pipelines.");
             return;
+        }
+        else if (running.length === 1) {
+            runId = running[0].runId;
+        }
+        else {
+            const picked = await vscode.window.showQuickPick(running.map(r => ({
+                label: r.specId,
+                description: r.step,
+                detail: r.runId,
+            })), { placeHolder: "Pipeline zum Abbrechen auswählen" });
+            if (!picked) {
+                return;
+            }
+            runId = picked.detail;
         }
         try {
             await pipelineClient.abort(runId);
@@ -518,12 +533,14 @@ function updateStatusBar(item, server) {
             item.command = undefined;
             item.backgroundColor = undefined;
             break;
-        case "running":
+        case "running": {
+            const python = vscode.workspace.getConfiguration("sdd").get("pythonPath", "python");
             item.text = `$(zap) SDD :${server.getPort()}`;
-            item.tooltip = `SDD Server läuft auf ${server.getBaseUrl()} – klicken zum Öffnen`;
+            item.tooltip = `${server.getBaseUrl()} · Python: ${python}`;
             item.command = "sdd.openWebUI";
             item.backgroundColor = undefined;
             break;
+        }
         case "error":
             item.text = "$(error) SDD";
             item.tooltip = "SDD Server Fehler – klicken für Output";

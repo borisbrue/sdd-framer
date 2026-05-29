@@ -39,6 +39,7 @@ const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const frontmatter_1 = require("./frontmatter");
+const pipeline_1 = require("./pipeline");
 class SddNode extends vscode.TreeItem {
     constructor(label, kind, filePath, id_str, collapsibleState = vscode.TreeItemCollapsibleState.None) {
         super(label, collapsibleState);
@@ -110,6 +111,15 @@ class SddTreeProvider {
     clearPipelineRun(specId) {
         this._pipelineRuns.delete(specId);
         this._onDidChangeTreeData.fire(undefined);
+    }
+    getRunningRuns() {
+        const result = [];
+        for (const [specId, state] of this._pipelineRuns) {
+            if (!pipeline_1.TERMINAL_STATUSES.includes(state.status)) {
+                result.push({ specId, runId: state.run_id, step: state.current_step });
+            }
+        }
+        return result;
     }
     getTreeItem(el) {
         return el;
