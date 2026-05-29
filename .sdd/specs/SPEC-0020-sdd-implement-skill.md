@@ -15,7 +15,6 @@ tags:
   - implementation
   - blueprint
 depends_on:
-  - SPEC-0018
   - SPEC-0019
   - SPEC-0004
 contracts:

@@ -3,7 +3,7 @@ id: CON-0058
 title: "sdd-skill-gate-flow"
 type: behavior
 format: gherkin
-spec: SPEC-0018
+spec: SPEC-0020
 version: 0.1.0
 status: draft
 artifact: ""

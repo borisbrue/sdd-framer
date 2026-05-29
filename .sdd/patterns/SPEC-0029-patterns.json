@@ -1,0 +1,30 @@
+{
+  "spec_id": "SPEC-0029",
+  "generated_at": "2026-05-29T21:51:22Z",
+  "patterns": [
+    {
+      "pattern_name": "ChainOfResponsibility",
+      "status": "accepted",
+      "decided_at": "2026-05-29T21:51:22Z",
+      "acceptance_reason": "Review-Flow (SOLID→Pattern→Regression) als erweiterbare Handler-Kette; neue Checks anhängbar ohne bestehende zu ändern",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-05-29T21:51:23Z",
+      "acceptance_reason": "sdd regression-check Stufe-1 (regelbasiert) und Stufe-2 (LLM) als austauschbare Strategien mit gemeinsamem Interface check(contracts)→[Conflict]",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "TemplateMethod",
+      "status": "accepted",
+      "decided_at": "2026-05-29T21:51:23Z",
+      "acceptance_reason": "sdd-implement definiert fixes Skelett start→branch→decompose→TDD-loop→finalize; Invariante der Sequenz, einzelne Schritte anpassbar",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}

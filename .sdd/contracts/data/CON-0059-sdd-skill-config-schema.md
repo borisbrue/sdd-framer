@@ -3,7 +3,7 @@ id: CON-0059
 title: "sdd-skill-config-schema"
 type: data
 format: json-schema
-spec: SPEC-0018
+spec: SPEC-0020
 version: 0.1.0
 status: draft
 artifact: ""

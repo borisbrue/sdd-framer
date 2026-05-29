@@ -3,7 +3,7 @@ id: CON-0057
 title: "sdd-skill-commands"
 type: behavior
 format: gherkin
-spec: SPEC-0018
+spec: SPEC-0020
 version: 0.1.0
 status: draft
 artifact: ""

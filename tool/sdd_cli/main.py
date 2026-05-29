@@ -2387,8 +2387,10 @@ def task_status(spec_id: str) -> None:
 @click.option("--no-commit", is_flag=True, help="Kein git commit – Caller hat bereits committed.")
 @click.option("--branch", default=None, help="Branch-Name (Default: feat/SPEC-XXXX).")
 @click.option("--commit-msg", default="", help="Commit-Nachricht (Default: automatisch).")
+@click.option("--skip-container", is_flag=True,
+              help="Container-Check und Testlauf überspringen; Commit und PR laufen normal.")
 def finalize_cmd(spec_id: str, dry_run: bool, no_commit: bool,
-                 branch: str | None, commit_msg: str) -> None:
+                 branch: str | None, commit_msg: str, skip_container: bool) -> None:
     cfg = _ensure_project()
     from .finalize import SpecFinalizer
 
@@ -2400,6 +2402,7 @@ def finalize_cmd(spec_id: str, dry_run: bool, no_commit: bool,
             commit_msg=commit_msg,
             no_commit=no_commit,
             branch=branch,
+            skip_container=skip_container,
         )
     except RuntimeError as exc:
         console.print(f"[red]✗[/] {exc}")
@@ -2410,7 +2413,10 @@ def finalize_cmd(spec_id: str, dry_run: bool, no_commit: bool,
         console.print(f"  Commit:  [dim]{report.commit_hash[:12]}[/]")
 
     if report.tests_passed:
-        console.print("[green]✓[/] Tests im Container: grün")
+        if "übersprungen" in report.test_output:
+            console.print(f"[yellow]⚠[/] {report.test_output}")
+        else:
+            console.print("[green]✓[/] Tests im Container: grün")
         if report.pr_url:
             console.print(f"[green]✓[/] PR erstellt: {report.pr_url}")
         elif report.pr_path:

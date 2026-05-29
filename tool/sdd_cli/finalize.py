@@ -6,7 +6,7 @@ Wird verwendet von:
   - sdd orchestrate (nach Code-Generierung)
   - sdd distribute (nach Task-Loop)
 
-Ablauf: git commit → Container starten → Tests im Container → Container entfernen → PR
+Ablauf: git commit → Container-Check → Tests im Container → Container entfernen → PR
 """
 from __future__ import annotations
 
@@ -72,15 +72,8 @@ class SpecFinalizer:
         commit_msg: str = "",
         no_commit: bool = False,
         branch: str | None = None,
+        skip_container: bool = False,
     ) -> FinalizeReport:
-        runtime = get_runtime(self._cfg)
-        cli = runtime.cli()
-        if not _runtime_available(cli):
-            raise RuntimeError(
-                f"'{cli}' ist nicht verfügbar. "
-                f"Starte {cli} und führe 'sdd finalize' erneut aus."
-            )
-
         effective_branch = branch or f"{FINALIZE_BRANCH_PREFIX}/{spec_id}"
         root = self._cfg.root
 
@@ -118,6 +111,19 @@ class SpecFinalizer:
                 error=None,
             )
 
+        if skip_container:
+            pr_url, pr_path = self._create_pr(spec_id)
+            return FinalizeReport(
+                spec_id=spec_id,
+                branch=effective_branch,
+                commit_hash=commit_hash,
+                tests_passed=True,
+                test_output="⚠ Container-Tests wurden übersprungen",
+                pr_url=pr_url,
+                pr_path=pr_path,
+                error=None,
+            )
+
         docker_cfg = self._cfg.raw.get("docker", {})
         compose_file = docker_cfg.get("compose_file", "")
         test_cfg = self._cfg.raw.get("test_runner", {})
@@ -126,10 +132,7 @@ class SpecFinalizer:
         timeout = test_cfg.get("timeout_per_spec", 120)
 
         if compose_file:
-            # 3+4. Compose-Stack starten (baut Images automatisch)
-            self._mgr.start(spec_id)
-
-            # 5. Contract-Tests lokal ausführen (laufen unabhängig vom Stack)
+            # Container-Stack muss bereits laufen
             test_result = subprocess.run(
                 [test_cmd, "tests/", "-x", "--tb=short"] + extra_args,
                 capture_output=True,
@@ -138,20 +141,15 @@ class SpecFinalizer:
                 timeout=timeout,
             )
         else:
-            # 3. Container-Image bauen (wenn nicht vorhanden)
-            image = docker_cfg.get("image", "sdd-dev:latest")
-            if not _image_exists(cli, image):
-                self._mgr.build()
-
-            # 4. Container starten
+            # Container muss bereits laufen
+            runtime = get_runtime(self._cfg)
             cname = container_name(spec_id)
-            status_before = runtime.inspect_status(cname)
-            if status_before == "running":
-                runtime.stop(cname, check=False)
-                runtime.rm(cname, check=False)
-            self._mgr.start(spec_id)
+            status_now = runtime.inspect_status(cname)
+            if status_now != "running":
+                raise RuntimeError(
+                    f"✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start {spec_id}'"
+                )
 
-            # 5. Tests im Container ausführen
             inner_cmd = f"cd /workspace && {test_cmd} tests/ -x --tb=short " + " ".join(extra_args)
             test_result = subprocess.run(
                 [runtime.cli(), "exec", cname, "bash", "-c", inner_cmd],
@@ -164,23 +162,18 @@ class SpecFinalizer:
         test_output = (test_result.stdout + test_result.stderr).strip()
         tests_passed = test_result.returncode == 0
 
-        # Parse pass/fail counts für save_test_result
         passed_count, total_count = _parse_pytest_counts(test_output)
         save_test_result(self._cfg, spec_id, passed=passed_count, total=total_count)
 
-        # 6. Stack / Container entfernen
-        self._mgr.close(spec_id)
+        if not compose_file:
+            self._mgr.close(spec_id)
 
-        # 7. PR erstellen wenn Tests grün
         pr_url: str | None = None
         pr_path: Path | None = None
         error: str | None = None
 
         if tests_passed:
-            strategy = GhFallbackPRStrategy()
-            pr_url = strategy.create(spec_id, self._cfg)
-            if pr_url is None:
-                pr_path = self._cfg.root / ".sdd" / "prs" / f"PR-{spec_id}.md"
+            pr_url, pr_path = self._create_pr(spec_id)
         else:
             error = f"Tests fehlgeschlagen im Container:\n{test_output[:1000]}"
 
@@ -194,6 +187,12 @@ class SpecFinalizer:
             pr_path=pr_path,
             error=error,
         )
+
+    def _create_pr(self, spec_id: str) -> tuple[str | None, Path | None]:
+        strategy = GhFallbackPRStrategy()
+        pr_url = strategy.create(spec_id, self._cfg)
+        pr_path = None if pr_url else self._cfg.root / ".sdd" / "prs" / f"PR-{spec_id}.md"
+        return pr_url, pr_path
 
 
 def _parse_pytest_counts(output: str) -> tuple[int, int]:

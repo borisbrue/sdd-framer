@@ -489,7 +489,8 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, cwd=cwd, env=env,
         )
-        for line in proc.stdout:  # type: ignore[union-attr]
+        assert proc.stdout is not None
+        for line in proc.stdout:
             stripped = line.rstrip("\n")
             if bus and stripped:
                 try:
