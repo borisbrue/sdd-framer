@@ -75,7 +75,7 @@ Für jede logische Einheit im Plan:
    sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short
    ```
 3. Bei Fehler: analysiere den Traceback, korrigiere den Code, wiederhole
-4. Bei >3 Iterationen ohne Fortschritt: pausiere und frage den Nutzer
+4. Bei >3 Iterationen ohne Fortschritt: stoppe mit Fehlerbericht (was versucht wurde, was fehlschlägt) — kein User-Prompt
 5. Bei grünen Tests: weiter zur nächsten logischen Einheit
 
 Zyklus endet wenn alle Test-Stubs ohne `NotImplementedError` durchlaufen.
