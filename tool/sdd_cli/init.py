@@ -1,6 +1,7 @@
 """`sdd init` – legt die Blueprint-Struktur in einem Projekt an."""
 from __future__ import annotations
 
+import json
 import re
 import shutil
 from dataclasses import dataclass
@@ -130,6 +131,40 @@ def copy_skill_files(
     return created, skipped
 
 
+def merge_claude_settings(target: Path, blueprint_root: Path) -> bool:
+    """Mergt SDD-Permissions aus dem Blueprint in .claude/settings.json.
+
+    Bestehende Einträge bleiben erhalten; neue werden hinzugefügt (kein Duplikat).
+    Returns True wenn die Datei erstellt oder geändert wurde.
+    """
+    src = (
+        blueprint_root / "templates" / "agents-md" / "providers" / "claude" / "settings.json"
+    )
+    if not src.exists():
+        return False
+
+    blueprint_settings: dict = json.loads(src.read_text(encoding="utf-8"))
+    new_entries: list[str] = (
+        blueprint_settings.get("permissions", {}).get("allow", [])
+    )
+
+    dst = target / ".claude" / "settings.json"
+    if dst.exists():
+        existing: dict = json.loads(dst.read_text(encoding="utf-8"))
+    else:
+        existing = {"permissions": {"allow": []}}
+        dst.parent.mkdir(parents=True, exist_ok=True)
+
+    current_allow: list[str] = existing.setdefault("permissions", {}).setdefault("allow", [])
+    added = [e for e in new_entries if e not in current_allow]
+    if not added:
+        return False
+
+    current_allow.extend(added)
+    dst.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
+    return True
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Projekt-Initialisierung
 # ─────────────────────────────────────────────────────────────────────────────
@@ -195,6 +230,10 @@ def init_project(
     skill_created, skill_skipped = copy_skill_files(
         target, src_root, provider=skill_provider, force=force_skills,
     )
+
+    # Claude-Settings mergen (nur beim Claude-Provider)
+    if skill_provider == "claude":
+        merge_claude_settings(target, src_root)
 
     # Globale mkcert-Zertifikate kopieren (wenn ~/.local/share/sdd/certs/ vorhanden)
     global_certs = Path.home() / ".local/share/sdd/certs"
