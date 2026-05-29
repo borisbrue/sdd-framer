@@ -488,8 +488,9 @@ def run_tests_in_container(spec_id: str) -> dict[str, Any]:
                "pytest tests/ -x --tb=short -q 2>&1"]
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        assert proc.stdout is not None
         collected: list[str] = []
-        for line in proc.stdout:  # type: ignore[union-attr]
+        for line in proc.stdout:
             line = line.rstrip("\n")
             collected.append(line)
             if bus:

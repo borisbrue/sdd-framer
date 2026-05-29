@@ -11,14 +11,26 @@ in den Implementierungskontext einfließen. Dies sichert die Evaluator-Isolation
 
 ## Schritt 1: Vorbedingungen prüfen
 - Existiert `.sdd/config.yaml`? Falls nicht: "Kein SDD-Projekt. 'sdd init' zuerst."
-- Lese Frontmatter der Spec. `status` muss `in-progress` sein.
-  Falls nicht: "Führe zuerst 'sdd start $ARGUMENTS' aus." und abbrechen.
+- Lese Frontmatter der Spec. Falls `status` nicht `in-progress`:
+  - Falls `status == approved`: führe automatisch aus:
+    ```bash
+    sdd start $ARGUMENTS
+    ```
+    `▶ sdd start $ARGUMENTS` (Status → in-progress)
+  - Falls `status` ein anderer Wert (z.B. `draft`, `deprecated`):
+    "✗ Spec hat Status '$STATUS' – Implementierung nicht möglich." und abbrechen.
 - Prüfe ob sdd CLI verfügbar: `which sdd`
 - Prüfe ob der Dev-Container läuft:
   ```bash
   podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]' | tr '-' '-')
   ```
-  Falls nicht `running`: "Container nicht gestartet – führe 'sdd start $ARGUMENTS' erneut aus."
+  Falls nicht `running`: "Container nicht gestartet – führe 'sdd start $ARGUMENTS' erneut aus." und abbrechen.
+
+## Schritt 1b: Feature-Branch erstellen
+```bash
+git checkout -b feat/$ARGUMENTS 2>/dev/null || git checkout feat/$ARGUMENTS
+```
+`▶ Branch feat/$ARGUMENTS` erstellt oder ausgecheckt (kein Fehler wenn bereits vorhanden).
 
 ## Schritt 2: Kontext laden (Allowlist – kein Holdout)
 Lese folgende Dateien (und NUR diese):
@@ -35,11 +47,17 @@ Fasse den geladenen Kontext kurz zusammen:
 - Contracts: [CON-IDs]
 - Pattern-Register: [Pattern-Namen falls vorhanden]
 
-## Schritt 3: Implementierungsplan erstellen
-Analysiere Spec + Contracts und entwirf einen Plan:
-- Welche Dateien/Module werden erstellt oder geändert?
-- Welche Klassen/Funktionen sind nötig?
-- Reihenfolge (Abhängigkeiten zuerst)
+## Schritt 3: Implementierungsplan via Decompose laden
+```bash
+sdd decompose $ARGUMENTS
+```
+`▶ sdd decompose $ARGUMENTS`
+
+Falls die Task-Liste leer ist (0 Tasks):
+"✗ Keine Tasks gefunden – prüfe Spec-Inhalt." und abbrechen.
+
+Die Tasks aus dem Decompose-Plan werden sequenziell als Implementierungsplan genutzt
+(kein `sdd distribute` — das bleibt `sdd orchestrate` vorbehalten).
 
 Zeige den Plan und warte auf Bestätigung bevor Code geschrieben wird.
 
@@ -72,22 +90,29 @@ sdd dev exec $ARGUMENTS bash -c "pip install -q --no-user --no-cache-dir -e '/wo
 
 Führe zuerst `sdd validate` aus und behebe alle Fehler.
 
-Wenn die Validierung sauber ist:
+`sdd finalize` startet keinen Container selbst — der Container muss bereits laufen.
+Falls kein Container läuft erscheint:
+"✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start $ARGUMENTS'"
+
+**Versuch 1 und 2:**
 ```bash
 sdd finalize $ARGUMENTS
 ```
-
-Dies führt einheitlich aus (gleich wie `sdd orchestrate` und `sdd distribute`):
-1. `git commit` auf Branch `feat/$ARGUMENTS`
-2. Container starten (wenn nicht bereits laufend)
-3. `pytest tests/ -x --tb=short` **im Container** ausführen
-4. Container entfernen
-5. PR erstellen (`gh pr create` → Fallback: `.sdd/prs/PR-$ARGUMENTS.md`)
-
-Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
+`▶ sdd finalize $ARGUMENTS`
 
 Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
 erneut im Container testen (Schritt 4), dann `sdd finalize $ARGUMENTS` wiederholen.
+
+**Dritter fehlgeschlagener Versuch (Container-Fehler):**
+Der Skill schlägt vor:
+```bash
+sdd finalize $ARGUMENTS --skip-container
+```
+Warte auf explizite Nutzerbestätigung bevor Ausführung.
+Nach Bestätigung: Commit und PR laufen normal durch.
+⚠ Container-Tests wurden übersprungen.
+
+Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
 
 ## Schritt 6: Holdout-Evaluation (im Container)
 

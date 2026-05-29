@@ -43,8 +43,11 @@ Zeige das Dokument zur Bestätigung. Erst nach "ja" / "ok" / "speichern":
 ```bash
 # Datei schreiben (slug aus Titel ableiten)
 ```
-Führe danach aus: `sdd validate --file .sdd/specs/SPEC-XXXX-<slug>.md`
-Bei Fehlern: erklären und korrigieren. Erst dann endgültig speichern.
+
+Falls die SPEC-ID nicht ermittelbar ist (z.B. keine bestehenden Specs im Verzeichnis),
+brich mit Fehlermeldung ab — keine Datei schreiben, keine Ausgabe mit falscher ID.
+
+**Nächster Schritt:** `/sdd-review SPEC-XXXX` — ersetze XXXX durch die soeben vergebene ID.
 
 ## Schritt 2b: CONTRACT erstellen
 Fragen:

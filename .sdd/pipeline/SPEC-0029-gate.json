@@ -1,0 +1,60 @@
+{
+  "spec_id": "SPEC-0029",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-29T10:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-29T10:05:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-29T10:10:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-29T10:15:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-29T10:20:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-29T10:25:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-30T09:00:00Z",
+      "result": "ok",
+      "note": "bootstrap: meta-spec defines regression-check feature itself"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-29T22:13:17Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-29T22:13:17Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

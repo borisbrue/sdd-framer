@@ -342,7 +342,11 @@
       "Bash(cp /run/media/deck/SM512/Development/sdd-framer/web/ui/dist/assets/*.js /run/media/deck/SM512/Development/sdd-framer/tool/sdd_cli/web/ui/dist/assets/)",
       "Bash(cp /run/media/deck/SM512/Development/sdd-framer/web/ui/dist/assets/*.js /home/deck/.var/app/com.visualstudio.code/data/uv/tools/sdd-framer/lib/python3.13/site-packages/sdd_cli/web/ui/dist/assets/)",
       "Bash(cp /run/media/deck/SM512/Development/sdd-framer/web/ui/dist/assets/*.css /run/media/deck/SM512/Development/sdd-framer/tool/sdd_cli/web/ui/dist/assets/)",
-      "Bash(cp /run/media/deck/SM512/Development/sdd-framer/web/ui/dist/assets/*.css /home/deck/.var/app/com.visualstudio.code/data/uv/tools/sdd-framer/lib/python3.13/site-packages/sdd_cli/web/ui/dist/assets/)"
+      "Bash(cp /run/media/deck/SM512/Development/sdd-framer/web/ui/dist/assets/*.css /home/deck/.var/app/com.visualstudio.code/data/uv/tools/sdd-framer/lib/python3.13/site-packages/sdd_cli/web/ui/dist/assets/)",
+      "Bash(sdd solid-check *)",
+      "Bash(sdd pattern-suggest *)",
+      "Bash(sdd pattern *)",
+      "Bash(python -m pytest tests/unit/test_tst_0130.py tests/unit/test_tst_0131.py tests/unit/test_tst_0132.py -v --tb=short)"
     ],
     "additionalDirectories": [
       "/home/deck/.local/share/sdd/certs",

@@ -56,7 +56,24 @@ Bei "nein": frage nach Ablehnungsgrund, dann:
 sdd pattern reject $ID <PatternName> --reason "<Grund>"
 ```
 
-## Schritt 4: Contract-Review (nur für CON-XXXX)
+## Schritt 4: Regression-Check
+
+[WARN] Falls `sdd regression-check` nicht verfügbar ist: Schritt überspringen und
+`[WARN] sdd regression-check nicht verfügbar` ausgeben.
+
+```bash
+sdd regression-check $ID
+```
+
+Zeige das Ergebnis:
+- Bei `error`-Severity: "⚠ Regression-Konflikt gefunden: CON-XXXX vs. CON-YYYY"
+  Frage: "Weiter trotzdem? (ja/nein)" — warte auf explizite Nutzerentscheidung.
+  Bei "nein": abbrechen.
+- Bei `warning`-Severity: "⚠ Möglicher Konflikt (warning): ... – bitte prüfen"
+  → Review-Flow fährt automatisch fort.
+- Bei 0 Konflikten: "✓ Kein Regressionsrisiko gefunden"
+
+## Schritt 5: Contract-Review (nur für CON-XXXX)
 Lese den Contract + verknüpften SPEC.
 Prüfe inhaltlich:
 - Ist die Garantie messbar und testbar?
@@ -68,7 +85,7 @@ Frage ob Contract-Status auf `approved` gesetzt werden soll:
 # Frontmatter status: draft → approved patchen
 ```
 
-## Schritt 5: Zusammenfassung
+## Schritt 6: Zusammenfassung
 ```
 Review abgeschlossen: SPEC-XXXX
 - SOLID: 1 Warnung (ISP), 0 Violations

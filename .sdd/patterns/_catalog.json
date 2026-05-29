@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-15T07:58:32Z",
+  "last_updated": "2026-05-29T21:51:23Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -21,6 +21,27 @@
       "accepted_at": "2026-05-15T07:58:32Z",
       "acceptance_reason": "Erweitert spec/contract review ohne Änderung am bestehenden Review-Code (OCP)",
       "refactoring_guru_url": "https://refactoring.guru/design-patterns/decorator"
+    },
+    {
+      "pattern_name": "ChainOfResponsibility",
+      "spec_id": "SPEC-0029",
+      "accepted_at": "2026-05-29T21:51:22Z",
+      "acceptance_reason": "Review-Flow (SOLID→Pattern→Regression) als erweiterbare Handler-Kette; neue Checks anhängbar ohne bestehende zu ändern",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0029",
+      "accepted_at": "2026-05-29T21:51:23Z",
+      "acceptance_reason": "sdd regression-check Stufe-1 (regelbasiert) und Stufe-2 (LLM) als austauschbare Strategien mit gemeinsamem Interface check(contracts)→[Conflict]",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "TemplateMethod",
+      "spec_id": "SPEC-0029",
+      "accepted_at": "2026-05-29T21:51:23Z",
+      "acceptance_reason": "sdd-implement definiert fixes Skelett start→branch→decompose→TDD-loop→finalize; Invariante der Sequenz, einzelne Schritte anpassbar",
+      "refactoring_guru_url": null
     }
   ]
 }
