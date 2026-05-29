@@ -118,29 +118,49 @@ class SpecFinalizer:
                 error=None,
             )
 
-        # 3. Container-Image bauen (wenn nicht vorhanden)
         docker_cfg = self._cfg.raw.get("docker", {})
-        image = docker_cfg.get("image", "sdd-dev:latest")
-        if not _image_exists(cli, image):
-            self._mgr.build()
+        compose_file = docker_cfg.get("compose_file", "")
+        test_cfg = self._cfg.raw.get("test_runner", {})
+        test_cmd = test_cfg.get("command", "pytest")
+        extra_args = test_cfg.get("extra_args", [])
+        timeout = test_cfg.get("timeout_per_spec", 120)
 
-        # 4. Container starten
-        cname = container_name(spec_id)
-        status_before = runtime.inspect_status(cname)
-        if status_before == "running":
-            runtime.stop(cname, check=False)
-            runtime.rm(cname, check=False)
+        if compose_file:
+            # 3+4. Compose-Stack starten (baut Images automatisch)
+            self._mgr.start(spec_id)
 
-        self._mgr.start(spec_id)
+            # 5. Contract-Tests lokal ausführen (laufen unabhängig vom Stack)
+            test_result = subprocess.run(
+                [test_cmd, "tests/", "-x", "--tb=short"] + extra_args,
+                capture_output=True,
+                text=True,
+                cwd=root,
+                timeout=timeout,
+            )
+        else:
+            # 3. Container-Image bauen (wenn nicht vorhanden)
+            image = docker_cfg.get("image", "sdd-dev:latest")
+            if not _image_exists(cli, image):
+                self._mgr.build()
 
-        # 5. Tests im Container ausführen (Output capturen)
-        test_result = subprocess.run(
-            [runtime.cli(), "exec", cname, "bash", "-c",
-             "rm -rf /workspace/.local && pip install -q --no-user --no-cache-dir -e '/workspace/' -e '/workspace/tool/[dev]' && cd /workspace && pytest tests/ -x --tb=short -q"],
-            capture_output=True,
-            text=True,
-            cwd=root,
-        )
+            # 4. Container starten
+            cname = container_name(spec_id)
+            status_before = runtime.inspect_status(cname)
+            if status_before == "running":
+                runtime.stop(cname, check=False)
+                runtime.rm(cname, check=False)
+            self._mgr.start(spec_id)
+
+            # 5. Tests im Container ausführen
+            inner_cmd = f"cd /workspace && {test_cmd} tests/ -x --tb=short " + " ".join(extra_args)
+            test_result = subprocess.run(
+                [runtime.cli(), "exec", cname, "bash", "-c", inner_cmd],
+                capture_output=True,
+                text=True,
+                cwd=root,
+                timeout=timeout,
+            )
+
         test_output = (test_result.stdout + test_result.stderr).strip()
         tests_passed = test_result.returncode == 0
 
@@ -148,7 +168,7 @@ class SpecFinalizer:
         passed_count, total_count = _parse_pytest_counts(test_output)
         save_test_result(self._cfg, spec_id, passed=passed_count, total=total_count)
 
-        # 6. Container entfernen
+        # 6. Stack / Container entfernen
         self._mgr.close(spec_id)
 
         # 7. PR erstellen wenn Tests grün

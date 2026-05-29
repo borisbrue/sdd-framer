@@ -93,8 +93,11 @@ class ContainerRuntime(abc.ABC):
     def push(self, target: str) -> None:
         self._cmd(["push", target])
 
-    def compose_up(self, compose_file: str) -> None:
-        self._cmd(["compose", "-f", compose_file, "up", "-d"])
+    def compose_up(self, compose_file: str, *, build: bool = True) -> None:
+        args = ["compose", "-f", compose_file, "up", "-d"]
+        if build:
+            args.append("--build")
+        self._cmd(args)
 
     def compose_down(self, compose_file: str) -> None:
         self._cmd(["compose", "-f", compose_file, "down"])
@@ -367,7 +370,7 @@ class DevContainerManager:
         self._runtime.push(target)
         print(f"✓ Image gepusht: {target}")
 
-    def up(self, spec_id: str) -> None:
+    def up(self, spec_id: str, *, build: bool = True) -> None:
         compose_file = self._compose_file()
         if not compose_file:
             print(
@@ -376,7 +379,7 @@ class DevContainerManager:
                 file=sys.stderr,
             )
             sys.exit(1)
-        self._runtime.compose_up(compose_file)
+        self._runtime.compose_up(compose_file, build=build)
         print(f"✓ Compose-Stack gestartet für {spec_id}")
         if self._log_stream_enabled() and self._log_streamer is not None:
             cname = container_name(spec_id)
@@ -453,14 +456,20 @@ class DevContainerManager:
         sys.exit(result.returncode)
 
     def close(self, spec_id: str, *, delete_branch: bool = False) -> None:
-        cname = container_name(spec_id)
-        bname = branch_name(spec_id)
-        self._runtime.stop(cname)
-        self._runtime.rm(cname)
-        print(f"✓ Container {cname} gestoppt und entfernt.")
-        if delete_branch and _branch_exists(bname):
-            _git(["branch", "-D", bname])
-            print(f"✓ Branch {bname} gelöscht.")
+        compose_file = self._compose_file()
+        if compose_file:
+            self._runtime.compose_down(compose_file)
+            print(f"✓ Compose-Stack gestoppt für {spec_id}.")
+        else:
+            cname = container_name(spec_id)
+            self._runtime.stop(cname)
+            self._runtime.rm(cname)
+            print(f"✓ Container {cname} gestoppt und entfernt.")
+        if delete_branch:
+            bname = branch_name(spec_id)
+            if _branch_exists(bname):
+                _git(["branch", "-D", bname])
+                print(f"✓ Branch {bname} gelöscht.")
 
     def pr(self, spec_id: str) -> None:
         test_result, passed, total = _load_last_test_result(self.cfg, spec_id)
