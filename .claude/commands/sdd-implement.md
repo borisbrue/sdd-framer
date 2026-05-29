@@ -59,7 +59,7 @@ Falls die Task-Liste leer ist (0 Tasks):
 Die Tasks aus dem Decompose-Plan werden sequenziell als Implementierungsplan genutzt
 (kein `sdd distribute` — das bleibt `sdd orchestrate` vorbehalten).
 
-Zeige den Plan und warte auf Bestätigung bevor Code geschrieben wird.
+Zeige den Plan und starte sofort mit der Implementierung — keine Bestätigung erforderlich.
 
 ## Schritt 4: TDD-Zyklus (im Container)
 
@@ -104,13 +104,11 @@ Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
 erneut im Container testen (Schritt 4), dann `sdd finalize $ARGUMENTS` wiederholen.
 
 **Dritter fehlgeschlagener Versuch (Container-Fehler):**
-Der Skill schlägt vor:
+Führe automatisch aus:
 ```bash
 sdd finalize $ARGUMENTS --skip-container
 ```
-Warte auf explizite Nutzerbestätigung bevor Ausführung.
-Nach Bestätigung: Commit und PR laufen normal durch.
-⚠ Container-Tests wurden übersprungen.
+⚠ Container-Tests wurden übersprungen — Commit und PR laufen normal durch.
 
 Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
 
