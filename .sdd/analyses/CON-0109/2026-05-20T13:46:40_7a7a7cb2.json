@@ -1,0 +1,92 @@
+{
+  "result_id": "2026-05-20T13:46:40_7a7a7cb2",
+  "doc_id": "CON-0109",
+  "timestamp": "2026-05-20T13:46:40",
+  "session_id": "14aaa457-3095-4d10-acf5-5ac942c70b3b",
+  "dismissed_ids": [
+    "failed-response-schema",
+    "result-schema",
+    "http-status-codes"
+  ],
+  "questions": [
+    {
+      "id": "failed-response-schema",
+      "section": "Status-Werte",
+      "text": "Wie sieht der vollst\u00e4ndige Response-Body bei `status: \"failed\"` aus? Gibt es ein `error`- oder `message`-Feld, und was enth\u00e4lt `finished_at` in diesem Fall?",
+      "severity": "error"
+    },
+    {
+      "id": "http-status-codes",
+      "section": "Endpunkt",
+      "text": "Welcher HTTP-Statuscode wird zur\u00fcckgegeben \u2014 immer 200, oder auch 404 wenn die `spec_id` nicht existiert?",
+      "severity": "error"
+    },
+    {
+      "id": "result-schema",
+      "section": "Endpunkt",
+      "text": "Was ist das Schema von `result` bei `status: \"done\"`? Ist es command-spezifisch, immer ein Objekt, oder kann es auch `null` sein?",
+      "severity": "error"
+    },
+    {
+      "id": "concurrent-job-start",
+      "section": "Persistenz",
+      "text": "Was passiert, wenn ein neuer Job gestartet wird, w\u00e4hrend noch ein Job mit `status: \"running\"` l\u00e4uft \u2014 wird der alte abgebrochen, oder ist der Start abzulehnen?",
+      "severity": "warning"
+    },
+    {
+      "id": "valid-command-values",
+      "section": "Status-Werte",
+      "text": "Welche g\u00fcltigen Werte kann das Feld `command` annehmen (z. B. nur `\"review\"` oder weitere)?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "Garantie",
+      "text": "Die Garantie \"nie einen Fehler\" ist nicht testbar: Sie schlie\u00dft weder Infrastrukturfehler (HTTP 500) noch ung\u00fcltige `spec_id`-Formate aus. Ohne definierte Ausnahmen ist die Garantie zu absolut formuliert.",
+      "severity": "error",
+      "suggested_fix": null
+    },
+    {
+      "section": "Endpunkt",
+      "text": "HTTP-Statuscodes fehlen vollst\u00e4ndig. Ohne explizite Angabe (z. B. 200 f\u00fcr alle Statuswerte) k\u00f6nnen Clients kein verl\u00e4ssliches Fehlerhandling implementieren.",
+      "severity": "error",
+      "suggested_fix": null
+    },
+    {
+      "section": "Endpunkt",
+      "text": "Kein Response-Beispiel f\u00fcr `status: \"failed\"`. Das Feld `result` und ein potenzielles Fehlerfeld (z. B. `error`) sind f\u00fcr diesen Zustand v\u00f6llig undefiniert.",
+      "severity": "error",
+      "suggested_fix": null
+    },
+    {
+      "section": "Endpunkt",
+      "text": "`\"result\": { ... }` ist kein Schema \u2014 es ist ein Platzhalter. Ohne Typangabe und Pflichtfelder ist der Vertrag f\u00fcr `done`-Responses nicht testbar.",
+      "severity": "error",
+      "suggested_fix": null
+    },
+    {
+      "section": "Endpunkt",
+      "text": "Das Feld `output` ist im `idle`-Response nicht vorhanden, in `running` und `done` aber schon. Ob es im `failed`-Fall vorhanden ist und ob es den letzten bekannten Output enth\u00e4lt, ist nicht spezifiziert.",
+      "severity": "warning",
+      "suggested_fix": null
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Einen Glossar-Eintrag f\u00fcr `spec_id` erg\u00e4nzen: erlaubtes Format (z. B. `SPEC-\\d+`), Validierungsregel und Verhalten bei unbekannter ID.",
+      "suggested_fix": null
+    },
+    {
+      "text": "Zeitstempelformat explizit als ISO 8601 / RFC 3339 mit Zeitzone festschreiben, damit Clients das Parsing nicht erraten m\u00fcssen.",
+      "suggested_fix": null
+    },
+    {
+      "text": "Maximale L\u00e4nge oder Streaming-Verhalten des `output`-Felds definieren, um unerwartetes Speicherwachstum bei lang laufenden Jobs auszuschlie\u00dfen.",
+      "suggested_fix": null
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

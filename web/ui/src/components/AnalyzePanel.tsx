@@ -10,6 +10,8 @@ interface Props {
   docContent: string;
   docType: "spec" | "contract";
   autoTrigger?: boolean;
+  onBodySaved?: () => void;
+  forceStartKey?: number;
 }
 
 const SEVERITY_ICON: Record<string, string> = {
@@ -29,12 +31,39 @@ const SEVERITY_COLOR: Record<string, string> = {
 function QuestionItem({
   q,
   dismissed,
+  docId,
+  docContent,
   onToggleDismiss,
+  onEdit,
+  canEdit,
 }: {
   q: AnalysisQuestion;
   dismissed: boolean;
+  docId: string;
+  docContent: string;
   onToggleDismiss: (id: string, value: boolean) => void;
+  onEdit: (hint: string | null) => void;
+  canEdit: boolean;
 }) {
+  const [fetchingHint, setFetchingHint] = useState(false);
+  const [hintError, setHintError] = useState("");
+  const notify = useNotify();
+
+  async function handleRequestHint() {
+    setFetchingHint(true);
+    setHintError("");
+    try {
+      const { suggested_fix } = await api.fetchFixHint(docId, q.text, q.section, docContent);
+      notify("✓ KI-Vorschlag erhalten", "success");
+      onEdit(suggested_fix);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Fehler beim Abrufen des Vorschlags.";
+      setHintError(msg);
+    } finally {
+      setFetchingHint(false);
+    }
+  }
+
   return (
     <div style={{
       borderLeft: `3px solid ${SEVERITY_COLOR[q.severity]}`,
@@ -50,12 +79,64 @@ function QuestionItem({
               {q.section}
             </span>
           )}
-          <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>{q.text}</p>
+          <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 6 }}>{q.text}</p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              onClick={() => onToggleDismiss(q.id, !dismissed)}
+              style={{ fontSize: 11, padding: "2px 8px", color: dismissed ? "var(--green)" : "var(--muted)", borderColor: dismissed ? "var(--green)" : "var(--border)" }}
+            >
+              {dismissed ? "↩ Wiederherstellen" : "✓ Abhaken"}
+            </button>
+            {canEdit && !dismissed && (
+              <>
+                <button
+                  onClick={() => onEdit(null)}
+                  style={{ fontSize: 11, padding: "2px 8px", color: "var(--accent)", borderColor: "var(--accent)" }}
+                >
+                  ✏ Bearbeiten
+                </button>
+                <button
+                  onClick={handleRequestHint}
+                  disabled={fetchingHint}
+                  style={{ fontSize: 11, padding: "2px 8px", color: "var(--yellow)", borderColor: "var(--yellow)" }}
+                >
+                  {fetchingHint ? "⏳ Lädt…" : "🤖 KI-Vorschlag"}
+                </button>
+              </>
+            )}
+          </div>
+          {hintError && (
+            <p style={{ fontSize: 11, color: "var(--red)", marginTop: 4 }}>{hintError}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IssueItem({
+  issue,
+  onEdit,
+}: {
+  issue: AnalysisIssue;
+  onEdit: (hint: string | null) => void;
+}) {
+  return (
+    <div style={{ borderLeft: `3px solid ${SEVERITY_COLOR[issue.severity]}`, paddingLeft: 10, marginBottom: 8 }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        <span style={{ flexShrink: 0 }}>{SEVERITY_ICON[issue.severity]}</span>
+        <div style={{ flex: 1 }}>
+          {issue.section && (
+            <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 2 }}>
+              {issue.section}
+            </span>
+          )}
+          <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>{issue.text}</p>
           <button
-            onClick={() => onToggleDismiss(q.id, !dismissed)}
-            style={{ fontSize: 11, padding: "2px 8px", color: dismissed ? "var(--green)" : "var(--muted)", borderColor: dismissed ? "var(--green)" : "var(--border)" }}
+            onClick={() => onEdit(issue.suggested_fix ?? null)}
+            style={{ fontSize: 11, padding: "2px 8px", color: "var(--accent)", borderColor: "var(--accent)" }}
           >
-            {dismissed ? "↩ Wiederherstellen" : "✓ Abhaken"}
+            ✏ Änderung bearbeiten
           </button>
         </div>
       </div>
@@ -63,19 +144,119 @@ function QuestionItem({
   );
 }
 
-function IssueItem({ issue }: { issue: AnalysisIssue }) {
+function SuggestionItem({
+  s,
+  onEdit,
+}: {
+  s: { text: string; suggested_fix?: string | null };
+  onEdit: (hint: string | null) => void;
+}) {
   return (
-    <div style={{ borderLeft: `3px solid ${SEVERITY_COLOR[issue.severity]}`, paddingLeft: 10, marginBottom: 8 }}>
-      <div style={{ display: "flex", gap: 6 }}>
-        <span style={{ flexShrink: 0 }}>{SEVERITY_ICON[issue.severity]}</span>
-        <div>
-          {issue.section && (
-            <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 2 }}>
-              {issue.section}
+    <div style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, marginBottom: 8 }}>
+      <p style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>💡 {s.text}</p>
+      <button
+        onClick={() => onEdit(s.suggested_fix ?? null)}
+        style={{ fontSize: 11, padding: "2px 8px", color: "var(--accent)", borderColor: "var(--accent)" }}
+      >
+        ✏ Änderung bearbeiten
+      </button>
+    </div>
+  );
+}
+
+// ─── Body Editor ──────────────────────────────────────────────────────────────
+
+function BodyEditor({
+  docId,
+  initialBody,
+  fixHint,
+  onSaved,
+  onClose,
+}: {
+  docId: string;
+  initialBody: string;
+  fixHint: string | null;
+  onSaved: () => void;
+  onClose: () => void;
+}) {
+  const notify = useNotify();
+  const [bodyText, setBodyText] = useState(initialBody);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSave() {
+    setSaving(true);
+    setError("");
+    try {
+      await api.patchContractBody(docId, bodyText);
+      notify("✓ Contract gespeichert", "success");
+      onSaved();
+      onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Fehler beim Speichern.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function applyHint() {
+    if (!fixHint) return;
+    setBodyText(prev => prev + (prev.endsWith("\n") ? "" : "\n") + "\n" + fixHint);
+  }
+
+  return (
+    <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+          Contract bearbeiten
+        </span>
+        <button onClick={onClose} style={{ fontSize: 12, padding: "2px 8px" }}>× Schließen</button>
+      </div>
+
+      {fixHint && (
+        <div style={{ marginBottom: 10, background: "var(--surface)", border: "1px solid var(--accent)", borderRadius: 6, padding: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--accent)", textTransform: "uppercase", letterSpacing: 0.8 }}>
+              KI-Vorschlag
             </span>
-          )}
-          <p style={{ fontSize: 13, lineHeight: 1.5 }}>{issue.text}</p>
+            <button
+              onClick={applyHint}
+              style={{ fontSize: 11, padding: "2px 8px", color: "var(--accent)", borderColor: "var(--accent)" }}
+            >
+              ↓ Ans Ende anfügen
+            </button>
+          </div>
+          <pre style={{ fontSize: 12, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0, color: "var(--fg)" }}>
+            {fixHint}
+          </pre>
         </div>
+      )}
+
+      <textarea
+        value={bodyText}
+        onChange={e => setBodyText(e.target.value)}
+        rows={16}
+        style={{
+          width: "100%", fontFamily: "monospace", fontSize: 12,
+          background: "var(--bg)", color: "var(--fg)", border: "1px solid var(--border)",
+          borderRadius: 6, padding: 10, resize: "vertical", boxSizing: "border-box",
+        }}
+      />
+
+      {error && <p style={{ color: "var(--red)", fontSize: 13, marginTop: 6 }}>{error}</p>}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <button
+          className="primary"
+          onClick={handleSave}
+          disabled={saving}
+          style={{ fontSize: 12, padding: "5px 14px" }}
+        >
+          {saving ? "Speichert…" : "💾 In Contract schreiben"}
+        </button>
+        <button onClick={onClose} style={{ fontSize: 12, padding: "5px 14px" }}>
+          Abbrechen
+        </button>
       </div>
     </div>
   );
@@ -83,7 +264,7 @@ function IssueItem({ issue }: { issue: AnalysisIssue }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function AnalyzePanel({ docId, docContent, docType, autoTrigger = false }: Props) {
+export default function AnalyzePanel({ docId, docContent, docType, autoTrigger = false, onBodySaved, forceStartKey }: Props) {
   const notify = useNotify();
 
   const [open, setOpen]         = useState(false);
@@ -97,6 +278,10 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
   const [current, setCurrent]             = useState<PersistedAnalysis | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [showDismissed, setShowDismissed] = useState(false);
+
+  // Body-Editor
+  const [editFixHint, setEditFixHint] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen]   = useState(false);
 
   // Poll ref
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -124,6 +309,21 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
 
   // Cleanup poll on unmount
   useEffect(() => () => stopPoll(), []);
+
+  // Force-open + auto-start when triggered externally (z.B. nach Restrukturierung)
+  const [pendingAutoStart, setPendingAutoStart] = useState(false);
+  const prevForceKeyRef = useRef(0);
+  useEffect(() => {
+    if (!forceStartKey || forceStartKey === prevForceKeyRef.current) return;
+    prevForceKeyRef.current = forceStartKey;
+    setOpen(true);
+    setPendingAutoStart(true);
+  }, [forceStartKey]);
+  useEffect(() => {
+    if (!pendingAutoStart || !open || starting || polling) return;
+    setPendingAutoStart(false);
+    startAnalysis();
+  }, [pendingAutoStart, open, starting, polling]);
 
   function stopPoll() {
     if (pollRef.current) {
@@ -192,7 +392,6 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
     try {
       const res = await api.dismissItem(docId, current.result_id, itemId, dismissed);
       setCurrent(prev => prev ? { ...prev, dismissed_ids: res.dismissed_ids } : prev);
-      // refresh summary dismissed_count
       setSummaries(prev => prev.map(s =>
         s.result_id === current.result_id
           ? { ...s, dismissed_count: res.dismissed_ids.length }
@@ -201,6 +400,17 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
     } catch {
       setError("Fehler beim Speichern.");
     }
+  }
+
+  function handleEdit(hint: string | null) {
+    setEditFixHint(hint);
+    setEditorOpen(true);
+  }
+
+  function handleBodySaved() {
+    setEditorOpen(false);
+    setEditFixHint(null);
+    onBodySaved?.();
   }
 
   // ─── Collapsed button ───────────────────────────────────────────────────────
@@ -231,6 +441,7 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
   const dismissedQuestions = current?.questions.filter(q => dismissedIds.includes(q.id)) ?? [];
   const isEmpty = current && activeQuestions.length === 0 && (current.issues?.length ?? 0) === 0 && (current.suggestions?.length ?? 0) === 0;
   const isRunning = polling || starting;
+  const canEdit = docType === "contract";
 
   return (
     <section className="card" style={{ borderColor: "var(--yellow)" }}>
@@ -309,7 +520,11 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
                   key={q.id}
                   q={q}
                   dismissed={false}
+                  docId={docId}
+                  docContent={docContent}
                   onToggleDismiss={handleToggleDismiss}
+                  onEdit={handleEdit}
+                  canEdit={canEdit}
                 />
               ))}
             </div>
@@ -321,7 +536,24 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
               <p style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
                 Probleme
               </p>
-              {current.issues.map((issue, i) => <IssueItem key={i} issue={issue} />)}
+              {current.issues.map((issue, i) => canEdit
+                ? <IssueItem key={i} issue={issue} onEdit={handleEdit} />
+                : (
+                  <div key={i} style={{ borderLeft: `3px solid ${SEVERITY_COLOR[issue.severity]}`, paddingLeft: 10, marginBottom: 8 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <span style={{ flexShrink: 0 }}>{SEVERITY_ICON[issue.severity]}</span>
+                      <div>
+                        {issue.section && (
+                          <span style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 2 }}>
+                            {issue.section}
+                          </span>
+                        )}
+                        <p style={{ fontSize: 13, lineHeight: 1.5 }}>{issue.text}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           )}
 
@@ -331,11 +563,14 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
               <p style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
                 Vorschläge
               </p>
-              {current.suggestions.map((s, i) => (
-                <div key={i} style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 13 }}>💡 {s.text}</span>
-                </div>
-              ))}
+              {current.suggestions.map((s, i) => canEdit
+                ? <SuggestionItem key={i} s={s} onEdit={handleEdit} />
+                : (
+                  <div key={i} style={{ borderLeft: "3px solid var(--accent)", paddingLeft: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 13 }}>💡 {s.text}</span>
+                  </div>
+                )
+              )}
             </div>
           )}
 
@@ -355,12 +590,27 @@ export default function AnalyzePanel({ docId, docContent, docType, autoTrigger =
                       key={q.id}
                       q={q}
                       dismissed={true}
+                      docId={docId}
+                      docContent={docContent}
                       onToggleDismiss={handleToggleDismiss}
+                      onEdit={handleEdit}
+                      canEdit={canEdit}
                     />
                   ))}
                 </div>
               )}
             </div>
+          )}
+
+          {/* Body Editor */}
+          {canEdit && editorOpen && (
+            <BodyEditor
+              docId={docId}
+              initialBody={docContent}
+              fixHint={editFixHint}
+              onSaved={handleBodySaved}
+              onClose={() => { setEditorOpen(false); setEditFixHint(null); }}
+            />
           )}
         </div>
       )}

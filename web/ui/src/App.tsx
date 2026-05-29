@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, AiUsage, Contract, Spec, Test } from "./api";
 import AiUsageView from "./components/AiUsageView";
 import ContractDetail from "./components/ContractDetail";
+import HoldoutDetail from "./components/HoldoutDetail";
 import ServerInfoPanel from "./components/ServerInfoPanel";
 import SettingsPage from "./components/SettingsPage";
 import SpecDetail from "./components/SpecDetail";
@@ -11,13 +12,14 @@ import StatusBar from "./components/StatusBar";
 import TestDetail from "./components/TestDetail";
 import { useTheme } from "./hooks/useTheme";
 
-type Selection = { type: "spec" | "contract" | "test"; id: string } | null;
+type Selection = { type: "spec" | "contract" | "test" | "holdout"; id: string } | null;
 
-function idType(id: string): "spec" | "contract" | "test" | "adr" {
+function idType(id: string): "spec" | "contract" | "test" | "holdout" | "adr" {
   const prefix = id.split("-")[0];
   if (prefix === "SPEC") return "spec";
   if (prefix === "CON")  return "contract";
   if (prefix === "TST")  return "test";
+  if (prefix === "HOL")  return "holdout";
   return "adr";
 }
 
@@ -60,6 +62,7 @@ export default function App() {
   function navigate(id: string) {
     const type = idType(id);
     if (type === "adr") return;
+
     const next: Selection = { type, id };
     setHistory(h => selected ? [...h, selected] : h);
     setSelected(next);
@@ -190,6 +193,14 @@ export default function App() {
             <TestDetail
               key={selected.id}
               testId={selected.id}
+              onNavigate={navigate}
+            />
+          )}
+
+          {!showAiUsage && !showSettings && selected?.type === "holdout" && (
+            <HoldoutDetail
+              key={selected.id}
+              holdoutId={selected.id}
               onNavigate={navigate}
             />
           )}

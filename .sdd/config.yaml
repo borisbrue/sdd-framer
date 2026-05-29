@@ -46,7 +46,7 @@ traceability:
   output_path: docs/traceability.md
 evaluator:
   model: claude-sonnet-4-6
-  base_url: http://localhost:8000
+  base_url: https://localhost:8000
   timeout_per_scenario: 60
   runs_per_scenario: 3
   pass_threshold: 2
@@ -86,6 +86,12 @@ cost_estimation:
       cache_read_per_million: 0.3
   budget_alert_usd: 5.0
   default_model: claude-haiku-4-5-20251001
+llm:
+  ai_routes:
+    provider: claude-cli
+  evaluator:
+    provider: claude-cli
+    model: claude-sonnet-4-6
 skills:
   provider: claude
   version: 0.1.0
@@ -110,3 +116,4 @@ docker:
 pwa:
   auth:
     token: 03f88e43579e809652ce9e286a0102ab5d57b81470bb2f6e7e4479cac54d7f67
+title: ''

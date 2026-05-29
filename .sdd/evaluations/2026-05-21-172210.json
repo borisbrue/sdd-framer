@@ -1,0 +1,303 @@
+{
+  "timestamp": "2026-05-21T15:20:32.031352+00:00",
+  "base_url": "https://localhost:8000",
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5,
+    "pass_rate": 0.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0001",
+      "title": "Job-Status bei inaktiver Spec gibt idle zurück",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0002",
+      "title": "Holdout-Generierung schlägt fehl wenn keine Contracts vorhanden",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0003",
+      "title": "Review-Aktion persistiert Ergebnis und schließt Gate-Phase ab",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0004",
+      "title": "Contract per PUT vollständig überschreiben (atomares Schreiben)",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0005",
+      "title": "Holdout-Assist verwendet keinen Sourcecode-Kontext",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    }
+  ]
+}

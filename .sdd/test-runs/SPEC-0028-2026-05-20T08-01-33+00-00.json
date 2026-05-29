@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0028",
+  "runner": "pytest",
+  "started_at": "2026-05-20T08:01:33+00:00",
+  "duration_s": 4.425,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0127",
+      "artifact": "tests/unit/test_pipeline_jobs.py",
+      "status": "passed",
+      "duration_s": 1.435,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0128",
+      "artifact": "tests/unit/test_interactive_routes.py",
+      "status": "passed",
+      "duration_s": 1.406,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0129",
+      "artifact": "tests/unit/test_interactive_routes.py",
+      "status": "passed",
+      "duration_s": 1.364,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0108": true,
+    "CON-0109": true,
+    "CON-0110": true
+  },
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0
+}

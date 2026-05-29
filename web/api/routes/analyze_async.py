@@ -16,6 +16,26 @@ from analyzer import analyze
 from job_store import JobStore, MAX_CONCURRENT_JOBS_PER_DOC, get_job_store
 from sdd_context import get_config
 
+FIX_HINT_PROMPT = """\
+You are an expert in Spec-Driven Development (SDD).
+A reviewer found the following question/issue in a document and you must suggest a concrete fix.
+
+Question/Issue: {question_text}
+Section: {section}
+
+## Document
+
+{content}
+
+Return ONLY a JSON object with a ready-to-use markdown snippet the author can paste into the document:
+{{"suggested_fix": "<markdown text>"}}
+
+Rules:
+- Write in the same language as the document.
+- Provide concrete, copy-pasteable markdown (headings, tables, bullet lists as appropriate).
+- Do NOT explain — just produce the fix text.
+"""
+
 router = APIRouter(prefix="/docs", tags=["analyze-async"])
 
 MAX_CONTENT_CHARS = 50_000
@@ -189,3 +209,68 @@ def dismiss_item(doc_id: str, result_id: str, body: DismissRequest) -> DismissRe
     if updated is None:
         raise HTTPException(status_code=404, detail="Analyse nicht gefunden.")
     return DismissResponse(dismissed_ids=updated)
+
+
+# ─── Fix-Hint ─────────────────────────────────────────────────────────────────
+
+class FixHintRequest(BaseModel):
+    content: str
+    question_text: str
+    section: str = ""
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("content darf nicht leer sein.")
+        return v[:MAX_CONTENT_CHARS]
+
+    @field_validator("question_text")
+    @classmethod
+    def question_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("question_text darf nicht leer sein.")
+        return v
+
+
+class FixHintResponse(BaseModel):
+    suggested_fix: str
+
+
+@router.post("/{doc_id}/analyze/fix-hint", response_model=FixHintResponse)
+def request_fix_hint(doc_id: str, body: FixHintRequest) -> FixHintResponse:
+    """Liefert einen konkreten Markdown-Änderungsvorschlag für eine einzelne Nachfrage."""
+    import json
+    import re
+
+    cfg = get_config()
+    from sdd_cli.llm import get_completion_provider
+    provider = get_completion_provider(cfg, "analyzer")
+
+    prompt = FIX_HINT_PROMPT.format(
+        question_text=body.question_text,
+        section=body.section or "—",
+        content=body.content,
+    )
+
+    try:
+        completion = provider.complete(prompt)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail={"error": "provider_error", "message": str(exc)})
+
+    inner = completion.text
+    fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", inner, re.DOTALL)
+    if fence:
+        inner = fence.group(1)
+    start, end = inner.find("{"), inner.rfind("}") + 1
+    if start == -1 or end == 0:
+        raise HTTPException(status_code=502, detail="LLM hat kein valides JSON zurückgegeben.")
+    try:
+        parsed = json.loads(inner[start:end])
+    except (json.JSONDecodeError, ValueError):
+        raise HTTPException(status_code=502, detail="LLM hat kein valides JSON zurückgegeben.")
+
+    fix = parsed.get("suggested_fix", "")
+    if not fix:
+        raise HTTPException(status_code=502, detail="Kein Vorschlag vom LLM erhalten.")
+    return FixHintResponse(suggested_fix=fix)

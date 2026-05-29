@@ -1,0 +1,72 @@
+{
+  "result_id": "2026-05-20T12:40:21_b7f54d04",
+  "doc_id": "SPEC-0028",
+  "timestamp": "2026-05-20T12:40:21",
+  "session_id": "0242aad0-2d8c-481d-95de-f1af77e13847",
+  "dismissed_ids": [],
+  "questions": [
+    {
+      "id": "auth-missing",
+      "section": "4. Funktionale Anforderungen",
+      "text": "Die API-Endpunkte l\u00f6sen sensible Operationen aus (Git-Branch anlegen, Container starten, PR erstellen). Welche Authentifizierung/Autorisierung sch\u00fctzt diese Endpunkte \u2014 und wer darf Pipeline-Aktionen ausl\u00f6sen?",
+      "severity": "error"
+    },
+    {
+      "id": "concurrent-jobs",
+      "section": "3. Architektur & Design Patterns",
+      "text": "Was passiert, wenn bereits ein Job l\u00e4uft und der Nutzer einen weiteren Gate-Button klickt? Wird der neue Job abgelehnt (HTTP 409), in eine Queue gestellt, oder der laufende Job abgebrochen?",
+      "severity": "error"
+    },
+    {
+      "id": "timeout-unresolved",
+      "section": "9. Offene Fragen",
+      "text": "Der Timeout-Vorschlag (120s) ist noch offen, aber implementierungsrelevant: Ist das ein Hard-Timeout, der den Job abbricht? Was passiert mit bereits geschriebenen Dateien (z. B. halb erzeugte Contracts) nach einem Timeout?",
+      "severity": "error"
+    },
+    {
+      "id": "rollback-semantics",
+      "section": "3. Architektur & Design Patterns",
+      "text": "Der Command-Entwurf nennt `rollback()` \u2014 f\u00fcr welche Commands soll Rollback ausgel\u00f6st werden, und was bedeutet Rollback konkret (z. B. bei `propose-contracts`: werden bereits geschriebene `.md`-Dateien gel\u00f6scht)?",
+      "severity": "warning"
+    },
+    {
+      "id": "agent-selection-criteria",
+      "section": "4. Funktionale Anforderungen",
+      "text": "FR-12 sagt, der Agent wird \"aus dem LLM-Pool gew\u00e4hlt\" \u2014 nach welchem Kriterium (erster Eintrag, Priorit\u00e4t, Round-Robin)? Was passiert, wenn der konfigurierte Provider nicht erreichbar ist?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "2. Zielsetzung",
+      "text": "Nur US-01 hat ein messbares Zeitlimit (30 Sekunden). F\u00fcr alle anderen KI-Aktionen (Contract-Vorschlag, Test-Generierung, Holdout-Generierung) fehlen Latenz- oder Timeout-Obergrenzen als Erfolgskriterium.",
+      "severity": "error"
+    },
+    {
+      "section": "4. Funktionale Anforderungen",
+      "text": "FR-09 (`run-tests`) spezifiziert nicht, wie der Container identifiziert wird (Name, ID, Label?) und was zur\u00fcckgegeben wird, wenn kein Container l\u00e4uft \u2014 weder HTTP-Status noch Fehlermeldungsformat sind definiert.",
+      "severity": "error"
+    },
+    {
+      "section": "7. Tests",
+      "text": "Es sind ausschlie\u00dflich Unit-Tests definiert. Integrationstests, die den vollst\u00e4ndigen Pipeline-Durchlauf (Button \u2192 API \u2192 Agent \u2192 Datei \u2192 Polling \u2192 UI) abdecken, fehlen.",
+      "severity": "warning"
+    },
+    {
+      "section": "2. Zielsetzung",
+      "text": "Kein Secret-Management im UI ist als Nicht-Ziel aufgef\u00fchrt, aber es fehlt eine Aussage dazu, wie API-Keys f\u00fcr die konfigurierten LLM-Provider zur Laufzeit bereitgestellt werden (Umgebungsvariablen, `.sdd/config.yaml`, anderes).",
+      "severity": "warning"
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Die Verkn\u00fcpfung von Contracts mit der Spec via Frontmatter (FR-02) sollte ein konkretes Beispiel-Schema zeigen, damit klar ist, welche Felder gesetzt werden und wie das UI die Verkn\u00fcpfung rendert."
+    },
+    {
+      "text": "Das Polling-Intervall f\u00fcr FR-11 sollte spezifiziert werden (z. B. 2s), damit Frontend-Implementierung und UX-Erwartung \u00fcbereinstimmen."
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

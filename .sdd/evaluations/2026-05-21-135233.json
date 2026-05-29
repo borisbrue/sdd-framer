@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-05-21T11:52:33.280191+00:00",
+  "base_url": "http://localhost:8000",
+  "summary": {
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "pass_rate": 0.0
+  },
+  "scenarios": []
+}

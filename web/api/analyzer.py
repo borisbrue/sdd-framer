@@ -38,10 +38,10 @@ underspecified user stories, missing scope boundaries.
 
 {{document_content}}
 
-Return ONLY a JSON object:
+Return ONLY a JSON object (keep each text field under 120 characters):
 {"questions":[{"id":"<slug>","section":"<heading>","text":"<question>","severity":"error|warning|suggestion"}],"issues":[{"section":"<h>","text":"<issue>","severity":"error|warning"}],"suggestions":[{"text":"<tip>"}]}
 
-Rules: max 5 questions, ask in document language, reference specific sections."""
+Rules: max 5 questions, max 5 issues, max 3 suggestions. Ask in document language. Reference specific sections."""
 
 FALLBACK_CONTRACT_PROMPT = """\
 You are an expert in Spec-Driven Development (SDD). Analyze the following Contract document
@@ -56,10 +56,10 @@ missing terms, untestable statements.
 
 {{document_content}}
 
-Return ONLY a JSON object:
+Return ONLY a JSON object (keep each text field under 120 characters):
 {"questions":[{"id":"<slug>","section":"<heading>","text":"<question>","severity":"error|warning|suggestion"}],"issues":[{"section":"<h>","text":"<issue>","severity":"error|warning"}],"suggestions":[{"text":"<tip>"}]}
 
-Rules: max 5 questions, ask in document language, reference specific sections."""
+Rules: max 5 questions, max 5 issues, max 3 suggestions. Ask in document language. Reference specific sections."""
 
 
 # Session state
@@ -135,6 +135,52 @@ def _build_prompt(template: str, content: str, answered: list[AnsweredQuestion])
 
 # Provider call
 
+def _try_parse_json(text: str) -> "dict[str, Any] | None":
+    """Versucht JSON zu parsen; repariert abgeschnittene Responses."""
+    # 1. Normaler Parse bis zum letzten }
+    end = text.rfind("}") + 1
+    if end > 0:
+        try:
+            return json.loads(text[:end])
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # 2. Repair: fehlende schließende Klammern ergänzen
+    depth_curly = depth_square = 0
+    in_string = escaped = False
+    last_complete = 0
+    for i, ch in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\" and in_string:
+            escaped = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == "{":
+            depth_curly += 1
+        elif ch == "}":
+            depth_curly -= 1
+        elif ch == "[":
+            depth_square += 1
+        elif ch == "]":
+            depth_square -= 1
+        if depth_curly == 0 and depth_square == 0 and i > 0:
+            last_complete = i + 1
+
+    # Schließe abgeschnittene Arrays/Objekte
+    repair = text[:last_complete] if last_complete else text
+    repair += "]" * max(0, depth_square) + "}" * max(0, depth_curly)
+    try:
+        return json.loads(repair)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
 def _call_claude(prompt: str, provider: "CompletionProvider") -> tuple[dict[str, Any], dict[str, Any]]:
     """Ruft den LLM-Provider auf und gibt (result_dict, usage_dict) zurück."""
     try:
@@ -174,17 +220,17 @@ def _call_claude(prompt: str, provider: "CompletionProvider") -> tuple[dict[str,
     if fence:
         inner_text = fence.group(1)
 
-    start, end = inner_text.find("{"), inner_text.rfind("}") + 1
-    if start == -1 or end == 0:
+    start = inner_text.find("{")
+    if start == -1:
         raise HTTPException(status_code=502, detail={
             "error": "provider_parse_error",
             "message": "LLM hat kein valides JSON zurückgegeben.",
             "raw": inner_text[:500],
         })
 
-    try:
-        parsed = json.loads(inner_text[start:end])
-    except (json.JSONDecodeError, ValueError):
+    candidate = inner_text[start:]
+    parsed = _try_parse_json(candidate)
+    if parsed is None:
         raise HTTPException(status_code=502, detail={
             "error": "provider_parse_error",
             "message": "LLM hat kein valides JSON zurückgegeben.",
@@ -209,11 +255,13 @@ class Issue:
     section: str
     text: str
     severity: str
+    suggested_fix: str | None = None
 
 
 @dataclass
 class Suggestion:
     text: str
+    suggested_fix: str | None = None
 
 
 @dataclass
@@ -278,11 +326,19 @@ def analyze(
     ][:MAX_QUESTIONS]
 
     issues = [
-        Issue(section=i.get("section", ""), text=i.get("text", ""), severity=i.get("severity", "warning"))
+        Issue(
+            section=i.get("section", ""),
+            text=i.get("text", ""),
+            severity=i.get("severity", "warning"),
+            suggested_fix=i.get("suggested_fix") or None,
+        )
         for i in (raw.get("issues") or [])
     ]
     suggestions = [
-        Suggestion(text=s.get("text", ""))
+        Suggestion(
+            text=s.get("text", ""),
+            suggested_fix=s.get("suggested_fix") or None,
+        )
         for s in (raw.get("suggestions") or [])
     ]
 

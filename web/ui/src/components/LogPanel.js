@@ -61,7 +61,7 @@ function wsUrl(specId) {
     return `${proto}//${host}/ws/logs/${specId}`;
 }
 let _lineId = 0;
-export default function LogPanel({ specId }) {
+export default function LogPanel({ specId, autoConnectTrigger }) {
     const [lines, setLines] = useState([]);
     const [conn, setConn] = useState("disconnected");
     const [autoScroll, setAutoScroll] = useState(true);
@@ -118,6 +118,19 @@ export default function LogPanel({ specId }) {
             bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
         }
     }, [lines]);
+    // Auto-connect when a pipeline action triggers it
+    useEffect(() => {
+        if (!autoConnectTrigger)
+            return;
+        if (wsRef.current) {
+            wsRef.current.onclose = null;
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+        setLines([]);
+        // Small delay so the backend can mark the stream active before we connect
+        setTimeout(connect, 400);
+    }, [autoConnectTrigger, connect]);
     // Cleanup on unmount / specId change
     useEffect(() => {
         return () => {

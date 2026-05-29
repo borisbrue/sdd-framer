@@ -97,6 +97,38 @@ def get_contract(contract_id: str) -> dict[str, Any]:
     raise HTTPException(status_code=404, detail=f"{contract_id} nicht gefunden.")
 
 
+class StatusPatch(BaseModel):
+    status: str
+
+
+@router.patch("/contracts/{contract_id}/status", summary="Contract-Status setzen")
+def patch_contract_status(contract_id: str, body: StatusPatch) -> dict[str, Any]:
+    found = _find_contract(contract_id)
+    if not found:
+        raise HTTPException(status_code=404, detail=f"{contract_id} nicht gefunden.")
+    md, cfg = found
+    doc = parse_safe(md)
+    doc.frontmatter["status"] = body.status
+    doc.write()
+    return {"ok": True, "id": contract_id, "status": body.status}
+
+
+class BodyPatch(BaseModel):
+    body: str
+
+
+@router.patch("/contracts/{contract_id}/body", summary="Contract-Body überschreiben")
+def patch_contract_body(contract_id: str, body: BodyPatch) -> dict[str, Any]:
+    found = _find_contract(contract_id)
+    if not found:
+        raise HTTPException(status_code=404, detail=f"{contract_id} nicht gefunden.")
+    md, cfg = found
+    doc = parse_safe(md)
+    doc.body = body.body
+    doc.write()
+    return {"ok": True, "id": contract_id}
+
+
 @router.post("/contracts", status_code=201, summary="Neuen Contract anlegen")
 def create_contract(body: ContractCreate) -> dict[str, Any]:
     cfg = get_config()

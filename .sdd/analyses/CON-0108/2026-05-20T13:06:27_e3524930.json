@@ -1,0 +1,73 @@
+{
+  "result_id": "2026-05-20T13:06:27_e3524930",
+  "doc_id": "CON-0108",
+  "timestamp": "2026-05-20T13:06:27",
+  "session_id": "a56808f1-8d63-4798-b98f-fdf2c3e5b627",
+  "dismissed_ids": [
+    "response-schema-contradiction",
+    "array-element-schemas",
+    "container-identifikation",
+    "idempotenz-wiederholter-aufruf",
+    "404-response-body",
+    "null-contracts-ergebnis",
+    "tests-passed-gate-ruecksetzen",
+    "vorbedingung-fehlercode",
+    "gate-phase-holdouts-tests",
+    "summary-feld-schema"
+  ],
+  "questions": [
+    {
+      "id": "summary-feld-schema",
+      "section": "Response-Schemata",
+      "text": "Das Feld `summary` erscheint in der `/review`-Response (`{ok, output, summary, issues[], suggestions[]}`), hat aber keine Schema-Definition in der Tabelle. Welchen Typ hat `summary` (z. B. `string`), ist es required oder optional, und was beschreibt es inhaltlich (z. B. Kurzfassung des Review-Ergebnisses)?",
+      "severity": "error"
+    },
+    {
+      "id": "vorbedingung-fehlercode",
+      "section": "Fehlerbedingungen",
+      "text": "Die Vorbedingungen (`contracts-proposed` f\u00fcr `/generate-holdouts`, `holdouts-generated` f\u00fcr `/run-tests`) sind definiert \u2014 aber welcher HTTP-Code und welches Response-Body werden zur\u00fcckgegeben, wenn eine Vorbedingung nicht erf\u00fcllt ist? Diese Fehlerbedingung fehlt in der Tabelle.",
+      "severity": "error"
+    },
+    {
+      "id": "404-response-body",
+      "section": "Fehlerbedingungen",
+      "text": "Bei `Spec nicht gefunden` wird HTTP 404 zur\u00fcckgegeben, das `ok`-Feld ist mit `\u2013` angegeben. Wird dennoch ein JSON-Body geliefert (z. B. `{\"ok\": false, \"output\": \"...\"}`)? Falls nicht, weicht dieser Fehler vom allgemeinen Response-Format ab und muss explizit spezifiziert werden.",
+      "severity": "error"
+    },
+    {
+      "id": "null-contracts-ergebnis",
+      "section": "POST /api/specs/{spec_id}/propose-contracts",
+      "text": "Was passiert, wenn der LLM keine g\u00fcltigen Contracts vorschl\u00e4gt (d. h. `contracts[]` w\u00e4re leer)? Ist das `ok: true` mit leerem Array (und Gate-Phase trotzdem abgeschlossen), oder `ok: false`?",
+      "severity": "warning"
+    },
+    {
+      "id": "tests-passed-gate-ruecksetzen",
+      "section": "POST /api/specs/{spec_id}/run-tests",
+      "text": "Wird die Gate-Phase `tests-passed` bei einem erneuten Aufruf mit `ok: false` (rc != 0) wieder zur\u00fcckgesetzt/gel\u00f6scht, oder bleibt sie einmal gesetzt dauerhaft bestehen? Das Verhalten bei Regression ist nicht spezifiziert.",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "POST /api/specs/{spec_id}/generate-holdouts",
+      "text": "Der Endpunkt `/generate-holdouts` wird zweimal vollst\u00e4ndig definiert \u2014 einmal in der initialen Endpunktliste (ohne Vorbedingung und Gate-Phase) und einmal sp\u00e4ter mit Vorbedingung und `holdouts-generated`-Gate. Die erste Definition ist unvollst\u00e4ndig und widerspr\u00fcchlich zur zweiten.",
+      "severity": "warning",
+      "suggested_fix": null
+    },
+    {
+      "section": "Verhalten bei wiederholtem Aufruf",
+      "text": "Die Endpunkte `DELETE /api/specs/{spec_id}/contracts` und `DELETE /api/specs/{spec_id}/holdouts` werden als L\u00f6sung f\u00fcr akkumulierte Artefakte erw\u00e4hnt, sind aber im Contract nicht definiert. Entweder m\u00fcssen sie spezifiziert oder der Hinweis muss entfernt werden.",
+      "severity": "warning",
+      "suggested_fix": null
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Die Gate-Phasen (`spec-review`, `contracts-proposed`, `holdouts-generated`, `tests-passed`) sollten als formale Glossar-Eintr\u00e4ge definiert werden \u2014 inklusive Speicherort (z. B. `.sdd/state.json`) und erlaubter \u00dcberg\u00e4nge, damit ihre Pr\u00fcfung testbar ist.",
+      "suggested_fix": null
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

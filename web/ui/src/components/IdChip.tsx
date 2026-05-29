@@ -11,6 +11,7 @@ export default function IdChip({ id, onClick, missing = false }: Props) {
     CON:  "var(--green)",
     TST:  "#cba6f7",
     ADR:  "var(--yellow)",
+    HOL:  "#f38ba8",
   };
   const color = colors[prefix] ?? "var(--muted)";
 

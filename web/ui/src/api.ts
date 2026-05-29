@@ -18,9 +18,16 @@ export const api = {
   getSpecs:        () => req<Spec[]>("GET", "/specs"),
   getSpec:         (id: string) => req<SpecDetail>("GET", `/specs/${id}`),
   createSpec:      (b: CreateSpec) => req<{id: string; file: string}>("POST", "/specs", b),
+  updateSpec:      (specId: string, body: string) => req<SpecDetail>("PUT", `/specs/${specId}`, { body }),
+  patchSpecStatus: (specId: string, status: string) =>
+                     req<{ok: boolean; status: string}>("PATCH", `/specs/${specId}/status`, { status }),
+  approveSpec:     (specId: string) =>
+                     req<{approved: boolean; status: string; checks: GateCheck[]}>("POST", `/specs/${specId}/approve`),
   getContracts:    () => req<Contract[]>("GET", "/contracts"),
   getContract:     (id: string) => req<ContractDetail>("GET", `/contracts/${id}`),
   createContract:  (b: CreateContract) => req<{id: string; file: string}>("POST", "/contracts", b),
+  patchContractStatus: (contractId: string, status: string) =>
+                         req<{ok: boolean; status: string}>("PATCH", `/contracts/${contractId}/status`, { status }),
   getTests:        () => req<Test[]>("GET", "/tests"),
   getTest:         (id: string) => req<TestDetail>("GET", `/tests/${id}`),
   createTest:      (b: CreateTest) => req<{id: string; file: string}>("POST", "/tests", b),
@@ -48,6 +55,18 @@ export const api = {
     req<PersistedAnalysis>("GET", `/docs/${docId}/analyses/${resultId}`),
   dismissItem: (docId: string, resultId: string, itemId: string, dismissed: boolean) =>
     req<{ dismissed_ids: string[] }>("PATCH", `/docs/${docId}/analyses/${resultId}/dismiss`, { item_id: itemId, dismissed }),
+  patchContractBody: (contractId: string, body: string) =>
+    req<{ ok: boolean }>("PATCH", `/contracts/${contractId}/body`, { body }),
+  fetchFixHint: (docId: string, questionText: string, section: string, content: string) =>
+    req<{ suggested_fix: string }>("POST", `/docs/${docId}/analyze/fix-hint`, {
+      content, question_text: questionText, section,
+    }),
+  getHoldouts:         (specId: string) => req<{holdouts: Holdout[]}>( "GET", `/specs/${specId}/holdouts`),
+  getHoldout:          (holId: string) => req<Holdout & {spec: string}>( "GET", `/holdouts/${holId}`),
+  saveHoldout:         (specId: string, holId: string, body: string) =>
+                         req<{ok: boolean}>("PUT", `/specs/${specId}/holdouts/${holId}`, { body }),
+  patchHoldoutStatus:  (specId: string, holId: string, status: string) =>
+                         req<{ok: boolean; status: string}>("PATCH", `/specs/${specId}/holdouts/${holId}/status`, { status }),
   getTestResults:      (specId: string) => req<RunReport>("GET", `/specs/${specId}/test-results`),
   triggerTestRun:      (specId: string) => req<RunReport>("POST", `/specs/${specId}/test-run`),
   orchestrate:         (b: OrchestrateRequest) => req<{run_id: string}>("POST", "/orchestrate", b),
@@ -111,7 +130,7 @@ export interface PersistedAnalysis {
   dismissed_ids: string[];
   questions: AnalysisQuestion[];
   issues: AnalysisIssue[];
-  suggestions: { text: string }[];
+  suggestions: { text: string; suggested_fix?: string | null }[];
   usage: Record<string, unknown>;
 }
 
@@ -126,6 +145,7 @@ export interface AnalysisIssue {
   section: string;
   text: string;
   severity: "error" | "warning";
+  suggested_fix?: string | null;
 }
 
 export interface AnalyzeResponse {
@@ -204,6 +224,15 @@ export interface Test {
 
 export interface TestDetail extends Test {
   body: string;
+}
+
+export interface Holdout {
+  id: string;
+  title: string;
+  status: string;
+  body: string;
+  abs_file: string;
+  spec?: string;
 }
 
 export interface ValidationIssue {
@@ -328,6 +357,12 @@ export interface ConfigPatch {
   evaluator_base_url?: string;
   max_retries?:        number;
   spec_lifecycle?:     string[];
+}
+
+export interface GateCheck {
+  name: string;
+  passed: boolean;
+  message: string;
 }
 
 export type TestRunStatus = "passed" | "failed" | "error" | "missing" | "skipped";

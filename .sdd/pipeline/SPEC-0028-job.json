@@ -1,0 +1,11 @@
+{
+  "spec_id": "SPEC-0028",
+  "command": "run-tests",
+  "status": "done",
+  "started_at": "2026-05-21T13:09:18.468395+00:00",
+  "output": "",
+  "finished_at": "2026-05-21T13:09:57.852677+00:00",
+  "result": {
+    "returncode": 0
+  }
+}

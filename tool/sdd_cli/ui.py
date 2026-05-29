@@ -307,7 +307,7 @@ def start_server(
             print("  Oder starte mit:   sdd ui --watch")
             sys.exit(1)
 
-        cert_dir = Path(project_root) / ".certs"
+        cert_dir = Path(root_resolved) / ".certs"
         ssl_args = []
         scheme = "http"
         if (cert_dir / "cert.pem").exists() and (cert_dir / "key.pem").exists():

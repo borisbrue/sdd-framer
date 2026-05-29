@@ -1,0 +1,66 @@
+{
+  "result_id": "2026-05-20T14:01:39_37b6d20b",
+  "doc_id": "SPEC-0028",
+  "timestamp": "2026-05-20T14:01:39",
+  "session_id": "d0d8bbff-7393-44b2-bf7c-2a4883ed5d5c",
+  "dismissed_ids": [],
+  "questions": [
+    {
+      "id": "spec-review-seiteneffekt",
+      "section": "5. Notizen",
+      "text": "Die offene Frage 'Soll der Spec-Review \u00c4nderungen direkt in die .md-Datei schreiben oder nur Feedback ausgeben?' ist f\u00fcr FR-01 implementierungsrelevant und muss entschieden werden: Schreibt der Review-Endpunkt ausschlie\u00dflich in `.sdd/reviews/{id}-review.md`, oder modifiziert er auch die Spec-Datei selbst?",
+      "severity": "error"
+    },
+    {
+      "id": "job-timeout-konflikt",
+      "section": "5. Notizen",
+      "text": "Der vorgeschlagene Job-Timeout von 120s steht in potenziellem Widerspruch zur 30-Sekunden-Erwartung aus US-01. Gilt der 30s-Wert als hartes SLO (HTTP-Fehler bei \u00dcberschreitung) oder als Richtwert \u2014 und was liefert das UI wenn ein Job nach 120s abbricht: Fehlermeldung, Teilergebnis oder Retry-Option?",
+      "severity": "error"
+    },
+    {
+      "id": "gleichzeitige-jobs-gleiche-spec",
+      "section": "2. Akzeptanzkriterien",
+      "text": "Was passiert, wenn f\u00fcr dieselbe Spec-ID ein zweiter Gate-Button geklickt wird, w\u00e4hrend FR-11 bereits einen laufenden Job meldet \u2014 wird der zweite Request abgelehnt (z. B. HTTP 409), in eine Queue gestellt, oder ersetzt er den laufenden Job?",
+      "severity": "error"
+    },
+    {
+      "id": "api-key-bereitstellung",
+      "section": "3. Constraints & Non-Goals",
+      "text": "'Kein eigenes Secret-Management im UI' ist als Nicht-Ziel definiert, aber es fehlt die Angabe wie der API-Key f\u00fcr den konfigurierten LLM-Provider (Claude, OpenAI, Ollama) zur Laufzeit bereitgestellt wird \u2014 Umgebungsvariable, `.env`-Datei oder anderer Mechanismus?",
+      "severity": "warning"
+    },
+    {
+      "id": "rollback-verhalten",
+      "section": "3. Constraints & Non-Goals",
+      "text": "Das Command Pattern definiert `rollback()`, aber es fehlen Akzeptanzkriterien f\u00fcr den Fehlerfall: Werden bei einem fehlgeschlagenen `propose-contracts` bereits geschriebene `.md`-Dateien wieder gel\u00f6scht, und welche Gate-Phasen-Markierungen werden r\u00fcckg\u00e4ngig gemacht?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "2. Akzeptanzkriterien",
+      "text": "Die Identifier `cid` (FR-06) und `hid` (FR-07) sind nicht definiert \u2014 ist es ein Dateiname, eine UUID oder ein fortlaufender Index? Das URL-Routing kann ohne diese Definition nicht implementiert werden.",
+      "severity": "error",
+      "suggested_fix": null
+    },
+    {
+      "section": "2. Akzeptanzkriterien",
+      "text": "FR-09 ('gibt Output zur\u00fcck') spezifiziert das Response-Format nicht: Werden stdout und stderr zusammengef\u00fchrt oder getrennt zur\u00fcckgegeben, ist der Exit-Code Bestandteil des Schemas, und gibt es eine L\u00e4ngenbegrenzung f\u00fcr den pytest-Output?",
+      "severity": "warning",
+      "suggested_fix": null
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Das Polling-Intervall f\u00fcr FR-11 sollte spezifiziert werden (z. B. alle 2s), damit das Frontend ohne R\u00fcckfragen implementiert werden kann.",
+      "suggested_fix": null
+    },
+    {
+      "text": "Die Performance-Erwartung aus US-01 (30 Sekunden) sollte als explizite nicht-funktionale Anforderung f\u00fcr Spec-Review formalisiert werden, damit Monitoring und Alerting darauf aufgebaut werden k\u00f6nnen.",
+      "suggested_fix": null
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

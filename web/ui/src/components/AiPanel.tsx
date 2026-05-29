@@ -1,4 +1,4 @@
-import { useState } from "react";
+import react from "react";
 import { api, AiUsageEntry } from "../api";
 import MarkdownBody from "./MarkdownBody";
 
@@ -33,14 +33,14 @@ function UsagePill({ entry }: { entry: AiUsageEntry }) {
 }
 
 export default function AiPanel({ specId, specContent, onApply, onNavigate }: Props) {
-  const [open, setOpen]         = useState(false);
-  const [provider, setProvider] = useState<Provider>("claude");
-  const [mode, setMode]         = useState<Mode>("idle");
-  const [loading, setLoading]   = useState(false);
-  const [result, setResult]     = useState("");
-  const [usage, setUsage]       = useState<AiUsageEntry | null>(null);
-  const [error, setError]       = useState("");
-  const [instructions, setInstructions] = useState("");
+  const [open, setOpen]         = react.useState(false);
+  const [provider, setProvider] = react.useState<Provider>("claude");
+  const [mode, setMode]         = react.useState<Mode>("idle");
+  const [loading, setLoading]   = react.useState(false);
+  const [result, setResult]     = react.useState("");
+  const [usage, setUsage]       = react.useState<AiUsageEntry | null>(null);
+  const [error, setError]       = react.useState("");
+  const [instructions, setInstructions] = react.useState("");
 
   async function run(op: Mode) {
     setLoading(true);

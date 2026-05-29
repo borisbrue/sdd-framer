@@ -1,0 +1,22 @@
+{
+  "spec_id": "SPEC-0012",
+  "runner": "pytest",
+  "started_at": "2026-05-19T18:38:39+00:00",
+  "duration_s": 0.035,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0110",
+      "artifact": "",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0110."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0079": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 1
+}

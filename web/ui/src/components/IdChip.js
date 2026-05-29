@@ -6,6 +6,7 @@ export default function IdChip({ id, onClick, missing = false }) {
         CON: "var(--green)",
         TST: "#cba6f7",
         ADR: "var(--yellow)",
+        HOL: "#f38ba8",
     };
     const color = colors[prefix] ?? "var(--muted)";
     return (_jsxs("span", { onClick: () => onClick(id), style: {

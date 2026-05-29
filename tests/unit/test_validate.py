@@ -206,7 +206,7 @@ class TestValidate:
             "check_agents_md": False,
         }})
         _write_spec(tmp_path / ".sdd" / "specs" / "SPEC-0001.md",
-                    contracts=[], tests=[])
+                    status="approved", contracts=[], tests=[])
         report = validate(cfg)
         assert any("require_contract_per_spec" in i.message for i in report.errors)
 

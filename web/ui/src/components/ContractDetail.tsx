@@ -4,6 +4,7 @@ import AnalyzePanel from "./AnalyzePanel";
 import IdChip from "./IdChip";
 import MarkdownBody from "./MarkdownBody";
 import OpenButton from "./OpenButton";
+import RestructurePanel from "./RestructurePanel";
 
 interface Props {
   contractId: string;
@@ -12,11 +13,17 @@ interface Props {
 
 export default function ContractDetail({ contractId, onNavigate }: Props) {
   const [detail, setDetail] = useState<ContractDetailType | null>(null);
+  const [analysisTrigger, setAnalysisTrigger] = useState(0);
 
   useEffect(() => {
     setDetail(null);
     api.getContract(contractId).then(setDetail).catch(console.error);
   }, [contractId]);
+
+  const patchStatus = async (status: string) => {
+    await api.patchContractStatus(contractId, status);
+    setDetail(d => d ? { ...d, status } : d);
+  };
 
   if (!detail) return <div style={{ padding: 20, color: "var(--muted)" }}>Lade…</div>;
 
@@ -27,7 +34,19 @@ export default function ContractDetail({ contractId, onNavigate }: Props) {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
               <code style={{ color: "var(--green)", fontSize: 13 }}>{detail.id}</code>
-              <span className={`badge badge-${detail.status}`}>{detail.status}</span>
+              <select
+                value={detail.status}
+                onChange={e => patchStatus(e.target.value)}
+                style={{
+                  fontSize: 11, background: "var(--surface)", color: "var(--muted)",
+                  border: "1px solid var(--border)", borderRadius: 4, padding: "2px 6px", cursor: "pointer",
+                }}
+              >
+                <option value="draft">draft</option>
+                <option value="review">review</option>
+                <option value="approved">approved</option>
+                <option value="deprecated">deprecated</option>
+              </select>
               <code style={{ fontSize: 11, color: "var(--muted)" }}>[{detail.format}]</code>
             </div>
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{detail.title}</h2>
@@ -71,7 +90,18 @@ export default function ContractDetail({ contractId, onNavigate }: Props) {
       {/* Markdown Body */}
       {detail.body.trim() && (
         <section className="card">
-          <h3 style={{ ...sectionHead, marginBottom: 12 }}>Inhalt</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={sectionHead}>Inhalt</h3>
+            <RestructurePanel
+              docId={detail.id}
+              docType="contract"
+              docContent={detail.body}
+              onRestructured={(newBody) => {
+                setDetail(d => d ? { ...d, body: newBody } : d);
+                setAnalysisTrigger(k => k + 1);
+              }}
+            />
+          </div>
           <MarkdownBody markdown={detail.body} onIdClick={onNavigate} />
         </section>
       )}
@@ -81,6 +111,8 @@ export default function ContractDetail({ contractId, onNavigate }: Props) {
         docId={detail.id}
         docContent={detail.body}
         docType="contract"
+        forceStartKey={analysisTrigger}
+        onBodySaved={() => api.getContract(contractId).then(setDetail).catch(console.error)}
       />
     </div>
   );

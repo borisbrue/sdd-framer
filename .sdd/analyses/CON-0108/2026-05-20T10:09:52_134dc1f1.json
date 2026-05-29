@@ -1,0 +1,67 @@
+{
+  "result_id": "2026-05-20T10:09:52_134dc1f1",
+  "doc_id": "CON-0108",
+  "timestamp": "2026-05-20T10:09:52",
+  "session_id": "329dc2ec-3ef5-4860-a5da-792b750f405a",
+  "dismissed_ids": [],
+  "questions": [
+    {
+      "id": "response-schema-contradiction",
+      "section": "Garantie",
+      "text": "Die Garantie definiert das Response-Schema als `{ok: bool, output: str}`, aber die Endpunkte liefern zus\u00e4tzliche Felder (`summary`, `issues[]`, `suggestions[]`, `contracts[]`, `holdouts[]`). Welches Schema gilt verbindlich \u2014 ist die Garantie unvollst\u00e4ndig, oder sind die Zusatzfelder optional/immer vorhanden?",
+      "severity": "error"
+    },
+    {
+      "id": "404-response-body",
+      "section": "Fehlerbedingungen",
+      "text": "Bei HTTP 404 ist `ok` als `\u2013` angegeben. Was ist der genaue Response-Body wenn die Spec nicht gefunden wird \u2014 kein `ok`-Feld, ein fester Fehlerstring, oder ein anderes Schema?",
+      "severity": "error"
+    },
+    {
+      "id": "array-element-schemas",
+      "section": "Endpunkte",
+      "text": "Die Felder `contracts[]`, `holdouts[]`, `issues[]` und `suggestions[]` in den Responses sind nicht typisiert. Enthalten sie Strings, Objekte mit definierten Feldern (z.B. `{id, title, path}`)? Welches Schema hat jedes Array-Element?",
+      "severity": "error"
+    },
+    {
+      "id": "ok-false-extra-fields",
+      "section": "Garantie",
+      "text": "Wenn `ok: false` zur\u00fcckgegeben wird: Sind die Zusatzfelder (`issues[]`, `contracts[]`, etc.) dann abwesend, leer (`[]`), oder `null`? Das Verhalten ist nicht spezifiziert.",
+      "severity": "error"
+    },
+    {
+      "id": "contract-type-path-segment",
+      "section": "Endpunkte",
+      "text": "Im Pfad `.sdd/contracts/{type}/{CON-XXXX}-{slug}.md` ist `{type}` undefiniert. Welche Werte kann `{type}` annehmen, und wer oder was bestimmt diesen Wert (LLM, fester Enum, Spec-Metadaten)?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "Garantie",
+      "text": "Die Garantie verspricht synchrone Antworten, definiert aber keine maximale Wartezeit f\u00fcr LLM-Aufrufe. Ohne Timeout-Garantie ist das synchrone Verhalten nicht testbar und Client-Implementierungen k\u00f6nnen keine sinnvollen Timeouts setzen.",
+      "severity": "warning"
+    },
+    {
+      "section": "Endpunkte",
+      "text": "`/generate-holdouts` und `/run-tests` markieren keine Gate-Phase als abgeschlossen, w\u00e4hrend `/review` und `/propose-contracts` dies explizit tun. Es ist unklar ob das eine bewusste Auslassung ist oder ein Versehen \u2014 fehlende Invariante im Gate-Lifecycle.",
+      "severity": "warning"
+    },
+    {
+      "section": "Fehlerbedingungen",
+      "text": "Fehlerbedingungen f\u00fcr ung\u00fcltige `spec_id`-Formate, Dateisystem-Fehler (z.B. Schreibschutz, volle Disk) und gleichzeitige Requests auf denselben Endpunkt (Idempotenz/Concurrency) fehlen vollst\u00e4ndig.",
+      "severity": "warning"
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Idempotenz-Verhalten explizit spezifizieren: Was passiert, wenn `/review` oder `/propose-contracts` ein zweites Mal aufgerufen werden \u2014 wird \u00fcberschrieben, abgelehnt (409), oder gibt es ein `force`-Parameter?"
+    },
+    {
+      "text": "Ein Glossar erg\u00e4nzen, das Begriffe wie `Gate-Phase`, `Dev-Container`, `CON-XXXX`/`HOL-XXXX` (Nummerierungsschema), und `slug` (Zeichensatz, L\u00e4nge) formal definiert."
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

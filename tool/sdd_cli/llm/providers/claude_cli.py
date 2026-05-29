@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -11,6 +12,17 @@ from collections.abc import Callable
 from ..base import CompletionResult
 
 _DEFAULT_COMPLETION_TIMEOUT = 120
+
+# Flatpak-Sandboxes und andere eingeschränkte Umgebungen fehlt ~/.local/bin im PATH.
+_EXTRA_SEARCH_PATH = os.pathsep.join([
+    str(Path.home() / ".local" / "bin"),
+    "/usr/local/bin",
+    os.environ.get("PATH", ""),
+])
+
+
+def _find_claude() -> str | None:
+    return shutil.which("claude") or shutil.which("claude", path=_EXTRA_SEARCH_PATH)
 
 
 class ClaudeCliCompletionProvider:
@@ -30,7 +42,7 @@ class ClaudeCliCompletionProvider:
         system_prompt: str | None = None,
         timeout: int | None = None,
     ) -> CompletionResult:
-        claude = shutil.which("claude")
+        claude = _find_claude()
         if not claude:
             raise RuntimeError(
                 "claude CLI nicht gefunden. "
@@ -80,7 +92,7 @@ class ClaudeCliCodeGenProvider:
         timeout: int = 600,
         on_proc: Callable[[Any], None] | None = None,
     ) -> tuple[list[dict[str, Any]], str]:
-        claude = shutil.which("claude")
+        claude = _find_claude()
         if not claude:
             raise RuntimeError(
                 "claude CLI nicht gefunden. "

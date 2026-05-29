@@ -1,4 +1,5 @@
----
+
+ ---
 id: SPEC-0018
 title: "Claude Skill für SDD – /sdd Slash-Commands für geführten Spec-Zyklus in Claude Code"
 status: implemented

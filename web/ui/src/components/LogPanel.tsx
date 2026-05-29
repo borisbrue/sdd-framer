@@ -19,6 +19,7 @@ interface DisplayLine {
 
 interface Props {
   specId: string;
+  autoConnectTrigger?: number;
 }
 
 // ── ANSI-to-HTML (basic 16-color + bold + reset) ──────────────────────────────
@@ -84,7 +85,7 @@ type ConnState = "disconnected" | "connecting" | "connected" | "no_stream" | "er
 
 let _lineId = 0;
 
-export default function LogPanel({ specId }: Props) {
+export default function LogPanel({ specId, autoConnectTrigger }: Props) {
   const [lines, setLines] = useState<DisplayLine[]>([]);
   const [conn, setConn] = useState<ConnState>("disconnected");
   const [autoScroll, setAutoScroll] = useState(true);
@@ -148,6 +149,19 @@ export default function LogPanel({ specId }: Props) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [lines]);
+
+  // Auto-connect when a pipeline action triggers it
+  useEffect(() => {
+    if (!autoConnectTrigger) return;
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setLines([]);
+    // Small delay so the backend can mark the stream active before we connect
+    setTimeout(connect, 400);
+  }, [autoConnectTrigger, connect]);
 
   // Cleanup on unmount / specId change
   useEffect(() => {

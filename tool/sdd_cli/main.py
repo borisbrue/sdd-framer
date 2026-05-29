@@ -469,7 +469,7 @@ def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool,
     console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
 
     try:
-        report = run_evaluation(cfg, base_url, hol_ids=ids_filter)
+        report = run_evaluation(cfg, base_url, hol_ids=ids_filter, spec_id=spec_id)
     except RuntimeError as e:
         console.print(f"[red]✗[/] {e}")
         sys.exit(1)

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+// useCallback bleibt für load() in SpecPipelineView
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,7 @@ interface Action {
   endpoint?: string;
   method?: string;
   info?: boolean;
+  secondary?: boolean;
 }
 
 interface Stage {
@@ -83,7 +85,7 @@ function SubStatusDot({ status }: { status: Substep["status"] }) {
 
 // ── Action button ──────────────────────────────────────────────────────────────
 
-function ActionButton({ action, onDone }: { action: Action; onDone: () => void }) {
+function ActionButton({ action, onDone, onTriggered }: { action: Action; onDone: () => void; onTriggered?: (id: string) => void }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -112,6 +114,7 @@ function ActionButton({ action, onDone }: { action: Action; onDone: () => void }
       }
       if (data.ok) {
         setResult("✓ " + (data.output?.split("\n")[0] ?? "OK"));
+        onTriggered?.(action.id);
         setTimeout(onDone, 1500);
       } else {
         const lines = (data.output ?? data.detail ?? "Fehler unbekannt")
@@ -130,7 +133,12 @@ function ActionButton({ action, onDone }: { action: Action; onDone: () => void }
       <button
         onClick={trigger}
         disabled={loading}
-        style={{
+        style={action.secondary ? {
+          background: "none", color: "var(--muted)",
+          border: "1px solid var(--border)", borderRadius: 5, padding: "3px 10px",
+          fontSize: 11, fontWeight: 400, cursor: loading ? "wait" : "pointer",
+          opacity: loading ? 0.5 : 1,
+        } : {
           background: "var(--accent)", color: "var(--bg)",
           border: "none", borderRadius: 5, padding: "4px 12px",
           fontSize: 12, fontWeight: 600, cursor: loading ? "wait" : "pointer",
@@ -153,7 +161,7 @@ function ActionButton({ action, onDone }: { action: Action; onDone: () => void }
 
 // ── Single stage node ──────────────────────────────────────────────────────────
 
-function StageNode({ stage, onRefresh }: { stage: Stage; onRefresh: () => void }) {
+function StageNode({ stage, onRefresh, onTriggered }: { stage: Stage; onRefresh: () => void; onTriggered?: (id: string) => void }) {
   const isActive = stage.status === "active";
   const isFailed = stage.status === "failed";
 
@@ -216,7 +224,7 @@ function StageNode({ stage, onRefresh }: { stage: Stage; onRefresh: () => void }
         {stage.actions && stage.actions.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
             {stage.actions.map(a => (
-              <ActionButton key={a.id} action={a} onDone={onRefresh} />
+              <ActionButton key={a.id} action={a} onDone={onRefresh} onTriggered={onTriggered} />
             ))}
           </div>
         )}
@@ -242,11 +250,14 @@ function Connector({ fromStatus }: { fromStatus: Stage["status"] }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
+const LOG_ACTION_IDS = new Set(["start", "run-tests", "review", "propose-contracts", "generate-holdouts", "finalize", "evaluate"]);
+
 interface Props {
   specId: string;
+  onActionTriggered?: (actionId: string) => void;
 }
 
-export default function SpecPipelineView({ specId }: Props) {
+export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
   const [state, setState] = useState<PipelineState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -297,7 +308,7 @@ export default function SpecPipelineView({ specId }: Props) {
       <div style={{ display: "flex", flexDirection: "column" }}>
         {state.stages.map((stage, i) => (
           <div key={stage.id}>
-            <StageNode stage={stage} onRefresh={load} />
+            <StageNode stage={stage} onRefresh={load} onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)} />
             {i < state.stages.length - 1 && (
               <div style={{ marginLeft: 10 }}>
                 <Connector fromStatus={stage.status} />
@@ -315,7 +326,7 @@ export default function SpecPipelineView({ specId }: Props) {
           borderRadius: 6, display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>Nächster Schritt</span>
-          <ActionButton action={state.next_action} onDone={load} />
+          <ActionButton action={state.next_action} onDone={load} onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)} />
         </div>
       )}
 

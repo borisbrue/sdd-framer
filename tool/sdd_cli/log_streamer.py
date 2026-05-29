@@ -71,6 +71,11 @@ class LogEventBus:
         with self._lock:
             return list(self._buffers.get(spec_id, []))
 
+    def clear_buffer(self, spec_id: str) -> None:
+        with self._lock:
+            if spec_id in self._buffers:
+                self._buffers[spec_id].clear()
+
     def mark_active(self, spec_id: str) -> None:
         with self._lock:
             self._active_streams.add(spec_id)

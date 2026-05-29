@@ -1,0 +1,192 @@
+{
+  "timestamp": "2026-05-21T13:04:53.318417+00:00",
+  "base_url": "https://localhost:8000",
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5,
+    "pass_rate": 0.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0001",
+      "title": "Job-Status bei inaktiver Spec gibt idle zurück",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0002",
+      "title": "Holdout-Generierung schlägt fehl wenn keine Contracts vorhanden",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0003",
+      "title": "Review-Aktion persistiert Ergebnis und schließt Gate-Phase ab",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0004",
+      "title": "Contract per PUT vollständig überschreiben (atomares Schreiben)",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0005",
+      "title": "Holdout-Assist verwendet keinen Sourcecode-Kontext",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: ANTHROPIC_API_KEY ist nicht gesetzt. Exportiere die Variable oder konfiguriere llm.*.api_key in config.yaml."
+        }
+      ]
+    }
+  ]
+}

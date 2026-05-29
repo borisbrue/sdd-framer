@@ -56,10 +56,12 @@ class IssueOut(BaseModel):
     section: str
     text: str
     severity: str
+    suggested_fix: str | None = None
 
 
 class SuggestionOut(BaseModel):
     text: str
+    suggested_fix: str | None = None
 
 
 class AnalyzeResponse(BaseModel):
@@ -91,8 +93,8 @@ def analyze_doc(doc_id: str, body: AnalyzeRequest) -> AnalyzeResponse:
         session_id=result.session_id,
         questions=[QuestionOut(id=q.id, section=q.section, text=q.text, severity=q.severity)
                    for q in result.questions],
-        issues=[IssueOut(section=i.section, text=i.text, severity=i.severity)
+        issues=[IssueOut(section=i.section, text=i.text, severity=i.severity, suggested_fix=i.suggested_fix)
                 for i in result.issues],
-        suggestions=[SuggestionOut(text=s.text) for s in result.suggestions],
+        suggestions=[SuggestionOut(text=s.text, suggested_fix=s.suggested_fix) for s in result.suggestions],
         usage=result.usage,
     )

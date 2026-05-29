@@ -1,0 +1,68 @@
+{
+  "result_id": "2026-05-20T11:53:18_a58397a6",
+  "doc_id": "CON-0108",
+  "timestamp": "2026-05-20T11:53:18",
+  "session_id": "d2a74a52-99c5-4507-9fc1-60c218b6630b",
+  "dismissed_ids": [
+    "response-schema-contradiction",
+    "array-element-schemas",
+    "container-identifikation",
+    "idempotenz-wiederholter-aufruf",
+    "gate-phase-holdouts-tests"
+  ],
+  "questions": [
+    {
+      "id": "array-element-schemas",
+      "section": "Endpunkte",
+      "text": "Welche Felder enthalten die Elemente der Arrays `contracts[]`, `holdouts[]`, `issues[]` und `suggestions[]` in den jeweiligen Responses? Ohne definierte Schemata sind diese Responses nicht testbar.",
+      "severity": "error"
+    },
+    {
+      "id": "idempotenz-wiederholter-aufruf",
+      "section": "Endpunkte",
+      "text": "Was passiert, wenn `/review` oder `/propose-contracts` erneut aufgerufen wird, obwohl bereits ein Ergebnis persistent gespeichert ist \u2014 wird \u00fcberschrieben, ein Fehler zur\u00fcckgegeben oder ein neues Artefakt angelegt?",
+      "severity": "error"
+    },
+    {
+      "id": "container-identifikation",
+      "section": "POST /api/specs/{spec_id}/run-tests",
+      "text": "Wie wird der 'laufende Dev-Container' identifiziert \u2014 \u00fcber eine feste Container-ID, einen Namen aus der Spec, eine Umgebungsvariable? Was gilt, wenn mehrere Container laufen?",
+      "severity": "error"
+    },
+    {
+      "id": "gate-phase-holdouts-tests",
+      "section": "Endpunkte",
+      "text": "Markieren `/generate-holdouts` und `/run-tests` absichtlich keine Gate-Phase als abgeschlossen, oder fehlt diese Angabe \u2014 und wenn absichtlich, welche Vorbedingung (Gate-Status) muss vor dem Aufruf erf\u00fcllt sein?",
+      "severity": "warning"
+    },
+    {
+      "id": "id-vergabe-con-hol",
+      "section": "POST /api/specs/{spec_id}/propose-contracts",
+      "text": "Nach welchem Schema werden `CON-XXXX`- und `HOL-XXXX`-IDs vergeben (fortlaufend global, pro Spec, zuf\u00e4llig)? Was passiert bei einem Konflikt mit einer bereits existierenden ID?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "Fehlerbedingungen",
+      "text": "F\u00fcr einen syntaktisch ung\u00fcltigen oder nicht-existenten `spec_id`-Pfadparameter ist kein HTTP-Code definiert (nur 'Spec nicht gefunden' \u2192 404 ist angegeben, aber eine Unterscheidung zwischen 'nicht gefunden' und 'ung\u00fcltigem Format' fehlt).",
+      "severity": "warning"
+    },
+    {
+      "section": "Garantie",
+      "text": "Das Timeout-Verhalten bei LLM-Aufrufen ist nicht spezifiziert: Es gibt keine Aussage dar\u00fcber, ob und nach welcher Dauer ein h\u00e4ngender LLM-Call abgebrochen wird und ob das als LLM-Provider-Fehler (200/false) oder anders zur\u00fcckgemeldet wird.",
+      "severity": "warning"
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Optionale Request-Body-Parameter dokumentieren (z. B. LLM-Modell-Override, Temperatur), auch wenn aktuell keine vorgesehen sind \u2014 ein explizites 'kein Request-Body erwartet' verhindert Unklarheiten."
+    },
+    {
+      "text": "Die Maximalbegrenzung auf 6 Contracts sollte mit einem definierten Verhalten verkn\u00fcpft werden: Wird beim LLM-Aufruf bereits als Constraint mitgegeben, oder werden \u00fcberz\u00e4hlige Vorschl\u00e4ge serverseitig verworfen?"
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

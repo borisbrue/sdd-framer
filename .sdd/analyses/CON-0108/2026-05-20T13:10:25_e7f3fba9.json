@@ -1,0 +1,76 @@
+{
+  "result_id": "2026-05-20T13:10:25_e7f3fba9",
+  "doc_id": "CON-0108",
+  "timestamp": "2026-05-20T13:10:25",
+  "session_id": "3f89dbfa-bc89-4114-826a-9a86c56cd4d3",
+  "dismissed_ids": [
+    "response-schema-contradiction",
+    "array-element-schemas",
+    "container-identifikation",
+    "idempotenz-wiederholter-aufruf",
+    "container-matching-label-vs-name",
+    "404-response-body",
+    "spec-review-gate-bei-fehler",
+    "state-json-initialzustand",
+    "null-contracts-ergebnis",
+    "tests-passed-gate-ruecksetzen",
+    "vorbedingung-fehlercode",
+    "propose-contracts-null-ergebnis",
+    "gate-phase-holdouts-tests",
+    "type-feld-enum-oder-offen",
+    "summary-feld-schema"
+  ],
+  "questions": [
+    {
+      "id": "spec-review-gate-bei-fehler",
+      "section": "POST /api/specs/{spec_id}/review",
+      "text": "Wird die Gate-Phase `spec-review` auch dann als abgeschlossen markiert, wenn der Endpunkt `ok: false` zur\u00fcckgibt (z. B. bei LLM-Fehler), oder nur bei `ok: true`?",
+      "severity": "error"
+    },
+    {
+      "id": "type-feld-enum-oder-offen",
+      "section": "Response-Schemata",
+      "text": "Das `type`-Feld in `contracts[]` wird direkt als Pfadkomponente in `.sdd/contracts/{type}/` verwendet. Ist `type` ein geschlossenes Enum (`\"api\"`, `\"data\"`, `\"behavior\"`) oder ein offener String \u2014 und wenn offen, wie wird Path-Traversal (z. B. `type: \"../../etc\"`) verhindert?",
+      "severity": "error"
+    },
+    {
+      "id": "propose-contracts-null-ergebnis",
+      "section": "POST /api/specs/{spec_id}/propose-contracts",
+      "text": "Was ist das definierte Verhalten, wenn der LLM 0 Contracts vorschl\u00e4gt: antwortet der Endpunkt mit `ok: true` und leerem `contracts[]`-Array, oder mit `ok: false`? Wird `contracts-proposed` in diesem Fall trotzdem als abgeschlossen markiert?",
+      "severity": "warning"
+    },
+    {
+      "id": "container-matching-label-vs-name",
+      "section": "Container-Identifikation f\u00fcr `run-tests`",
+      "text": "Wenn bei der konventionsbasierten Suche Container A das Label `sdd.spec_id={spec_id}` tr\u00e4gt und ein anderer Container B den Namen `sdd-{spec_id}-dev` hat: gelten das als \"mehrere Container matchen\" (\u2192 `ok: false`)? Oder haben Label-Matches Vorrang vor Name-Matches?",
+      "severity": "warning"
+    },
+    {
+      "id": "state-json-initialzustand",
+      "section": "ID-Vergabe f\u00fcr `CON-XXXX` und `HOL-XXXX`",
+      "text": "Was passiert, wenn `.sdd/state.json` beim ersten Aufruf noch nicht existiert? Wird die Datei automatisch mit den Startwerten `{\"next_con_id\": 1, \"next_hol_id\": 1}` angelegt, oder gibt der Endpunkt `ok: false` zur\u00fcck?",
+      "severity": "warning"
+    }
+  ],
+  "issues": [
+    {
+      "section": "POST /api/specs/{spec_id}/generate-holdouts",
+      "text": "Der Endpunkt wird im Dokument zweimal definiert \u2014 einmal ohne Vorbedingung und Gate-Marking, einmal mit. Die erste Definition nennt weder die Vorbedingung `contracts-proposed` noch das Markieren von `holdouts-generated`. Dasselbe gilt f\u00fcr `POST /run-tests`. Die erste (unvollst\u00e4ndige) Definition widerspricht der zweiten und erzeugt Implementierungs\u00adambiguit\u00e4t.",
+      "severity": "warning",
+      "suggested_fix": null
+    }
+  ],
+  "suggestions": [
+    {
+      "text": "Das maximale Timeout f\u00fcr LLM-Aufrufe und das Verhalten bei \u00dcberschreitung (Retry, sofortiges `ok: false`, o. \u00e4.) sollte spezifiziert werden, da synchrone Endpunkte ohne Timeout-Garantie keine testbaren SLAs haben.",
+      "suggested_fix": null
+    },
+    {
+      "text": "Das `output`-Feld im Erfolgsfall von `/run-tests` (rc == 0) sollte beschrieben werden: Enth\u00e4lt es den vollst\u00e4ndigen pytest-Stdout, eine Zusammenfassung oder eine leere Zeichenkette?",
+      "suggested_fix": null
+    }
+  ],
+  "usage": {
+    "provider": "claude-code-cli"
+  }
+}

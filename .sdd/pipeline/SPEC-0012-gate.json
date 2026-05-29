@@ -1,0 +1,25 @@
+{
+  "spec_id": "SPEC-0012",
+  "pipeline_phase": "contracts-proposed",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-19T19:36:25Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-19T19:36:27Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-19T19:36:28Z",
+      "result": "ok",
+      "proposed": []
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

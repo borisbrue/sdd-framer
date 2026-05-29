@@ -1,6 +1,7 @@
 """Pipeline-State Endpoint – berechnet den aktuellen Stand einer Spec im SDD-Workflow."""
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -9,7 +10,38 @@ from fastapi import APIRouter, HTTPException
 
 import sys
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from sdd_context import get_config
+
+
+def _enriched_env() -> dict[str, str]:
+    """Return os.environ enriched with common tool dirs so subprocesses find binaries."""
+    extra_dirs = [
+        str(Path.home() / ".local/bin"),
+        str(Path(sys.executable).parent),
+        str(Path.home() / ".local/share/uv/tools/sdd-framer/bin"),
+        str(Path.home() / ".local/share/uv/tools/sdd-cli/bin"),
+        str(Path.home() / ".var/app/com.visualstudio.code/data/uv/tools/sdd-framer/bin"),
+        str(Path.home() / ".var/app/com.visualstudio.code/data/python/bin"),
+    ]
+    env = os.environ.copy()
+    existing = env.get("PATH", "")
+    env["PATH"] = ":".join(extra_dirs) + (":" + existing if existing else "")
+    return env
+
+
+def _find_sdd() -> str:
+    """Locate the sdd CLI binary regardless of subprocess PATH."""
+    candidates = [
+        Path(sys.executable).parent / "sdd",
+        Path.home() / ".local/share/uv/tools/sdd-framer/bin/sdd",
+        Path.home() / ".local/share/uv/tools/sdd-cli/bin/sdd",
+        Path.home() / ".var/app/com.visualstudio.code/data/uv/tools/sdd-framer/bin/sdd",
+        Path.home() / ".var/app/com.visualstudio.code/data/python/bin/sdd",
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return "sdd"
+from sdd_context import get_config, get_log_streamer
 from sdd_cli.frontmatter import parse_safe
 from sdd_cli.dev_container import container_name, get_runtime
 
@@ -177,8 +209,8 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     _gp = _phase_done  # shorthand
     _gate_phases = [
         ("spec-draft",         "Draft abschließen",     "/api/specs/{}/gate-spec-draft"),
-        ("spec-review",        "Spec Review",           "/api/gate/{}/spec-review"),
-        ("contracts-proposed", "Contracts vorschlagen", "/api/gate/{}/contract-propose"),
+        ("spec-review",        "Spec Review (KI)",      "/api/specs/{}/review"),
+        ("contracts-proposed", "Contracts vorschlagen", "/api/specs/{}/propose-contracts"),
         ("contracts-review",   "Contract-Review",       "/api/gate/{}/contract-review"),
         ("tests-generated",    "Tests generieren",      "/api/gate/{}/test-generate"),
         ("spec-approved",      "Freigeben",             "/api/gate/{}/approve"),
@@ -231,11 +263,18 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
         hol_status = _ACTIVE
     else:
         hol_status = _PENDING
+    hol_actions = []
+    if hol_status == _ACTIVE and holdout_count == 0:
+        hol_actions = [{"id": "generate-holdouts", "label": "Holdouts generieren (KI)",
+                        "endpoint": f"/api/specs/{spec_id}/generate-holdouts", "method": "POST"}]
+    elif hol_status == _DONE and past_approved:
+        hol_actions = [{"id": "regen-holdouts", "label": "Holdouts neu generieren",
+                        "endpoint": f"/api/specs/{spec_id}/generate-holdouts", "method": "POST",
+                        "secondary": True}]
     stages.append(_stage("holdouts", "Holdout-Szenarien", hol_status,
         detail=f"{holdout_count} Szenario{'s' if holdout_count != 1 else ''}" if holdout_count else "Noch keine Szenarien",
         count=holdout_count,
-        actions=[{"id": "holdout-info", "label": "/sdd-holdout ausführen", "info": True}]
-            if hol_status == _ACTIVE else [],
+        actions=hol_actions,
     ))
 
     # 4. Implementierung
@@ -251,8 +290,13 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
         impl_status = _PENDING
 
     impl_actions = []
-    if is_approved and not is_progress:
-        impl_actions = [{"id": "start", "label": "sdd start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}]
+    if (is_approved or is_progress) and not container_up and not tests_green and not is_done and not is_eval_fail:
+        impl_actions = [{"id": "start", "label": "Container starten", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}]
+    elif is_progress and container_up:
+        impl_actions = [
+            {"id": "run-tests", "label": "Tests im Container", "endpoint": f"/api/specs/{spec_id}/run-tests", "method": "POST"},
+            {"id": "finalize", "label": "Finalize + PR", "endpoint": f"/api/specs/{spec_id}/finalize", "method": "POST", "secondary": True},
+        ]
 
     stages.append(_stage("implementation", "Implementierung", impl_status,
         substeps=[
@@ -303,8 +347,10 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
         next_action = _gate_next_action
     elif is_draft or is_review:
         next_action = {"label": "Gate prüfen", "endpoint": f"/api/specs/{spec_id}/gate-check", "method": "POST"}
-    elif is_approved:
+    elif is_approved and not container_up:
         next_action = {"label": f"sdd start {spec_id}", "command": "start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}
+    elif is_progress and not container_up and not tests_green:
+        next_action = {"label": "Container starten", "command": "start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}
     elif is_progress and not tests_green:
         next_action = {"label": f"/sdd-implement {spec_id}", "command": "implement", "info": True}
     elif is_progress and tests_green and not pr_path:
@@ -334,26 +380,134 @@ def get_pipeline(spec_id: str) -> dict[str, Any]:
 
 @router.post("/specs/{spec_id}/start")
 def trigger_start(spec_id: str) -> dict[str, Any]:
+    cfg = get_config()
+
+    # Determine current spec status
+    spec_status = None
+    for md in cfg.specs_dir.rglob("*.md"):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id") == spec_id:
+            spec_status = doc.frontmatter.get("status")
+            break
+
+    env = _enriched_env()
+    # Patch PATH persistently so ContainerRuntime._cmd and LogStreamer threads find podman/docker
+    os.environ["PATH"] = env["PATH"]
+
+    # If already in-progress, try to reuse or recreate the container
+    if spec_status == "in-progress":
+        try:
+            runtime = get_runtime(cfg)
+            cname = container_name(spec_id)
+            status = runtime.inspect_status(cname)
+            if status == "running":
+                _attach_logs(spec_id, cname)
+                return {"ok": True, "output": f"Container {cname} läuft — Log-Stream gestartet."}
+            if status is not None:
+                # Container exists but is stopped — just start it
+                runtime.start(cname)
+                _attach_logs(spec_id, cname)
+                return {"ok": True, "output": f"Container {cname} gestartet."}
+            # Container is gone — reset status to approved so sdd start can recreate it
+            _patch_spec_status(cfg, spec_id, "approved")
+        except Exception as e:
+            return {"ok": False, "output": f"Container-Start fehlgeschlagen: {e}"}
+
+    sdd = _find_sdd()
+    result = subprocess.run(
+        [sdd, "start", spec_id],
+        capture_output=True, text=True,
+        cwd=str(cfg.root),
+        env=env,
+    )
+    if result.returncode == 0:
+        cname = container_name(spec_id)
+        _attach_logs(spec_id, cname)
+    return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
+
+
+def _patch_spec_status(cfg, spec_id: str, status: str) -> None:
+    for md in cfg.specs_dir.rglob("*.md"):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id") == spec_id:
+            doc.frontmatter["status"] = status
+            doc.write()
+            return
+
+
+def _attach_logs(spec_id: str, cname: str) -> None:
     try:
-        result = subprocess.run(
-            ["sdd", "start", spec_id],
-            capture_output=True, text=True,
-        )
-        return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
-    except FileNotFoundError:
-        raise HTTPException(500, "sdd CLI nicht gefunden")
+        get_log_streamer().attach(spec_id, cname)
+    except Exception:
+        pass
 
 
 @router.post("/specs/{spec_id}/finalize")
 def trigger_finalize(spec_id: str) -> dict[str, Any]:
+    cfg = get_config()
+    sdd = _find_sdd()
+    result = subprocess.run(
+        [sdd, "finalize", spec_id, "--no-commit"],
+        capture_output=True, text=True,
+        cwd=str(cfg.root),
+    )
+    return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
+
+
+@router.post("/specs/{spec_id}/evaluate")
+def trigger_evaluate(spec_id: str) -> dict[str, Any]:
+    import threading
+
+    cfg = get_config()
+    base_url = (cfg.raw.get("evaluator", {}).get("base_url", "")
+                or cfg.raw.get("evaluator_base_url", "")).strip()
+    if not base_url:
+        return {"ok": False, "output": "Kein evaluator_base_url konfiguriert. Bitte in den Einstellungen setzen."}
+
+    bus = None
     try:
-        result = subprocess.run(
-            ["sdd", "finalize", spec_id, "--no-commit"],
-            capture_output=True, text=True,
+        bus = sdd_context.get_log_event_bus()
+    except Exception:
+        pass
+
+    if bus is not None:
+        try:
+            bus.clear_buffer(spec_id)
+        except Exception:
+            pass
+        bus.mark_active(spec_id)
+        bus.publish(spec_id, f"━━━ sdd evaluate {spec_id} ━━━")
+        bus.publish(spec_id, f"  Ziel: {base_url}")
+
+    sdd = _find_sdd()
+    env = _enriched_env()
+    cwd = str(cfg.root)
+
+    def _run_in_background() -> None:
+        proc = subprocess.Popen(
+            [sdd, "evaluate", "--base-url", base_url, "--spec", spec_id],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, cwd=cwd, env=env,
         )
-        return {"ok": result.returncode == 0, "output": (result.stdout + result.stderr).strip()}
-    except FileNotFoundError:
-        raise HTTPException(500, "sdd CLI nicht gefunden")
+        for line in proc.stdout:  # type: ignore[union-attr]
+            stripped = line.rstrip("\n")
+            if bus and stripped:
+                try:
+                    bus.publish(spec_id, stripped)
+                except Exception:
+                    pass
+        proc.wait()
+        if bus:
+            ok = proc.returncode == 0
+            try:
+                bus.publish(spec_id, f"━━━ evaluate {'✓ PASS' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
+            except Exception:
+                pass
+
+    threading.Thread(target=_run_in_background, daemon=True,
+                     name=f"evaluate-{spec_id}").start()
+
+    return {"ok": True, "output": "Evaluator gestartet – Logs im LogView."}
 
 
 @router.post("/specs/{spec_id}/gate-spec-draft")

@@ -96,15 +96,25 @@ class EvaluationReport:
         return d
 
 
-def _load_holdout_docs(config: SddConfig) -> list:
+_EVAL_STATUSES = {"active", "ready"}
+
+
+def _load_holdout_docs(config: SddConfig, spec_id: str | None = None) -> list:
     docs = []
     if not config.holdout_dir.exists():
         return docs
     for md in sorted(config.holdout_dir.rglob("*.md")):
         doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id", "").startswith("HOL-"):
-            if doc.frontmatter.get("status", "active") == "active":
-                docs.append(doc)
+        if not doc:
+            continue
+        fm = doc.frontmatter
+        if not fm.get("id", "").startswith("HOL-"):
+            continue
+        if fm.get("status", "active") not in _EVAL_STATUSES:
+            continue
+        if spec_id and fm.get("spec") != spec_id:
+            continue
+        docs.append(doc)
     return docs
 
 
@@ -213,12 +223,13 @@ def _run_scenario_once(
 
 
 def run_evaluation(config: SddConfig, base_url: str,
-                   hol_ids: list[str] | None = None) -> EvaluationReport:
+                   hol_ids: list[str] | None = None,
+                   spec_id: str | None = None) -> EvaluationReport:
     """Führt alle aktiven HOL-Szenarien gegen base_url aus."""
     from .llm import get_completion_provider
     provider = get_completion_provider(config, "evaluator")
 
-    docs = _load_holdout_docs(config)
+    docs = _load_holdout_docs(config, spec_id=spec_id)
     if hol_ids:
         docs = [d for d in docs if d.frontmatter.get("id") in hol_ids]
 
@@ -235,7 +246,13 @@ def run_evaluation(config: SddConfig, base_url: str,
             "Führe `pip install 'sdd-cli[evaluate]'` aus."
         ) from e
 
-    with httpx.Client(follow_redirects=True) as http:
+    import urllib.parse
+    _parsed = urllib.parse.urlparse(base_url)
+    _verify = _parsed.hostname not in ("localhost", "127.0.0.1", "::1")
+
+    print(f"  {len(docs)} Szenarien geladen", flush=True)
+
+    with httpx.Client(follow_redirects=True, verify=_verify) as http:
         for doc in docs:
             fm = doc.frontmatter
             hol_id = fm["id"]
@@ -243,11 +260,17 @@ def run_evaluation(config: SddConfig, base_url: str,
             contract = fm.get("contract", "")
             body_text = doc.body.strip()
 
+            print(f"  → {hol_id}: {title}", flush=True)
             result = ScenarioResult(hol_id=hol_id, title=title, contract=contract)
             for i in range(1, RUNS_PER_SCENARIO + 1):
+                print(f"    Run {i}/{RUNS_PER_SCENARIO} …", flush=True)
                 run = _run_scenario_once(i, title, body_text, base_url, http, provider)
+                verdict = "✓" if run.passed else "✗"
+                print(f"    Run {i} {verdict}  {run.llm_reasoning[:80]}", flush=True)
                 result.runs.append(run)
 
+            status = "PASS" if result.passed else "FAIL"
+            print(f"  {hol_id}: {status} ({result.pass_count}/{len(result.runs)})", flush=True)
             report.scenarios.append(result)
 
     return report
