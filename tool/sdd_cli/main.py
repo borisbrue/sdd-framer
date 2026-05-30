@@ -647,6 +647,27 @@ def status() -> None:
         )
     console.print(table)
 
+    # Hotfix-Abschnitt (SPEC-0031 FR-06)
+    from .hotfix import list_hotfixes
+    hotfixes = list_hotfixes(cfg.root)
+    if hotfixes:
+        console.print()
+        hf_table = Table(title="Hotfixes", show_lines=False)
+        hf_table.add_column("ID", style="cyan")
+        hf_table.add_column("Beschreibung")
+        hf_table.add_column("Status")
+        hf_table.add_column("Commit")
+        _sc = {"open": "yellow", "done": "green", "aborted": "dim red"}
+        for h in hotfixes:
+            st = h.get("status", "?")
+            hf_table.add_row(
+                h.get("id", "?"),
+                h.get("description", ""),
+                f"[{_sc.get(st, 'white')}]{st}[/]",
+                h.get("commit") or "—",
+            )
+        console.print(hf_table)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd mark-false-positive
@@ -2224,6 +2245,79 @@ def regression_check(spec_id: str, output_json: bool) -> None:
         sys.exit(1)
     elif any(f.severity == "warning" for f in result.findings):
         console.print("\n[yellow]⚠[/] Warnungen vorhanden – bitte prüfen")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd hotfix  (SPEC-0031)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("hotfix", help="Schlanker Bugfix-Zyklus ohne SDD-Overhead (SPEC-0031).")
+def hotfix_group() -> None:
+    pass
+
+
+@hotfix_group.command("start", help="Legt einen neuen Hotfix-Record an.")
+@click.argument("description")
+def hotfix_start(description: str) -> None:
+    from .hotfix import start as _start
+    cfg = _ensure_project()
+    hf_id = _start(cfg.root, description)
+    console.print(f"[green]✓[/] Hotfix [bold]{hf_id}[/] erstellt: {description}")
+    console.print(f"  Implementiere den Fix, dann: [cyan]sdd hotfix finalize {hf_id}[/]")
+
+
+@hotfix_group.command("finalize", help="Committet staged Changes und schließt den Hotfix ab.")
+@click.argument("hf_id")
+def hotfix_finalize(hf_id: str) -> None:
+    from .hotfix import finalize as _finalize
+    cfg = _ensure_project()
+    try:
+        commit = _finalize(cfg.root, hf_id)
+        console.print(f"[green]✓[/] [bold]{hf_id}[/] abgeschlossen — Commit: [cyan]{commit}[/]")
+    except (FileNotFoundError, ValueError, RuntimeError) as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
+
+
+@hotfix_group.command("abort", help="Bricht einen Hotfix ab (kein Commit).")
+@click.argument("hf_id")
+def hotfix_abort(hf_id: str) -> None:
+    from .hotfix import abort as _abort
+    cfg = _ensure_project()
+    try:
+        _abort(cfg.root, hf_id)
+        console.print(f"[yellow]✗[/] [bold]{hf_id}[/] abgebrochen.")
+    except FileNotFoundError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
+
+
+@hotfix_group.command("list", help="Listet Hotfixes tabellarisch auf.")
+@click.option("--status", default=None, type=click.Choice(["open", "done", "aborted"]),
+              help="Filtert nach Status.")
+def hotfix_list(status: str | None) -> None:
+    from .hotfix import list_hotfixes
+    cfg = _ensure_project()
+    hotfixes = list_hotfixes(cfg.root, status_filter=status)
+    if not hotfixes:
+        console.print("[dim]Keine Hotfixes gefunden.[/]")
+        return
+    table = Table(title="Hotfixes" + (f" · {status}" if status else ""))
+    table.add_column("ID", style="cyan")
+    table.add_column("Beschreibung")
+    table.add_column("Status")
+    table.add_column("Erstellt")
+    table.add_column("Commit")
+    _sc = {"open": "yellow", "done": "green", "aborted": "dim red"}
+    for h in hotfixes:
+        st = h.get("status", "?")
+        table.add_row(
+            h.get("id", "?"),
+            h.get("description", ""),
+            f"[{_sc.get(st, 'white')}]{st}[/]",
+            h.get("created", ""),
+            h.get("commit") or "—",
+        )
+    console.print(table)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
