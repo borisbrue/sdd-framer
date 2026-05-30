@@ -37,6 +37,7 @@ from routes.logs import router as logs_router
 from routes.orchestrate import router as orchestrate_router
 from routes.pipeline import router as pipeline_router
 from routes.remote import router as remote_router
+from routes.agent_flow import router as agent_flow_router  # SPEC-0032
 from routes.interactive import router as interactive_router
 from routes.specs import router as specs_router
 from routes.tests import router as tests_router
@@ -68,6 +69,7 @@ app.add_middleware(
 )
 
 app.include_router(hub_router,           prefix="/api")  # Hub – vor SPA-Fallback
+app.include_router(agent_flow_router,    prefix="/api")  # SPEC-0032
 app.include_router(interactive_router,   prefix="/api")  # SPEC-0028
 app.include_router(specs_router,         prefix="/api")
 app.include_router(pipeline_router,      prefix="/api")

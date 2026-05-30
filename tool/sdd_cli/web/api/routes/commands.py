@@ -55,6 +55,12 @@ def project_status() -> dict[str, Any]:
         if not (s.get("contracts") or []) or not (s.get("tests") or [])
     )
 
+    try:
+        from flow_session import get_flow_session_store
+        active_flows = get_flow_session_store().active_flows()
+    except Exception:
+        active_flows = []
+
     return {
         "title": cfg.raw.get("title", "SDD Project"),
         "specs": len(specs),
@@ -64,6 +70,7 @@ def project_status() -> dict[str, Any]:
         "has_claude_cli": _check_claude(),
         "evaluator_base_url": cfg.raw.get("evaluator", {}).get("base_url", ""),
         "project_root": str(cfg.root),
+        "active_flows": active_flows,  # SPEC-0032 FR-07
     }
 
 

@@ -1,0 +1,74 @@
+{
+  "spec_id": "SPEC-0032",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok",
+      "solid": "compliant",
+      "patterns": "none"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0114",
+        "CON-0115",
+        "CON-0116"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok",
+      "conflicts_found": 0,
+      "conflicts_high": 0
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok",
+      "files_generated": [
+        "tests/contract/test_agentflow_api.py",
+        "tests/contract/test_flowsession_behavior.py",
+        "tests/contract/test_tunnel_config_schema.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-05-30T00:00:00Z",
+      "result": "ok",
+      "notes": "Regression-Check clean: 0 errors, warnings only (expected delegation-Overlaps). LLM-Review übersprungen (kein API-Key)."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-05-30T19:54:14Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-05-30T19:54:14Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

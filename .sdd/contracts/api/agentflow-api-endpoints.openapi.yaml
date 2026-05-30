@@ -1,0 +1,235 @@
+openapi: 3.1.0
+info:
+  title: "AgentFlow API – Mobile Agentic Workflow"
+  version: "0.1.0"
+  description: |
+    Dieser Contract gehört zu SPEC-0032 (CON-0114).
+    Definiert die neuen /api/agent/flow/* Endpunkte der AgentFlowFacade.
+    Bestehende Endpunkte aus SPEC-0003/SPEC-0007 werden nicht verändert.
+    Änderungen erfordern Versions-Bump gemäß SemVer.
+  contact:
+    name: "Boris"
+servers:
+  - url: "http://localhost:8000"
+    description: "Local SDD Server"
+
+paths:
+  /api/agent/flow/start:
+    post:
+      operationId: startAgentFlow
+      summary: "Startet eine neue Flow-Session"
+      description: |
+        FR-01: Startet einen geführten Flow-Session (new-spec, review, implement, hotfix).
+        Gibt session_id und den ersten Prompt zurück. Der Server wählt intern das
+        passende Subsystem (SPEC-0005 für new-spec, SPEC-0016 für review,
+        SPEC-0007 für implement).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowStartRequest"
+      responses:
+        "200":
+          description: "Flow-Session gestartet"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowStartResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: "spec_id nicht gefunden (bei review/implement)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: "Ungültiger flow_type oder Spec-Status nicht kompatibel"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/agent/flow/{session_id}/reply:
+    post:
+      operationId: replyToAgentFlow
+      summary: "Sendet eine Nutzer-Antwort an den laufenden Flow"
+      description: |
+        FR-02: Sendet eine Antwort des Nutzers (Text oder Ja/Nein bei Decision Points).
+        Gibt den nächsten Prompt zurück oder {done: true, job_id} wenn der Flow
+        abgeschlossen ist und ein Hintergrundjob gestartet wurde.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowReplyRequest"
+      responses:
+        "200":
+          description: "Nächster Schritt oder Flow-Abschluss"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowReplyResponse"
+        "404":
+          description: "session_id unbekannt oder abgelaufen"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: "Session wartet nicht auf Input (z.B. Job läuft noch)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/agent/flow/{session_id}:
+    get:
+      operationId: getAgentFlowState
+      summary: "Gibt den aktuellen Flow-State zurück"
+      description: |
+        FR-06: Für PWA-Reconnect nach App-Neustart. Liefert den aktuellen Schritt,
+        bisherige Antworten und ob ein Job läuft.
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: "Aktueller Flow-State"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowState"
+        "404":
+          description: "session_id unbekannt oder TTL abgelaufen"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    FlowType:
+      type: string
+      enum: [new-spec, review, implement, hotfix]
+      description: "Typ des Agentic Flows"
+
+    FlowStartRequest:
+      type: object
+      required: [flow_type]
+      properties:
+        flow_type:
+          $ref: "#/components/schemas/FlowType"
+        spec_id:
+          type: string
+          pattern: "^SPEC-[0-9]{4}$"
+          description: "Pflichtfeld bei flow_type=review oder implement"
+          example: "SPEC-0032"
+
+    FlowStartResponse:
+      type: object
+      required: [session_id, prompt, state]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        prompt:
+          type: string
+          description: "Erster Prompt/Frage an den Nutzer"
+        state:
+          $ref: "#/components/schemas/FlowSessionState"
+
+    FlowReplyRequest:
+      type: object
+      required: [answer]
+      properties:
+        answer:
+          type: string
+          minLength: 1
+          description: "Nutzerantwort (Freitext oder 'ja'/'nein' bei Decision Points)"
+
+    FlowReplyResponse:
+      type: object
+      required: [done]
+      properties:
+        done:
+          type: boolean
+        prompt:
+          type: string
+          description: "Nächster Prompt (nur wenn done=false)"
+        state:
+          $ref: "#/components/schemas/FlowSessionState"
+        job_id:
+          type: string
+          description: "Job-ID aus SPEC-0016 (review) oder SPEC-0007 (implement), wenn done=true"
+        awaiting_decision:
+          type: boolean
+          description: "true wenn eine Ja/Nein-Entscheidung erwartet wird (FR-05)"
+
+    FlowSessionState:
+      type: string
+      enum: [running, awaiting_input, awaiting_decision, done, failed]
+      description: |
+        running: Flow läuft, kein Input nötig
+        awaiting_input: Wartet auf Nutzer-Freitext
+        awaiting_decision: Wartet auf Ja/Nein (Decision Point, FR-05)
+        done: Flow abgeschlossen
+        failed: Flow abgebrochen (Fehler)
+
+    FlowState:
+      type: object
+      required: [session_id, flow_type, state, step_index]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        flow_type:
+          $ref: "#/components/schemas/FlowType"
+        state:
+          $ref: "#/components/schemas/FlowSessionState"
+        step_index:
+          type: integer
+          minimum: 0
+          description: "Aktueller Schritt im Flow (0-basiert)"
+        current_prompt:
+          type: string
+          description: "Aktueller Prompt (nur wenn state=awaiting_input/awaiting_decision)"
+        answers:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Bisherige Antworten (step_index → answer)"
+        job_id:
+          type: string
+          description: "Interne Job-ID wenn ein Hintergrundjob läuft"
+        spec_id:
+          type: string
+          description: "Verknüpfte Spec-ID (bei review/implement)"
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+  responses:
+    BadRequest:
+      description: "Ungültiger Request"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

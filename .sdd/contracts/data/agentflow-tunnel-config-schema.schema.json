@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentflow-tunnel-config-schema",
+  "title": "AgentFlow Tunnel Config",
+  "description": "Schema für die 'tunnel'-Sektion in .sdd/config.yaml (SPEC-0032 FR-08). Konfiguriert die öffentliche URL der SDD-Instanz für PWA-Zugriff via Cloudflare Tunnel, Tailscale oder ngrok.",
+  "type": "object",
+  "required": ["tunnel"],
+  "properties": {
+    "tunnel": {
+      "type": "object",
+      "required": ["url"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://.*[^/]$",
+          "minLength": 10,
+          "description": "Öffentliche HTTPS-URL der SDD-Instanz. Muss mit https:// beginnen. Kein trailing slash.",
+          "examples": [
+            "https://sdd.example.com",
+            "https://my-sdd.trycloudflare.com",
+            "https://100.64.0.1:8000"
+          ]
+        }
+      }
+    }
+  }
+}
