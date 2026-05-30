@@ -192,7 +192,16 @@ class SpecFinalizer:
         strategy = GhFallbackPRStrategy()
         pr_url = strategy.create(spec_id, self._cfg)
         pr_path = None if pr_url else self._cfg.root / ".sdd" / "prs" / f"PR-{spec_id}.md"
+        self._mark_implemented(spec_id)
         return pr_url, pr_path
+
+    def _mark_implemented(self, spec_id: str) -> None:
+        from .frontmatter import parse_safe, patch_status
+        for md in self._cfg.specs_dir.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == spec_id:
+                patch_status(md, "implemented")
+                break
 
 
 def _parse_pytest_counts(output: str) -> tuple[int, int]:
