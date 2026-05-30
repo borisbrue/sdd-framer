@@ -10,8 +10,12 @@ version: 0.1.0
 priority: medium
 tags: []
 depends_on: []
-contracts: []
-tests: []
+contracts:
+- CON-0117
+- CON-0118
+tests:
+- TST-0136
+- TST-0137
 adrs: []
 started_at: '2026-05-29T23:32:46Z'
 ---
