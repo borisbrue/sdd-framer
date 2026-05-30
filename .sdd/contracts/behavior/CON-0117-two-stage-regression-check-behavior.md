@@ -6,7 +6,7 @@ type: behavior
 format: gherkin
 spec: SPEC-0030
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/behavior/two-stage-regression-check-behavior.feature"
 tests: ["TST-0136"]
 ---
@@ -31,7 +31,7 @@ Jedes Szenario MUSS durch einen automatisierten Test (behave oder pytest-bdd) ab
 
 - **INV-01:** Stufe 2 (LLM) läuft immer nach Stufe 1, nie davor und nie ohne Stufe 1.
 - **INV-02:** Exit-Code 1 wenn mindestens ein Befund mit `severity: error` vorliegt (unabhängig ob `[rule]` oder `[llm]`); Exit-Code 0 bei ausschließlich `warning`/`info`.
-- **INV-03:** Ist der LLM nicht erreichbar, wird Stufe 2 übersprungen mit der Warnung `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)`; Stufe-1-Ergebnisse werden vollständig ausgegeben.
+- **INV-03:** Bei jeglichem LLM-Fehler (API-Timeout, ungültiger Key, Rate-Limit, Netzwerkfehler) wird Stufe 2 übersprungen mit der Warnung `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)`; Stufe-1-Ergebnisse werden vollständig ausgegeben. Ein LLM-Fehler erhöht nie den Exit-Code.
 - **INV-04:** Specs im Status `draft` werden nie als Vergleichsbasis herangezogen — nur `implemented` und `in-progress`.
 
 ## Begriffe
