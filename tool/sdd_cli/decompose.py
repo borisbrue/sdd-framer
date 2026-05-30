@@ -5,6 +5,7 @@ Nutzt ClaudeCliCompletionProvider (kein API-Key nötig) als Default.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -55,6 +56,14 @@ class TaskDecomposer:
             timeout=180,
         )
         raw = result.text.strip()
+        # LLM wraps JSON in code block sometimes — extract array directly
+        m = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", raw, re.DOTALL)
+        if m:
+            raw = m.group(1)
+        else:
+            m = re.search(r"\[.*\]", raw, re.DOTALL)
+            if m:
+                raw = m.group(0)
         try:
             items: list[dict] = json.loads(raw)
         except json.JSONDecodeError as exc:
