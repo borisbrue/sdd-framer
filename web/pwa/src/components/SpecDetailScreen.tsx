@@ -158,7 +158,7 @@ export default function SpecDetailScreen({ project, specId, onBack }: Props) {
           spellCheck={false}
           style={{
             flex: 1, padding: 16, margin: 0, border: "none", outline: "none", resize: "none",
-            fontFamily: "monospace", fontSize: 13, lineHeight: 1.6,
+            fontFamily: "monospace", fontSize: 16, lineHeight: 1.6,
             background: "var(--bg)", color: "var(--text)",
           }}
         />

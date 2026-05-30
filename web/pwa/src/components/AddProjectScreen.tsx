@@ -242,7 +242,7 @@ const styles = {
     border: "1px solid var(--border)",
     borderRadius: 6,
     color: "var(--text)",
-    fontSize: 14,
+    fontSize: 16,
     width: "100%",
     boxSizing: "border-box" as const,
   },

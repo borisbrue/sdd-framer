@@ -184,7 +184,7 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
             style={{
               width: "100%", minHeight: 200,
               padding: "12px",
-              fontFamily: "monospace", fontSize: 13, lineHeight: 1.6,
+              fontFamily: "monospace", fontSize: 16, lineHeight: 1.6,
               background: "var(--bg)", color: "var(--text)",
               border: "1px solid var(--border)", borderRadius: 8,
               resize: "vertical", boxSizing: "border-box", outline: "none",
