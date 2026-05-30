@@ -2,7 +2,7 @@
 id: SPEC-0032
 title: Mobile Agentic Workflow – Vollständige SDD-Steuerung via PWA & Push
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-30
 updated: '2026-05-30'
