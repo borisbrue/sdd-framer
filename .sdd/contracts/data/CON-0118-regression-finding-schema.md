@@ -6,7 +6,7 @@ type: data
 format: json-schema
 spec: SPEC-0030
 version: 0.1.0
-status: review
+status: approved
 artifact: ".sdd/contracts/data/regression-finding-schema.schema.json"
 tests: ["TST-0137"]
 ---
@@ -28,6 +28,7 @@ maschinellen Weiterverarbeitung (z.B. in `/sdd-review`) verwendet.
 - **INV-02:** `type` ∈ {`overlap`, `conflict`, `redundancy`}
 - **INV-03:** `severity` ∈ {`error`, `warning`, `info`}
 - **INV-04:** `prefix` ∈ {`rule`, `llm`} — kennzeichnet die Prüfstufe des Befunds; ein Befund aus Stufe 1 hat immer `"prefix": "rule"`, aus Stufe 2 immer `"prefix": "llm"`.
+- **INV-05:** Ein Finding-Objekt darf keine zusätzlichen Felder enthalten (`additionalProperties: false`) — nur die 7 definierten Pflichtfelder sind erlaubt.
 
 ## Beispiele
 
