@@ -155,6 +155,20 @@ Python-Zielversion: 3.10+.
 
 Für die VS Code Extension gilt: TypeScript strict mode, ESLint mit Standard-Regeln.
 
+## Taste Invariants
+
+Diese Regeln gelten für alle Code-Änderungen im gesamten Repo und werden von
+`sdd validate` als Fehler durchgesetzt — nie als Warnung.
+
+- **Inline-Disable verboten:** Unterdrücke niemals Linter-Fehler durch Inline-Kommentare
+  (`# noqa`, `# type: ignore`, `// eslint-disable-next-line`, `@SuppressWarnings`).
+  Behebbe die Ursache — unterdrücke nicht den Fehler.
+- **Kein manuelles Vergeben von IDs:** Dokument-IDs (SPEC-XXXX, CON-XXXX, TST-XXXX)
+  werden ausschließlich von der CLI vergeben. Niemals manuell nummerieren oder korrigieren.
+- **CLI als einziger Filesystem-Schreiber:** Web API und Extension delegieren alle
+  Schreiboperationen an CLI-Module. Kein direktes Schreiben in `.sdd/` aus Web- oder
+  Extension-Code.
+
 ## Konventionen
 
 **Dokument-IDs** werden automatisch von der CLI vergeben – niemals manuell nummerieren.
