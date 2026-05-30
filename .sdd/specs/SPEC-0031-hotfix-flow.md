@@ -10,8 +10,12 @@ version: 0.1.0
 priority: high
 tags: []
 depends_on: []
-contracts: []
-tests: []
+contracts:
+- CON-0119
+- CON-0120
+tests:
+- TST-0138
+- TST-0139
 adrs: []
 started_at: '2026-05-30T10:10:19Z'
 ---
