@@ -1,7 +1,7 @@
 ---
 id: SPEC-0012
 title: Nachrichtenserver-Anbindung – Bidirektionale Kommunikation mit dem SDD-System
-status: draft
+status: deprecated
 owner: Boris
 created: 2026-05-14
 updated: 2026-05-14
@@ -24,7 +24,12 @@ adrs: []
 ---
 # Nachrichtenserver-Anbindung – Bidirektionale Kommunikation mit dem SDD-System
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+> **Status:** deprecated · **Owner:** Boris · **Version:** 0.1.0
+>
+> **Deprecation-Grund (2026-05-30):** Die Kernanwendungsfälle dieser Spec
+> (Remote-Steuerung, Push-Notifications, Mobile-Control) wurden durch
+> **SPEC-0023** (Remote Control Backend) und **SPEC-0024/0025** (PWA Shell)
+> vollständig abgedeckt. Der MQTT/Daemon-Ansatz wird nicht mehr weiterverfolgt.
 
 ## 1. Kontext & Motivation
 
