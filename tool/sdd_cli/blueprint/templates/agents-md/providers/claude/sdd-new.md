@@ -1,4 +1,4 @@
-<!-- skill: sdd-new | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-16 -->
+<!-- skill: sdd-new | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-new – Neuen SDD-Spec, Contract, Test oder ADR erstellen
 
@@ -7,8 +7,11 @@ Führe den Nutzer interaktiv durch die Erstellung eines neuen SDD-Dokuments.
 `$ARGUMENTS` enthält den Typ: `spec`, `contract`, `test` oder `adr`.
 
 ## Schritt 1: Typ bestimmen
-Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr)"
-Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr.
+Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr / holdout)"
+Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr, h=holdout.
+
+Falls Typ `holdout`: verweise auf `/sdd-holdout $SPEC_ID` — Holdouts werden
+über einen eigenen Skill erstellt (isolierter Kontext, keine Sourcecode-Sicht).
 
 Prüfe ob `.sdd/config.yaml` existiert. Falls nicht: Fehlermeldung und abbrechen.
 
@@ -40,8 +43,11 @@ Zeige das Dokument zur Bestätigung. Erst nach "ja" / "ok" / "speichern":
 ```bash
 # Datei schreiben (slug aus Titel ableiten)
 ```
-Führe danach aus: `sdd validate --file .sdd/specs/SPEC-XXXX-<slug>.md`
-Bei Fehlern: erklären und korrigieren. Erst dann endgültig speichern.
+
+Falls die SPEC-ID nicht ermittelbar ist (z.B. keine bestehenden Specs im Verzeichnis),
+brich mit Fehlermeldung ab — keine Datei schreiben, keine Ausgabe mit falscher ID.
+
+**Nächster Schritt:** `/sdd-review SPEC-XXXX` — ersetze XXXX durch die soeben vergebene ID.
 
 ## Schritt 2b: CONTRACT erstellen
 Fragen:
@@ -55,7 +61,14 @@ cat .sdd/templates/contract/<typ>-*.md | head -30
 ```
 Generiere Contract-Dokument, zeige zur Bestätigung, speichere nach OK.
 
+**Nächster Schritt:** `/sdd-review CON-XXXX` — Contract reviewen und auf `approved` setzen bevor Tests erstellt werden.
+
 ## Schritt 2c: TEST erstellen
+
+**Gate: Contract muss approved sein.**
+Lese das Frontmatter des angegebenen Contracts. Falls `status` ≠ `approved`:
+"✗ Contract CON-XXXX hat Status '$STATUS' – führe zuerst '/sdd-review CON-XXXX' durch." und abbrechen.
+
 Fragen:
 1. Welche SPEC-ID?
 2. Welcher Contract (CON-ID)?
@@ -63,6 +76,8 @@ Fragen:
 4. Was genau wird geprüft? (ein Satz)
 
 Template: `.sdd/templates/test/default.md`. Speichere in `tests/<stufe>/`.
+
+**Nächster Schritt:** `/sdd-review TST-XXXX` — Test reviewen bevor implementiert wird.
 
 ## Schritt 2d: ADR erstellen
 Fragen:

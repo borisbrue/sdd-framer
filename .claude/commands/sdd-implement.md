@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-19 -->
+<!-- skill: sdd-implement | version: 0.3.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -10,23 +10,47 @@ Implementiere das Feature für die angegebene SPEC vollständig nach TDD.
 in den Implementierungskontext einfließen. Dies sichert die Evaluator-Isolation.
 
 ## Schritt 1: Vorbedingungen prüfen
-- Existiert `.sdd/config.yaml`? Falls nicht: "Kein SDD-Projekt. 'sdd init' zuerst."
-- Lese Frontmatter der Spec. Falls `status` nicht `in-progress`:
-  - Falls `status == approved`: führe automatisch aus:
-    ```bash
-    sdd start $ARGUMENTS
-    ```
-    `▶ sdd start $ARGUMENTS` (Status → in-progress)
-  - Falls `status` ein anderer Wert (z.B. `draft`, `deprecated`):
-    "✗ Spec hat Status '$STATUS' – Implementierung nicht möglich." und abbrechen.
-- Prüfe ob sdd CLI verfügbar: `which sdd`
-- Prüfe ob der Dev-Container läuft:
-  ```bash
-  podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]' | tr '-' '-')
-  ```
-  Falls nicht `running`: "Container nicht gestartet – führe 'sdd start $ARGUMENTS' erneut aus." und abbrechen.
 
-## Schritt 1b: Feature-Branch erstellen
+- Existiert `.sdd/config.yaml`? Falls nicht: "Kein SDD-Projekt. 'sdd init' zuerst." und abbrechen.
+- Prüfe ob sdd CLI verfügbar: `which sdd`
+- Lese Frontmatter der Spec. Falls `status == deprecated`:
+  "✗ Spec ist deprecated – Implementierung nicht möglich." und abbrechen.
+
+## Schritt 1b: Auto-Approve + Container starten
+
+**Approve (automatisch, wenn noch nicht in-progress):**
+Falls `status` ≠ `in-progress`, führe automatisch aus:
+```bash
+sdd spec approve $ARGUMENTS
+```
+`▶ sdd spec approve $ARGUMENTS`
+
+Falls der Befehl fehlschlägt: zeige Fehler-Output und abbrechen mit:
+"✗ Approve fehlgeschlagen – Contracts oder Tests fehlen vermutlich. Prüfe '/sdd-review $ARGUMENTS'."
+
+**Container starten (automatisch):**
+Falls `status` ≠ `in-progress` (wurde gerade approved):
+```bash
+sdd start $ARGUMENTS
+```
+`▶ sdd start $ARGUMENTS` (Status → in-progress, Container startet)
+
+Falls `status` bereits `in-progress`: prüfe ob Container läuft:
+```bash
+podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
+```
+Falls nicht `running`: führe ebenfalls `sdd start $ARGUMENTS` aus (Neustart des Containers).
+
+**Container-Ready verifizieren:**
+Warte 5 Sekunden nach `sdd start`, dann prüfe:
+```bash
+podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
+```
+Falls nicht `running`: nochmals 10 Sekunden warten, erneut prüfen (max. 2 Versuche gesamt).
+Falls danach immer noch nicht `running`:
+"✗ Container konnte nicht gestartet werden – prüfe 'podman ps -a' und starte 'sdd start $ARGUMENTS' manuell." und abbrechen.
+
+## Schritt 1c: Feature-Branch erstellen
 ```bash
 git checkout -b feat/$ARGUMENTS 2>/dev/null || git checkout feat/$ARGUMENTS
 ```

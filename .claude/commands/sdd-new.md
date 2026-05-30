@@ -1,4 +1,4 @@
-<!-- skill: sdd-new | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-16 -->
+<!-- skill: sdd-new | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-new – Neuen SDD-Spec, Contract, Test oder ADR erstellen
 
@@ -61,7 +61,14 @@ cat .sdd/templates/contract/<typ>-*.md | head -30
 ```
 Generiere Contract-Dokument, zeige zur Bestätigung, speichere nach OK.
 
+**Nächster Schritt:** `/sdd-review CON-XXXX` — Contract reviewen und auf `approved` setzen bevor Tests erstellt werden.
+
 ## Schritt 2c: TEST erstellen
+
+**Gate: Contract muss approved sein.**
+Lese das Frontmatter des angegebenen Contracts. Falls `status` ≠ `approved`:
+"✗ Contract CON-XXXX hat Status '$STATUS' – führe zuerst '/sdd-review CON-XXXX' durch." und abbrechen.
+
 Fragen:
 1. Welche SPEC-ID?
 2. Welcher Contract (CON-ID)?
@@ -69,6 +76,8 @@ Fragen:
 4. Was genau wird geprüft? (ein Satz)
 
 Template: `.sdd/templates/test/default.md`. Speichere in `tests/<stufe>/`.
+
+**Nächster Schritt:** `/sdd-review TST-XXXX` — Test reviewen bevor implementiert wird.
 
 ## Schritt 2d: ADR erstellen
 Fragen:

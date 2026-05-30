@@ -1,4 +1,4 @@
-<!-- skill: sdd-review | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-16 -->
+<!-- skill: sdd-review | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-review – SOLID-Analyse + Pattern-Vorschläge
 
@@ -13,7 +13,10 @@ Prüfe ob `.sdd/config.yaml` existiert. Falls nicht: Fehlermeldung und abbrechen
 Liste alle Contracts mit `status: draft` auf und frage welchen der Nutzer reviewen möchte.
 
 **Bei leeren `$ARGUMENTS`:**
-Frage: "Welche SPEC oder CON-ID soll reviewed werden?"
+Frage: "Welche SPEC, CON-ID oder TST-ID soll reviewed werden?"
+
+**Bei TST-XXXX:** überspringe Schritte 2–4 (SOLID/Pattern/Regression gelten nicht für Tests)
+und gehe direkt zu Schritt 5b.
 
 ## Schritt 2: SOLID-Analyse ausführen
 ```bash
@@ -74,20 +77,46 @@ Zeige das Ergebnis:
 - Bei 0 Konflikten: "✓ Kein Regressionsrisiko gefunden"
 
 ## Schritt 5: Contract-Review (nur für CON-XXXX)
-Lese den Contract + verknüpften SPEC.
+
+Lade als Kontext:
+1. Den Contract selbst
+2. Das verknüpfte Spec (aus `spec:`-Frontmatter des Contracts)
+3. Alle anderen Contracts desselben Specs:
+   ```bash
+   grep -rl "spec: $(grep '^spec:' <contract-file> | awk '{print $2}')" .sdd/contracts/
+   ```
+
 Prüfe inhaltlich:
 - Ist die Garantie messbar und testbar?
 - Fehlen Randbedingungen (Timeouts, Fehlerfälle)?
 - Ist der Contract atomar (eine Verantwortlichkeit)?
+- Gibt es Überschneidungen oder Widersprüche mit den anderen Contracts desselben Specs?
 
 Frage ob Contract-Status auf `approved` gesetzt werden soll:
 ```bash
-# Frontmatter status: draft → approved patchen
+sdd contract approve CON-XXXX
 ```
+
+## Schritt 5b: Test-Review (nur für TST-XXXX)
+
+Lade als Kontext:
+1. Die Test-Datei selbst (aus TST `artifact:`-Frontmatter)
+2. Den verknüpften Contract (aus `contract:`-Frontmatter des Tests)
+3. Das verknüpfte Spec
+
+Prüfe inhaltlich:
+- Deckt der Test den Contract vollständig ab (Happy Path + mindestens 1 Fehlerfall)?
+- Sind alle Contract-Invarianten als eigene Test-Cases abgebildet?
+- Ist jeder Test unabhängig (kein versteckter State zwischen Tests)?
+- Sind die Assertions konkret und nicht trivial (kein `assert True`)?
+- Sind die Testdaten realistisch und repräsentativ?
+
+Falls Anpassungen nötig: liste sie konkret auf. Warte auf Bestätigung bevor die Test-Datei
+geändert wird.
 
 ## Schritt 6: Zusammenfassung
 ```
-Review abgeschlossen: SPEC-XXXX
+Review abgeschlossen: SPEC-XXXX / CON-XXXX / TST-XXXX
 - SOLID: 1 Warnung (ISP), 0 Violations
 - Patterns: Strategy (angenommen), Decorator (abgelehnt)
 - Nächster Schritt: sdd spec approve SPEC-XXXX (wenn bereit)
