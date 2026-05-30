@@ -3,6 +3,7 @@ import { Project, ProjectRegistry, refreshProjectsFromHub } from "./config";
 import { fetchSpecs, fetchStatus, SddSpec, SddStatus } from "./api";
 import ProjectSwitcher from "./components/ProjectSwitcher";
 import AddProjectScreen from "./components/AddProjectScreen";
+import AddSpecScreen from "./components/AddSpecScreen";
 import SpecDetailScreen from "./components/SpecDetailScreen";
 
 type Tab = "dashboard" | "projects" | "add";
@@ -13,6 +14,7 @@ export default function App() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("dashboard");
   const [addVisible, setAddVisible] = useState(false);
+  const [newSpecVisible, setNewSpecVisible] = useState(false);
   const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +79,18 @@ export default function App() {
     );
   }
 
+  if (newSpecVisible && activeProject) {
+    return (
+      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <AddSpecScreen
+          project={activeProject}
+          onCreated={(spec) => { setNewSpecVisible(false); setSelectedSpecId(spec.id); }}
+          onCancel={() => setNewSpecVisible(false)}
+        />
+      </div>
+    );
+  }
+
   if (selectedSpecId && activeProject) {
     return (
       <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -109,6 +123,36 @@ export default function App() {
           />
         )}
       </div>
+
+      {tab === "dashboard" && activeProject && (
+        <button
+          onClick={() => setNewSpecVisible(true)}
+          style={{
+            position: "fixed",
+            right: 20,
+            bottom: "calc(70px + env(safe-area-inset-bottom))",
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            background: "var(--accent)",
+            color: "#1d2021",
+            border: "none",
+            fontSize: 26,
+            fontWeight: 300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+            cursor: "pointer",
+            zIndex: 100,
+            padding: 0,
+            lineHeight: 1,
+          }}
+          title="Neue Spec anlegen"
+        >
+          +
+        </button>
+      )}
 
       <nav className="tab-bar">
         <button

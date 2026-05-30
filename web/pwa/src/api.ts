@@ -97,6 +97,22 @@ export async function getTestResults(project: Project, specId: string): Promise<
   return res.json();
 }
 
+export async function createSpec(
+  project: Project,
+  data: { title: string; owner?: string; priority?: string },
+): Promise<SddSpec> {
+  const res = await fetch(`${project.baseUrl}/api/specs`, {
+    method: "POST",
+    headers: { ...buildHeaders(project.token), "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw Object.assign(new Error(err.detail ?? res.statusText), { status: res.status });
+  }
+  return res.json();
+}
+
 export async function triggerTestRun(project: Project, specId: string): Promise<TestReport> {
   const res = await fetch(`${project.baseUrl}/api/specs/${specId}/test-run`, {
     method: "POST",
