@@ -2,7 +2,7 @@
 id: SPEC-0029
 title: Refactoring of sdd-implement
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-29
 updated: '2026-05-29'
