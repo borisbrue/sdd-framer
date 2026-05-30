@@ -97,6 +97,39 @@ export async function getTestResults(project: Project, specId: string): Promise<
   return res.json();
 }
 
+export interface AiResponse {
+  result: string;
+  usage: Record<string, unknown>;
+}
+
+export async function generateSpec(
+  project: Project,
+  data: { title: string; description?: string; context?: string },
+): Promise<AiResponse> {
+  const res = await fetch(`${project.baseUrl}/api/ai/generate-spec`, {
+    method: "POST",
+    headers: { ...buildHeaders(project.token), "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw Object.assign(new Error("ai_error"), { status: res.status });
+  return res.json();
+}
+
+export async function improveSpec(
+  project: Project,
+  specId: string,
+  currentContent: string,
+  instructions: string,
+): Promise<AiResponse> {
+  const res = await fetch(`${project.baseUrl}/api/ai/improve-spec`, {
+    method: "POST",
+    headers: { ...buildHeaders(project.token), "Content-Type": "application/json" },
+    body: JSON.stringify({ spec_id: specId, current_content: currentContent, instructions }),
+  });
+  if (!res.ok) throw Object.assign(new Error("ai_error"), { status: res.status });
+  return res.json();
+}
+
 export async function createSpec(
   project: Project,
   data: { title: string; owner?: string; priority?: string },

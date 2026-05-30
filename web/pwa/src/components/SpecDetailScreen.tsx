@@ -3,6 +3,7 @@ import { Project } from "../config";
 import { fetchSpec, updateSpec, SddSpecDetail } from "../api";
 import TestRunPanel from "./TestRunPanel";
 import MarkdownBody from "./MarkdownBody";
+import GuidedSpecEditor from "./GuidedSpecEditor";
 
 interface Props {
   project: Project;
@@ -21,6 +22,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default function SpecDetailScreen({ project, specId, onBack }: Props) {
   const [spec, setSpec] = useState<SddSpecDetail | null>(null);
   const [editing, setEditing] = useState(false);
+  const [guided, setGuided] = useState(false);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +30,7 @@ export default function SpecDetailScreen({ project, specId, onBack }: Props) {
   useEffect(() => {
     setSpec(null);
     setEditing(false);
+    setGuided(false);
     setError("");
     fetchSpec(project, specId)
       .then(s => { setSpec(s); setDraft(s.body); })
@@ -50,6 +53,17 @@ export default function SpecDetailScreen({ project, specId, onBack }: Props) {
     }
   }
 
+  if (guided && spec) {
+    return (
+      <GuidedSpecEditor
+        project={project}
+        spec={spec}
+        onSaved={(updated) => { setSpec(updated); setDraft(updated.body); setGuided(false); }}
+        onCancel={() => setGuided(false)}
+      />
+    );
+  }
+
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Header */}
@@ -64,9 +78,14 @@ export default function SpecDetailScreen({ project, specId, onBack }: Props) {
           {spec?.id ?? specId}
         </span>
         {spec && !editing && (
-          <button onClick={() => setEditing(true)} style={{ padding: "4px 12px", fontSize: 13 }}>
-            Bearbeiten
-          </button>
+          <>
+            <button onClick={() => setGuided(true)} style={{ padding: "4px 10px", fontSize: 13, color: "var(--accent)", borderColor: "var(--accent)" }}>
+              ✦ Geführt
+            </button>
+            <button onClick={() => setEditing(true)} style={{ padding: "4px 10px", fontSize: 13 }}>
+              Bearbeiten
+            </button>
+          </>
         )}
         {editing && (
           <>
