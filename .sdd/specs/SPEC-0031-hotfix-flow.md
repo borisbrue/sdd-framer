@@ -2,7 +2,7 @@
 id: SPEC-0031
 title: Hotfix Flow
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-30
 updated: '2026-05-30'

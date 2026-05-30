@@ -2,7 +2,7 @@
 id: SPEC-0030
 title: LLM-Based Regression Check
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-30
 updated: '2026-05-29'
