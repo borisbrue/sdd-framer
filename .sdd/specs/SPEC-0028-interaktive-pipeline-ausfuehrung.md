@@ -1,7 +1,7 @@
 ---
 id: SPEC-0028
 title: Interaktive Pipeline-Ausführung im Web UI
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-19
 updated: '2026-05-21'
