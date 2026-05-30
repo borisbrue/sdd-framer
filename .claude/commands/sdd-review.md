@@ -68,13 +68,26 @@ sdd pattern reject $ID <PatternName> --reason "<Grund>"
 sdd regression-check $ID
 ```
 
-Zeige das Ergebnis:
-- Bei `error`-Severity: "⚠ Regression-Konflikt gefunden: CON-XXXX vs. CON-YYYY"
-  Frage: "Weiter trotzdem? (ja/nein)" — warte auf explizite Nutzerentscheidung.
+Zeige Stufe-1- und Stufe-2-Befunde **getrennt** mit Präfix `[rule]` bzw. `[llm]`:
+
+```
+── Regression-Check: SPEC-XXXX ─────────────────────────
+  Stufe 1 – Regelbasiert:
+    [rule] error   CON-0111 vs. CON-0001 – Endpoint-Konflikt: POST /api/specs
+    [rule] ✓ keine weiteren Regelkonflikte
+
+  Stufe 2 – LLM-Semantik:
+    [llm]  warning SPEC-0005 §FR-03 – semantische Überschneidung mit FR-02
+                   "Beide Specs beschreiben Analyse-Session-Tracking"
+    [llm]  ✓ keine weiteren inhaltlichen Konflikte
+```
+
+Bei `error`-Severity (egal ob `[rule]` oder `[llm]`):
+  "⚠ Regression-Konflikt gefunden" + Details — Frage: "Weiter trotzdem? (ja/nein)"
   Bei "nein": abbrechen.
-- Bei `warning`-Severity: "⚠ Möglicher Konflikt (warning): ... – bitte prüfen"
-  → Review-Flow fährt automatisch fort.
-- Bei 0 Konflikten: "✓ Kein Regressionsrisiko gefunden"
+Bei nur `warning`/`info`: Review-Flow fährt automatisch fort.
+Bei 0 Befunden in beiden Stufen: "✓ Kein Regressionsrisiko gefunden"
+Falls LLM nicht erreichbar: `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)` — Stufe-1-Ergebnisse werden normal angezeigt.
 
 ## Schritt 5: Contract-Review (nur für CON-XXXX)
 

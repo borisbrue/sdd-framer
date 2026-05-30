@@ -1,4 +1,4 @@
-<!-- skill: sdd-validate | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-16 -->
+<!-- skill: sdd-validate | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-validate – Validierung mit Fehler-Erklärungen
 
@@ -70,9 +70,28 @@ Sofort?  [ja/nein]
 - Referenzielle Integrität (Contract ohne Spec, Test ohne Contract):
   Erkläre warum diese Verletzung den Traceability-Graph beschädigt.
 
-## Schritt 4: Zusammenfassung
+## Schritt 4: LLM-Semantik-Check (nur bei SPEC-XXXX)
+
+Falls `$ARGUMENTS` eine SPEC-ID enthält (z.B. `--file SPEC-XXXX` oder direkt `SPEC-XXXX`):
+
+[WARN] Falls `sdd regression-check` nicht verfügbar ist: Schritt überspringen und
+`[WARN] sdd regression-check nicht verfügbar` ausgeben.
+
+```bash
+sdd regression-check SPEC-XXXX
+```
+
+Zeige Stufe-1- und Stufe-2-Befunde getrennt (`[rule]` / `[llm]`) — identisches Format
+wie in `/sdd-review` Schritt 4.
+
+Bei `error`-Severity: Fehler in die Gesamtzusammenfassung aufnehmen.
+Bei nur `warning`/`info`: als Hinweis ausgeben, kein Abbruch.
+Falls LLM nicht erreichbar: `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)`.
+
+## Schritt 5: Zusammenfassung
 ```
 Zusammenfassung: N Fehler gefunden, M behoben.
+Regression-Check: K Konflikte [rule], L Befunde [llm]
 Nächster Schritt: sdd validate (erneut prüfen)
 ```
 
