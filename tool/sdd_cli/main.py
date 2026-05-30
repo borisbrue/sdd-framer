@@ -2153,6 +2153,80 @@ def pattern_list(spec_id: str | None) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# sdd regression-check  (SPEC-0030)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.command(
+    "regression-check",
+    help="Prüft eine Spec auf Konflikte mit bestehenden Specs (SPEC-0030).",
+)
+@click.argument("spec_id")
+@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
+def regression_check(spec_id: str, output_json: bool) -> None:
+    import json as _json
+    from .regression_check import RegressionCheckChain
+
+    cfg = _ensure_project()
+
+    provider = None
+    try:
+        from .llm.factory import get_completion_provider
+        provider = get_completion_provider(cfg, "analyzer")
+    except Exception:
+        pass
+
+    chain = RegressionCheckChain(cfg.root)
+    result = chain.run(spec_id, provider=provider)
+
+    if output_json:
+        print(_json.dumps(
+            {
+                "spec_id": result.spec_id,
+                "findings": [f.to_dict() for f in result.findings],
+                "llm_skipped": result.llm_skipped,
+                "llm_skip_reason": result.llm_skip_reason,
+            },
+            indent=2,
+            ensure_ascii=False,
+        ))
+        if any(f.severity == "error" for f in result.findings):
+            sys.exit(1)
+        return
+
+    rule_findings = [f for f in result.findings if f.source == "rule"]
+    llm_findings = [f for f in result.findings if f.source == "llm"]
+    _sev_color = {"error": "red", "warning": "yellow", "info": "cyan"}
+
+    console.print(f"\n[bold]Regression-Check: {spec_id}[/]")
+    console.print("─" * 70)
+
+    console.print("\n[bold dim][rule] Stufe 1 – Regelbasiert[/]")
+    if rule_findings:
+        for f in rule_findings:
+            c = _sev_color.get(f.severity, "white")
+            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
+            console.print(f"    → {f.description}")
+    else:
+        console.print("  [green]✓[/] Kein regelbasierter Regressionskonflikt gefunden")
+
+    console.print("\n[bold dim][llm] Stufe 2 – LLM-Semantik[/]")
+    if result.llm_skipped:
+        console.print(f"  [yellow]⚠[/] LLM-Check übersprungen ({result.llm_skip_reason})")
+    elif llm_findings:
+        for f in llm_findings:
+            c = _sev_color.get(f.severity, "white")
+            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
+            console.print(f"    → {f.description}")
+    else:
+        console.print("  [green]✓[/] Kein inhaltlicher Regressionskonflikt gefunden")
+
+    if any(f.severity == "error" for f in result.findings):
+        console.print("\n[red]✗[/] Error-Severity gefunden – Regression-Check gescheitert")
+        sys.exit(1)
+    elif any(f.severity == "warning" for f in result.findings):
+        console.print("\n[yellow]⚠[/] Warnungen vorhanden – bitte prüfen")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SOLID-Integration: spec review / contract review Erweiterung (SPEC-0015 §6.1)
 # ─────────────────────────────────────────────────────────────────────────────
 
