@@ -74,7 +74,7 @@ def start(repo_root: Path, description: str) -> str:
 
 
 def finalize(repo_root: Path, hf_id: str) -> str:
-    """Stage all changes, commit, update record. Returns commit hash."""
+    """Run tests, commit staged changes, update record. Returns commit hash."""
     path = _hf_path(repo_root, hf_id)
     if not path.exists():
         raise FileNotFoundError(f"Hotfix-Record nicht gefunden: {hf_id}")
@@ -82,6 +82,18 @@ def finalize(repo_root: Path, hf_id: str) -> str:
     data = _read_hf(path)
     if data.get("status") != "open":
         raise ValueError(f"{hf_id} hat Status '{data.get('status')}' – nur 'open' kann finalisiert werden.")
+
+    test_proc = subprocess.run(
+        ["pytest", "tests/", "-x", "--tb=short", "-q"],
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+    )
+    if test_proc.returncode != 0:
+        output = (test_proc.stdout + test_proc.stderr).strip()
+        raise RuntimeError(
+            f"Tests fehlgeschlagen – Hotfix anpassen vor Commit:\n{output[:800]}"
+        )
 
     description = data.get("description", hf_id)
     proc = _git(
