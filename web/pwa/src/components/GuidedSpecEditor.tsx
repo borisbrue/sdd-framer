@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Project } from "../config";
 import { generateSpec, improveSpec, updateSpec, SddSpecDetail } from "../api";
 
@@ -40,6 +40,46 @@ const STEPS = [
   },
 ] as const;
 
+// ── localStorage helpers ──────────────────────────────────────────────────────
+
+interface Draft {
+  stepIndex: number;
+  answers: string[];
+  savedAt: string;
+}
+
+function draftKey(specId: string) { return `sdd-guided-${specId}`; }
+
+function loadDraft(specId: string): Draft | null {
+  try {
+    const raw = localStorage.getItem(draftKey(specId));
+    return raw ? (JSON.parse(raw) as Draft) : null;
+  } catch { return null; }
+}
+
+function saveDraft(specId: string, stepIndex: number, answers: string[]) {
+  try {
+    localStorage.setItem(draftKey(specId), JSON.stringify({
+      stepIndex, answers, savedAt: new Date().toISOString(),
+    } satisfies Draft));
+  } catch { /* storage full */ }
+}
+
+function clearDraft(specId: string) {
+  localStorage.removeItem(draftKey(specId));
+}
+
+function formatAge(iso: string): string {
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "gerade eben";
+  if (mins < 60) return `vor ${mins} Min.`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `vor ${hrs} Std.`;
+  return new Date(iso).toLocaleDateString("de-DE");
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 interface Props {
   project: Project;
   spec: SddSpecDetail;
@@ -48,14 +88,33 @@ interface Props {
 }
 
 export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: Props) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<string[]>(STEPS.map(() => ""));
+  // Read draft once on mount (useRef avoids re-reads on re-render)
+  const initialDraft = useRef(loadDraft(spec.id));
+  const hasDraft = initialDraft.current !== null;
+
+  const [stepIndex, setStepIndex] = useState(initialDraft.current?.stepIndex ?? 0);
+  const [answers, setAnswers] = useState<string[]>(
+    initialDraft.current?.answers ?? STEPS.map(() => ""),
+  );
+  const [restoredAt] = useState<string | null>(initialDraft.current?.savedAt ?? null);
+  const [showRestoreBanner, setShowRestoreBanner] = useState(hasDraft);
+
   const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // On mount: generate full draft once and distribute to steps
+  // Auto-save whenever step or answers change
   useEffect(() => {
+    saveDraft(spec.id, stepIndex, answers);
+  }, [spec.id, stepIndex, answers]);
+
+  // Initial AI generation — only when no draft was restored
+  useEffect(() => {
+    if (hasDraft) return;
+    runGeneration();
+  }, [spec.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function runGeneration() {
     let active = true;
     setAiLoading(true);
     generateSpec(project, {
@@ -72,17 +131,27 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
       .then(res => {
         if (!active) return;
         const sections = parseSections(res.result);
-        setAnswers(STEPS.map((step) => {
+        setAnswers(STEPS.map(step => {
           const match = Object.entries(sections).find(([k]) =>
-            k.toLowerCase().includes(step.sectionHint.toLowerCase())
+            k.toLowerCase().includes(step.sectionHint.toLowerCase()),
           );
           return match ? match[1] : "";
         }));
       })
-      .catch(() => { /* user can request manually per step */ })
+      .catch(() => { /* user can request manually */ })
       .finally(() => { if (active) setAiLoading(false); });
     return () => { active = false; };
-  }, [spec.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  function handleRestart() {
+    clearDraft(spec.id);
+    initialDraft.current = null;
+    setAnswers(STEPS.map(() => ""));
+    setStepIndex(0);
+    setShowRestoreBanner(false);
+    setError("");
+    runGeneration();
+  }
 
   async function handleSuggest() {
     setAiLoading(true);
@@ -117,6 +186,7 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
     try {
       const body = assembleBody(spec, answers);
       const updated = await updateSpec(project, spec.id, body);
+      clearDraft(spec.id);
       onSaved(updated);
     } catch {
       setError("Speichern fehlgeschlagen.");
@@ -145,6 +215,14 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
           <span style={{ fontSize: 12, color: "var(--muted)", flexShrink: 0 }}>
             {stepIndex + 1} / {STEPS.length}
           </span>
+          <button
+            onClick={handleRestart}
+            disabled={aiLoading}
+            title="Entwurf verwerfen und neu generieren"
+            style={{ padding: "4px 8px", fontSize: 12, color: "var(--muted)", flexShrink: 0 }}
+          >
+            ↺ Neu
+          </button>
         </div>
         <div style={{ height: 3, background: "var(--border)", borderRadius: 2 }}>
           <div style={{
@@ -155,8 +233,29 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
         </div>
       </div>
 
-      {/* Step content */}
+      {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+
+        {/* Restore banner */}
+        {showRestoreBanner && restoredAt && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 14px", borderRadius: 8,
+            background: "color-mix(in srgb, var(--accent) 12%, var(--surface))",
+            border: "1px solid color-mix(in srgb, var(--accent) 40%, var(--border))",
+          }}>
+            <span style={{ fontSize: 13, color: "var(--accent)", flex: 1 }}>
+              Entwurf wiederhergestellt ({formatAge(restoredAt)})
+            </span>
+            <button
+              onClick={() => setShowRestoreBanner(false)}
+              style={{ padding: "2px 8px", fontSize: 12, background: "transparent", border: "none", color: "var(--muted)" }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Question card */}
         <div style={{
           background: "var(--surface)", borderRadius: 10, padding: 14,
@@ -182,7 +281,7 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
             placeholder={step.placeholder}
             spellCheck={false}
             style={{
-              width: "100%", minHeight: 200,
+              width: "100%", minHeight: 220,
               padding: "12px",
               fontFamily: "monospace", fontSize: 16, lineHeight: 1.6,
               background: "var(--bg)", color: "var(--text)",
@@ -251,6 +350,8 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
     </div>
   );
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseSections(markdown: string): Record<string, string> {
   const sections: Record<string, string> = {};
