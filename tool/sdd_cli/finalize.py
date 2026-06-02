@@ -127,19 +127,36 @@ class SpecFinalizer:
         docker_cfg = self._cfg.raw.get("docker", {})
         compose_file = docker_cfg.get("compose_file", "")
         test_cfg = self._cfg.raw.get("test_runner", {})
-        test_cmd = test_cfg.get("command", "pytest")
+        custom_cmd = test_cfg.get("command")
         extra_args = test_cfg.get("extra_args", [])
         timeout = test_cfg.get("timeout_per_spec", 120)
 
+        # Auto-detect project type when no command is configured
+        if custom_cmd:
+            test_cmd = custom_cmd
+            test_args = extra_args
+        elif (root / "package.json").exists():
+            test_cmd = "npm"
+            test_args = ["test"] + extra_args
+        else:
+            test_cmd = "pytest"
+            test_args = ["tests/", "-x", "--tb=short"] + extra_args
+
         if compose_file:
             # Container-Stack muss bereits laufen
-            test_result = subprocess.run(
-                [test_cmd, "tests/", "-x", "--tb=short"] + extra_args,
-                capture_output=True,
-                text=True,
-                cwd=root,
-                timeout=timeout,
-            )
+            try:
+                test_result = subprocess.run(
+                    [test_cmd] + test_args,
+                    capture_output=True,
+                    text=True,
+                    cwd=root,
+                    timeout=timeout,
+                )
+            except FileNotFoundError:
+                raise RuntimeError(
+                    f"✗ Test-Runner '{test_cmd}' nicht gefunden. "
+                    f"Setze 'test_runner.command' in .sdd/config.yaml oder nutze --skip-container."
+                )
         else:
             # Container muss bereits laufen
             runtime = get_runtime(self._cfg)

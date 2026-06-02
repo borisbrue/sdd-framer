@@ -118,6 +118,9 @@ Führe zuerst `sdd validate` aus und behebe alle Fehler.
 Falls kein Container läuft erscheint:
 "✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start $ARGUMENTS'"
 
+⚠️ **`sdd finalize` erstellt automatisch einen Git-Commit** — kein manuelles
+`git add` / `git commit` danach nötig. Der `FinalizeReport` enthält den Commit-Hash.
+
 **Versuch 1 und 2:**
 ```bash
 sdd finalize $ARGUMENTS
