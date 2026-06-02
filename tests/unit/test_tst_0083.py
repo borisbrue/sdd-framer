@@ -48,7 +48,7 @@ class TestTST0083:
 
         # Schritt 2: up SPEC-0022 startet Compose + LogStreamer (CON-0069 G-05)
         manager.up("SPEC-0022")
-        runtime.compose_up.assert_called_once_with(".sdd/docker-compose.yml")
+        runtime.compose_up.assert_called_once_with(".sdd/docker-compose.yml", build=True)
         assert bus.has_stream("SPEC-0022")
 
         # Schritt 3: LogEventBus.publish → Zeile im Buffer (CON-0070 G-03)

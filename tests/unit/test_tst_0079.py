@@ -62,7 +62,7 @@ class TestTST0079:
         with patch("subprocess.run", return_value=_mock_run()) as mock:
             rt.compose_up(".sdd/docker-compose.yml")
         mock.assert_called_once_with(
-            ["docker", "compose", "-f", ".sdd/docker-compose.yml", "up", "-d"],
+            ["docker", "compose", "-f", ".sdd/docker-compose.yml", "up", "-d", "--build"],
             capture_output=False,
             text=True,
             check=True,

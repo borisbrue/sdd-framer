@@ -886,6 +886,22 @@ def hub_start(port: int, no_browser: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# sdd pwa
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group(help="SDD PWA – Mobile Web App auf Port 8080.")
+def pwa() -> None:
+    pass
+
+
+@pwa.command("start", help="Startet die SDD PWA (statischer Server).")
+@click.option("--port", default=8080, show_default=True, help="Port für die PWA.")
+@click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
+def pwa_start(port: int, no_browser: bool) -> None:
+    from .ui import start_pwa
+    start_pwa(port=port, open_browser=not no_browser)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # sdd test-run / sdd test-results
 # ─────────────────────────────────────────────────────────────────────────────
 def _print_run_report(report: "_test_runner.RunReport") -> None:
@@ -2242,9 +2258,12 @@ def regression_check(spec_id: str, output_json: bool) -> None:
 
     if any(f.severity == "error" for f in result.findings):
         console.print("\n[red]✗[/] Error-Severity gefunden – Regression-Check gescheitert")
+        console.print(f"  Findings gespeichert: [cyan]sdd conflict list {spec_id}[/]")
         sys.exit(1)
     elif any(f.severity == "warning" for f in result.findings):
-        console.print("\n[yellow]⚠[/] Warnungen vorhanden – bitte prüfen")
+        console.print("\n[yellow]⚠[/] Warnungen vorhanden – Findings gespeichert")
+        console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
+        console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

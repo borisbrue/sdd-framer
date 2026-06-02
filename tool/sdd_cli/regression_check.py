@@ -216,6 +216,41 @@ class RegressionCheckChain:
                 pass
         return None
 
+    def _persist_findings(self, spec_id: str, findings: list[CheckFinding]) -> None:
+        """Write regression findings into the conflict-report store (idempotent)."""
+        import datetime
+
+        report_path = self._repo_root / ".sdd" / "conflict-reports" / f"{spec_id}-conflicts.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if report_path.exists():
+            try:
+                data = json.loads(report_path.read_text(encoding="utf-8"))
+            except Exception:
+                data = {"spec_id": spec_id, "new_contracts": [], "conflicts": [], "impact_summary": {}}
+        else:
+            data = {"spec_id": spec_id, "new_contracts": [], "conflicts": [], "impact_summary": {}}
+
+        data["conflicts"] = [c for c in data.get("conflicts", []) if c.get("source") != "regression"]
+
+        _sev_map = {"error": "high", "warning": "medium", "info": "low"}
+        spec_num = spec_id.replace("SPEC-", "")
+        for i, f in enumerate(findings, start=1):
+            data["conflicts"].append({
+                "id": f"CF-{spec_num}-R{i:03d}",
+                "type": f.type,
+                "severity": _sev_map.get(f.severity, "medium"),
+                "new_contract": f.own_section,
+                "conflicting_contract": f"{f.spec_id}:{f.section}",
+                "detail": f.description,
+                "source": "regression",
+                "status": "open",
+                "resolution": None,
+            })
+
+        data["generated_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        report_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
     def run(
         self,
         spec_id: str,
@@ -236,5 +271,7 @@ class RegressionCheckChain:
         llm_handler = LLMSemanticCheckHandler(provider=provider, strategy=strategy)
         rule_handler = RuleBasedCheckHandler(next_handler=llm_handler)
         rule_handler.handle(target, context_specs, result)
+
+        self._persist_findings(spec_id, result.findings)
 
         return result
