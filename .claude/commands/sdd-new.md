@@ -47,6 +47,22 @@ Zeige das Dokument zur Bestätigung. Erst nach "ja" / "ok" / "speichern":
 Falls die SPEC-ID nicht ermittelbar ist (z.B. keine bestehenden Specs im Verzeichnis),
 brich mit Fehlermeldung ab — keine Datei schreiben, keine Ausgabe mit falscher ID.
 
+## Schritt 3: Offene Fragen klären (vor sdd-review)
+
+Lies den Abschnitt "Offene Fragen" aus der soeben gespeicherten Spec.
+Falls offene Fragen vorhanden sind (Einträge mit `- [ ]`):
+
+Gehe jede Frage **einzeln** durch — stelle sie dem Nutzer, warte auf Antwort,
+dann nächste Frage. Keine Batch-Abfragen.
+
+Nach allen Antworten:
+- Ersetze `- [ ]` durch `- [x]` und ergänze die Antwort direkt hinter der Frage
+- Aktualisiere betroffene FRs / Nicht-Ziele / Architektur-Abschnitte wo die Antwort
+  die Spec inhaltlich verändert
+- Zeige kurz welche Abschnitte aktualisiert wurden
+
+Falls keine offenen Fragen vorhanden: direkt zu "Nächster Schritt".
+
 **Nächster Schritt:** `/sdd-review SPEC-XXXX` — ersetze XXXX durch die soeben vergebene ID.
 
 ## Schritt 2b: CONTRACT erstellen
