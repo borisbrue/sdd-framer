@@ -2,7 +2,7 @@
 id: SPEC-0035
 title: Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-06-02
 updated: '2026-06-03'
