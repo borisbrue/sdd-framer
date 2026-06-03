@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-03 -->
+<!-- skill: sdd-implement | version: 0.4.1 | sdd-blueprint: true | updated: 2026-06-03 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -28,7 +28,48 @@ sdd spec approve $ARGUMENTS
 Falls der Befehl fehlschlägt: zeige Fehler-Output und abbrechen mit:
 "✗ Approve fehlgeschlagen – Contracts oder Tests fehlen vermutlich. Prüfe '/sdd-review $ARGUMENTS'."
 
-**Container starten (automatisch):**
+**Container-Runtime diagnostizieren:**
+Lese den konfigurierten Runtime-Namen aus `.sdd/config.yaml` (`docker.runtime`, Standard: `docker`).
+Prüfe dann:
+```bash
+<runtime> info 2>&1 | head -5
+```
+
+Falls der Check fehlschlägt, analysiere die Fehlerausgabe:
+
+- Enthält sie `shared libraries` oder `cannot open shared object file`:
+  ```
+  ✗ Container-Runtime nicht nutzbar: fehlende System-Bibliothek.
+  
+  Ursache: Die VS Code Flatpak-Sandbox exponiert Host-Binaries (z.B. podman über
+  /run/host/usr/bin/) ohne deren nativen Shared-Library-Pfad. Dadurch schlägt
+  'podman info' mit einem Library-Fehler fehl, auch wenn podman installiert ist.
+  
+  Optionen:
+    A) Claude Code aus einem nativen Terminal starten (empfohlen):
+       Konsole/foot/Alacritty öffnen → 'claude' dort starten → podman funktioniert korrekt.
+    B) Container-losen Modus aktivieren (Tests laufen direkt auf dem Host):
+       Weiter mit --no-container (kein 'sdd dev exec', kein Container nötig).
+  ```
+  → Frage den Nutzer: "Container-los weitermachen? [J/n]"
+  - Bei J (oder Enter): setze **CONTAINER_MODE=host** und weiter mit `sdd start $ARGUMENTS --no-container`
+  - Bei n: Abbruch
+
+- Enthält sie `permission denied` oder `connect`:
+  ```
+  ✗ Container-Runtime nicht erreichbar: Socket-Verbindung fehlgeschlagen.
+  
+  Starte den Daemon und versuche erneut:
+    systemctl --user start podman.socket   # für Podman (rootless)
+    sudo systemctl start docker            # für Docker
+  ```
+  → Abbruch. Nutzer soll Runtime starten und '/sdd-implement $ARGUMENTS' erneut ausführen.
+
+- Sonstiger Fehler: Fehlertext anzeigen und abbrechen.
+
+Falls der Check erfolgreich ist: setze **CONTAINER_MODE=container** und weiter.
+
+**Container starten (automatisch, nur bei CONTAINER_MODE=container):**
 Falls `status` ≠ `in-progress` (wurde gerade approved):
 ```bash
 sdd start $ARGUMENTS
@@ -37,18 +78,31 @@ sdd start $ARGUMENTS
 
 Falls `status` bereits `in-progress`: prüfe ob Container läuft:
 ```bash
-podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
+<runtime> inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
 ```
 Falls nicht `running`: führe ebenfalls `sdd start $ARGUMENTS` aus (Neustart des Containers).
 
-**Container-Ready verifizieren:**
+**Container-Ready verifizieren (nur bei CONTAINER_MODE=container):**
 Warte 5 Sekunden nach `sdd start`, dann prüfe:
 ```bash
-podman inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
+<runtime> inspect --format '{{.State.Status}}' sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]')
 ```
 Falls nicht `running`: nochmals 10 Sekunden warten, erneut prüfen (max. 2 Versuche gesamt).
 Falls danach immer noch nicht `running`:
-"✗ Container konnte nicht gestartet werden – prüfe 'podman ps -a' und starte 'sdd start $ARGUMENTS' manuell." und abbrechen.
+```
+✗ Container konnte nicht gestartet werden.
+  Diagnose: '<runtime> ps -a' für laufende Container prüfen.
+  Manuell starten: 'sdd start $ARGUMENTS'
+  Oder container-los: 'sdd start $ARGUMENTS --no-container' → dann Tests auf dem Host ausführen.
+```
+→ Abbruch.
+
+**Container-loser Start (CONTAINER_MODE=host):**
+```bash
+sdd start $ARGUMENTS --no-container
+```
+`▶ sdd start $ARGUMENTS --no-container` (Status → in-progress, kein Container)
+Zeige Hinweis: "[WARN] Container-loser Modus aktiv – Tests laufen direkt auf dem Host."
 
 ## Schritt 1c: Feature-Branch erstellen
 ```bash
@@ -95,27 +149,33 @@ Die Tasks aus dem Decompose-Plan werden sequenziell als Implementierungsplan gen
 
 Zeige den Plan und starte sofort mit der Implementierung — keine Bestätigung erforderlich.
 
-## Schritt 4: TDD-Zyklus (im Container)
+## Schritt 4: TDD-Zyklus
 
 Code wird auf dem Host-Filesystem geschrieben (Read/Edit/Write-Tools).
-Tests laufen **im Container** via `sdd dev exec` — vollständig isoliert,
-keine Host-Berechtigungen nötig.
+
+**CONTAINER_MODE=container:** Tests laufen im Container via `sdd dev exec` — isoliert.
+**CONTAINER_MODE=host:** Tests laufen direkt auf dem Host — kein Container nötig.
 
 Für jede logische Einheit im Plan:
 
 1. Schreibe Implementierungscode (auf Basis von Spec + Contracts, NICHT Holdout)
-2. Führe Tests im Container aus:
-   ```bash
-   sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short
-   ```
+2. Führe Tests aus:
+   - Container-Modus:
+     ```bash
+     sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short
+     ```
+   - Host-Modus:
+     ```bash
+     pytest tests/ -x --tb=short
+     ```
 3. Bei Fehler: analysiere den Traceback, korrigiere den Code, wiederhole
 4. Bei >3 Iterationen ohne Fortschritt: stoppe mit Fehlerbericht (was versucht wurde, was fehlschlägt) — kein User-Prompt
 5. Bei grünen Tests: weiter zur nächsten logischen Einheit
 
 Zyklus endet wenn alle Test-Stubs ohne `NotImplementedError` durchlaufen.
 
-**Hinweis:** `sdd dev exec` benötigt pip-Setup nur beim ersten Aufruf. Wenn der
-Container neu ist, einmalig ausführen:
+**Hinweis (nur Container-Modus):** `sdd dev exec` benötigt pip-Setup nur beim ersten Aufruf.
+Wenn der Container neu ist, einmalig ausführen:
 ```bash
 sdd dev exec $ARGUMENTS bash -c "pip install -q --no-user --no-cache-dir -e '/workspace/' -e '/workspace/tool/[dev]'"
 ```
@@ -124,55 +184,62 @@ sdd dev exec $ARGUMENTS bash -c "pip install -q --no-user --no-cache-dir -e '/wo
 
 Führe zuerst `sdd validate` aus und behebe alle Fehler.
 
-`sdd finalize` startet keinen Container selbst — der Container muss bereits laufen.
-Falls kein Container läuft erscheint:
-"✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start $ARGUMENTS'"
-
 ⚠️ **`sdd finalize` erstellt automatisch einen Git-Commit** — kein manuelles
 `git add` / `git commit` danach nötig. Der `FinalizeReport` enthält den Commit-Hash.
 
-**Versuch 1 und 2:**
+**CONTAINER_MODE=container:**
+
+`sdd finalize` erwartet einen laufenden Container. Falls keiner läuft:
+"✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start $ARGUMENTS'"
+
+Versuch 1 und 2:
 ```bash
 sdd finalize $ARGUMENTS
 ```
-`▶ sdd finalize $ARGUMENTS`
-
 Bei fehlgeschlagenen Container-Tests: Traceback analysieren, Code korrigieren,
 erneut im Container testen (Schritt 4), dann `sdd finalize $ARGUMENTS` wiederholen.
 
-**Dritter fehlgeschlagener Versuch (Container-Fehler):**
-Führe automatisch aus:
+Dritter fehlgeschlagener Versuch (Container-Fehler) → automatisch:
 ```bash
 sdd finalize $ARGUMENTS --skip-container
 ```
 ⚠ Container-Tests wurden übersprungen — Commit und PR laufen normal durch.
 
+**CONTAINER_MODE=host:**
+
+```bash
+sdd finalize $ARGUMENTS --skip-container
+```
+`▶ sdd finalize $ARGUMENTS --skip-container` (kein Container vorhanden – erwartet)
+
 Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
 
-## Schritt 6: Holdout-Evaluation (im Container)
+## Schritt 6: Holdout-Evaluation
 
 Nach erfolgreichem `sdd finalize` die Holdout-Szenarien evaluieren.
-`sdd evaluate` läuft im Dev-Container (API-Key wurde beim Start übergeben).
 
+**CONTAINER_MODE=container:** `sdd evaluate` läuft im Dev-Container (API-Key wurde beim Start übergeben).
 ```bash
 sdd dev exec $ARGUMENTS bash -c \
   "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
    sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS"
 ```
 
-**Retry-Loop (max 3 Versuche):**
+**CONTAINER_MODE=host:** `sdd evaluate` läuft direkt auf dem Host.
+```bash
+pip install -q -e './tool/[evaluate]' > /dev/null && \
+sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS
+```
+
+**Retry-Loop (max 3 Versuche, beide Modi):**
 
 | Versuch | Ergebnis | Aktion |
 |---------|----------|--------|
 | 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren, `sdd finalize` + erneut evaluieren |
-| 3 | fehlgeschlagen | `sdd evaluate ... --final-attempt` ausführen → Status → `evaluation-failed`, Bericht anzeigen, Nutzer informieren |
+| 3 | fehlgeschlagen | `--final-attempt` setzen → Status → `evaluation-failed`, Bericht anzeigen, Nutzer informieren |
 | beliebig | bestanden | Fertig |
 
-Beim 3. fehlgeschlagenen Versuch `--final-attempt` setzen:
-```bash
-sdd dev exec $ARGUMENTS bash -c \
-  "sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --final-attempt"
-```
+Beim 3. fehlgeschlagenen Versuch `--final-attempt` anhängen (jeweils passend zum Modus).
 
 Der Nutzer sieht dann einen Fehlerbericht und entscheidet ob die Spec überarbeitet
 oder die Holdout-Kriterien angepasst werden sollen.
