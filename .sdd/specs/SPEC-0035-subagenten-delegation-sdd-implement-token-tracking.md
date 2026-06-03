@@ -1,20 +1,32 @@
 ---
 id: SPEC-0035
-title: "Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task"
+title: Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task
 type: feature
-status: draft
-owner: "borisbrue"
+status: in-progress
+owner: borisbrue
 created: 2026-06-02
-updated: 2026-06-02
+updated: '2026-06-03'
 version: 0.1.0
 priority: medium
-tags: ["agent-sdk", "token-tracking", "sdd-implement", "claude-specific"]
-depends_on: ["SPEC-0011", "SPEC-0032"]
-contracts: []
-tests: []
+tags:
+- agent-sdk
+- token-tracking
+- sdd-implement
+- claude-specific
+depends_on:
+- SPEC-0011
+- SPEC-0032
+contracts:
+- CON-0121
+- CON-0122
+tests:
+- TST-0140
+- TST-0141
+- TST-0142
+- TST-0143
 adrs: []
+started_at: '2026-06-03T06:12:32Z'
 ---
-
 # Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task
 
 > **Status:** draft · **Owner:** borisbrue · **Version:** 0.1.0
@@ -187,17 +199,17 @@ sdd implement SPEC-XXXX          ← CLI-Befehl (neu)
 
 | Contract-ID | Typ      | Was wird garantiert?                                                       |
 |-------------|----------|----------------------------------------------------------------------------|
-| CON-XXXX    | data     | Token-History-Schema-Erweiterung: `task_id`, `task_label` als optionale Felder |
-| CON-XXXX    | behavior | Sub-Agenten-Delegation-Protokoll: Kontext-Übergabe, Token-Reporting, Fehler-Propagation |
+| CON-0121    | data     | Token-History-Schema-Erweiterung: `task_id`, `task_label` als optionale Felder |
+| CON-0122    | behavior | Sub-Agenten-Delegation-Protokoll: Kontext-Übergabe, Token-Reporting, Fehler-Propagation |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level    | Was prüft der Test?                                                     |
 |----------|----------|-------------------------------------------------------------------------|
-| TST-XXXX | unit     | Token-Aggregation: Summe Sub-Agenten-Token == Gesamt-Eintrag in token-history |
-| TST-XXXX | unit     | Fallback-Logik: Single-Context-Mode bei Nicht-Claude-Provider           |
-| TST-XXXX | contract | Token-History-Schema: task_id-Felder werden korrekt geschrieben/gelesen |
-| TST-XXXX | contract | Fehler-Propagation: Sub-Agenten-Fehler hält Orchestrator an             |
+| TST-0140 | unit     | Token-Aggregation: Summe Sub-Agenten-Token == Gesamt-Eintrag in token-history |
+| TST-0141 | unit     | Fallback-Logik: Single-Context-Mode bei Nicht-Claude-Provider           |
+| TST-0142 | contract | Token-History-Schema: task_id-Felder werden korrekt geschrieben/gelesen |
+| TST-0143 | contract | Fehler-Propagation: Sub-Agenten-Fehler hält Orchestrator an             |
 
 ## 10. Implementierungsreihenfolge
 

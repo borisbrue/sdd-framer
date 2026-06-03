@@ -223,6 +223,15 @@ function DashboardTab({
           ProjectRegistry.update(p.id, { auth_required: true });
           onProjectReload();
           setError("Authentifizierung abgelaufen. Bitte QR-Code erneut scannen.");
+        } else if (p.hubUrl) {
+          // Netzwerkfehler: Hub befragen ob Port sich geändert hat (z.B. nach Server-Neustart)
+          const refreshed = await refreshProjectsFromHub(ProjectRegistry.getAll());
+          const updated = refreshed.find(rp => rp.id === p.id);
+          if (updated && updated.baseUrl !== p.baseUrl) {
+            onProjectReload(); // baseUrl-Dep triggert useEffect-Neustart mit neuem Port
+            return;
+          }
+          setError("Server nicht erreichbar.");
         } else {
           setError("Server nicht erreichbar.");
         }
@@ -231,7 +240,7 @@ function DashboardTab({
       }
     }
     load(project);
-  }, [project?.id, onProjectReload]);
+  }, [project?.id, project?.baseUrl, onProjectReload]);
 
   if (!project) {
     return (

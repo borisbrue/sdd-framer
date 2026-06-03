@@ -53,9 +53,16 @@ def init_token_usage_table(config: SddConfig) -> None:
                 cache_read_tokens  INTEGER NOT NULL DEFAULT 0,
                 cache_write_tokens INTEGER NOT NULL DEFAULT 0,
                 duration_ms        INTEGER NOT NULL DEFAULT 0,
-                calibrated         INTEGER NOT NULL DEFAULT 0
+                calibrated         INTEGER NOT NULL DEFAULT 0,
+                task_id            TEXT,
+                task_label         TEXT
             )
         """)
+        # Migration: add task_id/task_label columns to existing tables (CON-0121)
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(token_usage)")}
+        for col, typedef in (("task_id", "TEXT"), ("task_label", "TEXT")):
+            if col not in existing:
+                conn.execute(f"ALTER TABLE {TOKEN_USAGE_TABLE} ADD COLUMN {col} {typedef}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -73,6 +80,8 @@ def persist_token_usage(
     cache_write_tokens: int = 0,
     duration_ms: int = 0,
     spec_id: str | None = None,
+    task_id: str | None = None,
+    task_label: str | None = None,
 ) -> None:
     """Schreibt tatsächlichen Token-Verbrauch einer LLM-Komponente in die DB."""
     try:
@@ -84,11 +93,11 @@ def persist_token_usage(
                 f"""INSERT INTO {TOKEN_USAGE_TABLE}
                     (timestamp, spec_id, component, model,
                      input_tokens, output_tokens, cache_read_tokens,
-                     cache_write_tokens, duration_ms)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                     cache_write_tokens, duration_ms, task_id, task_label)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (ts, spec_id, component, model,
                  input_tokens, output_tokens, cache_read_tokens,
-                 cache_write_tokens, duration_ms),
+                 cache_write_tokens, duration_ms, task_id, task_label),
             )
     except Exception:
         pass  # Persistenz-Fehler dürfen Hauptfluss nicht unterbrechen
@@ -439,6 +448,8 @@ class TokenHistoryRow:
     cache_read_tokens: int
     cache_write_tokens: int
     duration_ms: int
+    task_id: str | None = None
+    task_label: str | None = None
 
 
 def token_history(
@@ -473,6 +484,8 @@ def token_history(
                 cache_read_tokens=r["cache_read_tokens"],
                 cache_write_tokens=r["cache_write_tokens"],
                 duration_ms=r["duration_ms"],
+                task_id=r["task_id"] if "task_id" in r.keys() else None,
+                task_label=r["task_label"] if "task_label" in r.keys() else None,
             )
             for r in rows
         ]
@@ -523,6 +536,28 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
             f"UPDATE {TOKEN_USAGE_TABLE} SET calibrated = 1 WHERE spec_id = ?",
             (spec_id,),
         )
+        task_rows = conn.execute(f"""
+            SELECT task_id, task_label,
+                   SUM(input_tokens)      AS input_tokens,
+                   SUM(output_tokens)     AS output_tokens,
+                   SUM(cache_read_tokens) AS cache_read_tokens,
+                   COUNT(*)              AS n
+            FROM {TOKEN_USAGE_TABLE}
+            WHERE spec_id = ? AND task_id IS NOT NULL
+            GROUP BY task_id, task_label
+            ORDER BY MIN(id)
+        """, (spec_id,)).fetchall()
+    tasks = [
+        {
+            "task_id": tr["task_id"],
+            "task_label": tr["task_label"],
+            "input_tokens": tr["input_tokens"] or 0,
+            "output_tokens": tr["output_tokens"] or 0,
+            "cache_read_tokens": tr["cache_read_tokens"] or 0,
+            "n_entries": tr["n"] or 0,
+        }
+        for tr in task_rows
+    ]
     return {
         "spec_id": spec_id,
         "input_tokens": row["input_tokens"] or 0,
@@ -530,4 +565,5 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
         "cache_read_tokens": row["cache_read_tokens"] or 0,
         "cache_write_tokens": row["cache_write_tokens"] or 0,
         "n_entries": row["n"] or 0,
+        "tasks": tasks,
     }

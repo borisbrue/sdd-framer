@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.3.0 | sdd-blueprint: true | updated: 2026-05-30 -->
+<!-- skill: sdd-implement | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-03 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -73,13 +73,23 @@ Fasse den geladenen Kontext kurz zusammen:
 
 ## Schritt 3: Implementierungsplan via Decompose laden
 ```bash
-sdd decompose $ARGUMENTS
+sdd decompose $ARGUMENTS --yes
 ```
 `▶ sdd decompose $ARGUMENTS`
 
 Falls die Task-Liste leer ist (0 Tasks):
 "✗ Keine Tasks gefunden – prüfe Spec-Inhalt." und abbrechen.
 
+**Sub-Agenten-Delegation (Claude-Provider):**
+Falls der aktive Provider Claude ist (`llm.ai_routes.provider: claude-cli` oder `anthropic`):
+```bash
+sdd implement $ARGUMENTS
+```
+`▶ sdd implement $ARGUMENTS` — startet Sub-Agenten-Loop (SPEC-0035).
+Falls `sdd implement` mit `[Fallback: Single-Context-Mode]` antwortet oder nicht verfügbar ist:
+weiter mit manuellem TDD-Zyklus (Schritt 4).
+
+**Nicht-Claude-Provider oder manueller Modus:**
 Die Tasks aus dem Decompose-Plan werden sequenziell als Implementierungsplan genutzt
 (kein `sdd distribute` — das bleibt `sdd orchestrate` vorbehalten).
 

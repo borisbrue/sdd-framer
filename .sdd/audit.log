@@ -20,3 +20,10 @@
 2026-05-30T10:48:10Z  hotfix.start  HF-0003  'sdd hotfix finalize: Testsuite vor Commit ausführen, bei Fehler blockieren'
 2026-05-30T10:48:25Z  hotfix.finalize  HF-0003  commit=197dffb
 2026-05-30T19:58:03Z SPEC-0032 approved → in-progress [sdd-start]
+2026-06-02T21:23:31Z  hotfix.start  HF-0004  'regression-check schreibt Findings automatisch in den Conflict-Store'
+2026-06-02T21:32:14Z  hotfix.finalize  HF-0004  commit=13e332e
+2026-06-02T21:45:54Z  hotfix.start  HF-0005  'sdd-new Skill: offene Fragen interaktiv klären vor sdd-review'
+2026-06-02T21:52:31Z  hotfix.finalize  HF-0005  commit=5d4d626
+2026-06-02T21:58:55Z  hotfix.start  HF-0006  'finalize: npm-Projekt-Erkennung + FileNotFoundError abfangen + Skill-Text für Commit-Hinweis'
+2026-06-02T22:07:16Z  hotfix.finalize  HF-0006  commit=f60cc0f
+2026-06-03T06:12:32Z SPEC-0035 approved → in-progress [sdd-start]

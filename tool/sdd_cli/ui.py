@@ -190,6 +190,64 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
         p.wait()
 
 
+def start_pwa(port: int = 8080, open_browser: bool = True) -> None:
+    """Startet die SDD PWA als statischer Server."""
+    web = _web_root()
+    pwa_dir = web / "pwa"
+
+    if not (pwa_dir / "dist" / "index.html").exists():
+        print(f"✗ PWA-Build nicht gefunden: {pwa_dir / 'dist'}", file=sys.stderr)
+        print("  Bitte zuerst: cd web/pwa && npm run build", file=sys.stderr)
+        sys.exit(1)
+
+    global_certs = Path.home() / ".local/share/sdd/certs"
+    ssl_args: list[str] = []
+    scheme = "http"
+    if (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists():
+        ssl_args = [
+            "--ssl-certfile", str(global_certs / "cert.pem"),
+            "--ssl-keyfile",  str(global_certs / "key.pem"),
+        ]
+        scheme = "https"
+
+    def stop_all(signum=None, frame=None) -> None:
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, stop_all)
+    signal.signal(signal.SIGTERM, stop_all)
+
+    proc = subprocess.Popen(
+        [_api_python(web / "api"), "-m", "uvicorn", "server:app",
+         "--host", "0.0.0.0", "--port", str(port)] + ssl_args,
+        cwd=pwa_dir,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    threading.Thread(target=_stream, args=(proc, "pwa"), daemon=True).start()
+
+    try:
+        import socket as _sock
+        with _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM) as _s:
+            _s.connect(("8.8.8.8", 80))
+            _lan_ip = _s.getsockname()[0]
+    except Exception:
+        _lan_ip = None
+
+    print(f"▶ SDD PWA gestartet → {scheme}://localhost:{port}/")
+    if _lan_ip and not _lan_ip.startswith("127."):
+        print(f"  Im LAN (QR scannen): {scheme}://{_lan_ip}:{port}/")
+    print(f"  Stoppen mit Ctrl+C\n")
+
+    if open_browser:
+        import time
+        import webbrowser
+        time.sleep(1.5)
+        webbrowser.open(f"{scheme}://localhost:{port}/")
+
+    proc.wait()
+
+
 def start_server(
     project_root: str,
     port: int = 8000,
@@ -234,9 +292,9 @@ def start_server(
             _origins = [
                 f"http://localhost:5173", f"http://localhost:8000",
                 f"http://localhost:{port}", f"{scheme}://localhost:{port}",
-                # PWA-Dev kann auf http oder https laufen – beide Varianten erlauben
-                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174)],
-                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174)],
+                # PWA-Dev (Vite) und PWA-Server (sdd pwa start) – beide Varianten erlauben
+                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
+                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
                 f"{scheme}://{_lan_ip}:{port}",
             ]
             env["SDD_ALLOWED_ORIGINS"] = ",".join(dict.fromkeys(_origins))

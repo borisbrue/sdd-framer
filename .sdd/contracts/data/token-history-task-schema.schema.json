@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDD token_usage Row (task-granular extension)",
+  "description": "Schema einer Zeile in der token_usage-Tabelle mit optionalen Task-Granularitäts-Feldern für Sub-Agenten-Delegation (SPEC-0035).",
+  "type": "object",
+  "required": ["id", "timestamp", "component", "model", "input_tokens", "output_tokens"],
+  "properties": {
+    "id": { "type": "integer" },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "spec_id": { "type": ["string", "null"] },
+    "task_id": {
+      "type": ["string", "null"],
+      "description": "Optionale Task-ID aus dem Decompose-Plan (z.B. 'TASK-1'). Null wenn nicht task-granular."
+    },
+    "task_label": {
+      "type": ["string", "null"],
+      "description": "Optionaler Task-Titel aus dem Decompose-Plan. Null wenn nicht task-granular."
+    },
+    "component": { "type": "string", "minLength": 1 },
+    "model": { "type": "string" },
+    "input_tokens": { "type": "integer", "minimum": 0 },
+    "output_tokens": { "type": "integer", "minimum": 0 },
+    "cache_read_tokens": { "type": "integer", "minimum": 0 },
+    "cache_write_tokens": { "type": "integer", "minimum": 0 },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "calibrated": { "type": "integer", "enum": [0, 1] }
+  },
+  "if": {
+    "properties": { "task_id": { "type": "string" } },
+    "required": ["task_id"]
+  },
+  "then": {
+    "required": ["task_label"],
+    "properties": {
+      "task_label": { "type": "string", "minLength": 1 }
+    }
+  }
+}

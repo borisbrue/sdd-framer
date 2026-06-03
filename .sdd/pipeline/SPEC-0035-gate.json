@@ -1,0 +1,70 @@
+{
+  "spec_id": "SPEC-0035",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-06-03T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-06-03T05:59:46Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-06-03T06:00:01Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0121",
+        "CON-0122"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-06-03T06:00:02Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-06-03T06:03:49Z",
+      "result": "ok",
+      "conflicts_found": 6,
+      "conflicts_high": 3
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-06-03T06:11:08Z",
+      "result": "ok",
+      "files_generated": [
+        ".sdd/tests/contract/test_con-0121.py",
+        ".sdd/tests/contract/test_con-0122.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-06-03T06:12:00Z",
+      "result": "ok",
+      "notes": "Stufe 1 clean (0 Regelkonflikte). Stufe 2 übersprungen (LLM-Timeout). Alle 6 Contract-Konflikte resolved/acknowledged."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-06-03T06:11:27Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "9/9",
+        "scenarios_covered": "3/3",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-06-03T06:11:27Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}
