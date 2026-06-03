@@ -1,0 +1,110 @@
+{
+  "spec_id": "SPEC-0035",
+  "generated_at": "2026-06-03T06:03:49Z",
+  "new_contracts": [
+    "CON-0121",
+    "CON-0122"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0035-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0095",
+      "detail": "CON-0122 G-02 definiert exakt 1 Retry pro Sub-Agenten-Fehler, danach Orchestrator-Halt. CON-0095 INV-02 erlaubt retry_count 0–3 und kennt als Terminal-State 'blocked' (nach 3 Fehlversuchen) – nicht Halt des gesamten Orchestrators. Die Retry-Obergrenzen (1 vs. 3) sind direkt widersprüchlich.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Intentional: CON-0095 beschreibt Retry-Logik für sdd-orchestrate-Jobs (Job-Ebene, retry_count 0–3). CON-0122 G-02 beschreibt Retry für sdd-implement-Sub-Agenten (Task-Ebene). Getrennte Subsysteme mit unterschiedlichen Retry-Semantiken. SPEC-0035 FR-06 legt bewusst 1 Retry für Sub-Agenten fest um Kontext-Akkumulation zu verhindern.",
+        "resolved_at": "2026-06-03T06:10:26Z"
+      }
+    },
+    {
+      "id": "CF-0035-002",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0100",
+      "detail": "CON-0100 beschreibt bis zu 3 Retry-Stufen mit akkumuliertem error_context (INV-04: 'Retries erhalten vollständigen error_context aller vorherigen Versuche'). CON-0122 G-02 bricht nach 1 Retry ab; CON-0122 G-01 schreibt vor, jeder Sub-Agent startet 'ausschließlich' mit task-eigenem Kontext – der akkumulierte error_context aus CON-0100 würde G-01 verletzen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Intentional: CON-0100 INV-04 (akkumulierter error_context) gilt für sdd-orchestrate-Retries. CON-0122 G-01/G-02 gilt für sdd-implement-Sub-Agenten: kein akkumulierter Kontext ist Designziel (verhindert Cross-Task-Drift). Die Sub-Agenten-Architektur isoliert bewusst jeden Retry mit leerem Kontext.",
+        "resolved_at": "2026-06-03T06:10:33Z"
+      }
+    },
+    {
+      "id": "CF-0035-003",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 G-03 schreibt vor, der Claude-Prompt MUSS den vollständigen Spec-Inhalt + AGENTS.md + alle referenzierten Contracts enthalten. CON-0122 G-01 schränkt den Sub-Agenten-Kontext auf 'ausschließlich Spec + task-spezifische Contracts + Test-Stubs' ein – AGENTS.md und nicht-task-relevante Contracts sind implizit ausgeschlossen. Das Feature-Szenario verstärkt dies ('jeder Sub-Agent startet mit leerem Kontext').",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0122 G-01 aktualisiert: AGENTS.md ist explizit im Sub-Agenten-Kontext enthalten; nur Contracts anderer Tasks werden ausgeschlossen. CON-0012 G-03 bleibt vollständig erfüllt.",
+        "resolved_at": "2026-06-03T06:10:11Z"
+      }
+    },
+    {
+      "id": "CF-0035-004",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 INV-02 definiert retry_count-Bereich 0–3; INV-05 besagt error_context enthält maximal 3 Einträge (einen pro Retry). CON-0122 G-02 begrenzt Retries auf exakt 1 — im Sub-Agenten-Modus wäre retry_count > 1 ein per CON-0122 verbotener Zustand, der CON-0096 strukturell widerspricht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Intentional: CON-0096 retry_count 0–3 gilt für sdd-orchestrate. Im sdd-implement-Sub-Agenten-Modus (CON-0122) ist retry_count auf 0 oder 1 beschränkt — das ist kein struktureller Widerspruch sondern eine Teilmenge des erlaubten Bereichs (0 und 1 liegen beide im 0–3-Intervall von CON-0096).",
+        "resolved_at": "2026-06-03T06:10:39Z"
+      }
+    },
+    {
+      "id": "CF-0035-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0041",
+      "detail": "CON-0122 INV-02 setzt voraus, dass task_id und task_label in token-history persistiert werden. CON-0041 (status: review) definiert das kanonische token_usage-Tabellenschema ohne diese Felder. CON-0121 soll das Schema erweitern, referenziert CON-0041 jedoch nicht als explizite Abhängigkeit, und ein Migrations-Contract für bestehende Datenbanken fehlt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0121 um explizite CON-0041-Abhängigkeit und Migrations-Hinweis (nullable ALTER TABLE) ergänzt. Keine separaten Migrations-Contracts nötig da beide Spalten DEFAULT NULL sind.",
+        "resolved_at": "2026-06-03T06:10:15Z"
+      }
+    },
+    {
+      "id": "CF-0035-006",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0122",
+      "conflicting_contract": "CON-0063",
+      "detail": "CON-0063 beschreibt den vollständigen Ablauf von /sdd-implement SPEC-XXXX (G-01–G-04) ohne Sub-Agenten-Delegation zu erwähnen. CON-0122 spezifiziert dasselbe Kommando nach sdd decompose unter einem anderen Ausführungsmodell. Beide Contracts regeln denselben Einstiegspunkt ohne gegenseitige Referenz oder Geltungsbereichs-Abgrenzung (z. B. 'gilt nur wenn decompose-Tasks vorhanden').",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0122 Geltungsbereich explizit auf sdd-implement Sub-Agenten-Pfad (Claude-Provider + Decompose-Tasks) eingeschränkt. CON-0063 gilt weiterhin für Single-Context-Mode und Fallback-Pfad. Beide Contracts sind komplementär ohne Überschneidung.",
+        "resolved_at": "2026-06-03T06:10:21Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 6,
+    "high": 3,
+    "medium": 3,
+    "low": 0,
+    "affected_specs_count": 0
+  }
+}

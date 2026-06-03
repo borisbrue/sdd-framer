@@ -57,6 +57,7 @@ class Task:
     commit_hash: str | None = None
     dependencies: list[str] = field(default_factory=list)
     error_context: list[str] = field(default_factory=list)
+    con_ids: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -75,6 +76,7 @@ class Task:
             "commit_hash": self.commit_hash,
             "dependencies": self.dependencies,
             "error_context": self.error_context,
+            "con_ids": self.con_ids,
         }
 
     @classmethod
@@ -95,4 +97,5 @@ class Task:
             commit_hash=d.get("commit_hash"),
             dependencies=d.get("dependencies", []),
             error_context=d.get("error_context", []),
+            con_ids=d.get("con_ids", []),
         )

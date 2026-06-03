@@ -358,7 +358,13 @@
       "Bash(UV_TOOL_DIR=/home/deck/.var/app/com.visualstudio.code/data/uv/tools uv tool install --force dist/sdd_framer-0.1.15-py3-none-any.whl)",
       "Bash(mkdir -p /run/media/deck/SM512/Development/sdd-framer/.claude/commands/maintenance)",
       "Bash(flatpak run *)",
-      "Bash(/app/bin/code --install-extension /run/media/deck/SM512/Development/sdd-framer/vscode-extension/sdd-framer-0.3.1.vsix)"
+      "Bash(/app/bin/code --install-extension /run/media/deck/SM512/Development/sdd-framer/vscode-extension/sdd-framer-0.3.1.vsix)",
+      "Bash(python -m pytest -x --tb=short -q)",
+      "Bash(python -m pytest tests/unit/test_tst_0079.py::TestTST0079::test_docker_runtime_compose_up --tb=long -q)",
+      "Bash(python -m pytest tests/unit/test_tst_0079.py::TestTST0079::test_docker_runtime_compose_up -q)",
+      "Bash(python -m pytest tests/unit/test_tst_0083.py::TestTST0083::test_full_stack_flow_mocked --tb=long -q)",
+      "Bash(python -m pytest tests/ -x --tb=short -q -k \"finalize\")",
+      "Bash(wait)"
     ],
     "additionalDirectories": [
       "/home/deck/.local/share/sdd/certs",

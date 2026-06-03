@@ -1961,6 +1961,61 @@ def calibrate_cmd(spec_id: str) -> None:
     console.print(f"  Input-Tokens:  {summary['input_tokens']:,}")
     console.print(f"  Output-Tokens: {summary['output_tokens']:,}")
     console.print(f"  Einträge:      {summary['n_entries']}")
+    if summary.get("tasks"):
+        console.print("\n  [bold]Per-Task-Aufschlüsselung:[/]")
+        for t in summary["tasks"]:
+            console.print(
+                f"    [cyan]{t['task_id']}[/]  {t['task_label'][:50]}"
+                f"  in={t['input_tokens']:,}  out={t['output_tokens']:,}"
+            )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd implement  (SPEC-0035)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.command("implement", help="Sub-Agenten-Delegation für sdd-implement (SPEC-0035).")
+@click.argument("spec_id")
+def implement_cmd(spec_id: str) -> None:
+    from .decompose import TaskDecomposer
+    from .sub_agent import SubAgentOrchestrator, is_claude_provider
+
+    cfg = _ensure_project()
+
+    if not is_claude_provider(cfg):
+        console.print(f"[yellow][Fallback: Single-Context-Mode][/] Provider ist nicht Claude.")
+        console.print("Führe Implementierung im bestehenden Single-Context-Mode aus.")
+        return
+
+    decomposer = TaskDecomposer()
+    try:
+        tasks = decomposer.load(spec_id, cfg)
+    except Exception:
+        tasks = []
+
+    if not tasks:
+        console.print(f"[red]✗[/] Keine Tasks gefunden – führe 'sdd decompose {spec_id}' zuerst aus.")
+        sys.exit(1)
+
+    console.print(f"[cyan]▶[/] Sub-Agenten-Delegation: {len(tasks)} Tasks für [bold]{spec_id}[/]")
+
+    orchestrator = SubAgentOrchestrator(config=cfg, spec_id=spec_id)
+
+    def _spawn(task):
+        raise NotImplementedError(
+            "Sub-Agenten-Spawning via Claude Agent SDK noch nicht aktiviert – "
+            "nutze /sdd-implement SPEC-XXXX in Claude Code."
+        )
+
+    report = orchestrator.run(tasks, _spawn)
+
+    if report.halted and report.failed_task:
+        ft = report.failed_task
+        console.print(f"\n[red]✗[/] Orchestrator angehalten nach Task [bold]{ft.task_id}[/]: {ft.task_title}")
+        console.print(f"  Fehler: {ft.error}")
+        console.print(f"  Abgeschlossen: {len(report.completed_tasks)}/{len(tasks)} Tasks")
+        sys.exit(1)
+
+    console.print(f"[green]✓[/] {len(report.completed_tasks)} Tasks abgeschlossen.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
