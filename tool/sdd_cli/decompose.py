@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .config import SddConfig
 from .frontmatter import parse_safe
-from .task_model import Task, TaskType, Complexity, ContextSize
+from .task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
 
 _SYSTEM_PROMPT = """\
 Du bist ein Software-Architekt. Deine Aufgabe: Zerlege ein Spec in atomare, \
@@ -21,9 +21,15 @@ Regeln:
 - Jeder Task adressiert genau eine funktionale Verantwortlichkeit (atomic).
 - Gib NUR valides JSON zurück – kein Markdown, kein Text darum herum.
 - Jeder Task hat: title, description, type (code|test|config|doc),
-  complexity (low|medium|high), context_size (S|M|L), estimated_tokens (int > 0).
+  complexity (low|medium|high), context_size (S|M|L), estimated_tokens (int > 0),
+  dependencies (Liste von Titeln anderer Tasks die vorher abgeschlossen sein müssen),
+  parallel_group (String-Label für Tasks die parallel laufen können, null wenn sequenziell).
+- Tasks die sich NICHT gegenseitig beeinflussen und keine Abhängigkeiten haben,
+  bekommen dasselbe parallel_group-Label (z.B. "group-1").
+- Tasks mit dependencies müssen nach ihren Abhängigkeiten laufen (parallel_group=null).
 - Mindestens ein Task pro FR im Spec.
 - Keine doppelten Titel.
+- Keine zirkulären dependencies.
 
 Ausgabeformat (JSON-Array):
 [
@@ -33,10 +39,48 @@ Ausgabeformat (JSON-Array):
     "type": "code",
     "complexity": "medium",
     "context_size": "M",
-    "estimated_tokens": 3000
+    "estimated_tokens": 3000,
+    "dependencies": [],
+    "parallel_group": "group-1"
   }
 ]
 """
+
+
+def detect_circular_dependencies(tasks: list[Task]) -> set[str]:
+    """DFS-basierte Zirkel-Erkennung. Gibt IDs der betroffenen Tasks zurück."""
+    title_to_id = {t.title: t.id for t in tasks}
+    adj: dict[str, set[str]] = {t.id: set() for t in tasks}
+    for t in tasks:
+        for dep_title in t.dependencies:
+            dep_id = title_to_id.get(dep_title)
+            if dep_id:
+                adj[t.id].add(dep_id)
+
+    visited: set[str] = set()
+    in_stack: set[str] = set()
+    circular: set[str] = set()
+
+    def dfs(node: str) -> bool:
+        visited.add(node)
+        in_stack.add(node)
+        for neighbor in adj.get(node, set()):
+            if neighbor not in visited:
+                if dfs(neighbor):
+                    circular.add(node)
+                    return True
+            elif neighbor in in_stack:
+                circular.add(node)
+                circular.add(neighbor)
+                return True
+        in_stack.discard(node)
+        return False
+
+    for task_id in list(adj.keys()):
+        if task_id not in visited:
+            dfs(task_id)
+
+    return circular
 
 
 class TaskDecomposer:
@@ -93,11 +137,21 @@ class TaskDecomposer:
                 complexity=Complexity(item.get("complexity", "medium")),
                 context_size=ContextSize(item.get("context_size", "M")),
                 estimated_tokens=estimated,
+                dependencies=item.get("dependencies", []),
+                parallel_group=item.get("parallel_group"),
             ))
 
         if not tasks:
             print("Keine Tasks ableitbar", file=sys.stderr)
             sys.exit(1)
+
+        circular = detect_circular_dependencies(tasks)
+        if circular:
+            for task_id in circular:
+                task = next((t for t in tasks if t.id == task_id), None)
+                if task:
+                    task.status = TaskStatus.BLOCKED
+                    task.error_context.append("circular dependency detected")
 
         return tasks
 

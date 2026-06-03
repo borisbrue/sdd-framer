@@ -1,0 +1,187 @@
+{
+  "spec_id": "SPEC-0034",
+  "generated_at": "2026-06-03T09:53:56Z",
+  "new_contracts": [
+    "CON-0123",
+    "CON-0124"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0034-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0124",
+      "conflicting_contract": "CON-0095",
+      "detail": "CON-0095 definiert die authoritative Task-Lifecycle-State-Machine mit den Endzuständen 'committed' (positiv) und 'blocked' (nach 3 Retries). CON-0124 führt zwei neue Zustände 'passed' und 'failed' ein, die in CON-0095 nicht existieren. Die Transition review→passed in CON-0124 widerspricht der Transition review→committed in CON-0095. Es ist unklar, ob 'passed' ein Zwischenzustand vor 'committed' ist oder ob 'committed' durch 'passed' ersetzt wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "task_model.py und task_lifecycle.py haben PASSED/FAILED bereits seit SPEC-0026. Transition review→passed→committed ist die authoritative Implementierung. CON-0095 ist veraltete Dokumentation und muss separat aktualisiert werden.",
+        "resolved_at": "2026-06-03T09:50:36Z"
+      }
+    },
+    {
+      "id": "CF-0034-002",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0124",
+      "conflicting_contract": "CON-0100",
+      "detail": "CON-0100 (ReviewPipeline) führt Unit-Tests bereits als Stufe 2 der Pipeline aus (Syntax → Unit-Tests → Claude-Review) und überführt den Task bei Gesamterfolg direkt nach 'committed'. CON-0124 verlangt eine weitere, separate Testausführung über mark_passed() bevor die passed-Transition erfolgt. Es entsteht eine doppelte Testpflicht ohne definierte Abgrenzung: unklar, ob mark_passed() die Pipeline-Tests wiederholt oder andere Test-IDs ausführt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Keine doppelte Testpflicht: ReviewPipeline (CON-0100) läuft interne Unit-Tests während der Implementierung. CON-0124 mark_passed() prüft SDD-Test-Dokumente (TST-IDs aus .sdd/tests/) nach Abschluss. Verschiedene Ebenen: Implementierungsverifikation vs. Acceptance-Gate.",
+        "resolved_at": "2026-06-03T09:50:36Z"
+      }
+    },
+    {
+      "id": "CF-0034-003",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0124",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 definiert das Task-Status-Enum implizit über CON-0095 (pending/assigned/running/review/committed/blocked). Die Zustände 'passed' und 'failed' aus CON-0124 fehlen im Schema. Zusätzlich schränkt CON-0096 INV-05 error_context auf maximal 3 Einträge ein (einen je Retry), während CON-0124 INV-03 error_context für Testergebnisse nutzt – bei parallelen Retry- und Gate-Fehlern können mehr als 3 Einträge entstehen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "passed/failed existieren in task_model.py (TaskStatus-Enum). CON-0096 ist veraltete Dokumentation. error_context-Limit (3 Einträge) ist in der aktuellen Implementation nicht erzwungen – CON-0096 muss korrigiert werden, nicht CON-0124.",
+        "resolved_at": "2026-06-03T09:50:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-004",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0124",
+      "conflicting_contract": "CON-0097",
+      "detail": "Das letzte Szenario in CON-0124 ('Zirkuläre Dependencies werden beim Decompose erkannt') beschreibt Verhalten der Decompose-Phase und gehört thematisch zu CON-0097. Der Contract CON-0124 ist als Gate für mark_passed() deklariert (Scope: Transition review→passed), nicht für den Decompose-Orchestrator. Das Szenario ist out-of-scope und dupliziert eine Verantwortlichkeit, die CON-0097 abdecken sollte.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Zirkuläre-Dependency-Szenario aus CON-0124 entfernt – gehört zu CON-0097 (Decompose). CON-0124 ist jetzt korrekt auf mark_passed()-Transition begrenzt.",
+        "resolved_at": "2026-06-03T09:50:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0124",
+      "conflicting_contract": "CON-0061",
+      "detail": "CON-0061 G-02 erzwingt bereits 'erst nach grünen Tests zur nächsten Einheit übergehen' im TDD-Zyklus-Kontext. CON-0124 fügt eine gleichartige Test-Gate-Logik auf Lifecycle-Ebene hinzu. Beide Contracts fordern Test-vor-Proceed ohne Abgrenzung der zuständigen Ebene (Skill-Level vs. Lifecycle-Level). Potenzielle Redundanz wenn derselbe Task beide Ebenen durchläuft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Verschiedene Abstraktionsebenen: CON-0061 gilt im TDD-Skill-Kontext (Schritt 4 des sdd-implement-Skills), CON-0124 gilt auf TaskLifecycle-Ebene (programmatische API). Kein Widerspruch, da sdd-implement den Lifecycle aufruft.",
+        "resolved_at": "2026-06-03T09:50:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-R001",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "US-01 / US-03 (Schätz-Tokens + tatsächlicher Verbrauch pro Task)",
+      "conflicting_contract": "SPEC-0011:Primärziel (Token-Vorhersage vor Execution)",
+      "detail": "SPEC-0011 definiert ein vollständiges Token-Kostenschätzsystem auf Basis historischer Daten; SPEC-0034 US-01 und US-03 implementieren dieselbe Funktion (Schätzung vor Start, Ist-Verbrauch nach Abschluss) erneut auf Task-Ebene, ohne auf SPEC-0011 zu referenzieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:36Z"
+      }
+    },
+    {
+      "id": "CF-0034-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium-3 (kein Task → passed ohne grünen Test)",
+      "conflicting_contract": "SPEC-0006:Primärziel (Test-Runs pro Spec, Pass/Fail-Auswertung)",
+      "detail": "SPEC-0006 implementiert bereits die Ausführung und Auswertung von Tests pro Spec inkl. Pass/Fail-Status; SPEC-0034's Task-Completion-Gate löst dasselbe Problem (Test muss grün sein) ohne die vorhandene Test-Run-Infrastruktur aus SPEC-0006 zu nutzen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium-2 (SSE-Event < 500 ms nach Task-Statuswechsel)",
+      "conflicting_contract": "SPEC-0007:Erfolgskriterium (SSE-Statusstream für laufenden Orchestrator-Run)",
+      "detail": "SPEC-0007 führt bereits einen SSE-Kanal für Echtzeit-Fortschritts­meldungen des Orchestrators ein; SPEC-0034 definiert einen zweiten SSE-Mechanismus für Task-Statuswechsel auf demselben Run, was zu konkurrierenden Event-Streams auf derselben Verbindung führt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterium-2 (SSE-Event reaches frontend within 500 ms)",
+      "conflicting_contract": "SPEC-0016:Kernprinzip Fire-and-forget + Push-Benachrichtigung via SSE",
+      "detail": "SPEC-0016 entwirft die allgemeine Infrastruktur für asynchrone Hintergrundjobs mit SSE-Push-Benachrichtigungen; SPEC-0034 baut dieselbe Infrastruktur spec-scoped neu auf, anstatt die in SPEC-0016 definierte Basis zu erweitern.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterium-3 (Task-Completion-Gate: passed nur bei grünem Test)",
+      "conflicting_contract": "SPEC-0014:Verpflichtender gestufter Qualitätsprozess (Execution Gate)",
+      "detail": "SPEC-0014 definiert ein mehrstufiges Execution-Gate, das Spec-Execution blockiert bis Qualitätsbedingungen erfüllt sind; SPEC-0034's Task-Completion-Gate ist semantisch ein nachgelagertes Gate auf Task-Ebene, das ohne Bezug zu SPEC-0014's Gate-Framework spezifiziert wird.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:37Z"
+      }
+    },
+    {
+      "id": "CF-0034-R006",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterium-1 (GET /api/specs/{spec_id}/tasks)",
+      "conflicting_contract": "SPEC-0003:REST-API Route-Gruppe Specs (GET /specs, GET /specs/{id})",
+      "detail": "SPEC-0003 besitzt die bestehende Specs-Route-Gruppe; SPEC-0034 erweitert diese um /tasks als Sub-Ressource ohne explizite Abhängigkeit auf SPEC-0003 zu deklarieren, was zu undokumentierter Kopplung an die Route-Architektur führt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bereits in depends_on und Contract-Analyse adressiert: SPEC-0034 baut auf bestehende Infrastruktur auf (SPEC-0011, SPEC-0006, SPEC-0007, SPEC-0016, SPEC-0003) – kein Widerspruch, sondern Erweiterung.",
+        "resolved_at": "2026-06-03T09:55:38Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 5,
+    "high": 3,
+    "medium": 1,
+    "low": 1,
+    "affected_specs_count": 0
+  }
+}

@@ -1,0 +1,107 @@
+openapi: "3.1.0"
+info:
+  title: Kanban Tasks API
+  version: "0.1.0"
+  description: "SPEC-0034 CON-0123 – GET /api/specs/{spec_id}/tasks + SSE /events"
+paths:
+  /api/specs/{spec_id}/tasks:
+    get:
+      summary: Tasks des letzten Runs (FR-01)
+      operationId: get_tasks
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tasks-Liste (leer wenn kein Run vorhanden)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TasksResponse"
+        "404":
+          description: Spec nicht gefunden
+  /api/specs/{spec_id}/tasks/events:
+    get:
+      summary: SSE-Stream für Task-Statuswechsel (FR-02)
+      operationId: task_events
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Server-Sent Events Stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "404":
+          description: Spec nicht gefunden
+        "503":
+          description: SSE nicht verfügbar
+components:
+  schemas:
+    TasksResponse:
+      type: object
+      required: [spec_id, run_id, tasks]
+      properties:
+        spec_id:
+          type: string
+        run_id:
+          type: [string, "null"]
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - estimated_tokens
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [code, test, config, doc]
+        status:
+          type: string
+          enum: [pending, assigned, running, review, passed, failed, committed, retrying, blocked]
+        complexity:
+          type: string
+        context_size:
+          type: string
+        estimated_tokens:
+          type: integer
+          minimum: 1
+        actual_tokens:
+          type: [integer, "null"]
+        llm_id:
+          type: [string, "null"]
+        parallel_group:
+          type: [string, "null"]
+        dependencies:
+          type: array
+          items:
+            type: string
+        test_ids:
+          type: array
+          items:
+            type: string
+        error_context:
+          type: array
+          items:
+            type: string
+        run_id:
+          type: [string, "null"]

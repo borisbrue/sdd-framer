@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-29T21:51:23Z",
+  "last_updated": "2026-06-03T09:31:27Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -41,6 +41,20 @@
       "spec_id": "SPEC-0029",
       "accepted_at": "2026-05-29T21:51:23Z",
       "acceptance_reason": "sdd-implement definiert fixes Skelett start→branch→decompose→TDD-loop→finalize; Invariante der Sequenz, einzelne Schritte anpassbar",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Observer",
+      "spec_id": "SPEC-0034",
+      "accepted_at": "2026-06-03T09:31:20Z",
+      "acceptance_reason": "SSE-Streaming: TaskEventBus entkoppelt Statuswechsel von Subscriber-Typen (SSE, Webhook). Verhindert OCP-Verletzung in TaskLifecycle.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Repository",
+      "spec_id": "SPEC-0034",
+      "accepted_at": "2026-06-03T09:31:27Z",
+      "acceptance_reason": "Kapselt tasks.json-Persistenz (.sdd/runs/{spec_id}/{run_id}/tasks.json). Ermöglicht Austausch gegen DB ohne API-Änderung und macht File-I/O isoliert testbar.",
       "refactoring_guru_url": null
     }
   ]

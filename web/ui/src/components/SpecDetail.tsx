@@ -6,6 +6,7 @@ import ApprovePanel from "./ApprovePanel";
 import RestructurePanel from "./RestructurePanel";
 import ExecutePanel from "./ExecutePanel";
 import LogPanel from "./LogPanel";
+import TaskKanbanBoard from "./TaskKanbanBoard";
 import TestRunPanel from "./TestRunPanel";
 import ContractForm from "./ContractForm";
 import IdChip from "./IdChip";
@@ -199,6 +200,14 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Task-Kanban-Board (SPEC-0034) – bei in-progress und implemented */}
+      {(detail.status === "in-progress" || detail.status === "implemented") && (
+        <section className="card">
+          <h3 style={sectionHead}>Tasks</h3>
+          <TaskKanbanBoard specId={specId} />
         </section>
       )}
 

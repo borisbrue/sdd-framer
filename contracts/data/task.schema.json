@@ -72,6 +72,24 @@
       "type": "array",
       "items": { "type": "string" },
       "maxItems": 3
+    },
+    "con_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "parallel_group": {
+      "type": ["string", "null"]
+    },
+    "test_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "actual_tokens": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "run_id": {
+      "type": ["string", "null"]
     }
   },
   "if": {

@@ -1,33 +1,37 @@
 ---
 id: SPEC-0034
-title: "Kanban-Board für Tasks innerhalb eines Specs"
+title: Kanban-Board für Tasks innerhalb eines Specs
 type: feature
-status: review
+status: in-progress
 owner: borisbrue
 created: 2026-05-30
-updated: 2026-06-03
+updated: '2026-06-03'
 version: 0.2.0
 priority: medium
 tags:
-  - web-ui
-  - kanban
-  - task-tracking
-  - realtime
-  - token-tracking
+- web-ui
+- kanban
+- task-tracking
+- realtime
+- token-tracking
 depends_on:
-  - SPEC-0003   # Web UI
-  - SPEC-0026   # LLM Task Distribution Engine (task_model.py)
-  - SPEC-0035   # Sub-Agenten-Delegation mit Token-Tracking
+- SPEC-0003
+- SPEC-0006
+- SPEC-0007
+- SPEC-0011
+- SPEC-0016
+- SPEC-0026
+- SPEC-0035
 contracts:
-  - CON-0123
-  - CON-0124
+- CON-0123
+- CON-0124
 tests:
-  - TST-0144
-  - TST-0145
-  - TST-0146
+- TST-0144
+- TST-0145
+- TST-0146
 adrs: []
+started_at: '2026-06-03T09:56:22Z'
 ---
-
 # Kanban-Board für Tasks innerhalb eines Specs
 
 > **Status:** review · **Owner:** borisbrue · **Version:** 0.2.0

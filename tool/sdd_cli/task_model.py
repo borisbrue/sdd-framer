@@ -58,6 +58,11 @@ class Task:
     dependencies: list[str] = field(default_factory=list)
     error_context: list[str] = field(default_factory=list)
     con_ids: list[str] = field(default_factory=list)
+    # SPEC-0034: Kanban-Board fields
+    parallel_group: str | None = None
+    test_ids: list[str] = field(default_factory=list)
+    actual_tokens: int | None = None
+    run_id: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -77,6 +82,10 @@ class Task:
             "dependencies": self.dependencies,
             "error_context": self.error_context,
             "con_ids": self.con_ids,
+            "parallel_group": self.parallel_group,
+            "test_ids": self.test_ids,
+            "actual_tokens": self.actual_tokens,
+            "run_id": self.run_id,
         }
 
     @classmethod
@@ -98,4 +107,8 @@ class Task:
             dependencies=d.get("dependencies", []),
             error_context=d.get("error_context", []),
             con_ids=d.get("con_ids", []),
+            parallel_group=d.get("parallel_group"),
+            test_ids=d.get("test_ids", []),
+            actual_tokens=d.get("actual_tokens"),
+            run_id=d.get("run_id"),
         )
