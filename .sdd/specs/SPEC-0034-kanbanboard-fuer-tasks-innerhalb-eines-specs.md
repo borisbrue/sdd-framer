@@ -2,7 +2,7 @@
 id: SPEC-0034
 title: Kanban-Board für Tasks innerhalb eines Specs
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-05-30
 updated: '2026-06-03'
