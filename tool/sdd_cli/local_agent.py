@@ -3,6 +3,7 @@
 Proxy Pattern (Refactoring Guru): LocalSubAgentProxy implementiert SubAgentProxy-Protocol,
   startet claude CLI-Subprocess mit ANTHROPIC_BASE_URL-Override.
 Observer Pattern: DagScheduler dispatcht nach Task-Completion ereignisgesteuert.
+SPEC-0037: DagScheduler publiziert DagEvents in DagEventBus für WebUI-Monitor.
 """
 from __future__ import annotations
 
@@ -12,10 +13,14 @@ import shutil
 import subprocess
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
-from typing import Callable, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Callable, Literal, Protocol, runtime_checkable
 
 from .sub_agent import OrchestratorReport, SubAgentResult
 from .task_model import Task
+
+if TYPE_CHECKING:
+    from .dag_event import DagEventBus
+    from .dag_command import CommandQueue, SchedulerState
 
 logger = logging.getLogger(__name__)
 
@@ -172,15 +177,30 @@ class CloudSubAgentProxy:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class DagScheduler:
-    """Observer Pattern: ereignisgesteuerter Task-Dispatch nach Completion (CON-0127)."""
+    """Observer Pattern: ereignisgesteuerter Task-Dispatch nach Completion (CON-0127).
+    SPEC-0037: publiziert DagEvents in optionalen event_bus; liest CommandQueue zwischen Dispatches.
+    """
 
     def __init__(
         self,
         max_parallel_local: int,
         max_parallel_cloud: int,
+        event_bus: "DagEventBus | None" = None,
+        command_queue: "CommandQueue | None" = None,
     ) -> None:
         self.max_parallel_local = max_parallel_local
         self.max_parallel_cloud = max_parallel_cloud
+        self._event_bus = event_bus
+        self._command_queue = command_queue
+
+    def _publish(self, run_id: str, task_id: str, status: str, agent: str = "none", model: str = "") -> None:
+        if self._event_bus is None:
+            return
+        from .dag_event import DagEvent
+        self._event_bus.publish(DagEvent(
+            run_id=run_id, task_id=task_id,
+            status=status, agent=agent, model=model,  # type: ignore[arg-type]
+        ))
 
     def run(
         self,
@@ -190,10 +210,13 @@ class DagScheduler:
         cloud_proxy: SubAgentProxy,
         *,
         spec_id: str = "",
+        run_id: str = "",
     ) -> OrchestratorReport:
         """INV-01: depends_on strikt. INV-02: Slot-Limits nie überschritten.
         INV-03: root-Tasks sofort. INV-04: kein Polling."""
         self._validate_no_cycles(tasks)
+
+        _run_id = run_id or spec_id or "default"
 
         title_to_id = {t.title: t.id for t in tasks}
         deps_by_id: dict[str, set[str]] = {
@@ -208,34 +231,68 @@ class DagScheduler:
         cloud_running = 0
         report = OrchestratorReport(spec_id=spec_id)
 
+        # Emit pending events for all tasks at start
+        for t in tasks:
+            self._publish(_run_id, t.id, "pending")
+
+        # Build SchedulerState for CommandQueue (SPEC-0037 FR-04)
+        sched_state: "SchedulerState | None" = None
+        if self._command_queue is not None:
+            from .dag_command import SchedulerState
+            sched_state = SchedulerState(deps_by_task=deps_by_id)
+
+        def _drain_commands() -> None:
+            if self._command_queue is not None and sched_state is not None:
+                errors = self._command_queue.drain(_run_id, sched_state)
+                for err in errors:
+                    logger.warning("CommandQueue invariant violation: %s", err)
+
         def is_ready(t: Task) -> bool:
+            skipped = sched_state.skipped_tasks if sched_state else set()
+            paused = sched_state.paused_tasks if sched_state else set()
             return (
                 t.id in pending_ids
                 and t.id not in running_ids
+                and t.id not in skipped
+                and t.id not in paused
                 and deps_by_id[t.id].issubset(completed_ids)
             )
 
         def dispatch_ready(futures_map: dict[Future, tuple[Task, str]]) -> None:
             nonlocal local_running, cloud_running
+            _drain_commands()
+            skipped = sched_state.skipped_tasks if sched_state else set()
+            # Handle skipped tasks: mark done so dependents can proceed
+            for t in list(tasks):
+                if t.id in skipped and t.id in pending_ids:
+                    pending_ids.discard(t.id)
+                    completed_ids.add(t.id)
+                    self._publish(_run_id, t.id, "skipped")
+                    if sched_state:
+                        sched_state.completed_tasks.add(t.id)
+
+            route_overrides = sched_state.route_overrides if sched_state else {}
             for t in list(tasks):
                 if not is_ready(t):
                     continue
-                route = route_fn(t)
+                route = route_overrides.get(t.id) or route_fn(t)
                 if route == "local" and local_running < self.max_parallel_local:
                     local_running += 1
                     running_ids.add(t.id)
                     pending_ids.discard(t.id)
+                    model = local_proxy.model if hasattr(local_proxy, "model") else "?"
                     f = executor.submit(local_proxy.execute, t)
                     futures_map[f] = (t, "local")
-                    logger.info(
-                        "[LOCAL: %s] %s", local_proxy.model if hasattr(local_proxy, "model") else "?", t.title
-                    )
+                    self._publish(_run_id, t.id, "running", "local", model)
+                    logger.info("[LOCAL: %s] %s", model, t.title)
                 elif route == "cloud" and cloud_running < self.max_parallel_cloud:
                     cloud_running += 1
                     running_ids.add(t.id)
                     pending_ids.discard(t.id)
+                    model = cloud_proxy.model if hasattr(cloud_proxy, "model") else "cloud"
                     f = executor.submit(cloud_proxy.execute, t)
                     futures_map[f] = (t, "cloud")
+                    self._publish(_run_id, t.id, "running", "cloud", model)
                     logger.info("[CLOUD] %s", t.title)
 
         max_workers = max(1, self.max_parallel_local + self.max_parallel_cloud)
@@ -262,9 +319,15 @@ class DagScheduler:
                                 task_id=t.id, task_title=t.title, success=True
                             )
                         completed_ids.add(t.id)
+                        if sched_state:
+                            sched_state.completed_tasks.add(t.id)
                         report.completed_tasks.append(result)
+                        self._publish(_run_id, t.id, "done", route)
                         dispatch_ready(futures_map)  # Observer: newly unblocked tasks
                     except (DagSchedulerError, Exception) as exc:
+                        if sched_state:
+                            sched_state.failed_tasks.add(t.id)
+                        self._publish(_run_id, t.id, "failed", route)
                         report.failed_task = SubAgentResult(
                             task_id=t.id, task_title=t.title, success=False,
                             error=str(exc),
@@ -275,6 +338,8 @@ class DagScheduler:
                         futures_map.clear()
                         break
 
+        if self._event_bus is not None:
+            self._event_bus.close(_run_id)
         return report
 
     @staticmethod

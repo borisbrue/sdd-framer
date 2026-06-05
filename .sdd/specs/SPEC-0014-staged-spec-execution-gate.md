@@ -82,7 +82,11 @@ und eine Regression-Prüfung bestanden.
 
 **Nicht-Ziele (explizit):**
 - Automatisches Beheben von Contract-Konflikten (Konflikt wird gemeldet, Lösung liegt beim Autor)
-- Vollautomatische SPEC-Genehmigung ohne menschliche Freigabe
+- Vollautomatische SPEC-Genehmigung ohne menschliche Freigabe im Default-Betrieb.
+  Ausnahme: SPEC-0037 (Autopilot-Modus) darf Gates automatisch passieren, wenn
+  `autopilot.automated_gate_approval: true` in `.sdd/config.yaml` explizit gesetzt
+  ist und alle Exit-Kriterien des Gates erfüllt sind — das ist kein Bypass, sondern
+  ein konfiguriertes Opt-in mit denselben Exit-Kriterien wie die manuelle Freigabe.
 - Prüfung von Contracts über Workspace-Grenzen hinweg (nur aktueller Workspace)
 - Integration in den VS Code Extension-Execute-Flow (Folgespec)
 - Rückwirkende Prüfung bereits implementierter SPECs
