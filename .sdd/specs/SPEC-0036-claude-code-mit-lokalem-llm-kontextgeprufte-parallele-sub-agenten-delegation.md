@@ -2,7 +2,7 @@
 id: SPEC-0036
 title: Claude Code mit lokalem LLM – Kontextgeprüfte Parallele Sub-Agenten-Delegation
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-06-05
 updated: '2026-06-05'
