@@ -42,6 +42,7 @@ from routes.interactive import router as interactive_router
 from routes.specs import router as specs_router
 from routes.tasks import router as tasks_router  # SPEC-0034
 from routes.tests import router as tests_router
+from routes.dag_monitor import router as dag_monitor_router  # SPEC-0037
 
 # SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
 _raw_origins = os.environ.get("SDD_ALLOWED_ORIGINS", "")
@@ -74,6 +75,7 @@ app.include_router(agent_flow_router,    prefix="/api")  # SPEC-0032
 app.include_router(interactive_router,   prefix="/api")  # SPEC-0028
 app.include_router(specs_router,         prefix="/api")
 app.include_router(tasks_router,         prefix="/api")  # SPEC-0034
+app.include_router(dag_monitor_router,   prefix="/api")  # SPEC-0037
 app.include_router(pipeline_router,      prefix="/api")
 app.include_router(contracts_router,     prefix="/api")
 app.include_router(tests_router,         prefix="/api")

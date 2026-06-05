@@ -119,7 +119,15 @@
       "Bash(UV_TOOL_DIR=/home/deck/.var/app/com.visualstudio.code/data/uv/tools uv tool install --force dist/sdd_framer-0.1.19-py3-none-any.whl)",
       "Bash(sdd regression-check *)",
       "Bash(git *)",
-      "Bash(podman exec *)"
+      "Bash(podman exec *)",
+      "Bash(UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force dist/sdd_framer-0.1.23-py3-none-any.whl)",
+      "Bash(UV_TOOL_DIR=/home/deck/.var/app/com.visualstudio.code/data/uv/tools uv tool install --force dist/sdd_framer-0.1.23-py3-none-any.whl)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); errors=[f for f in d['findings'] if f['severity']=='error']; print\\('ERRORS:',len\\(errors\\)\\); [print\\(f['spec_id'],f['severity'],f['description'][:80]\\) for f in errors]\")",
+      "Bash(cp /run/media/deck/SM512/Development/sdd-framer/.claude/commands/sdd-review.md /run/media/deck/SM512/Development/sdd-framer/.sdd/templates/agents-md/providers/claude/sdd-review.md)",
+      "Bash(cp /run/media/deck/SM512/Development/sdd-framer/.claude/commands/sdd-review.md /run/media/deck/SM512/Development/sdd-framer/tool/sdd_cli/blueprint/templates/agents-md/providers/claude/sdd-review.md)",
+      "Bash(python -m pytest --version)",
+      "Bash(python *)",
+      "Bash(python3 -m pytest tests/unit/test_tst_0152.py tests/unit/test_tst_0153.py tests/unit/test_tst_0154.py tests/contract/test_tst_0155.py tests/contract/test_tst_0156.py -v --tb=short+)"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",

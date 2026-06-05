@@ -29,3 +29,5 @@
 2026-06-03T06:12:32Z SPEC-0035 approved → in-progress [sdd-start]
 2026-06-03T09:56:22Z SPEC-0034 approved → in-progress [sdd-start]
 2026-06-05T09:40:56Z SPEC-0036 approved → in-progress [sdd-start]
+2026-06-05T12:13:57Z SPEC-0037 approved → in-progress [sdd-start]
+2026-06-05T12:14:57Z  hotfix.start  HF-0007  'regression-ok Gate-Phase wird nach regression-check nie markiert; TST-Review triggert keinen Check'

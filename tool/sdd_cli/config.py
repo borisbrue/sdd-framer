@@ -115,6 +115,17 @@ class SddConfig:
     def pattern_suggestions_max(self) -> int:
         return int(self.raw.get("pattern_suggestions", {}).get("max_suggestions", 4))
 
+    # ── SPEC-0037: Autopilot + DAG-Monitor ───────────────────────────────────
+
+    def autopilot_config(self) -> dict:
+        return self.raw.get("autopilot", {})
+
+    def dag_monitor_sse_heartbeat(self) -> int:
+        return int(self.raw.get("dag_monitor", {}).get("sse_heartbeat_seconds", 15))
+
+    def dag_monitor_max_runs_history(self) -> int:
+        return int(self.raw.get("dag_monitor", {}).get("max_runs_history", 5))
+
 
 def find_project_root(start: Path | None = None) -> Path | None:
     """Sucht aufwärts nach einem Verzeichnis mit .sdd/config.yaml."""
