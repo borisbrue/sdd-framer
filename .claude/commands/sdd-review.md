@@ -127,6 +127,15 @@ Prüfe inhaltlich:
 Falls Anpassungen nötig: liste sie konkret auf. Warte auf Bestätigung bevor die Test-Datei
 geändert wird.
 
+Führe danach automatisch den Regression-Check auf der übergeordneten Spec durch
+(SPEC-ID aus `spec:`-Frontmatter des Tests):
+```bash
+sdd regression-check <SPEC-ID>
+```
+Zeige das Ergebnis wie in Schritt 4 beschrieben. Bei `error`-Severity: stoppen und Konflikt
+melden. Bei `warning`/`info` oder 0 Befunden: Gate-Phase `regression-ok` wird automatisch
+durch den CLI-Befehl markiert — kein manueller Schritt nötig.
+
 ## Schritt 6: Zusammenfassung
 ```
 Review abgeschlossen: SPEC-XXXX / CON-XXXX / TST-XXXX

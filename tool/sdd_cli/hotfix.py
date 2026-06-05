@@ -84,7 +84,7 @@ def finalize(repo_root: Path, hf_id: str) -> str:
         raise ValueError(f"{hf_id} hat Status '{data.get('status')}' – nur 'open' kann finalisiert werden.")
 
     test_proc = subprocess.run(
-        ["pytest", "tests/", "-x", "--tb=short", "-q"],
+        ["uv", "run", "pytest", "tests/", "-x", "--tb=short", "-q"],
         capture_output=True,
         text=True,
         cwd=repo_root,

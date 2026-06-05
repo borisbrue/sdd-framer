@@ -2311,7 +2311,8 @@ def regression_check(spec_id: str, output_json: bool) -> None:
     else:
         console.print("  [green]✓[/] Kein inhaltlicher Regressionskonflikt gefunden")
 
-    if any(f.severity == "error" for f in result.findings):
+    has_errors = any(f.severity == "error" for f in result.findings)
+    if has_errors:
         console.print("\n[red]✗[/] Error-Severity gefunden – Regression-Check gescheitert")
         console.print(f"  Findings gespeichert: [cyan]sdd conflict list {spec_id}[/]")
         sys.exit(1)
@@ -2319,6 +2320,11 @@ def regression_check(spec_id: str, output_json: bool) -> None:
         console.print("\n[yellow]⚠[/] Warnungen vorhanden – Findings gespeichert")
         console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
         console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
+
+    from .gate import ExecutionGate
+    g = ExecutionGate(cfg.root)
+    g.mark_phase_complete(spec_id, "regression-ok")
+    console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
