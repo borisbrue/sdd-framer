@@ -1,0 +1,40 @@
+{
+  "spec_id": "SPEC-0036",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-06-05T00:00:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-06-05T08:55:00Z",
+      "result": "ok"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-06-05T09:00:00Z",
+      "result": "ok",
+      "notes": "Stufe 1 clean (0 Regelkonflikte). Stufe 2 LLM-Timeout (zweimalig). Alle 7 Findings aus erstem Regression-Run (1 ERROR, 4 WARN, 2 INFO) in v0.2.0 eingearbeitet: Schema-Koordination SPEC-0011 (FR-07), tiktoken-Utility-Sharing (FR-02), calibrate-Erweiterung (FR-08), Abgrenzungen SPEC-0008/SPEC-0013/SPEC-0016 in §1+§3. Conflict-Report zeigt 0 offene Konflikte."
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-06-05T09:40:40Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-06-05T09:40:40Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": "conflict-reports/SPEC-0036-conflicts.json",
+  "override": null
+}

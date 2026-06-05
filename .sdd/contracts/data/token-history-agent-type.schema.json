@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDD token_usage Row (agent-type extension, SPEC-0036)",
+  "description": "Erweitert CON-0121 um agent_type und model für lokale vs. Cloud-Sub-Agenten-Unterscheidung.",
+  "type": "object",
+  "required": ["id", "timestamp", "component", "model", "input_tokens", "output_tokens"],
+  "properties": {
+    "id": { "type": "integer" },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "spec_id": { "type": ["string", "null"] },
+    "task_id": { "type": ["string", "null"] },
+    "task_label": { "type": ["string", "null"] },
+    "component": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "agent_type": {
+      "type": ["string", "null"],
+      "enum": ["local", "cloud", null],
+      "description": "Ob der Task von einem lokalen oder Cloud-Sub-Agenten ausgeführt wurde. Null bei nicht-delegierten Einträgen."
+    },
+    "input_tokens": { "type": "integer", "minimum": 0 },
+    "output_tokens": { "type": "integer", "minimum": 0 },
+    "cache_read_tokens": { "type": "integer", "minimum": 0 },
+    "cache_write_tokens": { "type": "integer", "minimum": 0 },
+    "duration_ms": { "type": "integer", "minimum": 0 },
+    "calibrated": { "type": "integer", "enum": [0, 1] }
+  },
+  "if": {
+    "properties": { "agent_type": { "type": "string" } },
+    "required": ["agent_type"]
+  },
+  "then": {
+    "required": ["model"],
+    "properties": {
+      "model": { "type": "string", "minLength": 1 }
+    }
+  }
+}

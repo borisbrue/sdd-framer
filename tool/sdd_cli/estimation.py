@@ -58,9 +58,13 @@ def init_token_usage_table(config: SddConfig) -> None:
                 task_label         TEXT
             )
         """)
-        # Migration: add task_id/task_label columns to existing tables (CON-0121)
+        # Migration: add columns to existing tables
         existing = {row[1] for row in conn.execute("PRAGMA table_info(token_usage)")}
-        for col, typedef in (("task_id", "TEXT"), ("task_label", "TEXT")):
+        for col, typedef in (
+            ("task_id", "TEXT"),
+            ("task_label", "TEXT"),
+            ("agent_type", "TEXT"),  # CON-0129: "local" | "cloud" | NULL
+        ):
             if col not in existing:
                 conn.execute(f"ALTER TABLE {TOKEN_USAGE_TABLE} ADD COLUMN {col} {typedef}")
 
@@ -82,6 +86,7 @@ def persist_token_usage(
     spec_id: str | None = None,
     task_id: str | None = None,
     task_label: str | None = None,
+    agent_type: str | None = None,  # CON-0129: "local" | "cloud" | None
 ) -> None:
     """Schreibt tatsächlichen Token-Verbrauch einer LLM-Komponente in die DB."""
     try:
@@ -93,11 +98,11 @@ def persist_token_usage(
                 f"""INSERT INTO {TOKEN_USAGE_TABLE}
                     (timestamp, spec_id, component, model,
                      input_tokens, output_tokens, cache_read_tokens,
-                     cache_write_tokens, duration_ms, task_id, task_label)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                     cache_write_tokens, duration_ms, task_id, task_label, agent_type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (ts, spec_id, component, model,
                  input_tokens, output_tokens, cache_read_tokens,
-                 cache_write_tokens, duration_ms, task_id, task_label),
+                 cache_write_tokens, duration_ms, task_id, task_label, agent_type),
             )
     except Exception:
         pass  # Persistenz-Fehler dürfen Hauptfluss nicht unterbrechen
@@ -450,6 +455,7 @@ class TokenHistoryRow:
     duration_ms: int
     task_id: str | None = None
     task_label: str | None = None
+    agent_type: str | None = None  # CON-0129: "local" | "cloud" | None
 
 
 def token_history(
@@ -486,6 +492,7 @@ def token_history(
                 duration_ms=r["duration_ms"],
                 task_id=r["task_id"] if "task_id" in r.keys() else None,
                 task_label=r["task_label"] if "task_label" in r.keys() else None,
+                agent_type=r["agent_type"] if "agent_type" in r.keys() else None,
             )
             for r in rows
         ]

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDD local_agent Configuration",
+  "description": "Schema der local_agent-Sektion in .sdd/config.yaml (SPEC-0036 §5).",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Aktiviert lokale Sub-Agenten-Delegation. False = Cloud-Only-Fallback.",
+      "default": false
+    },
+    "proxy_url": {
+      "type": "string",
+      "pattern": "^https?://.+",
+      "description": "URL des Anthropic-kompatiblen lokalen Proxys (LiteLLM o.ä.)."
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Modellname wie beim Proxy registriert (z.B. 'llama3.1:8b')."
+    },
+    "context_window": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Max. Context-Tokens des lokalen Modells."
+    },
+    "context_reserve_tokens": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 8192,
+      "description": "Reservierte Tokens für Model-Output, werden vom context_window abgezogen."
+    },
+    "max_parallel_local": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16,
+      "default": 4,
+      "description": "Max. parallele lokale Sub-Agenten."
+    },
+    "max_parallel_cloud": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8,
+      "default": 2,
+      "description": "Max. parallele Cloud-Sub-Agenten."
+    },
+    "api_key": {
+      "type": "string",
+      "description": "Proxy-Auth-Key oder ${ENV_VAR}-Referenz. Kein Anthropic-Key.",
+      "default": "local-key"
+    },
+    "health_check": {
+      "type": "boolean",
+      "default": true,
+      "description": "Proxy-Ping vor erstem Task-Dispatch."
+    }
+  },
+  "if": {
+    "properties": { "enabled": { "const": true } },
+    "required": ["enabled"]
+  },
+  "then": {
+    "required": ["proxy_url", "model", "context_window"]
+  },
+  "additionalProperties": false
+}
