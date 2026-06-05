@@ -2,7 +2,7 @@
 id: SPEC-0037
 title: Agent-DAG-Monitor und autonomer Implementierungs-Autopilot
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-06-05
 updated: '2026-06-05'
