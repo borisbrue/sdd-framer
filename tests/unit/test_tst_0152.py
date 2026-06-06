@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import asyncio
 
+from typing import Literal
+
 from sdd_cli.dag_event import DagEvent, DagEventBus
 
+DagEventStatus = Literal["pending", "running", "done", "failed", "skipped", "paused"]
 
-def _ev(run_id: str, task_id: str, status: str = "running") -> DagEvent:
-    return DagEvent(run_id=run_id, task_id=task_id, status=status)  # type: ignore[arg-type]
+
+def _ev(run_id: str, task_id: str, status: DagEventStatus = "running") -> DagEvent:
+    return DagEvent(run_id=run_id, task_id=task_id, status=status)
 
 
 def _run(coro):

@@ -885,6 +885,117 @@ def hub_start(port: int, no_browser: bool) -> None:
     start_hub(port=port, open_browser=not no_browser)
 
 
+@hub.command("run", help="Startet den Hub-Daemon (wird von systemd verwendet).")
+@click.option("--port", default=8080, show_default=True, help="Port für den Hub-Daemon.")
+def hub_run(port: int) -> None:
+    import uvicorn
+    from .hub.app import create_app
+    from .hub.config import HubConfig
+    cfg = HubConfig.load()
+    cfg = cfg.model_copy(update={"port": port})
+    app = create_app(config=cfg)
+    uvicorn.run(app, host="0.0.0.0", port=cfg.port)
+
+
+@hub.command("register", help="Registriert ein Projekt in der Hub-Registry.")
+@click.option("--name", required=True, help="Projektname.")
+@click.option("--path", "project_path", required=True, help="Pfad zum Projektverzeichnis.")
+@click.option("--cmd", required=True, multiple=True, help="Start-Kommando (wiederholbar).")
+@click.option("--port", required=True, type=int, help="Port des Projektservers.")
+@click.option("--force", is_flag=True, help="Bestehenden Eintrag überschreiben.")
+def hub_register(name: str, project_path: str, cmd: tuple, port: int, force: bool) -> None:
+    import re
+    from pathlib import Path
+    from .hub.models import ProjectEntry
+    from .hub.registry import ProjectRegistry, DuplicateProjectError
+
+    project_id = re.sub(r"[^a-z0-9-]", "-", name.lower()).strip("-")
+    entry = ProjectEntry(
+        id=project_id,
+        name=name,
+        path=Path(project_path).expanduser().resolve(),
+        start_cmd=list(cmd),
+        port=port,
+    )
+    reg = ProjectRegistry()
+    try:
+        reg.register(entry, force=force)
+        console.print(f"[green]✓[/] Projekt [bold]{name}[/] registriert (ID: {project_id})")
+    except DuplicateProjectError as e:
+        console.print(f"[red]✗[/] {e}")
+        raise SystemExit(1) from e
+
+
+@hub.command("status", help="Zeigt den Status aller registrierten Projekte.")
+def hub_status() -> None:
+    from .hub.registry import ProjectRegistry
+    from rich.table import Table
+
+    reg = ProjectRegistry()
+    entries = reg.get_all()
+    if not entries:
+        console.print("[dim]Keine Projekte registriert.[/]")
+        return
+    table = Table(title="SDD Hub – Projekte")
+    table.add_column("ID")
+    table.add_column("Name")
+    table.add_column("Port")
+    table.add_column("Status")
+    table.add_column("PID")
+    for e in entries:
+        status_color = {"running": "green", "stopped": "dim", "error": "red"}.get(e.status, "white")
+        table.add_row(e.id, e.name, str(e.port), f"[{status_color}]{e.status}[/]", str(e.pid or "–"))
+    console.print(table)
+
+
+@hub.command("install", help="Installiert systemd-User-Service und Avahi-mDNS-Eintrag.")
+def hub_install() -> None:
+    import shutil
+    from pathlib import Path
+    from jinja2 import Template
+    from .hub.config import HubConfig
+
+    cfg = HubConfig.load()
+    sdd_dir = Path.home() / ".config" / "sdd"
+    sdd_dir.mkdir(parents=True, exist_ok=True)
+
+    registry_path = sdd_dir / "hub-registry.yaml"
+    if not registry_path.exists():
+        registry_path.write_text("[]")
+        console.print(f"[green]✓[/] Registry angelegt: {registry_path}")
+
+    hub_yaml = sdd_dir / "hub.yaml"
+    if not hub_yaml.exists():
+        cfg.save(hub_yaml)
+        console.print(f"[green]✓[/] Hub-Config angelegt: {hub_yaml}")
+
+    templates_dir = Path(__file__).parent / "hub" / "templates"
+    systemd_dir = Path.home() / ".config" / "systemd" / "user"
+    systemd_dir.mkdir(parents=True, exist_ok=True)
+    unit_tmpl = Template((templates_dir / "sdd-hub.service").read_text())
+    unit_text = unit_tmpl.render(port=cfg.port)
+    unit_path = systemd_dir / "sdd-hub.service"
+    unit_path.write_text(unit_text)
+    console.print(f"[green]✓[/] systemd-Unit geschrieben: {unit_path}")
+
+    import subprocess
+    subprocess.run(["systemctl", "--user", "daemon-reload"], check=False)
+    subprocess.run(["systemctl", "--user", "enable", "--now", "sdd-hub"], check=False)
+    console.print("[green]✓[/] sdd-hub.service aktiviert und gestartet")
+
+    avahi_dir = Path("/etc/avahi/services")
+    if avahi_dir.exists() and os.access(str(avahi_dir), os.W_OK):
+        avahi_tmpl = Template((templates_dir / "sdd-hub.avahi.xml").read_text())
+        avahi_text = avahi_tmpl.render(port=cfg.port)
+        avahi_path = avahi_dir / "sdd-hub.service"
+        avahi_path.write_text(avahi_text)
+        console.print(f"[green]✓[/] Avahi-Service geschrieben: {avahi_path}")
+    else:
+        console.print("[yellow]![/] Avahi-Verzeichnis nicht beschreibbar – mDNS übersprungen")
+
+    console.print(f"\n[bold green]Hub installiert.[/] Erreichbar unter http://steamdeck.local:{cfg.port}/hub/")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd pwa
 # ─────────────────────────────────────────────────────────────────────────────

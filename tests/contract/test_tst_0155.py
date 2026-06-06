@@ -52,7 +52,7 @@ def test_stream_delivers_published_events():
     async def run():
         async def publish():
             await asyncio.sleep(0.05)
-            bus.publish(DagEvent(run_id="run-ev2", task_id="t1", status="running"))  # type: ignore
+            bus.publish(DagEvent(run_id="run-ev2", task_id="t1", status="running"))
             await asyncio.sleep(0.05)
             bus.close("run-ev2")
 

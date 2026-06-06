@@ -1,0 +1,29 @@
+{
+  "spec_id": "SPEC-0038",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-06-06T09:57:08Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-06-06T10:07:55Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "",
+        "scenarios_covered": "",
+        "contracts_consistent": true
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-06-06T10:07:55Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

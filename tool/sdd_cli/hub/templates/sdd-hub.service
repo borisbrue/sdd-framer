@@ -1,0 +1,13 @@
+[Unit]
+Description=SDD Hub – Multi-Projekt-Dashboard
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=uv run --with sdd-framer sdd hub run --port {{ port }}
+Restart=on-failure
+RestartSec=5s
+Environment=HOME=%h
+
+[Install]
+WantedBy=default.target

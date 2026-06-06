@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDD Hub</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #0f0f0f; color: #e0e0e0; }
+    h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card { background: #1a1a1a; border-radius: 8px; padding: 1rem; border: 1px solid #2a2a2a; }
+    .name { font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; }
+    .port { color: #888; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+    .badge.running { background: #1a4a1a; color: #4caf50; }
+    .badge.stopped { background: #2a2a2a; color: #888; }
+    .badge.error   { background: #4a1a1a; color: #f44336; }
+    .actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; }
+    button { padding: 4px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; }
+    .btn-start { background: #2d4a2d; color: #4caf50; }
+    .btn-stop  { background: #4a2d2d; color: #f44336; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>SDD Hub</h1>
+  <div class="grid" id="projects">
+    {% for p in projects %}
+    <div class="card" data-id="{{ p.id }}">
+      <div class="name">{{ p.name }}</div>
+      <div class="port">:{{ p.port }}</div>
+      <span class="badge {{ p.status }}">{{ p.status }}</span>
+      <div class="actions">
+        <button class="btn-start" onclick="startProject('{{ p.id }}')"
+          {% if p.status == 'running' %}disabled{% endif %}>Start</button>
+        <button class="btn-stop" onclick="stopProject('{{ p.id }}')"
+          {% if p.status != 'running' %}disabled{% endif %}>Stop</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    function updateCard(id, status, pid) {
+      const card = document.querySelector(`[data-id="${id}"]`);
+      if (!card) return;
+      card.querySelector('.badge').className = `badge ${status}`;
+      card.querySelector('.badge').textContent = status;
+      card.querySelector('.btn-start').disabled = status === 'running';
+      card.querySelector('.btn-stop').disabled = status !== 'running';
+    }
+
+    async function startProject(id) {
+      await fetch(`/hub/projects/${id}/start`, { method: 'POST' });
+    }
+
+    async function stopProject(id) {
+      await fetch(`/hub/projects/${id}/stop`, { method: 'POST' });
+    }
+
+    const es = new EventSource('/hub/projects/stream');
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      updateCard(data.id, data.status, data.pid);
+    };
+  </script>
+</body>
+</html>

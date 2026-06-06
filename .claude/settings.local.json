@@ -127,7 +127,8 @@
       "Bash(cp /run/media/deck/SM512/Development/sdd-framer/.claude/commands/sdd-review.md /run/media/deck/SM512/Development/sdd-framer/tool/sdd_cli/blueprint/templates/agents-md/providers/claude/sdd-review.md)",
       "Bash(python -m pytest --version)",
       "Bash(python *)",
-      "Bash(python3 -m pytest tests/unit/test_tst_0152.py tests/unit/test_tst_0153.py tests/unit/test_tst_0154.py tests/contract/test_tst_0155.py tests/contract/test_tst_0156.py -v --tb=short+)"
+      "Bash(python3 -m pytest tests/unit/test_tst_0152.py tests/unit/test_tst_0153.py tests/unit/test_tst_0154.py tests/contract/test_tst_0155.py tests/contract/test_tst_0156.py -v --tb=short+)",
+      "Bash(grep -v \"^\\\\-\\\\-\\\\-$\")"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",
