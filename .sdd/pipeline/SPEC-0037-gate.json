@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0037",
-  "pipeline_phase": "execute-unlocked",
+  "pipeline_phase": "regression-ok",
   "phase_history": [
     {
       "phase": "spec-draft",
@@ -12,12 +12,6 @@
       "completed_at": "2026-06-05T00:00:00Z",
       "result": "ok",
       "notes": "SOLID: compliant (0 Violations). Pattern-Check: 3 Pattern korrekt angewandt (Observer, Command, State). Regression-Findings v0.2.0 + v0.3.0 eingearbeitet: SPEC-0007/SPEC-0016-Infrastruktur referenziert (FR-02), SPEC-0004-Abgrenzung §1, SPEC-0014-Konflikt gelöst via FR-12 automated_gate_approval Opt-in, SPEC-0028-Abgrenzung §1, SPEC-0034 Kanban-Link FR-05."
-    },
-    {
-      "phase": "regression-ok",
-      "completed_at": "2026-06-05T00:00:00Z",
-      "result": "ok",
-      "notes": "Stufe 1: 0 Regelkonflikte. Stufe 2 LLM: 1 ERROR (SPEC-0014 Gate-Konflikt) + 2 WARN (SPEC-0007, SPEC-0004) + 1 INFO (SPEC-0016) in v0.3.0 vollständig eingearbeitet. Zweiter Lauf: 0 errors, nur verbleibende WARN/INFO ohne Handlungsbedarf."
     },
     {
       "phase": "spec-approved",
@@ -32,6 +26,11 @@
     {
       "phase": "execute-unlocked",
       "completed_at": "2026-06-05T12:13:51Z",
+      "result": "ok"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-06-06T11:44:24Z",
       "result": "ok"
     }
   ],

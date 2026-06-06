@@ -19,8 +19,17 @@ depends_on:
 - SPEC-0028
 - SPEC-0034
 - SPEC-0016
-contracts: []
-tests: []
+contracts:
+- CON-0140
+- CON-0141
+- CON-0142
+- CON-0143
+tests:
+- TST-0162
+- TST-0163
+- TST-0164
+- TST-0165
+- TST-0166
 adrs: []
 started_at: '2026-06-05T12:13:57Z'
 ---

@@ -1,0 +1,30 @@
+{
+  "spec_id": "SPEC-0037",
+  "generated_at": "2026-06-06T11:23:14Z",
+  "patterns": [
+    {
+      "pattern_name": "Observer",
+      "status": "accepted",
+      "decided_at": "2026-06-06T11:23:14Z",
+      "acceptance_reason": "DagEventBus entkoppelt DagScheduler von Transport-Layer; SSE-Subscription via AsyncIterator ist unidirektional ausreichend für Task-Statusupdates — kein WebSocket-Overhead",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Command",
+      "status": "accepted",
+      "decided_at": "2026-06-06T11:23:15Z",
+      "acceptance_reason": "SchedulerCommands (Pause/ForceRoute/Skip/Restart) kapseln WebUI-Nutzereingriffe; Commands sind serialisierbar (Audit-Log) und verhindern Race Conditions durch direktes State-Mutieren aus HTTP-Handlern",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "State",
+      "status": "accepted",
+      "decided_at": "2026-06-06T11:23:15Z",
+      "acceptance_reason": "AutopilotStateMachine mit Zuständen idle→decomposing→implementing→testing→reviewing→finalizing→done/escalated verhindert verschachtelte if/elif-Transitionen; States sind einzeln testbar und kapseln je eine Phase",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}
