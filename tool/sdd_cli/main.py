@@ -883,6 +883,19 @@ def _hub_port_occupied(port: int) -> bool:
         return _s.connect_ex(("127.0.0.1", port)) == 0
 
 
+def _find_free_port(start: int = 8100, exclude: set[int] | None = None) -> int:
+    import socket as _socket
+    exclude = exclude or {4711, 8080, 8000, 5173}
+    port = start
+    while True:
+        if port not in exclude:
+            with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as s:
+                s.setsockopt(_socket.SOL_SOCKET, _socket.SO_REUSEADDR, 1)
+                if s.connect_ex(("127.0.0.1", port)) != 0:
+                    return port
+        port += 1
+
+
 @hub.command("start", help="Startet den SDD Hub (Multi-Projekt-Dashboard).")
 @click.option("--port", default=4711, show_default=True, help="Port für den Hub.")
 @click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
@@ -964,6 +977,53 @@ def hub_unregister(project_id: str) -> None:
         console.print(f"[green]✓[/] Projekt [bold]{project_id}[/] entfernt")
     except ProjectNotFoundError as e:
         console.print(f"[red]✗[/] {e}")
+        raise SystemExit(1) from e
+
+
+@hub.command("add", help="Fügt ein SDD-Projekt zum Hub hinzu (auto-detektiert Name und Port).")
+@click.argument("path", default=".", required=False)
+@click.option("--force", is_flag=True, help="Bestehenden Eintrag überschreiben.")
+def hub_add(path: str, force: bool) -> None:
+    import re
+    import yaml
+    from pathlib import Path
+    from .hub.models import ProjectEntry
+    from .hub.registry import ProjectRegistry, DuplicateProjectError
+
+    project_path = Path(path).expanduser().resolve()
+    sdd_config_path = project_path / ".sdd" / "config.yaml"
+
+    if not sdd_config_path.exists():
+        console.print(f"[red]✗[/] Kein SDD-Projekt gefunden in [bold]{project_path}[/] (.sdd/config.yaml fehlt)")
+        raise SystemExit(1)
+
+    raw = yaml.safe_load(sdd_config_path.read_text()) or {}
+    name = raw.get("project", {}).get("name") or project_path.name
+    existing_port: int | None = raw.get("hub", {}).get("port")
+
+    port = existing_port or _find_free_port()
+
+    if not existing_port:
+        raw.setdefault("hub", {})["port"] = port
+        sdd_config_path.write_text(yaml.dump(raw, allow_unicode=True, sort_keys=False))
+        console.print(f"[dim]→ Port {port} in .sdd/config.yaml gespeichert[/]")
+
+    sdd_bin = Path.home() / ".local" / "bin" / "sdd"
+    project_id = re.sub(r"[^a-z0-9-]", "-", name.lower()).strip("-")
+    entry = ProjectEntry(
+        id=project_id,
+        name=name,
+        path=project_path,
+        start_cmd=[str(sdd_bin), "ui", "--project", str(project_path), "--port", str(port), "--no-browser"],
+        port=port,
+    )
+    reg = ProjectRegistry()
+    try:
+        reg.register(entry, force=force)
+        console.print(f"[green]✓[/] [bold]{name}[/] zum Hub hinzugefügt → http://localhost:{port}/")
+        console.print(f"  ID: {project_id} | Port: {port} | Cmd: sdd ui --project ...")
+    except DuplicateProjectError as e:
+        console.print(f"[yellow]![/] {e} Verwende --force zum Überschreiben.")
         raise SystemExit(1) from e
 
 

@@ -103,3 +103,82 @@ def test_hub_unregister_unknown_fails(tmp_path, monkeypatch):
 
     result = _runner().invoke(cli, ["hub", "unregister", "ghost"])
     assert result.exit_code != 0
+
+
+def _make_sdd_project(base: Path, name: str = "My Project", port: int | None = None) -> Path:
+    sdd_dir = base / ".sdd"
+    sdd_dir.mkdir(parents=True)
+    cfg: dict = {"project": {"name": name}}
+    if port:
+        cfg["hub"] = {"port": port}
+    import yaml
+    (sdd_dir / "config.yaml").write_text(yaml.dump(cfg))
+    return base
+
+
+def test_hub_add_registers_project(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    project_dir = _make_sdd_project(tmp_path / "myproject", name="My App")
+
+    result = _runner().invoke(cli, ["hub", "add", str(project_dir)])
+    assert result.exit_code == 0
+    assert "My App" in result.output
+
+    status = _runner().invoke(cli, ["hub", "status"])
+    assert "my-app" in status.output
+
+
+def test_hub_add_saves_port_to_config(tmp_path, monkeypatch):
+    import yaml
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    project_dir = _make_sdd_project(tmp_path / "porttest", name="Port Test")
+
+    _runner().invoke(cli, ["hub", "add", str(project_dir)])
+
+    saved = yaml.safe_load((project_dir / ".sdd" / "config.yaml").read_text())
+    assert "hub" in saved
+    assert isinstance(saved["hub"]["port"], int)
+
+
+def test_hub_add_reuses_existing_port(tmp_path, monkeypatch):
+    import yaml
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    project_dir = _make_sdd_project(tmp_path / "reuseport", name="Reuse", port=9321)
+
+    _runner().invoke(cli, ["hub", "add", str(project_dir)])
+
+    saved = yaml.safe_load((project_dir / ".sdd" / "config.yaml").read_text())
+    assert saved["hub"]["port"] == 9321
+
+
+def test_hub_add_fails_without_sdd_project(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+
+    result = _runner().invoke(cli, ["hub", "add", str(empty_dir)])
+    assert result.exit_code != 0
+
+
+def test_hub_add_duplicate_fails_without_force(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    project_dir = _make_sdd_project(tmp_path / "dup", name="Dup App")
+
+    _runner().invoke(cli, ["hub", "add", str(project_dir)])
+    result = _runner().invoke(cli, ["hub", "add", str(project_dir)])
+    assert result.exit_code != 0
+
+
+def test_hub_add_force_overwrites(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    project_dir = _make_sdd_project(tmp_path / "forcedup", name="Force App")
+
+    _runner().invoke(cli, ["hub", "add", str(project_dir)])
+    result = _runner().invoke(cli, ["hub", "add", "--force", str(project_dir)])
+    assert result.exit_code == 0
