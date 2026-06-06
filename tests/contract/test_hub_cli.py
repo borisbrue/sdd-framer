@@ -75,3 +75,31 @@ def test_hub_status_shows_registered_project(tmp_path, monkeypatch):
     result = _runner().invoke(cli, ["hub", "status"])
     assert result.exit_code == 0
     assert "shown-app" in result.output
+
+
+def test_hub_unregister_removes_entry(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+
+    _runner().invoke(cli, [
+        "hub", "register",
+        "--name", "remove-me",
+        "--path", str(tmp_path),
+        "--cmd", "python", "--cmd", "app.py",
+        "--port", "6000",
+    ])
+    result = _runner().invoke(cli, ["hub", "unregister", "remove-me"])
+    assert result.exit_code == 0
+    assert "entfernt" in result.output
+
+    status = _runner().invoke(cli, ["hub", "status"])
+    assert "remove-me" not in status.output
+
+
+def test_hub_unregister_unknown_fails(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / ".config" / "sdd").mkdir(parents=True)
+    (tmp_path / ".config" / "sdd" / "hub-registry.yaml").write_text("[]")
+
+    result = _runner().invoke(cli, ["hub", "unregister", "ghost"])
+    assert result.exit_code != 0

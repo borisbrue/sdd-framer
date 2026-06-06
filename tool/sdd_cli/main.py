@@ -953,6 +953,20 @@ def hub_register(name: str, project_path: str, cmd: tuple, port: int, force: boo
         raise SystemExit(1) from e
 
 
+@hub.command("unregister", help="Entfernt ein Projekt aus der Hub-Registry.")
+@click.argument("project_id")
+def hub_unregister(project_id: str) -> None:
+    from .hub.registry import ProjectRegistry, ProjectNotFoundError
+
+    reg = ProjectRegistry()
+    try:
+        reg.remove(project_id)
+        console.print(f"[green]✓[/] Projekt [bold]{project_id}[/] entfernt")
+    except ProjectNotFoundError as e:
+        console.print(f"[red]✗[/] {e}")
+        raise SystemExit(1) from e
+
+
 @hub.command("status", help="Zeigt den Status aller registrierten Projekte.")
 def hub_status() -> None:
     from .hub.registry import ProjectRegistry
