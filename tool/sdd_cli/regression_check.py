@@ -231,7 +231,10 @@ class RegressionCheckChain:
         else:
             data = {"spec_id": spec_id, "new_contracts": [], "conflicts": [], "impact_summary": {}}
 
-        data["conflicts"] = [c for c in data.get("conflicts", []) if c.get("source") != "regression"]
+        data["conflicts"] = [
+            c for c in data.get("conflicts", [])
+            if c.get("source") != "regression" or c.get("status") != "open"
+        ]
 
         _sev_map = {"error": "high", "warning": "medium", "info": "low"}
         spec_num = spec_id.replace("SPEC-", "")
