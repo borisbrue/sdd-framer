@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=uv run --with sdd-framer sdd hub run --port {{ port }}
+ExecStart=%h/.local/bin/sdd hub run --port {{ port }}
 Restart=on-failure
 RestartSec=5s
 Environment=HOME=%h
