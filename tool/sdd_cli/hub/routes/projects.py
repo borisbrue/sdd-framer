@@ -10,7 +10,7 @@ from ..commands import StartProjectCommand, StopProjectCommand
 from ..models import ProjectEntry
 from ..registry import ProjectNotFoundError
 
-router = APIRouter(prefix="/hub")
+router = APIRouter()
 
 
 @router.get("/projects", response_model=list[ProjectEntry])

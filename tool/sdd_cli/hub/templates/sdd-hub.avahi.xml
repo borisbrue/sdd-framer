@@ -5,6 +5,6 @@
   <service>
     <type>_http._tcp</type>
     <port>{{ port }}</port>
-    <txt-record>path=/hub/projects</txt-record>
+    <txt-record>path=/projects</txt-record>
   </service>
 </service-group>

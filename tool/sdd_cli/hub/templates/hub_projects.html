@@ -50,14 +50,14 @@
     }
 
     async function startProject(id) {
-      await fetch(`/hub/projects/${id}/start`, { method: 'POST' });
+      await fetch(`/projects/${id}/start`, { method: 'POST' });
     }
 
     async function stopProject(id) {
-      await fetch(`/hub/projects/${id}/stop`, { method: 'POST' });
+      await fetch(`/projects/${id}/stop`, { method: 'POST' });
     }
 
-    const es = new EventSource('/hub/projects/stream');
+    const es = new EventSource('/projects/stream');
     es.onmessage = (e) => {
       const data = JSON.parse(e.data);
       updateCard(data.id, data.status, data.pid);

@@ -903,7 +903,7 @@ def hub_start(port: int, no_browser: bool) -> None:
     cfg = cfg.model_copy(update={"port": port})
     app = create_app(config=cfg)
 
-    url = f"http://localhost:{port}/hub/"
+    url = f"http://localhost:{port}/"
     console.print(f"▶ SDD Hub gestartet → {url}")
 
     if not no_browser:
@@ -1021,7 +1021,7 @@ def hub_install() -> None:
     else:
         console.print("[yellow]![/] Avahi-Verzeichnis nicht beschreibbar – mDNS übersprungen")
 
-    console.print(f"\n[bold green]Hub installiert.[/] Erreichbar unter http://steamdeck.local:{cfg.port}/hub/")
+    console.print(f"\n[bold green]Hub installiert.[/] Erreichbar unter http://steamdeck.local:{cfg.port}/")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
