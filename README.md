@@ -30,9 +30,19 @@ FastAPI-Backend (`web/api/`) mit eingebetteter React-SPA (`web/ui/`).
 - Alle CLI-Befehle per HTTP aufrufbar
 - WebSocket-Live-Logs für Pipeline-Runs
 - KI-Analyse asynchron (Hintergrundqueue)
-- Hub-Mechanismus: mehrere SDD-Projekte registrieren und verwalten
+- Projekt-Hub: laufende SDD-Projekt-Server registrieren und im Dashboard anzeigen
 
-Erreichbar unter `http://localhost:8000` (API) und `http://localhost:8000` (SPA).
+Erreichbar unter `http://localhost:8000` (API + SPA).
+
+### 5. Hub-Daemon (`tool/sdd_cli/hub/`)
+
+Systemd-User-Service für dauerhaften Multi-Projekt-Betrieb (Port **4711**):
+
+- File-basierte Projekt-Registry (`~/.config/sdd/hub-registry.yaml`)
+- Projektserver per Klick starten und stoppen (ohne Terminal)
+- SSE-Stream für Live-Statusupdates
+- WebUI unter `/hub/` — zeigt alle registrierten Projekte mit Status-Badges
+- Manueller Start (`sdd hub start`) und systemd-Daemon (`sdd hub install`) nutzen **dieselbe** Implementierung
 
 ### 3. VS Code Extension (`vscode-extension/`)
 
@@ -516,6 +526,57 @@ Tasks für SPEC-0026 (8):
 
 ---
 
+### `sdd hub` — Multi-Projekt-Hub verwalten
+
+Der Hub-Daemon läuft auf Port **4711** und verwaltet mehrere Projektserver zentral.
+
+#### `sdd hub start` — Manueller Start (Vordergrund)
+
+```bash
+sdd hub start [--port INTEGER] [--no-browser]
+```
+
+Startet den Hub im laufenden Terminal. Blockiert bis Strg+C. Warnt wenn Port bereits belegt.
+Öffnet automatisch die WebUI im Browser (deaktivierbar mit `--no-browser`).
+
+#### `sdd hub install` — systemd-Daemon installieren
+
+```bash
+sdd hub install
+```
+
+Installiert und aktiviert `sdd-hub.service` als systemd-User-Service.
+Der Hub startet dann automatisch beim Systemboot — kein Terminal nötig.
+
+#### `sdd hub register` — Projekt registrieren
+
+```bash
+sdd hub register --name <name> --path <pfad> --cmd <befehl...> --port <port> [--force]
+```
+
+Trägt ein Projekt in die Hub-Registry ein (`~/.config/sdd/hub-registry.yaml`).
+`--cmd` kann mehrfach angegeben werden (z.B. `--cmd uv --cmd run --cmd sdd --cmd ui`).
+
+#### `sdd hub status` — Registry-Übersicht
+
+```bash
+sdd hub status
+```
+
+Zeigt alle registrierten Projekte mit aktuellem Status und PID in einer Tabelle.
+
+**Hub-API-Endpunkte** (alle unter `http://localhost:4711`):
+
+| Methode | Pfad | Beschreibung |
+|---|---|---|
+| `GET` | `/hub/projects` | Alle registrierten Projekte (JSON) |
+| `POST` | `/hub/projects/{id}/start` | Projektprozess starten |
+| `POST` | `/hub/projects/{id}/stop` | Projektprozess stoppen |
+| `GET` | `/hub/projects/stream` | Live-Statusupdates (SSE) |
+| `GET` | `/hub/` | WebUI (HTML-Dashboard) |
+
+---
+
 ## Web API — Endpunkte
 
 Die API ist unter `http://localhost:8000/api/...` erreichbar. Interaktive Dokumentation: `http://localhost:8000/docs`
@@ -594,13 +655,18 @@ Die API ist unter `http://localhost:8000/api/...` erreichbar. Interaktive Dokume
 | `POST` | `/api/suggest-contracts` | Contracts vorschlagen |
 | `GET` | `/api/usage` | Token-Verbrauch abrufen |
 
-### Hub — Multi-Projekt-Verwaltung
+### Hub — Projekt-Dashboard (Auto-Register, Port 8000)
+
+Projektserver melden sich automatisch an wenn `sdd ui` gestartet wird.
 
 | Methode | Pfad | Beschreibung |
 |---|---|---|
-| `POST` | `/api/hub/register` | Projekt registrieren |
-| `POST` | `/api/hub/deregister` | Projekt abmelden |
-| `GET` | `/api/hub/projects` | Alle registrierten Projekte |
+| `POST` | `/api/hub/register` | Projekt-Server anmelden |
+| `POST` | `/api/hub/deregister` | Projekt-Server abmelden |
+| `GET` | `/api/hub/projects` | Alle registrierten Server |
+| `GET` | `/hub` | Browser-Dashboard (HTML) |
+
+> Für dauerhaften Multi-Projekt-Betrieb mit Start/Stop-Steuerung: `sdd hub install` (Port 4711).
 
 ### Remote Control (SPEC-0023)
 
@@ -758,6 +824,15 @@ tests/
 
 tool/
   sdd_cli/             # Python-Paket – CLI-Kern
+    hub/               # Hub-Daemon (SPEC-0038/0039, Port 4711)
+      app.py           # FastAPI-App (create_app Factory)
+      registry.py      # File-basierte Projekt-Registry
+      process_manager.py # Prozess-Start/Stop + Crash-Detection
+      events.py        # SSE-EventBus
+      models.py        # ProjectEntry Pydantic-Model
+      config.py        # HubConfig (Default-Port 4711)
+      routes/          # FastAPI-Router
+      templates/       # HTML-Dashboard + systemd-Unit-Template
     task_model.py      # Task Dataclass + Enums (SPEC-0026)
     task_lifecycle.py  # State Machine – Zustandsübergänge
     llm_pool.py        # LLM-Pool-Registry + Selector (Strategy)
