@@ -32,3 +32,9 @@
 2026-06-05T12:13:57Z SPEC-0037 approved → in-progress [sdd-start]
 2026-06-05T12:14:57Z  hotfix.start  HF-0007  'regression-ok Gate-Phase wird nach regression-check nie markiert; TST-Review triggert keinen Check'
 2026-06-06T10:08:42Z SPEC-0038 approved → in-progress [sdd-start]
+2026-06-06T11:09:45Z  hotfix.start  HF-0008  'regression-ok Gate-Phase wird nach regression-check nie markiert; TST-Review triggert keinen Check'
+2026-06-06T11:18:09Z  hotfix.finalize  HF-0008  commit=989c742
+2026-06-06T11:21:34Z  hotfix.abort  HF-0007
+2026-06-06T11:41:57Z  hotfix.start  HF-0009  'regression-check überschreibt acknowledged Konflikte beim Neuschreiben des Conflict-Store'
+2026-06-06T11:45:18Z  hotfix.finalize  HF-0009  commit=bbc5876
+2026-06-06T14:48:48Z SPEC-0039 approved → in-progress [sdd-start]

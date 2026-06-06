@@ -877,15 +877,42 @@ def hub() -> None:
     pass
 
 
+def _hub_port_occupied(port: int) -> bool:
+    import socket as _socket
+    with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as _s:
+        return _s.connect_ex(("127.0.0.1", port)) == 0
+
+
 @hub.command("start", help="Startet den SDD Hub (Multi-Projekt-Dashboard).")
-@click.option("--port", default=8000, show_default=True, help="Port für den Hub.")
+@click.option("--port", default=4711, show_default=True, help="Port für den Hub.")
 @click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
 def hub_start(port: int, no_browser: bool) -> None:
-    from .ui import start_hub
-    start_hub(port=port, open_browser=not no_browser)
+    import threading
+    import webbrowser
+    import uvicorn
+    from .hub.app import create_app
+    from .hub.config import HubConfig
+
+    if _hub_port_occupied(port):
+        console.print(
+            f"[yellow][WARN][/] Port {port} ist bereits belegt — "
+            f"läuft der Hub-Daemon bereits? Anderen Port mit --port wählen."
+        )
+
+    cfg = HubConfig.load()
+    cfg = cfg.model_copy(update={"port": port})
+    app = create_app(config=cfg)
+
+    url = f"http://localhost:{port}/hub/"
+    console.print(f"▶ SDD Hub gestartet → {url}")
+
+    if not no_browser:
+        threading.Timer(1.5, lambda: webbrowser.open(url)).start()
+
+    uvicorn.run(app, host="0.0.0.0", port=cfg.port)
 
 
-@hub.command("run", help="Startet den Hub-Daemon (wird von systemd verwendet).")
+@hub.command("run", help="Startet den Hub-Daemon (wird von systemd verwendet).", hidden=True)
 @click.option("--port", default=4711, show_default=True, help="Port für den Hub-Daemon.")
 def hub_run(port: int) -> None:
     import uvicorn
