@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class HubConfig(BaseModel):
-    port: int = 8080
+    port: int = 4711
 
     @classmethod
     def load(cls, path: Path | None = None) -> "HubConfig":

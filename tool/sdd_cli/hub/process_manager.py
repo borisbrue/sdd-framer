@@ -31,8 +31,12 @@ class ProcessManager:
         if project_id in self._processes and self._processes[project_id].poll() is None:
             from fastapi import HTTPException
             raise HTTPException(status_code=409, detail=f"Project '{project_id}' is already running.")
+        import shlex
+        cmd = entry.start_cmd
+        if len(cmd) == 1:
+            cmd = shlex.split(cmd[0])
         proc = subprocess.Popen(
-            entry.start_cmd,
+            cmd,
             cwd=str(entry.path),
             start_new_session=True,
         )

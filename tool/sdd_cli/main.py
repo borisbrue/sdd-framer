@@ -872,7 +872,7 @@ cli.add_command(ui_cmd, name="ui")
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd hub
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.group(help="SDD Hub – Multi-Projekt-Dashboard auf Port 8000.")
+@cli.group(help="SDD Hub – Multi-Projekt-Dashboard auf Port 4711.")
 def hub() -> None:
     pass
 
@@ -886,7 +886,7 @@ def hub_start(port: int, no_browser: bool) -> None:
 
 
 @hub.command("run", help="Startet den Hub-Daemon (wird von systemd verwendet).")
-@click.option("--port", default=8080, show_default=True, help="Port für den Hub-Daemon.")
+@click.option("--port", default=4711, show_default=True, help="Port für den Hub-Daemon.")
 def hub_run(port: int) -> None:
     import uvicorn
     from .hub.app import create_app
@@ -983,8 +983,9 @@ def hub_install() -> None:
     subprocess.run(["systemctl", "--user", "enable", "--now", "sdd-hub"], check=False)
     console.print("[green]✓[/] sdd-hub.service aktiviert und gestartet")
 
+    import os as _os
     avahi_dir = Path("/etc/avahi/services")
-    if avahi_dir.exists() and os.access(str(avahi_dir), os.W_OK):
+    if avahi_dir.exists() and _os.access(str(avahi_dir), _os.W_OK):
         avahi_tmpl = Template((templates_dir / "sdd-hub.avahi.xml").read_text())
         avahi_text = avahi_tmpl.render(port=cfg.port)
         avahi_path = avahi_dir / "sdd-hub.service"

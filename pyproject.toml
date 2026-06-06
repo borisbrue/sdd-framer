@@ -84,4 +84,5 @@ sdd_cli = [
     "web/api/routes/*.py",
     "web/ui/dist/*",
     "web/ui/dist/**/*",
+    "hub/templates/*",
 ]

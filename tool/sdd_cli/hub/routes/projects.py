@@ -96,6 +96,4 @@ async def hub_projects_ui(request: Request) -> HTMLResponse:
     for entry in entries:
         live_status, live_pid = manager.get_live_status(entry.id)
         projects.append(entry.model_copy(update={"status": live_status, "pid": live_pid}))
-    return templates.TemplateResponse(
-        "hub_projects.html", {"request": request, "projects": projects}
-    )
+    return templates.TemplateResponse(request, "hub_projects.html", {"projects": projects})
