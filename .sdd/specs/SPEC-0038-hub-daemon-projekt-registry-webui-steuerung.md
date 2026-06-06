@@ -2,7 +2,7 @@
 id: SPEC-0038
 title: Hub-Daemon mit Projekt-Registry und WebUI-Steuerung
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-06-06
 updated: '2026-06-06'
