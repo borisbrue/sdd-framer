@@ -1,0 +1,53 @@
+{
+  "spec_id": "SPEC-0039",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0039-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/main",
+      "conflicting_contract": "SPEC-0025:endpoint /api/main",
+      "detail": "Endpoint '/api/main' auch in SPEC-0025 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "False Positive: /api/main ist kein API-Endpoint sondern der uvicorn-Modulpfad (main:app) in der systemd-Service-Konfiguration — keine echte Endpoint-Überschneidung mit SPEC-0025",
+        "resolved_at": "2026-06-06T14:43:26Z"
+      }
+    },
+    {
+      "id": "CF-0039-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0003:2.1",
+      "detail": "SPEC-0003 implementiert web/api/routes/hub.py als In-Memory-Hub-Registry; die bisherige sdd hub start-Implementierung startete denselben Server — SPEC-0039 FR-05 entkoppelt sdd hub start von dieser Implementierung, ohne zu klären ob bestehende Contracts oder Tests aus SPEC-0003 sdd hub start als Fixture-Voraussetzung nutzen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Kein echter Konflikt: FR-05 entkoppelt nur den CLI-Einstiegspunkt (sdd hub start) von start_hub(), ändert aber keine Contracts oder API-Oberfläche aus SPEC-0003. sdd ui nutzt start_hub() intern weiter unverändert.",
+        "resolved_at": "2026-06-06T14:43:26Z"
+      }
+    },
+    {
+      "id": "CF-0039-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Nicht-Ziele",
+      "conflicting_contract": "SPEC-0003:2.1",
+      "detail": "Beide Specs definieren Teile des Hub-Konzepts: SPEC-0003 besitzt die Auto-Register-API (web/api/routes/hub.py) und das sdd-ui-Protokoll, SPEC-0039 besitzt die CLI-Einstiegspunkte (hub start/run/install) — die Grenze ist semantisch klar, aber kein Spec referenziert den anderen explizit als Abhängigkeit, was bei zukünftigen Änderungen zu Drift führen kann.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Valider Hinweis: SPEC-0003 wird als depends_on in SPEC-0039 ergänzt um semantische Zugehörigkeit zu dokumentieren.",
+        "resolved_at": "2026-06-06T14:43:27Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-06T14:42:59Z"
+}

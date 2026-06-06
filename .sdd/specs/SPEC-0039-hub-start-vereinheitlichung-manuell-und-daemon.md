@@ -3,7 +3,7 @@ id: SPEC-0039
 title: Hub-Start-Vereinheitlichung — sdd hub start als manueller Pfad, sdd hub install
   als Daemon-Pfad
 type: feature
-status: implemented
+status: in-progress
 owner: borisbrue
 created: 2026-06-06
 updated: '2026-06-06'
