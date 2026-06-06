@@ -1107,7 +1107,7 @@ def pwa() -> None:
 
 
 @pwa.command("start", help="Startet die SDD PWA (statischer Server).")
-@click.option("--port", default=8080, show_default=True, help="Port für die PWA.")
+@click.option("--port", default=0, show_default=True, help="Port für die PWA (0 = freier Port ab 8080).")
 @click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
 def pwa_start(port: int, no_browser: bool) -> None:
     from .ui import start_pwa

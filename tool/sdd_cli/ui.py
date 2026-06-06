@@ -18,6 +18,19 @@ def _web_root() -> Path:
     return Path(str(_pkg_files("sdd_cli").joinpath("web")))
 
 
+def _find_free_port(start: int = 8080, exclude: set[int] | None = None) -> int:
+    import socket as _socket
+    exclude = exclude or {4711, 8000, 5173}
+    port = start
+    while True:
+        if port not in exclude:
+            with _socket.socket(_socket.AF_INET, _socket.SOCK_STREAM) as s:
+                s.setsockopt(_socket.SOL_SOCKET, _socket.SO_REUSEADDR, 1)
+                if s.connect_ex(("127.0.0.1", port)) != 0:
+                    return port
+        port += 1
+
+
 def _api_python(api_dir: Path) -> str:
     """Findet einen Python-Interpreter mit uvicorn."""
     # 1. web/api/.venv (falls vorhanden)
@@ -190,8 +203,10 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
         p.wait()
 
 
-def start_pwa(port: int = 8080, open_browser: bool = True) -> None:
+def start_pwa(port: int = 0, open_browser: bool = True) -> None:
     """Startet die SDD PWA als statischer Server."""
+    if port == 0:
+        port = _find_free_port(start=8080)
     web = _web_root()
     pwa_dir = web / "pwa"
 
