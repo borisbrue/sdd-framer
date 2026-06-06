@@ -1050,21 +1050,49 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
     if not allowed.allowed:
         console.print(f"[red]✗[/] {allowed.reason}")
         sys.exit(2)
+
+    spec_doc = None
+    for md in cfg.specs_dir.rglob("*.md"):
+        doc = parse_safe(md)
+        if doc and doc.frontmatter.get("id") == spec_id:
+            spec_doc = doc
+            break
+    if spec_doc is None:
+        console.print(f"[red]✗[/] Spec nicht gefunden: {spec_id}")
+        sys.exit(2)
+
+    contracts = spec_doc.frontmatter.get("contracts") or []
+    tests = spec_doc.frontmatter.get("tests") or []
+    errors: list[str] = []
+    if not contracts:
+        errors.append(
+            f"Keine Contracts verknüpft – erst Contracts anlegen und im Frontmatter eintragen.\n"
+            f"  Tipp: [cyan]sdd contract propose {spec_id} CON-XXXX ...[/]"
+        )
+    if not tests:
+        errors.append(
+            f"Keine Tests verknüpft – erst Tests anlegen und im Frontmatter eintragen.\n"
+            f"  Tipp: [cyan]sdd new test {spec_id}[/]"
+        )
+    if errors:
+        for msg in errors:
+            console.print(f"[red]✗[/] {msg}")
+        sys.exit(2)
+
     g.mark_phase_complete(spec_id, "spec-approved", consistency_check={
         "fr_coverage": fr_coverage,
         "scenarios_covered": scenarios_covered,
         "contracts_consistent": True,
+        "contracts_count": len(contracts),
+        "tests_count": len(tests),
     })
     g.mark_phase_complete(spec_id, "execute-unlocked")
-    for md in cfg.specs_dir.rglob("*.md"):
-        doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id") == spec_id:
-            try:
-                patch_status(md, "approved")
-            except Exception:
-                pass
-            break
+    try:
+        patch_status(spec_doc.path, "approved")
+    except Exception:
+        pass
     console.print(f"[green]✓[/] [cyan]{spec_id}[/] genehmigt – Execute freigegeben.")
+    console.print(f"  Contracts: {len(contracts)}, Tests: {len(tests)}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 """Unit-Tests für main.py – Click CLI Commands via CliRunner (SPEC-0001)."""
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -290,3 +291,88 @@ class TestNewGithubWorkflow:
         runner.invoke(cli, ["new", "github-workflow"])
         result = runner.invoke(cli, ["new", "github-workflow"])
         assert "existiert bereits" in result.output
+
+
+# ─── sdd spec approve ─────────────────────────────────────────────────────────
+
+def _write_spec_md(specs_dir: Path, spec_id: str, contracts: list, tests: list) -> None:
+    contracts_yaml = json.dumps(contracts)
+    tests_yaml = json.dumps(tests)
+    content = (
+        f"---\nid: {spec_id}\nstatus: review\n"
+        f"contracts: {contracts_yaml}\ntests: {tests_yaml}\n---\n# Spec\n"
+    )
+    (specs_dir / f"{spec_id}-test.md").write_text(content, encoding="utf-8")
+
+
+def _unlock_gate_up_to_regression_ok(project: Path, spec_id: str) -> None:
+    phases_done = [
+        "spec-draft", "spec-review", "contracts-proposed", "contracts-draft",
+        "contracts-review", "tests-generated", "regression-ok",
+    ]
+    history = [
+        {"phase": p, "completed_at": "2026-01-01T00:00:00Z", "result": "ok"}
+        for p in phases_done
+    ]
+    data = {
+        "spec_id": spec_id,
+        "pipeline_phase": "regression-ok",
+        "phase_history": history,
+        "blocking_issues": [],
+        "conflict_report_ref": None,
+        "override": None,
+    }
+    gate_path = project / ".sdd" / "pipeline" / f"{spec_id}-gate.json"
+    gate_path.parent.mkdir(parents=True, exist_ok=True)
+    gate_path.write_text(json.dumps(data), encoding="utf-8")
+
+
+class TestSpecApprove:
+    def test_approve_fails_when_no_contracts(self, runner, project, monkeypatch):
+        monkeypatch.chdir(project)
+        _write_spec_md(project / ".sdd" / "specs", "SPEC-0099", contracts=[], tests=["TST-0001"])
+        _unlock_gate_up_to_regression_ok(project, "SPEC-0099")
+        result = runner.invoke(cli, ["spec", "approve", "SPEC-0099"])
+        assert result.exit_code == 2
+        assert "Contracts" in result.output
+
+    def test_approve_fails_when_no_tests(self, runner, project, monkeypatch):
+        monkeypatch.chdir(project)
+        _write_spec_md(project / ".sdd" / "specs", "SPEC-0099", contracts=["CON-0001"], tests=[])
+        _unlock_gate_up_to_regression_ok(project, "SPEC-0099")
+        result = runner.invoke(cli, ["spec", "approve", "SPEC-0099"])
+        assert result.exit_code == 2
+        assert "Tests" in result.output
+
+    def test_approve_fails_when_neither_contracts_nor_tests(self, runner, project, monkeypatch):
+        monkeypatch.chdir(project)
+        _write_spec_md(project / ".sdd" / "specs", "SPEC-0099", contracts=[], tests=[])
+        _unlock_gate_up_to_regression_ok(project, "SPEC-0099")
+        result = runner.invoke(cli, ["spec", "approve", "SPEC-0099"])
+        assert result.exit_code == 2
+        assert "Contracts" in result.output
+        assert "Tests" in result.output
+
+    def test_approve_succeeds_with_contracts_and_tests(self, runner, project, monkeypatch):
+        monkeypatch.chdir(project)
+        _write_spec_md(project / ".sdd" / "specs", "SPEC-0099",
+                       contracts=["CON-0001"], tests=["TST-0001"])
+        _unlock_gate_up_to_regression_ok(project, "SPEC-0099")
+        result = runner.invoke(cli, ["spec", "approve", "SPEC-0099"])
+        assert result.exit_code == 0
+        assert "genehmigt" in result.output
+
+    def test_approve_records_counts_in_gate(self, runner, project, monkeypatch):
+        monkeypatch.chdir(project)
+        _write_spec_md(project / ".sdd" / "specs", "SPEC-0099",
+                       contracts=["CON-0001", "CON-0002"], tests=["TST-0001"])
+        _unlock_gate_up_to_regression_ok(project, "SPEC-0099")
+        runner.invoke(cli, ["spec", "approve", "SPEC-0099"])
+        gate = json.loads(
+            (project / ".sdd" / "pipeline" / "SPEC-0099-gate.json").read_text()
+        )
+        approved_entry = next(
+            e for e in gate["phase_history"] if e["phase"] == "spec-approved"
+        )
+        assert approved_entry["consistency_check"]["contracts_count"] == 2
+        assert approved_entry["consistency_check"]["tests_count"] == 1
