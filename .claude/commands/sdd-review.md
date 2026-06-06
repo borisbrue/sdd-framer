@@ -127,8 +127,8 @@ Prüfe inhaltlich:
 Falls Anpassungen nötig: liste sie konkret auf. Warte auf Bestätigung bevor die Test-Datei
 geändert wird.
 
-Führe danach automatisch den Regression-Check auf der übergeordneten Spec durch
-(SPEC-ID aus `spec:`-Frontmatter des Tests):
+**Führe IMMER — unabhängig davon ob Test-Anpassungen nötig waren — den Regression-Check
+auf der übergeordneten Spec durch** (SPEC-ID aus `spec:`-Frontmatter des Tests):
 ```bash
 sdd regression-check <SPEC-ID>
 ```

@@ -269,6 +269,18 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
         tst_text += f"\n## Generierter Testvorschlag\n\n{test_suggestion}\n"
     tst_path.write_text(tst_text, encoding="utf-8")
 
+    if spec_id:
+        try:
+            from .regression_check import RegressionCheckChain
+            from .gate import ExecutionGate
+            chain = RegressionCheckChain(config.root)
+            rc_result = chain.run(spec_id, provider=None)
+            if not any(f.severity == "error" for f in rc_result.findings):
+                gate = ExecutionGate(config.root)
+                gate.mark_phase_complete(spec_id, "regression-ok")
+        except Exception:
+            pass
+
     _link_test_in_contract(contract_doc.path, tst_id)
 
     if verdict == "needs_revision" and notes:

@@ -2421,6 +2421,9 @@ def regression_check(spec_id: str, output_json: bool) -> None:
         ))
         if any(f.severity == "error" for f in result.findings):
             sys.exit(1)
+        from .gate import ExecutionGate
+        g = ExecutionGate(cfg.root)
+        g.mark_phase_complete(spec_id, "regression-ok")
         return
 
     rule_findings = [f for f in result.findings if f.source == "rule"]
