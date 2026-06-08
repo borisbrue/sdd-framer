@@ -1,3 +1,3 @@
 """sdd-cli – Spec-Driven Development CLI."""
 
-__version__ = "0.1.40"
+__version__ = "0.1.41"
