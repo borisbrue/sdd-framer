@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, Contract, Holdout, SpecDetail as SpecDetailType, Test } from "../api";
 import AiPanel from "./AiPanel";
 import AnalyzePanel from "./AnalyzePanel";
+import DraftEditor from "./DraftEditor";
 import ApprovePanel from "./ApprovePanel";
 import RestructurePanel from "./RestructurePanel";
 import ExecutePanel from "./ExecutePanel";
@@ -217,8 +218,20 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
       {/* Live Container Logs (SPEC-0022) */}
       <LogPanel specId={specId} autoConnectTrigger={logConnectTrigger} />
 
-      {/* Markdown Body */}
-      {detail.body.trim() && (
+      {/* Draft: interaktiver Editor */}
+      {detail.status === "draft" && (
+        <DraftEditor
+          specId={detail.id}
+          initialBody={detail.body}
+          onSaved={(newBody) => {
+            setDetail(d => d ? { ...d, body: newBody } : d);
+            setAnalysisTrigger(k => k + 1);
+          }}
+        />
+      )}
+
+      {/* Nicht-Draft: statischer Inhalt */}
+      {detail.status !== "draft" && detail.body.trim() && (
         <section className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={sectionHead}>Inhalt</h3>
@@ -255,12 +268,14 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
         forceStartKey={analysisTrigger}
       />
 
-      {/* KI-Assistent */}
-      <AiPanel
-        specId={detail.id}
-        specContent={detail.body}
-        onNavigate={onNavigate}
-      />
+      {/* KI-Assistent (nur für Nicht-Draft) */}
+      {detail.status !== "draft" && (
+        <AiPanel
+          specId={detail.id}
+          specContent={detail.body}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   );
 }
