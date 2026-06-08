@@ -106,8 +106,10 @@ def patch_contract_status(contract_id: str, body: StatusPatch) -> dict[str, Any]
     found = _find_contract(contract_id)
     if not found:
         raise HTTPException(status_code=404, detail=f"{contract_id} nicht gefunden.")
-    md, cfg = found
+    md, _ = found
     doc = parse_safe(md)
+    if not doc:
+        raise HTTPException(status_code=500, detail=f"{contract_id} nicht lesbar.")
     doc.frontmatter["status"] = body.status
     doc.write()
     return {"ok": True, "id": contract_id, "status": body.status}
@@ -122,8 +124,10 @@ def patch_contract_body(contract_id: str, body: BodyPatch) -> dict[str, Any]:
     found = _find_contract(contract_id)
     if not found:
         raise HTTPException(status_code=404, detail=f"{contract_id} nicht gefunden.")
-    md, cfg = found
+    md, _ = found
     doc = parse_safe(md)
+    if not doc:
+        raise HTTPException(status_code=500, detail=f"{contract_id} nicht lesbar.")
     doc.body = body.body
     doc.write()
     return {"ok": True, "id": contract_id}
@@ -153,5 +157,16 @@ def create_contract(body: ContractCreate) -> dict[str, Any]:
     target.write_text(text, encoding="utf-8")
     if skeleton:
         copy_skeleton(cfg, skeleton, cfg.root / artifact_rel)
+
+    # Link contract back to spec frontmatter
+    if body.spec_id:
+        spec_files = list(cfg.specs_dir.rglob(f"{body.spec_id}-*.md"))
+        if spec_files:
+            spec_doc = parse_safe(spec_files[0])
+            if spec_doc:
+                existing = spec_doc.frontmatter.get("contracts") or []
+                if cid not in existing:
+                    spec_doc.frontmatter["contracts"] = existing + [cid]
+                    spec_doc.write()
 
     return {"id": cid, "file": str(target.relative_to(cfg.root)), "abs_file": str(target)}

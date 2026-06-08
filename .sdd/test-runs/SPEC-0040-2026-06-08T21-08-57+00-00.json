@@ -1,0 +1,61 @@
+{
+  "spec_id": "SPEC-0040",
+  "runner": "pytest",
+  "started_at": "2026-06-08T21:08:57+00:00",
+  "duration_s": 0.427,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0170",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0170."
+    },
+    {
+      "test_id": "TST-0171",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0171."
+    },
+    {
+      "test_id": "TST-0172",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0172."
+    },
+    {
+      "test_id": "TST-0173",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0173."
+    },
+    {
+      "test_id": "TST-0174",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0174."
+    },
+    {
+      "test_id": "TST-0175",
+      "artifact": "tests/<level>/<name>.test.<ext>",
+      "status": "missing",
+      "duration_s": 0.0,
+      "message": "artifact: ist Platzhalter in TST-0175."
+    }
+  ],
+  "contract_coverage": {
+    "CON-0147": false,
+    "CON-0148": false,
+    "CON-0149": false,
+    "CON-0150": false,
+    "CON-0151": false
+  },
+  "passed": 0,
+  "failed": 0,
+  "skipped": 6
+}

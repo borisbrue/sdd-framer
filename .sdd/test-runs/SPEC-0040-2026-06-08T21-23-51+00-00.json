@@ -1,0 +1,61 @@
+{
+  "spec_id": "SPEC-0040",
+  "runner": "pytest",
+  "started_at": "2026-06-08T21:23:51+00:00",
+  "duration_s": 3.688,
+  "exit_code": 0,
+  "tests": [
+    {
+      "test_id": "TST-0170",
+      "artifact": "tests/unit/test_tst_0170.py",
+      "status": "passed",
+      "duration_s": 0.856,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0171",
+      "artifact": "tests/unit/test_tst_0171.py",
+      "status": "passed",
+      "duration_s": 0.521,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0172",
+      "artifact": "tests/unit/test_tst_0172.py",
+      "status": "passed",
+      "duration_s": 0.525,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0173",
+      "artifact": "tests/unit/test_tst_0173.py",
+      "status": "passed",
+      "duration_s": 0.416,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0174",
+      "artifact": "tests/unit/test_tst_0174.py",
+      "status": "passed",
+      "duration_s": 0.635,
+      "message": ""
+    },
+    {
+      "test_id": "TST-0175",
+      "artifact": "tests/unit/test_tst_0175.py",
+      "status": "passed",
+      "duration_s": 0.439,
+      "message": ""
+    }
+  ],
+  "contract_coverage": {
+    "CON-0147": true,
+    "CON-0148": true,
+    "CON-0149": true,
+    "CON-0150": true,
+    "CON-0151": true
+  },
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0
+}

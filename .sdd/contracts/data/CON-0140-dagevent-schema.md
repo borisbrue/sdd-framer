@@ -3,7 +3,7 @@ id: CON-0140
 project: ""
 title: "DagEvent Schema"
 type: data
-format: pydantic
+format: json-schema
 spec: SPEC-0037
 version: 0.1.0
 status: approved

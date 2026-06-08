@@ -2535,7 +2535,7 @@ wheels = [
 
 [[package]]
 name = "sdd-cli"
-version = "0.1.24"
+version = "0.1.46"
 source = { editable = "tool" }
 dependencies = [
     { name = "click" },
@@ -2575,7 +2575,7 @@ provides-extras = ["dev", "evaluate", "lm-studio"]
 
 [[package]]
 name = "sdd-framer"
-version = "0.1.25"
+version = "0.1.46"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },

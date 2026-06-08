@@ -108,11 +108,14 @@ export default function GuidedSpecEditor({ project, spec, onSaved, onCancel }: P
     saveDraft(spec.id, stepIndex, answers);
   }, [spec.id, stepIndex, answers]);
 
+  const runGenerationRef = useRef(runGeneration);
+  runGenerationRef.current = runGeneration;
+
   // Initial AI generation — only when no draft was restored
   useEffect(() => {
     if (hasDraft) return;
-    runGeneration();
-  }, [spec.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    runGenerationRef.current();
+  }, [spec.id, hasDraft]);
 
   function runGeneration() {
     let active = true;

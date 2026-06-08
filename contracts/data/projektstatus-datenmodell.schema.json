@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "CON-0148/projektstatus-datenmodell",
+  "title": "Projektstatus-Datenmodell",
+  "description": "Datenmodell für Projektstatus-Objekte der Hub-API (CON-0148 v0.1.0)",
+  "type": "object",
+  "required": ["id", "name", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Eindeutige maschinenlesbare Projekt-ID"
+    },
+    "name": {
+      "type": "string",
+      "description": "Menschenlesbarer Anzeigename des Projekts"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["running", "stopped", "starting", "stopping"],
+      "description": "Normierter Serverstatus — exakt vier Werte zulässig (CON-0148)"
+    },
+    "statusChangedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der letzten Statusänderung (optional)"
+    }
+  },
+  "additionalProperties": true
+}

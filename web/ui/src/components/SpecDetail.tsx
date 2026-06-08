@@ -3,14 +3,15 @@ import type { CSSProperties, ReactNode } from "react";
 import { api, Contract, Holdout, SpecDetail as SpecDetailType, Test } from "../api";
 import AiPanel from "./AiPanel";
 import AnalyzePanel from "./AnalyzePanel";
-import DraftEditor from "./DraftEditor";
-import ApprovePanel from "./ApprovePanel";
+import SpecWizard from "./SpecWizard";
 import RestructurePanel from "./RestructurePanel";
 import ExecutePanel from "./ExecutePanel";
 import LogPanel from "./LogPanel";
 import TaskKanbanBoard from "./TaskKanbanBoard";
 import TestRunPanel from "./TestRunPanel";
 import ContractForm from "./ContractForm";
+import ContractSuggestPanel from "./ContractSuggestPanel";
+import TestSuggestPanel from "./TestSuggestPanel";
 import IdChip from "./IdChip";
 import MarkdownBody from "./MarkdownBody";
 import OpenButton from "./OpenButton";
@@ -80,7 +81,7 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
 
   const isDraft = detail.status === "draft";
   const isReview = detail.status === "review";
-  const inWorkPhase = detail.status === "active" || isReview;
+  const inWorkPhase = detail.status === "active";
   const inExecPhase = detail.status === "approved" || detail.status === "in-progress" || detail.status === "implemented";
   const hasKanban = detail.status === "in-progress" || detail.status === "implemented";
 
@@ -142,7 +143,7 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
     <SpecPipelineView specId={specId} onActionTriggered={() => setLogConnectTrigger(k => k + 1)} />
   );
 
-  const contractsSection = (withForms: boolean) => (
+  const contractsSection = (withForms: boolean, withSuggest = false) => (
     <section>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <h3 style={sectionHead}>Contracts ({myContracts.length})</h3>
@@ -171,10 +172,13 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
             ))}
           </div>
         )}
+      {withSuggest && detail && (
+        <ContractSuggestPanel specId={detail.id} specContent={detail.body} onCreated={onRefresh} />
+      )}
     </section>
   );
 
-  const testsSection = (withForms: boolean) => (
+  const testsSection = (withForms: boolean, withSuggest = false) => (
     <section>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <h3 style={sectionHead}>Tests ({myTests.length})</h3>
@@ -202,6 +206,12 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
             ))}
           </div>
         )}
+      {withSuggest && detail && myContracts.length > 0 && (
+        <TestSuggestPanel
+          specId={detail.id} specContent={detail.body}
+          contracts={myContracts} onCreated={onRefresh}
+        />
+      )}
     </section>
   );
 
@@ -240,27 +250,29 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>{children}</div>
   );
 
-  // ── DRAFT: Fokus auf Spec-Erstellung ──────────────────────────────────────
+  // ── DRAFT: geführter Wizard ───────────────────────────────────────────────
 
-  if (isDraft) return wrap(<>
+  if (isDraft || isReview) return wrap(<>
     {header}
-    <DraftEditor
+    <SpecWizard
       specId={detail.id}
+      specStatus={detail.status}
       initialBody={detail.body}
-      onSaved={newBody => {
-        setDetail(d => d ? { ...d, body: newBody } : d);
-        setAnalysisTrigger(k => k + 1);
+      contracts={myContracts}
+      tests={myTests}
+      onSaved={newBody => setDetail(d => d ? { ...d, body: newBody } : d)}
+      onNavigate={onNavigate}
+      onRefresh={onRefresh}
+      onRequestReview={async () => {
+        await api.patchSpecStatus(detail.id, "review");
+        setDetail(d => d ? { ...d, status: "review" } : d);
+        onRefresh();
+      }}
+      onApproved={() => {
+        setDetail(d => d ? { ...d, status: "approved" } : d);
+        onRefresh();
       }}
     />
-    <Collapsible title="✦ KI-Analyse">
-      <AnalyzePanel docId={detail.id} docContent={detail.body} docType="spec" forceStartKey={analysisTrigger} />
-    </Collapsible>
-    <Collapsible title={`Contracts (${myContracts.length})`}>
-      {contractsSection(true)}
-    </Collapsible>
-    <Collapsible title={`Tests (${myTests.length})`}>
-      {testsSection(true)}
-    </Collapsible>
     {detail.depends_on.length > 0 && (
       <Collapsible title="Abhängigkeiten">{dependsOnSection}</Collapsible>
     )}
@@ -271,14 +283,8 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
   if (inWorkPhase) return wrap(<>
     {header}
     {pipeline}
-    {isReview && (
-      <ApprovePanel
-        specId={detail.id}
-        onApproved={() => { setDetail(d => d ? { ...d, status: "approved" } : d); onRefresh(); }}
-      />
-    )}
-    {contractsSection(true)}
-    {testsSection(true)}
+    {contractsSection(true, true)}
+    {testsSection(true, true)}
     {dependsOnSection}
     {holdoutsSection}
     {detail.body.trim() && (
@@ -296,7 +302,13 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
       </Collapsible>
     )}
     <Collapsible title="✦ KI-Werkzeuge">
-      <AnalyzePanel docId={detail.id} docContent={detail.body} docType="spec" forceStartKey={analysisTrigger} />
+      <AnalyzePanel
+        docId={detail.id} docContent={detail.body} docType="spec" forceStartKey={analysisTrigger}
+        onSaveBody={async (newBody) => {
+          await api.updateSpec(detail.id, newBody);
+          setDetail(d => d ? { ...d, body: newBody } : d);
+        }}
+      />
       <AiPanel specId={detail.id} specContent={detail.body} onNavigate={onNavigate} />
     </Collapsible>
   </>);
@@ -331,7 +343,13 @@ export default function SpecDetail({ specId, contracts, tests, onNavigate, onRef
       {testsSection(false)}
     </Collapsible>
     <Collapsible title="✦ KI-Werkzeuge">
-      <AnalyzePanel docId={detail.id} docContent={detail.body} docType="spec" forceStartKey={analysisTrigger} />
+      <AnalyzePanel
+        docId={detail.id} docContent={detail.body} docType="spec" forceStartKey={analysisTrigger}
+        onSaveBody={async (newBody) => {
+          await api.updateSpec(detail.id, newBody);
+          setDetail(d => d ? { ...d, body: newBody } : d);
+        }}
+      />
       <AiPanel specId={detail.id} specContent={detail.body} onNavigate={onNavigate} />
     </Collapsible>
   </>);

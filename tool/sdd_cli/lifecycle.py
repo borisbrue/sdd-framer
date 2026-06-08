@@ -402,6 +402,9 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
             stub_path.parent.mkdir(parents=True, exist_ok=True)
             stub_path.write_text(_render_stub(tst_id, tst_doc, spec_id), encoding="utf-8")
             stubs_created.append(stub_path)
+            _implement_test_stub(
+                config, tst_id, tst_doc, stub_path, spec_body=spec_doc.body or ""
+            )
 
     return StartResult(
         spec_id=spec_id,
@@ -440,27 +443,135 @@ def get_in_progress_specs(config: SddConfig) -> list[Document]:
 
 
 def _find_tst_doc(config: SddConfig, tst_id: str) -> "Document | None":
-    tests_root = config.root / "tests"
-    if not tests_root.exists():
-        return None
-    for md in tests_root.rglob("*.md"):
-        doc = parse_safe(md)
-        if doc and doc.frontmatter.get("id") == tst_id:
-            return doc
+    for base in config.all_test_dirs:
+        for md in base.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == tst_id:
+                return doc
     return None
 
 
 def _derive_stub_path(config: SddConfig, tst_id: str, tst_doc: "Document | None") -> "Path | None":
-    tests_root = config.root / "tests"
     if tst_doc is not None:
-        artifact = tst_doc.frontmatter.get("artifact")
-        if artifact:
+        artifact = tst_doc.frontmatter.get("artifact", "")
+        # Skip template placeholders like "tests/<level>/<name>.test.<ext>"
+        if artifact and "<" not in artifact:
             return config.root / artifact
         level = tst_doc.frontmatter.get("level", "unit")
     else:
         level = "unit"
     slug = tst_id.lower().replace("-", "_")
-    return tests_root / level / f"test_{slug}.py"
+    return config.project_tests_dir / level / f"test_{slug}.py"
+
+
+def _read_contract_for_tst(config: SddConfig, contract_id: str) -> tuple[str, str, str, str]:
+    """Returns (title, format, artifact_content, artifact_rel) for a contract ID."""
+    if not contract_id:
+        return "", "", "", ""
+    doc = _find_doc_by_id(config.contracts_dir, contract_id)
+    if doc is None:
+        return "", "", "", ""
+    title = doc.frontmatter.get("title", "")
+    fmt = doc.frontmatter.get("format", "")
+    artifact_rel = doc.frontmatter.get("artifact", "")
+    content = ""
+    if artifact_rel:
+        p = config.root / artifact_rel
+        if p.exists():
+            content = p.read_text(encoding="utf-8")
+    return title, fmt, content, artifact_rel
+
+
+def _build_implement_test_prompt(
+    tst_id: str,
+    title: str,
+    level: str,
+    contract_id: str,
+    con_title: str,
+    con_fmt: str,
+    tst_body: str,
+    artifact_content: str,
+    artifact_rel: str,
+    spec_body: str,
+    class_name: str,
+    stub_path: "Path",
+) -> str:
+    artifact_section = ""
+    if artifact_content:
+        artifact_section = (
+            f"\n**Contract-Artefakt** (`{artifact_rel}`):\n"
+            f"{artifact_content[:3000]}\n"
+        )
+    spec_section = f"\n**Spec-Kontext:**\n{spec_body[:600]}\n" if spec_body else ""
+    return (
+        f"Schreibe ein ausführbares pytest-Modul für folgenden SDD-Test.\n\n"
+        f"**Test-ID:** {tst_id}\n"
+        f"**Titel:** {title}\n"
+        f"**Level:** {level}\n"
+        f"**Contract:** {contract_id} – {con_title} (Format: {con_fmt})\n"
+        f"**Ausgabe-Datei:** {stub_path.name}\n\n"
+        f"**Testbeschreibung:**\n{tst_body}\n"
+        f"{artifact_section}{spec_section}\n"
+        "**Anforderungen:**\n"
+        "- Nur valider Python-Code, KEINE Markdown-Fences, keine Prosa\n"
+        "- Verfügbare Imports: pathlib, pytest, yaml, jsonschema (alle installiert)\n"
+        f"- Testklasse: `{class_name}` mit Methoden die `test_` beginnen\n"
+        "- KEIN pytest.skip(), KEIN raise NotImplementedError — alle Tests sollen laufen\n"
+        "- Kein Netzwerkzugriff: Mocks, In-Memory-Objekte oder statische Dateivalidierung\n"
+        f"- Contract-Artefakt liegt unter: `{artifact_rel}` (Pfad relativ zu Repo-Root)\n"
+        "- Pfad zu Repo-Root aus Testdatei: `Path(__file__).resolve().parents[2]`\n"
+    )
+
+
+def _implement_test_stub(
+    config: SddConfig,
+    tst_id: str,
+    tst_doc: "Document | None",
+    stub_path: Path,
+    spec_body: str = "",
+) -> bool:
+    """Generates pytest code via LLM and writes to stub_path. Returns True on success."""
+    if tst_doc is None:
+        return False
+    try:
+        from .llm.factory import get_completion_provider
+    except ImportError:
+        return False
+
+    title = tst_doc.frontmatter.get("title", "")
+    level = tst_doc.frontmatter.get("level", "unit")
+    contract_id = tst_doc.frontmatter.get("contract", "")
+    tst_body = (tst_doc.body or "").strip()
+    class_name = "Test" + tst_id.replace("-", "")
+
+    con_title, con_fmt, artifact_content, artifact_rel = _read_contract_for_tst(
+        config, contract_id
+    )
+    prompt = _build_implement_test_prompt(
+        tst_id=tst_id, title=title, level=level,
+        contract_id=contract_id, con_title=con_title, con_fmt=con_fmt,
+        tst_body=tst_body, artifact_content=artifact_content,
+        artifact_rel=artifact_rel, spec_body=spec_body,
+        class_name=class_name, stub_path=stub_path,
+    )
+    system_prompt = (
+        "You are an expert Python test engineer for Spec-Driven Development. "
+        "Output ONLY valid Python code — no markdown fences, no prose, no explanations."
+    )
+    try:
+        provider = get_completion_provider(config, "completion")
+        result = provider.complete(prompt, max_tokens=4096, system_prompt=system_prompt, timeout=300)
+        code = result.text.strip()
+        if code.startswith("```"):
+            lines = code.splitlines()
+            end = len(lines) - 1 if lines[-1].strip() == "```" else len(lines)
+            code = "\n".join(lines[1:end])
+        if "import pytest" in code and "def test_" in code:
+            stub_path.write_text(code, encoding="utf-8")
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def _render_stub(tst_id: str, tst_doc: "Document | None", spec_id: str) -> str:
