@@ -1,6 +1,82 @@
 import { useState } from "react";
 import { api, AiUsageEntry } from "../api";
 
+function buildSpecTemplate(title: string, section1: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  return `# ${title}
+
+## 1. Kontext & Motivation
+
+${section1.trim()}
+
+## 2. Zielsetzung
+
+**Primärziel:**
+
+
+**Erfolgskriterien (messbar):**
+- [ ]
+
+**Nicht-Ziele (explizit):**
+-
+
+## 3. User Stories
+
+| ID    | Als ... | möchte ich ... | um ... |
+|-------|---------|----------------|--------|
+| US-01 |         |                |        |
+
+## 4. Funktionale Anforderungen
+
+- **FR-01:**
+
+## 5. Nicht-funktionale Anforderungen
+
+| Kategorie     | Anforderung |
+|---------------|-------------|
+| Performance   |             |
+| Security      |             |
+| Accessibility |             |
+| Observability |             |
+| Datenschutz   |             |
+
+## 6. Akzeptanzkriterien (Gherkin)
+
+\`\`\`gherkin
+Feature: ${title}
+
+  Scenario:
+    Given
+    When
+    Then
+\`\`\`
+
+## 7. Edge Cases & Fehlerfälle
+
+-
+
+## 8. Contracts (was wird garantiert)
+
+| Contract-ID | Typ | Was wird garantiert? |
+|-------------|-----|----------------------|
+
+## 9. Tests (wie wird verifiziert)
+
+| Test-ID  | Level | Was prüft der Test? |
+|----------|-------|---------------------|
+
+## 10. Offene Fragen
+
+- [ ]
+
+## 11. Änderungshistorie
+
+| Datum      | Version | Autor | Änderung             |
+|------------|---------|-------|----------------------|
+| ${today}   | 0.1.0   |       | Initiale Erstellung  |
+`;
+}
+
 interface Props {
   onCreated: (id: string) => void;
   onCancel: () => void;
@@ -46,7 +122,7 @@ export default function SpecForm({ onCreated, onCancel }: Props) {
     setAiUsage(null);
     try {
       const res = await api.aiGenerateSpec({ title, description });
-      setAiBody(res.result);
+      setAiBody(buildSpecTemplate(title, res.result));
       setAiUsage(res.usage);
       setAiPhase("preview");
     } catch (e: unknown) {

@@ -8,7 +8,7 @@ spec: SPEC-0039
 version: 0.1.0
 status: approved
 artifact: ".sdd/contracts/behavior/sdd-hub-start-warnt-bei-belegtem-port.feature"
-tests: []
+tests: ["TST-0168"]
 ---
 
 # Contract: sdd hub start gibt Warnung aus wenn Standardport belegt ist

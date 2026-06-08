@@ -8,7 +8,7 @@ spec: SPEC-0039
 version: 0.1.0
 status: approved
 artifact: ".sdd/contracts/behavior/sdd-hub-run-ist-hidden.feature"
-tests: []
+tests: ["TST-0169"]
 ---
 
 # Contract: sdd hub run ist als hidden markiert und erscheint nicht in sdd hub --help

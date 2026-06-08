@@ -90,6 +90,26 @@ def create_test(body: TestCreate) -> dict[str, Any]:
     text = text.replace("level: contract", f"level: {body.level}", 1)
     target.write_text(text, encoding="utf-8")
 
+    # Link test back to spec frontmatter
+    spec_files = list(cfg.specs_dir.rglob(f"{body.spec_id}-*.md"))
+    if spec_files:
+        spec_doc = parse_safe(spec_files[0])
+        if spec_doc:
+            existing = spec_doc.frontmatter.get("tests") or []
+            if tid not in existing:
+                spec_doc.frontmatter["tests"] = existing + [tid]
+                spec_doc.write()
+
+    # Link test back to contract frontmatter
+    for md in cfg.contracts_dir.rglob("*.md"):
+        con_doc = parse_safe(md)
+        if con_doc and con_doc.frontmatter.get("id") == body.contract_id:
+            existing = con_doc.frontmatter.get("tests") or []
+            if tid not in existing:
+                con_doc.frontmatter["tests"] = existing + [tid]
+                con_doc.write()
+            break
+
     return {"id": tid, "file": str(target.relative_to(cfg.root)), "abs_file": str(target)}
 
 

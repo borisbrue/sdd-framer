@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Project } from "../config";
 import { createSpec, SddSpec } from "../api";
 
@@ -9,6 +9,9 @@ interface Props {
 }
 
 export default function AddSpecScreen({ project, onCreated, onCancel }: Props) {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { titleInputRef.current?.focus(); }, []);
+
   const [title, setTitle] = useState("");
   const [owner, setOwner] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
@@ -40,12 +43,11 @@ export default function AddSpecScreen({ project, onCreated, onCancel }: Props) {
           <label style={styles.fieldLabel}>
             Titel *
             <input
+              ref={titleInputRef}
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="z.B. User-Login via OAuth"
               required
-              // eslint-disable-next-line jsx-a11y/no-autofocus
-              autoFocus
               style={styles.input}
             />
           </label>

@@ -39,7 +39,15 @@ export const api = {
                      req<{ok: boolean}>("POST", "/open", { abs_file, line: line ?? 1 }),
   aiGenerateSpec:     (b: AiGenerateSpec)      => req<AiResponse>("POST", "/ai/generate-spec", b),
   aiImproveSpec:      (b: AiImproveSpec)       => req<AiResponse>("POST", "/ai/improve-spec", b),
-  aiSuggestContracts: (b: AiSuggestContracts)  => req<AiResponse>("POST", "/ai/suggest-contracts", b),
+  aiImproveSection:   (b: AiImproveSection)    => req<AiResponse>("POST", "/ai/improve-section", b),
+  aiFixFinding:       (b: AiFixFinding)        => req<AiResponse>("POST", "/ai/fix-finding", b),
+  aiSuggestContracts:           (b: AiSuggestContracts)  => req<AiResponse>("POST", "/ai/suggest-contracts", b),
+  aiSuggestContractsStructured: (b: AiSuggestContracts)       => req<AiSuggestContractsStructuredResponse>("POST", "/ai/suggest-contracts-structured", b),
+  aiSuggestTestsStructured:     (b: AiSuggestTestsRequest)    => req<AiSuggestTestsStructuredResponse>("POST", "/ai/suggest-tests-structured", b),
+  aiFillContract: (b: { contract_id: string; spec_context: string }) =>
+    req<AiResponse>("POST", "/ai/fill-contract", b),
+  aiFillTest: (b: { test_id: string; spec_context: string; contract_description?: string }) =>
+    req<AiResponse>("POST", "/ai/fill-test", b),
   aiUsage:            ()                        => req<AiUsage>("GET", "/ai/usage"),
   copilotGenerateSpec:     (b: AiGenerateSpec)     => req<AiResponse>("POST", "/copilot/generate-spec", b),
   copilotImproveSpec:      (b: AiImproveSpec)      => req<AiResponse>("POST", "/copilot/improve-spec", b),
@@ -269,7 +277,29 @@ export interface CreateTest     { spec_id: string; contract_id: string; level: s
 
 export interface AiGenerateSpec    { title: string; description?: string; context?: string; }
 export interface AiImproveSpec     { spec_id: string; current_content: string; instructions: string; }
+export interface AiImproveSection  {
+  spec_id: string; section_heading: string; section_content: string;
+  instructions: string; full_spec_content?: string; linked_spec_ids?: string[];
+}
+export interface AiFixFinding {
+  spec_id: string; finding_text: string; finding_section?: string;
+  full_spec_content: string; instructions?: string;
+}
 export interface AiSuggestContracts { spec_id: string; spec_content: string; }
+export interface ContractSuggestionItem { title: string; format: string; description: string; }
+export interface AiSuggestContractsStructuredResponse {
+  suggestions: ContractSuggestionItem[];
+  usage: AiUsageEntry;
+}
+export interface AiSuggestTestsRequest {
+  spec_id: string; spec_content: string;
+  contracts: { id: string; title: string; format: string }[];
+}
+export interface TestSuggestionItem { title: string; level: string; contract_id: string; description: string; }
+export interface AiSuggestTestsStructuredResponse {
+  suggestions: TestSuggestionItem[];
+  usage: AiUsageEntry;
+}
 
 export interface AiUsageEntry {
   ts: string; provider: string; operation: string; model: string;

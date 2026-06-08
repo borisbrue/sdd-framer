@@ -1,0 +1,292 @@
+openapi: 3.1.0
+info:
+  title: Hub Connection & Project Control API
+  version: 1.0.0
+  description: |
+    Schnittstelle zwischen PWA und Hub fuer Verbindungsueberwachung (Heartbeat)
+    sowie Steuerung von Projektservern (Start/Stopp).
+servers:
+  - url: https://hub.local/api/v1
+    description: Hub-Instanz (lokal)
+tags:
+  - name: health
+    description: Verbindungsstatus und Erreichbarkeit des Hubs
+  - name: projects
+    description: Projektstatus und Serversteuerung
+paths:
+  /health:
+    get:
+      operationId: getHubHealth
+      summary: Hub-Verbindungsstatus abrufen
+      description: |
+        Heartbeat-Endpunkt zur aktiven Ueberwachung der Hub-Erreichbarkeit (FR-08).
+        Die PWA ruft diesen Endpunkt periodisch ab, um zwischen Online- und
+        Offline-Modus zu wechseln und Aktionsschaltflaechen entsprechend zu sperren
+        oder freizugeben (FR-05).
+      tags:
+        - health
+      responses:
+        '200':
+          description: Hub ist erreichbar und betriebsbereit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+                version: 2.4.1
+                timestamp: '2026-06-08T10:00:00Z'
+        '503':
+          description: Hub ist temporaer nicht verfuegbar
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: https://hub.local/problems/service-unavailable
+                title: Hub temporarily unavailable
+                status: 503
+  /projects:
+    get:
+      operationId: listProjects
+      summary: Alle hinterlegten Projekte mit aktuellem Status abrufen
+      description: |
+        Gibt alle im Hub registrierten Projekte mit ihrem aktuellen Serverstatus
+        zurueck (FR-01, FR-02). Der initiale Aufruf beim Oeffnen der PWA muss
+        innerhalb von <= 2 Sekunden beantwortet werden. Wird bei Verbindungsverlust
+        nicht erreichbar, zeigt die PWA den zuletzt gecachten Status und einen
+        Offline-Hinweis (FR-06).
+      tags:
+        - projects
+      responses:
+        '200':
+          description: Vollstaendige Liste aller hinterlegten Projekte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+              example:
+                projects:
+                  - id: proj-42
+                    name: My Web App
+                    status: running
+                    updatedAt: '2026-06-08T09:55:00Z'
+                  - id: proj-43
+                    name: Backend Service
+                    status: stopped
+                    updatedAt: '2026-06-08T08:00:00Z'
+                  - id: proj-44
+                    name: Data Pipeline
+                    status: starting
+                    updatedAt: '2026-06-08T09:59:30Z'
+        '502':
+          description: Hub konnte den Projektstatus intern nicht ermitteln
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+  /projects/{projectId}/start:
+    post:
+      operationId: startProject
+      summary: Projektserver starten
+      description: |
+        Startet den Projektserver fuer ein Projekt mit Status `stopped` (FR-03).
+        Der Hub nimmt den Befehl mit HTTP 202 an und wechselt den Projektstatus
+        auf `starting`. Die sichtbare Statusaenderung im naechsten
+        `GET /projects`-Abruf erfolgt innerhalb von <= 5 Sekunden (FR-07).
+        Diese Aktion darf die PWA nur aufrufen, wenn `GET /health` erreichbar
+        war (FR-05).
+      tags:
+        - projects
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '202':
+          description: Startbefehl angenommen; Projekt wechselt in Status `starting`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectActionResult'
+              example:
+                projectId: proj-43
+                previousStatus: stopped
+                status: starting
+                requestedAt: '2026-06-08T10:01:00Z'
+        '404':
+          description: Projekt nicht gefunden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Projekt befindet sich nicht im Status `stopped`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: https://hub.local/problems/invalid-project-state
+                title: Project is not in stopped state
+                status: 409
+                detail: Projekt proj-43 hat Status running und kann nicht gestartet werden.
+                instance: /projects/proj-43/start
+  /projects/{projectId}/stop:
+    post:
+      operationId: stopProject
+      summary: Projektserver stoppen
+      description: |
+        Stoppt den Projektserver fuer ein Projekt mit Status `running` (FR-04).
+        Der Hub nimmt den Befehl mit HTTP 202 an und wechselt den Projektstatus
+        auf `stopping`. Die sichtbare Statusaenderung im naechsten
+        `GET /projects`-Abruf erfolgt innerhalb von <= 5 Sekunden (FR-07).
+        Diese Aktion darf die PWA nur aufrufen, wenn `GET /health` erreichbar
+        war (FR-05).
+      tags:
+        - projects
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '202':
+          description: Stoppbefehl angenommen; Projekt wechselt in Status `stopping`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectActionResult'
+              example:
+                projectId: proj-42
+                previousStatus: running
+                status: stopping
+                requestedAt: '2026-06-08T10:02:00Z'
+        '404':
+          description: Projekt nicht gefunden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '409':
+          description: Projekt befindet sich nicht im Status `running`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+              example:
+                type: https://hub.local/problems/invalid-project-state
+                title: Project is not in running state
+                status: 409
+                detail: Projekt proj-42 hat Status stopped und kann nicht gestoppt werden.
+                instance: /projects/proj-42/stop
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      description: Eindeutige Projekt-ID im Hub
+      schema:
+        type: string
+        example: proj-42
+  schemas:
+    HealthStatus:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+          description: Betriebsstatus des Hubs
+        version:
+          type: string
+          description: Hub-Softwareversion
+          example: 2.4.1
+        timestamp:
+          type: string
+          format: date-time
+          description: Serverzeit zum Zeitpunkt der Antwort
+    ProjectStatus:
+      type: string
+      enum:
+        - running
+        - stopped
+        - starting
+        - stopping
+      description: Aktueller Betriebsstatus des Projektservers
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - status
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Eindeutige Projekt-ID im Hub
+          example: proj-42
+        name:
+          type: string
+          description: Anzeigename des Projekts
+          example: My Web App
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Zeitstempel der letzten Statusaenderung
+    ProjectList:
+      type: object
+      required:
+        - projects
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+          description: Vollstaendige Liste aller hinterlegten Projekte
+    ProjectActionResult:
+      type: object
+      required:
+        - projectId
+        - status
+        - requestedAt
+      properties:
+        projectId:
+          type: string
+          description: ID des betroffenen Projekts
+          example: proj-42
+        previousStatus:
+          $ref: '#/components/schemas/ProjectStatus'
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        requestedAt:
+          type: string
+          format: date-time
+          description: Zeitstempel, zu dem der Befehl vom Hub registriert wurde
+    ProblemDetail:
+      type: object
+      description: Fehlerdetail gemaess RFC 7807
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          example: https://hub.local/problems/invalid-project-state
+        title:
+          type: string
+          example: Project is not in stopped state
+        status:
+          type: integer
+          example: 409
+        detail:
+          type: string
+          example: Projekt proj-43 hat Status running und kann nicht gestartet werden.
+        instance:
+          type: string
+          format: uri
+          example: /projects/proj-43/start

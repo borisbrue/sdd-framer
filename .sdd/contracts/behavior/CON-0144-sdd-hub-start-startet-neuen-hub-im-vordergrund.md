@@ -8,7 +8,7 @@ spec: SPEC-0039
 version: 0.1.0
 status: approved
 artifact: ".sdd/contracts/behavior/sdd-hub-start-startet-neuen-hub-im-vordergrund.feature"
-tests: []
+tests: ["TST-0167"]
 ---
 
 # Contract: sdd hub start startet hub/app.py im Vordergrund auf Port 4711
