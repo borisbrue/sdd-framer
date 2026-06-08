@@ -148,12 +148,12 @@ export async function createSpec(
 
 // ── Hub API (CON-0147, CON-0149) ──────────────────────────────────────────────
 
-export type ServerStatus = "running" | "stopped" | "starting" | "stopping" | "error";
+export type { ServerStatus } from "./hubLogic";
 
 export interface HubProject {
   id: string;
   name: string;
-  status: ServerStatus;
+  status: string;
   updatedAt?: string;
 }
 

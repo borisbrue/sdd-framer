@@ -11,6 +11,7 @@ artifact: contracts/api/hub-projekt-status-steuerungs-api.openapi.yaml
 tests:
 - TST-0170
 - TST-0174
+- TST-0176
 ---
 Dieser Contract definiert die HTTP-REST-Schnittstelle zwischen der PWA und dem Hub-Dienst für den Abruf von Projektstatus-Informationen sowie die Steuerung von Projektservern.
 

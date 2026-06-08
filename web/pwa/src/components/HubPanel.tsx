@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HubProject, ServerStatus, fetchHubHealth, fetchHubProjects, postHubAction } from "../api";
+import { HubProject, fetchHubHealth, fetchHubProjects, postHubAction } from "../api";
+import {
+  ConnectionMonitor,
+  ConnectionState,
+  ServerStatus,
+  canStart,
+  canStop,
+  isTransitionState,
+  optimisticStatus,
+} from "../hubLogic";
 
 const POLL_INTERVAL_MS = 8000;
 const HEALTH_INTERVAL_MS = 8000;
-const OFFLINE_THRESHOLD = 2; // consecutive failures before offline
-
-type ConnectionState = "online" | "offline" | "unknown";
 
 interface Props {
   hubUrl: string;
@@ -18,7 +24,7 @@ export default function HubPanel({ hubUrl }: Props) {
   const [loading, setLoading] = useState(true);
   const [pendingActions, setPendingActions] = useState<Set<string>>(new Set());
 
-  const failureCountRef = useRef(0);
+  const monitorRef = useRef(new ConnectionMonitor());
   const isMounted = useRef(true);
 
   // ── Health monitor ──────────────────────────────────────────────────────────
@@ -26,15 +32,10 @@ export default function HubPanel({ hubUrl }: Props) {
   const checkHealth = useCallback(async () => {
     const ok = await fetchHubHealth(hubUrl);
     if (!isMounted.current) return;
-    if (ok) {
-      failureCountRef.current = 0;
-      setConnection("online");
-    } else {
-      failureCountRef.current += 1;
-      if (failureCountRef.current >= OFFLINE_THRESHOLD) {
-        setConnection("offline");
-      }
-    }
+    const next = ok
+      ? monitorRef.current.recordSuccess()
+      : monitorRef.current.recordFailure();
+    setConnection(next);
   }, [hubUrl]);
 
   // ── Project polling ─────────────────────────────────────────────────────────
@@ -92,10 +93,10 @@ export default function HubPanel({ hubUrl }: Props) {
 
     setPendingActions(prev => new Set(prev).add(project.id));
 
-    // Optimistic update
-    const optimisticStatus: ServerStatus = action === "start" ? "starting" : "stopping";
+    // Optimistic update (FR-07)
+    const nextStatus = optimisticStatus(action);
     setProjects(prev =>
-      prev.map(p => p.id === project.id ? { ...p, status: optimisticStatus } : p),
+      prev.map(p => p.id === project.id ? { ...p, status: nextStatus } : p),
     );
 
     try {
@@ -197,8 +198,11 @@ function ProjectRow({
   pending: boolean;
   onAction: (p: HubProject, a: "start" | "stop") => void;
 }) {
-  const isTransition = project.status === "starting" || project.status === "stopping";
-  const buttonsDisabled = !online || pending || isTransition;
+  const inTransition = isTransitionState(project.status as ServerStatus);
+  const startEnabled = canStart(project.status as ServerStatus, online, pending);
+  const stopEnabled = canStop(project.status as ServerStatus, online, pending);
+  const showStart = project.status === "stopped" || inTransition;
+  const showStop = project.status === "running" || inTransition;
 
   return (
     <div
@@ -222,18 +226,18 @@ function ProjectRow({
           aria-label={`Aktionen für ${project.name}`}
           style={{ display: "flex", gap: 6, flexShrink: 0 }}
         >
-          {(project.status === "stopped" || isTransition) && (
+          {showStart && (
             <ActionButton
               label="Starten"
-              disabled={buttonsDisabled || project.status !== "stopped"}
+              disabled={!startEnabled}
               onClick={() => onAction(project, "start")}
               color="var(--green)"
             />
           )}
-          {(project.status === "running" || isTransition) && (
+          {showStop && (
             <ActionButton
               label="Stoppen"
-              disabled={buttonsDisabled || project.status !== "running"}
+              disabled={!stopEnabled}
               onClick={() => onAction(project, "stop")}
               color="var(--red)"
             />

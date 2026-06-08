@@ -10,6 +10,8 @@ status: draft
 artifact: contracts/api/hub-verbindungs-health-endpunkt.openapi.yaml
 tests:
 - TST-0172
+- TST-0176
+- TST-0177
 ---
 Dieser Contract beschreibt die HTTP-Schnittstelle, über die die PWA den Verbindungsstatus zum Hub aktiv überwacht sowie Projektserver steuert. Er ist verbindlich für alle Kommunikationsvorgänge zwischen PWA-Frontend und Hub-Backend.
 
