@@ -71,8 +71,8 @@ def _stream(proc: subprocess.Popen, prefix: str, on_ready: Callable | None = Non
 
 
 def _hub_scheme() -> str:
-    global_certs = Path.home() / ".local/share/sdd/certs"
-    return "https" if (global_certs / "cert.pem").exists() else "http"
+    # Hub läuft immer auf HTTP (zusätzlich HTTPS wenn Certs vorhanden → port+1)
+    return "http"
 
 
 def _hub_urlopen(req: urllib.request.Request) -> None:
@@ -134,18 +134,11 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     env.pop("SDD_PROJECT_ROOT", None)   # Hub läuft ohne Projektkontext
     env["SDD_HUB_MODE"] = "1"
 
-    # HTTPS: globale mkcert-Zertifikate nutzen wenn vorhanden
     global_certs = Path.home() / ".local/share/sdd/certs"
-    ssl_args: list[str] = []
-    hub_scheme = "http"
-    if (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists():
-        ssl_args = [
-            "--ssl-certfile", str(global_certs / "cert.pem"),
-            "--ssl-keyfile",  str(global_certs / "key.pem"),
-        ]
-        hub_scheme = "https"
+    has_certs = (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists()
+    https_port = port + 1 if has_certs else None
 
-    # CORS für PWA-Dev (beide Schemata für LAN und localhost)
+    # CORS: immer beide Schemata für LAN und localhost
     try:
         import socket as _sock
         with _sock.socket(_sock.AF_INET, _sock.SOCK_DGRAM) as _s:
@@ -154,10 +147,12 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
         if not _lan_ip.startswith("127."):
             _origins = [
                 "http://localhost:5173", "http://localhost:5174",
-                f"http://localhost:{port}", f"{hub_scheme}://localhost:{port}",
+                f"http://localhost:{port}",
+                *([f"https://localhost:{https_port}"] if https_port else []),
                 *[f"http://{_lan_ip}:{p}" for p in (5173, 5174)],
                 *[f"https://{_lan_ip}:{p}" for p in (5173, 5174)],
-                f"{hub_scheme}://{_lan_ip}:{port}",
+                f"http://{_lan_ip}:{port}",
+                *([f"https://{_lan_ip}:{https_port}"] if https_port else []),
             ]
             env["SDD_ALLOWED_ORIGINS"] = ",".join(dict.fromkeys(_origins))
     except Exception:
@@ -176,9 +171,12 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     signal.signal(signal.SIGINT, stop_all)
     signal.signal(signal.SIGTERM, stop_all)
 
+    _python = _api_python(api_dir)
+
+    # HTTP immer
     proc = subprocess.Popen(
-        [_api_python(api_dir), "-m", "uvicorn", "main:app",
-         "--host", "0.0.0.0", "--port", str(port)] + ssl_args,
+        [_python, "-m", "uvicorn", "main:app",
+         "--host", "0.0.0.0", "--port", str(port)],
         cwd=api_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -188,8 +186,25 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     procs.append(proc)
     threading.Thread(target=_stream, args=(proc, "hub"), daemon=True).start()
 
-    url = f"{hub_scheme}://localhost:{port}/"
-    print(f"▶ SDD Hub gestartet → {url}")
+    # HTTPS zusätzlich wenn Certs vorhanden
+    if has_certs:
+        proc_ssl = subprocess.Popen(
+            [_python, "-m", "uvicorn", "main:app",
+             "--host", "0.0.0.0", "--port", str(https_port),
+             "--ssl-certfile", str(global_certs / "cert.pem"),
+             "--ssl-keyfile",  str(global_certs / "key.pem")],
+            cwd=api_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            env=env,
+        )
+        procs.append(proc_ssl)
+        threading.Thread(target=_stream, args=(proc_ssl, "hub/s"), daemon=True).start()
+
+    print(f"▶ SDD Hub gestartet → http://localhost:{port}/")
+    if has_certs and https_port:
+        print(f"  HTTPS (LAN/Smartphone) → https://localhost:{https_port}/")
     print(f"  Projektserver registrieren sich automatisch über die Extension.")
     print(f"  Stoppen mit Ctrl+C\n")
 
@@ -197,7 +212,7 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
         import time
         import webbrowser
         time.sleep(1.5)
-        webbrowser.open(url)
+        webbrowser.open(f"http://localhost:{port}/")
 
     for p in procs:
         p.wait()
@@ -216,30 +231,50 @@ def start_pwa(port: int = 0, open_browser: bool = True) -> None:
         sys.exit(1)
 
     global_certs = Path.home() / ".local/share/sdd/certs"
-    ssl_args: list[str] = []
-    scheme = "http"
-    if (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists():
-        ssl_args = [
-            "--ssl-certfile", str(global_certs / "cert.pem"),
-            "--ssl-keyfile",  str(global_certs / "key.pem"),
-        ]
-        scheme = "https"
+    has_certs = (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists()
+    https_port = port + 1 if has_certs else None
+
+    procs: list[subprocess.Popen] = []
 
     def stop_all(signum=None, frame=None) -> None:
+        for p in procs:
+            try:
+                p.terminate()
+            except ProcessLookupError:
+                pass
         sys.exit(0)
 
     signal.signal(signal.SIGINT, stop_all)
     signal.signal(signal.SIGTERM, stop_all)
 
+    _python = _api_python(web / "api")
+
+    # HTTP immer
     proc = subprocess.Popen(
-        [_api_python(web / "api"), "-m", "uvicorn", "server:app",
-         "--host", "0.0.0.0", "--port", str(port)] + ssl_args,
+        [_python, "-m", "uvicorn", "server:app",
+         "--host", "0.0.0.0", "--port", str(port)],
         cwd=pwa_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
     )
+    procs.append(proc)
     threading.Thread(target=_stream, args=(proc, "pwa"), daemon=True).start()
+
+    # HTTPS zusätzlich wenn Certs vorhanden
+    if has_certs:
+        proc_ssl = subprocess.Popen(
+            [_python, "-m", "uvicorn", "server:app",
+             "--host", "0.0.0.0", "--port", str(https_port),
+             "--ssl-certfile", str(global_certs / "cert.pem"),
+             "--ssl-keyfile",  str(global_certs / "key.pem")],
+            cwd=pwa_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        procs.append(proc_ssl)
+        threading.Thread(target=_stream, args=(proc_ssl, "pwa/s"), daemon=True).start()
 
     try:
         import socket as _sock
@@ -249,18 +284,24 @@ def start_pwa(port: int = 0, open_browser: bool = True) -> None:
     except Exception:
         _lan_ip = None
 
-    print(f"▶ SDD PWA gestartet → {scheme}://localhost:{port}/")
-    if _lan_ip and not _lan_ip.startswith("127."):
-        print(f"  Im LAN (QR scannen): {scheme}://{_lan_ip}:{port}/")
+    print(f"▶ SDD PWA gestartet → http://localhost:{port}/")
+    if has_certs and https_port:
+        if _lan_ip and not _lan_ip.startswith("127."):
+            print(f"  HTTPS (LAN/Smartphone) → https://{_lan_ip}:{https_port}/")
+        else:
+            print(f"  HTTPS → https://localhost:{https_port}/")
+    elif _lan_ip and not _lan_ip.startswith("127."):
+        print(f"  Im LAN: http://{_lan_ip}:{port}/")
     print(f"  Stoppen mit Ctrl+C\n")
 
     if open_browser:
         import time
         import webbrowser
         time.sleep(1.5)
-        webbrowser.open(f"{scheme}://localhost:{port}/")
+        webbrowser.open(f"http://localhost:{port}/")
 
-    proc.wait()
+    for p in procs:
+        p.wait()
 
 
 def start_server(
@@ -294,9 +335,7 @@ def start_server(
     if external_url:
         env["SDD_EXTERNAL_URL"] = external_url
 
-    # CORS: LAN-IP-Origins für PWA-Dev (Ports 5173/5174) automatisch erlauben
-    cert_dir = Path(project_root) / ".certs"
-    scheme = "https" if (cert_dir / "cert.pem").exists() else "http"
+    # CORS: immer beide Schemata für LAN und localhost erlauben
     _lan_ip = ""
     try:
         import socket as _sock
@@ -306,22 +345,20 @@ def start_server(
         if not _lan_ip.startswith("127."):
             _origins = [
                 f"http://localhost:5173", f"http://localhost:8000",
-                f"http://localhost:{port}", f"{scheme}://localhost:{port}",
+                f"http://localhost:{port}", f"https://localhost:{port + 1}",
                 # PWA-Dev (Vite) und PWA-Server (sdd pwa start) – beide Varianten erlauben
                 *[f"http://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
                 *[f"https://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
-                f"{scheme}://{_lan_ip}:{port}",
+                f"http://{_lan_ip}:{port}",
+                f"https://{_lan_ip}:{port + 1}",
             ]
             env["SDD_ALLOWED_ORIGINS"] = ",".join(dict.fromkeys(_origins))
     except Exception:
         pass
 
-    # Hub-URL für QR-Code (gleiche LAN-IP, fixer Hub-Port)
-    # Hub nutzt HTTPS wenn globale mkcert-Zertifikate vorhanden
-    _global_certs = Path.home() / ".local/share/sdd/certs"
-    _hub_scheme = "https" if (_global_certs / "cert.pem").exists() else "http"
+    # Hub-URL für QR-Code (gleiche LAN-IP, fixer Hub-Port) – Hub immer HTTP
     if _lan_ip and not _lan_ip.startswith("127."):
-        env["SDD_HUB_URL"] = f"{_hub_scheme}://{_lan_ip}:{hub_port}"
+        env["SDD_HUB_URL"] = f"http://{_lan_ip}:{hub_port}"
 
     procs: list[subprocess.Popen] = []
 
@@ -381,18 +418,19 @@ def start_server(
             sys.exit(1)
 
         cert_dir = Path(root_resolved) / ".certs"
-        ssl_args = []
-        scheme = "http"
-        if (cert_dir / "cert.pem").exists() and (cert_dir / "key.pem").exists():
-            ssl_args = [
-                "--ssl-certfile", str(cert_dir / "cert.pem"),
-                "--ssl-keyfile",  str(cert_dir / "key.pem"),
-            ]
-            scheme = "https"
+        has_certs = (cert_dir / "cert.pem").exists() and (cert_dir / "key.pem").exists()
+        https_port = port + 1 if has_certs else None
 
+        _ext_url = (
+            f"https://{_lan_ip}:{https_port}" if _lan_ip and not _lan_ip.startswith("127.") and has_certs
+            else f"http://{_lan_ip}:{port}" if _lan_ip and not _lan_ip.startswith("127.")
+            else f"http://localhost:{port}"
+        )
+
+        _python = _api_python(api_dir)
         api = subprocess.Popen(
-            [_api_python(api_dir), "-m", "uvicorn", "main:app",
-             "--host", "0.0.0.0", "--port", str(port)] + ssl_args,
+            [_python, "-m", "uvicorn", "main:app",
+             "--host", "0.0.0.0", "--port", str(port)],
             cwd=api_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -400,13 +438,31 @@ def start_server(
             env=env,
         )
         procs.append(api)
-        _ext_url = (f"{scheme}://{_lan_ip}:{port}" if _lan_ip and not _lan_ip.startswith("127.")
-                    else f"{scheme}://localhost:{port}")
-        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, scheme, _ext_url)
+        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, "http", _ext_url)
         threading.Thread(target=_stream, args=(api, "api", on_ready), daemon=True).start()
 
-        url = f"{scheme}://localhost:{port}"
+        if has_certs:
+            api_ssl = subprocess.Popen(
+                [_python, "-m", "uvicorn", "main:app",
+                 "--host", "0.0.0.0", "--port", str(https_port),
+                 "--ssl-certfile", str(cert_dir / "cert.pem"),
+                 "--ssl-keyfile",  str(cert_dir / "key.pem")],
+                cwd=api_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env,
+            )
+            procs.append(api_ssl)
+            threading.Thread(target=_stream, args=(api_ssl, "api/s"), daemon=True).start()
+
+        url = f"http://localhost:{port}"
         print(f"▶ Server gestartet → {url}")
+        if has_certs and https_port:
+            if _lan_ip and not _lan_ip.startswith("127."):
+                print(f"  HTTPS (LAN/Smartphone) → https://{_lan_ip}:{https_port}")
+            else:
+                print(f"  HTTPS → https://localhost:{https_port}")
         print(f"  Stoppen mit Ctrl+C\n")
 
     if open_browser:

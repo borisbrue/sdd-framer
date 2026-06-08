@@ -896,13 +896,40 @@ def _find_free_port(start: int = 8100, exclude: set[int] | None = None) -> int:
         port += 1
 
 
+def _hub_run_servers(app, http_port: int, certs_dir: Path | None = None) -> None:
+    """Startet HTTP (immer) und HTTPS (port+1, wenn Certs vorhanden) via asyncio."""
+    import asyncio
+    import uvicorn
+
+    global_certs = certs_dir or Path.home() / ".local/share/sdd/certs"
+    has_certs = (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists()
+    https_port = http_port + 1 if has_certs else None
+
+    if not has_certs:
+        uvicorn.run(app, host="0.0.0.0", port=http_port)
+        return
+
+    async def _serve_both() -> None:
+        http_cfg = uvicorn.Config(app, host="0.0.0.0", port=http_port)
+        https_cfg = uvicorn.Config(
+            app, host="0.0.0.0", port=https_port,
+            ssl_certfile=str(global_certs / "cert.pem"),
+            ssl_keyfile=str(global_certs / "key.pem"),
+        )
+        await asyncio.gather(
+            uvicorn.Server(http_cfg).serve(),
+            uvicorn.Server(https_cfg).serve(),
+        )
+
+    asyncio.run(_serve_both())
+
+
 @hub.command("start", help="Startet den SDD Hub (Multi-Projekt-Dashboard).")
 @click.option("--port", default=4711, show_default=True, help="Port für den Hub.")
 @click.option("--no-browser", is_flag=True, help="Browser nicht automatisch öffnen.")
 def hub_start(port: int, no_browser: bool) -> None:
     import threading
     import webbrowser
-    import uvicorn
     from .hub.app import create_app
     from .hub.config import HubConfig
 
@@ -916,25 +943,29 @@ def hub_start(port: int, no_browser: bool) -> None:
     cfg = cfg.model_copy(update={"port": port})
     app = create_app(config=cfg)
 
+    global_certs = Path.home() / ".local/share/sdd/certs"
+    has_certs = (global_certs / "cert.pem").exists() and (global_certs / "key.pem").exists()
+
     url = f"http://localhost:{port}/"
     console.print(f"▶ SDD Hub gestartet → {url}")
+    if has_certs:
+        console.print(f"  HTTPS (LAN/Smartphone) → https://localhost:{port + 1}/")
 
     if not no_browser:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
 
-    uvicorn.run(app, host="0.0.0.0", port=cfg.port)
+    _hub_run_servers(app, port)
 
 
 @hub.command("run", help="Startet den Hub-Daemon (wird von systemd verwendet).", hidden=True)
 @click.option("--port", default=4711, show_default=True, help="Port für den Hub-Daemon.")
 def hub_run(port: int) -> None:
-    import uvicorn
     from .hub.app import create_app
     from .hub.config import HubConfig
     cfg = HubConfig.load()
     cfg = cfg.model_copy(update={"port": port})
     app = create_app(config=cfg)
-    uvicorn.run(app, host="0.0.0.0", port=cfg.port)
+    _hub_run_servers(app, port)
 
 
 @hub.command("register", help="Registriert ein Projekt in der Hub-Registry.")
