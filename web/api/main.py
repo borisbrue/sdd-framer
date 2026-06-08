@@ -41,6 +41,8 @@ from routes.agent_flow import router as agent_flow_router  # SPEC-0032
 from routes.interactive import router as interactive_router
 from routes.specs import router as specs_router
 from routes.tests import router as tests_router
+from routes.devlog import router as devlog_router
+import routes.devlog as _devlog
 
 # SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
 _raw_origins = os.environ.get("SDD_ALLOWED_ORIGINS", "")
@@ -53,6 +55,7 @@ _ALLOWED_ORIGINS: list[str] = (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _devlog.setup(asyncio.get_event_loop())
     if not os.environ.get("SDD_HUB_MODE"):
         sdd_context.init()
     asyncio.create_task(hub_health_loop())
@@ -84,6 +87,7 @@ app.include_router(analyze_async_router, prefix="/api")
 app.include_router(copilot_router,       prefix="/api")
 app.include_router(auth_router,          prefix="/api")  # SPEC-0025
 app.include_router(remote_router,        prefix="/api")  # SPEC-0023
+app.include_router(devlog_router,        prefix="/api")
 app.include_router(logs_router)          # WebSocket /ws/logs/{spec_id} – kein /api-Prefix
 app.include_router(chat_router)          # WebSocket /ws/chat – kein /api-Prefix (SPEC-0023)
 

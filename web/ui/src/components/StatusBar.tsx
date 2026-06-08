@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Status, ValidationResult } from "../api";
 
-interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; }
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; }
 
-export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo }: Props) {
+export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole }: Props) {
   const [status, setStatus] = useState<Status | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -58,6 +58,9 @@ export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerI
         </button>
         <button onClick={onShowSettings} style={{ color: "var(--muted)", borderColor: "var(--border)" }}>
           ⚙ Einstellungen
+        </button>
+        <button onClick={onToggleConsole} style={{ color: "var(--muted)", borderColor: "var(--border)", fontFamily: "monospace" }}>
+          &gt;_ Konsole
         </button>
       </div>
 

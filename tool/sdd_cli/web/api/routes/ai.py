@@ -1,12 +1,15 @@
 """Claude AI endpoints for spec generation and improvement."""
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+
+log = logging.getLogger(__name__)
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 import usage_store
@@ -55,6 +58,7 @@ def _get_provider():
 def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
     """Call LLM provider with cached system prompt. Returns (text, usage_entry)."""
     provider = _get_provider()
+    log.info("AI-Call gestartet: operation=%s provider=%s", operation, type(provider).__name__)
     try:
         result = provider.complete(
             user_message,
@@ -62,7 +66,10 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
             system_prompt=SDD_SYSTEM_PROMPT,
         )
     except RuntimeError as exc:
+        log.error("AI-Call Fehler (%s): %s", operation, exc)
         raise HTTPException(status_code=503, detail=str(exc))
+    log.info("AI-Call abgeschlossen: operation=%s tokens_out=%s",
+             operation, result.usage.output_tokens if result.usage else "?")
 
     text = result.text
     entry: dict[str, Any] = {}

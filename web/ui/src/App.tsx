@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, AiUsage, Contract, Spec, Test } from "./api";
 import AiUsageView from "./components/AiUsageView";
 import ContractDetail from "./components/ContractDetail";
+import DevConsole from "./components/DevConsole";
 import HoldoutDetail from "./components/HoldoutDetail";
 import ServerInfoPanel from "./components/ServerInfoPanel";
 import SettingsPage from "./components/SettingsPage";
@@ -34,6 +35,7 @@ export default function App() {
   const [showAiUsage, setShowAiUsage]       = useState(false);
   const [showSettings, setShowSettings]     = useState(false);
   const [showServerInfo, setShowServerInfo] = useState(false);
+  const [showConsole, setShowConsole]       = useState(false);
   const [aiUsage, setAiUsage]     = useState<AiUsage | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -93,7 +95,9 @@ export default function App() {
         onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); }}
         onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); }}
         onShowServerInfo={() => setShowServerInfo(v => !v)}
+        onToggleConsole={() => setShowConsole(v => !v)}
       />
+      {showConsole && <DevConsole onClose={() => setShowConsole(false)} />}
 
       {showServerInfo && <ServerInfoPanel onClose={() => setShowServerInfo(false)} />}
 

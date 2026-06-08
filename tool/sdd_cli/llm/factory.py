@@ -23,7 +23,7 @@ _DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 _COMPLETION_BUILTIN: dict[str, dict] = {
     "evaluator":  {"provider": "anthropic", "model": _DEFAULT_ANTHROPIC_MODEL},
     "analyzer":   {"provider": "claude-cli"},
-    "ai_routes":  {"provider": "anthropic", "model": "claude-opus-4-7"},
+    "ai_routes":  {"provider": "anthropic", "model": "claude-sonnet-4-6"},
     "completion": {"provider": "anthropic", "model": _DEFAULT_ANTHROPIC_MODEL},
 }
 
