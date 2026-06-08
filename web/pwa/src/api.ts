@@ -146,6 +146,51 @@ export async function createSpec(
   return res.json();
 }
 
+// ── Hub API (CON-0147, CON-0149) ──────────────────────────────────────────────
+
+export type ServerStatus = "running" | "stopped" | "starting" | "stopping" | "error";
+
+export interface HubProject {
+  id: string;
+  name: string;
+  status: ServerStatus;
+  updatedAt?: string;
+}
+
+export interface HubProjectList {
+  projects: HubProject[];
+  retrievedAt: string;
+}
+
+export async function fetchHubHealth(hubUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${hubUrl}/health`, { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return false;
+    const body = await res.json().catch(() => null);
+    return body && (body.status === "ok" || body.status === "degraded");
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchHubProjects(hubUrl: string): Promise<HubProjectList> {
+  const res = await fetch(`${hubUrl}/projects`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`hub_projects_error:${res.status}`);
+  return res.json();
+}
+
+export async function postHubAction(
+  hubUrl: string,
+  projectId: string,
+  action: "start" | "stop",
+): Promise<void> {
+  const res = await fetch(`${hubUrl}/projects/${projectId}/${action}`, {
+    method: "POST",
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) throw new Error(`hub_action_error:${res.status}`);
+}
+
 export async function triggerTestRun(project: Project, specId: string): Promise<TestReport> {
   const res = await fetch(`${project.baseUrl}/api/specs/${specId}/test-run`, {
     method: "POST",

@@ -5,8 +5,9 @@ import ProjectSwitcher from "./components/ProjectSwitcher";
 import AddProjectScreen from "./components/AddProjectScreen";
 import AddSpecScreen from "./components/AddSpecScreen";
 import SpecDetailScreen from "./components/SpecDetailScreen";
+import HubPanel from "./components/HubPanel";
 
-type Tab = "dashboard" | "projects" | "add";
+type Tab = "dashboard" | "hub" | "projects";
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -113,6 +114,9 @@ export default function App() {
             onSelectSpec={setSelectedSpecId}
           />
         )}
+        {tab === "hub" && (
+          <HubPanel hubUrl={activeProject?.hubUrl ?? ""} />
+        )}
         {tab === "projects" && (
           <ProjectSwitcher
             projects={projects}
@@ -161,6 +165,13 @@ export default function App() {
         >
           <span className="tab-icon">📋</span>
           Dashboard
+        </button>
+        <button
+          className={tab === "hub" ? "active" : ""}
+          onClick={() => setTab("hub")}
+        >
+          <span className="tab-icon">🔌</span>
+          Hub
         </button>
         <button
           className={tab === "projects" ? "active" : ""}
