@@ -1,4 +1,4 @@
-<!-- skill: maintenance:release | version: 0.1.0 | sdd-blueprint: false | updated: 2026-05-30 -->
+<!-- skill: maintenance:release | version: 0.1.1 | sdd-blueprint: false | updated: 2026-06-08 -->
 
 # /maintenance:release – Version bumpen, Wheel bauen und einspielen
 
@@ -49,7 +49,20 @@ git add pyproject.toml tool/pyproject.toml tool/sdd_cli/__init__.py
 git commit -m "version bump <NEUE_VERSION>"
 ```
 
-## Schritt 4: Wheel bauen
+## Schritt 4: Frontend bauen und synchronisieren
+
+Das Wheel packt `tool/sdd_cli/web/ui/dist/` — diese müssen vor dem Wheel-Build
+aktuell sein. Prüfe ob `web/ui/src/` seit dem letzten Build geändert wurde und
+baue ggf. neu:
+
+```bash
+cd web/ui && npm run build && cd ../..
+rsync -a --delete web/ui/dist/ tool/sdd_cli/web/ui/dist/
+```
+
+Wenn keine Frontend-Änderungen vorliegen, kann dieser Schritt übersprungen werden.
+
+## Schritt 5: Wheel bauen
 
 ```bash
 uv build
@@ -57,14 +70,14 @@ uv build
 
 Erzeugt `dist/sdd_framer-<NEUE_VERSION>-py3-none-any.whl`.
 
-## Schritt 5: In beide Installationen einspielen
+## Schritt 6: In beide Installationen einspielen
 
 ```bash
 UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force dist/sdd_framer-<NEUE_VERSION>-py3-none-any.whl
 UV_TOOL_DIR=/home/deck/.var/app/com.visualstudio.code/data/uv/tools uv tool install --force dist/sdd_framer-<NEUE_VERSION>-py3-none-any.whl
 ```
 
-## Schritt 6: Verifizieren
+## Schritt 7: Verifizieren
 
 ```bash
 sdd --version

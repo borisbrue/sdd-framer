@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -187,8 +187,7 @@ function StageChip({ stage, expanded, onClick }: { stage: Stage; expanded: boole
         background: expanded ? "var(--surface)" : "transparent",
         outline: isActive ? "2px solid var(--accent)"
           : isFailed ? "2px solid var(--red)"
-          : expanded ? "1px solid var(--border)"
-          : "none",
+          : "1px solid var(--border)",
         opacity: stage.status === "pending" || stage.status === "skipped" ? 0.45 : 1,
       }}
     >
@@ -268,12 +267,14 @@ export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
   const [state, setState] = useState<PipelineState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const stateRef = useRef<PipelineState | null>(null);
 
   const load = useCallback(() => {
     fetch(`/api/specs/${specId}/pipeline`)
       .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => { throw new Error(e.detail); }))
       .then((data: PipelineState) => {
         setState(data);
+        stateRef.current = data;
         setExpandedId(prev => {
           if (prev && data.stages.some(s => s.id === prev)) return prev;
           const auto = data.stages.find(s => s.status === "active" || s.status === "failed");
@@ -283,14 +284,20 @@ export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
       .catch(e => setError(e.message));
   }, [specId]);
 
+  // Initial load — resets on specId change
   useEffect(() => {
     setExpandedId(null);
+    stateRef.current = null;
     load();
+  }, [load]);
+
+  // Polling — uses ref to avoid state as dep (prevents re-render loop)
+  useEffect(() => {
     const interval = setInterval(() => {
-      if (state?.stages.some(s => s.status === "active")) load();
+      if (stateRef.current?.stages.some(s => s.status === "active")) load();
     }, 15000);
     return () => clearInterval(interval);
-  }, [load, state]);
+  }, [load]);
 
   if (error) return (
     <div style={{ padding: 12, color: "var(--muted)", fontSize: 12 }}>
@@ -332,7 +339,7 @@ export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
       </div>
 
       {/* Horizontal stage row */}
-      <div style={{ display: "flex", alignItems: "flex-start", overflowX: "auto", paddingBottom: 2 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", overflowX: "auto", paddingTop: 2, paddingBottom: 2 }}>
         {stageRow}
       </div>
 
