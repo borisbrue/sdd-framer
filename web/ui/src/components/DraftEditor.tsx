@@ -11,13 +11,18 @@ interface Props {
 type AiPhase = "idle" | "generating" | "preview";
 
 function UsagePill({ entry }: { entry: AiUsageEntry }) {
+  const isCli = entry.provider === "claude-cli";
   return (
     <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "monospace" }}>
-      {entry.input_tokens}↑ {entry.output_tokens}↓
-      {entry.cache_read_tokens > 0 && (
-        <span style={{ color: "var(--green)" }}> {entry.cache_read_tokens} cached</span>
-      )}
-      {" "}${entry.cost_usd.toFixed(5)}
+      {isCli
+        ? <span>claude-cli</span>
+        : <>{entry.input_tokens}↑ {entry.output_tokens}↓
+            {entry.cache_read_tokens > 0 && (
+              <span style={{ color: "var(--green)" }}> {entry.cache_read_tokens} cached</span>
+            )}
+            {" "}${(entry.cost_usd ?? 0).toFixed(5)}
+          </>
+      }
     </span>
   );
 }

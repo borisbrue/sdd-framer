@@ -1,6 +1,7 @@
 """Claude AI endpoints for spec generation and improvement."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -64,6 +65,7 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
             user_message,
             max_tokens=2048,
             system_prompt=SDD_SYSTEM_PROMPT,
+            timeout=300,
         )
     except RuntimeError as exc:
         log.error("AI-Call Fehler (%s): %s", operation, exc)
@@ -72,7 +74,6 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
              operation, result.usage.output_tokens if result.usage else "?")
 
     text = result.text
-    entry: dict[str, Any] = {}
     if result.usage:
         entry = usage_store.record_usage(
             operation=operation,
@@ -82,6 +83,12 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
             cache_read_tokens=result.usage.cache_read_tokens,
             model=result.usage.model,
         )
+    else:
+        entry: dict[str, Any] = {
+            "ts": "", "provider": "claude-cli", "operation": operation,
+            "model": "claude-cli", "input_tokens": 0, "output_tokens": 0,
+            "cache_creation_tokens": 0, "cache_read_tokens": 0, "cost_usd": 0.0,
+        }
     return text, entry
 
 
@@ -112,7 +119,7 @@ class AiResponse(BaseModel):
 # Endpoints
 
 @router.post("/generate-spec", response_model=AiResponse)
-def generate_spec(body: GenerateSpecRequest) -> AiResponse:
+async def generate_spec(body: GenerateSpecRequest) -> AiResponse:
     prompt = f"Write the Markdown body for a Spec with the title: **{body.title}**."
     if body.description:
         prompt += f"\n\nDescription: {body.description}"
@@ -123,24 +130,24 @@ def generate_spec(body: GenerateSpecRequest) -> AiResponse:
         "Be concise but complete. Include: purpose, acceptance criteria (as a checklist), "
         "and any important constraints or non-goals."
     )
-    text, entry = _call("generate-spec", prompt)
+    text, entry = await asyncio.to_thread(_call, "generate-spec", prompt)
     return AiResponse(result=text, usage=entry)
 
 
 @router.post("/improve-spec", response_model=AiResponse)
-def improve_spec(body: ImproveSpecRequest) -> AiResponse:
+async def improve_spec(body: ImproveSpecRequest) -> AiResponse:
     prompt = (
         f"Improve the following Spec ({body.spec_id}) according to these instructions:\n\n"
         f"**Instructions:** {body.instructions}\n\n"
         f"**Current content:**\n\n{body.current_content}\n\n"
         "Return only the improved Markdown body (no frontmatter, no code fences)."
     )
-    text, entry = _call("improve-spec", prompt)
+    text, entry = await asyncio.to_thread(_call, "improve-spec", prompt)
     return AiResponse(result=text, usage=entry)
 
 
 @router.post("/suggest-contracts", response_model=AiResponse)
-def suggest_contracts(body: SuggestContractsRequest) -> AiResponse:
+async def suggest_contracts(body: SuggestContractsRequest) -> AiResponse:
     prompt = (
         f"Given the following Spec ({body.spec_id}), suggest which Contracts should be "
         f"created to make it verifiable.\n\n"
@@ -151,7 +158,7 @@ def suggest_contracts(body: SuggestContractsRequest) -> AiResponse:
         "- What the artifact should describe (1-2 sentences)\n\n"
         "Format your response as a Markdown list."
     )
-    text, entry = _call("suggest-contracts", prompt)
+    text, entry = await asyncio.to_thread(_call, "suggest-contracts", prompt)
     return AiResponse(result=text, usage=entry)
 
 

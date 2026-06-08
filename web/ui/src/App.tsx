@@ -117,7 +117,7 @@ export default function App() {
             </button>
           </div>
 
-          <div style={{ overflowY: "auto", flex: 1, padding: 8 }}>
+          <div style={{ overflowY: "auto", flex: 1, padding: 8, paddingBottom: showConsole ? 280 : 8 }}>
             {showSpecForm && (
               <SpecForm
                 onCreated={(id) => { setShowSpecForm(false); refresh().then(() => selectSpec(id)); }}
@@ -138,7 +138,7 @@ export default function App() {
         </aside>
 
         {/* Main */}
-        <main ref={mainRef} style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 0 }}>
+        <main ref={mainRef} style={{ flex: 1, overflowY: "auto", padding: 20, paddingBottom: showConsole ? 280 : 20, display: "flex", flexDirection: "column", gap: 0 }}>
           {(selected || history.length > 0) && !showAiUsage && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, fontSize: 12, color: "var(--muted)" }}>
               {history.length > 0 && (
