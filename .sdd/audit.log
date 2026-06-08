@@ -38,3 +38,8 @@
 2026-06-06T11:41:57Z  hotfix.start  HF-0009  'regression-check überschreibt acknowledged Konflikte beim Neuschreiben des Conflict-Store'
 2026-06-06T11:45:18Z  hotfix.finalize  HF-0009  commit=bbc5876
 2026-06-06T14:48:48Z SPEC-0039 approved → in-progress [sdd-start]
+2026-06-08T20:25:29Z SPEC-0040 approved → in-progress [sdd-start]
+2026-06-08T20:25:34Z SPEC-0040 approved → in-progress [sdd-start]
+2026-06-08T20:25:44Z SPEC-0040 approved → in-progress [sdd-start]
+2026-06-08T20:27:15Z SPEC-0040 approved → in-progress [sdd-start]
+2026-06-08T20:30:01Z SPEC-0040 approved → in-progress [sdd-start]

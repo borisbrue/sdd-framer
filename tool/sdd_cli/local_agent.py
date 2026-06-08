@@ -193,13 +193,20 @@ class DagScheduler:
         self._event_bus = event_bus
         self._command_queue = command_queue
 
-    def _publish(self, run_id: str, task_id: str, status: str, agent: str = "none", model: str = "") -> None:
+    def _publish(
+        self,
+        run_id: str,
+        task_id: str,
+        status: Literal["pending", "running", "done", "failed", "skipped", "paused"],
+        agent: Literal["local", "cloud", "none"] = "none",
+        model: str = "",
+    ) -> None:
         if self._event_bus is None:
             return
         from .dag_event import DagEvent
         self._event_bus.publish(DagEvent(
             run_id=run_id, task_id=task_id,
-            status=status, agent=agent, model=model,  # type: ignore[arg-type]
+            status=status, agent=agent, model=model,
         ))
 
     def run(
@@ -258,7 +265,7 @@ class DagScheduler:
                 and deps_by_id[t.id].issubset(completed_ids)
             )
 
-        def dispatch_ready(futures_map: dict[Future, tuple[Task, str]]) -> None:
+        def dispatch_ready(futures_map: dict[Future, tuple[Task, Literal["local", "cloud"]]]) -> None:
             nonlocal local_running, cloud_running
             _drain_commands()
             skipped = sched_state.skipped_tasks if sched_state else set()
@@ -271,7 +278,7 @@ class DagScheduler:
                     if sched_state:
                         sched_state.completed_tasks.add(t.id)
 
-            route_overrides = sched_state.route_overrides if sched_state else {}
+            route_overrides: dict[str, Literal["local", "cloud"]] = sched_state.route_overrides if sched_state else {}
             for t in list(tasks):
                 if not is_ready(t):
                     continue
@@ -297,7 +304,7 @@ class DagScheduler:
 
         max_workers = max(1, self.max_parallel_local + self.max_parallel_cloud)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures_map: dict[Future, tuple[Task, str]] = {}
+            futures_map: dict[Future, tuple[Task, Literal["local", "cloud"]]] = {}
             dispatch_ready(futures_map)
 
             while futures_map:

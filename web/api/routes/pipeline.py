@@ -352,7 +352,7 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     elif is_progress and not container_up and not tests_green:
         next_action = {"label": "Container starten", "command": "start", "endpoint": f"/api/specs/{spec_id}/start", "method": "POST"}
     elif is_progress and not tests_green:
-        next_action = {"label": f"/sdd-implement {spec_id}", "command": "implement", "info": True}
+        next_action = {"label": f"sdd implement {spec_id}", "command": "implement", "endpoint": f"/api/specs/{spec_id}/implement", "method": "POST"}
     elif is_progress and tests_green and not pr_path:
         next_action = {"label": f"sdd finalize {spec_id}", "command": "finalize", "endpoint": f"/api/specs/{spec_id}/finalize", "method": "POST"}
     elif (is_progress or pr_path) and not eval_passed and not is_eval_fail:
@@ -509,6 +509,57 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
                      name=f"evaluate-{spec_id}").start()
 
     return {"ok": True, "output": "Evaluator gestartet – Logs im LogView."}
+
+
+@router.post("/specs/{spec_id}/implement")
+def trigger_implement(spec_id: str) -> dict[str, Any]:
+    import threading
+
+    bus = None
+    try:
+        bus = sdd_context.get_log_event_bus()
+    except Exception:
+        pass
+
+    if bus is not None:
+        try:
+            bus.clear_buffer(spec_id)
+        except Exception:
+            pass
+        bus.mark_active(spec_id)
+        bus.publish(spec_id, f"━━━ sdd implement {spec_id} ━━━")
+
+    sdd = _find_sdd()
+    env = _enriched_env()
+    cfg = get_config()
+    cwd = str(cfg.root)
+
+    def _run_in_background() -> None:
+        proc = subprocess.Popen(
+            [sdd, "implement", spec_id],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, cwd=cwd, env=env,
+        )
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            stripped = line.rstrip("\n")
+            if bus and stripped:
+                try:
+                    bus.publish(spec_id, stripped)
+                except Exception:
+                    pass
+        proc.wait()
+        if bus:
+            ok = proc.returncode == 0
+            try:
+                bus.publish(spec_id, f"━━━ implement {'✓ OK' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
+            except Exception:
+                pass
+
+    threading.Thread(target=_run_in_background, daemon=True,
+                     name=f"implement-{spec_id}").start()
+
+    return {"ok": True, "output": f"Implementierungsphase gestartet – führe /sdd-implement {spec_id} in Claude Code aus."}
 
 
 @router.post("/specs/{spec_id}/gate-spec-draft")

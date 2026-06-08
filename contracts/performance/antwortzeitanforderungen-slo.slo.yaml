@@ -1,0 +1,59 @@
+slos:
+  - name: initial_status_load
+    objective: 95
+    sli:
+      metric: status_load_duration_seconds
+      threshold: 2.0
+      aggregation: p95
+    description: >
+      Der initiale Abruf und die Darstellung aller hinterlegten Projektstatus
+      nach dem Öffnen der PWA muss innerhalb von 2 Sekunden abgeschlossen sein
+      (95. Perzentil). Gemessen von der ersten Nutzerinteraktion bis zur
+      vollständigen Darstellung der Projektliste.
+
+  - name: action_status_visibility
+    objective: 95
+    sli:
+      metric: action_to_status_change_seconds
+      threshold: 5.0
+      aggregation: p95
+    description: >
+      Nach dem Absenden einer Start- oder Stopp-Aktion muss die sichtbare
+      Statusänderung (optimistisch oder per erneutem Abruf) in der PWA-UI
+      innerhalb von 5 Sekunden erfolgen (95. Perzentil). Gemessen vom
+      Klick-Ereignis bis zur aktualisierten Statusanzeige.
+
+  - name: offline_indicator_latency
+    objective: 99
+    sli:
+      metric: offline_detection_latency_seconds
+      threshold: 3.0
+      aggregation: p99
+    description: >
+      Bei Verbindungsverlust zum Hub muss die PWA den Offline-Hinweis
+      (Banner oder Icon mit Zeitstempel des letzten Abrufs) innerhalb
+      von 3 Sekunden anzeigen (99. Perzentil). Gemessen ab dem letzten
+      erfolgreichen Heartbeat oder fehlgeschlagenen API-Aufruf.
+
+  - name: project_list_completeness
+    objective: 100
+    sli:
+      metric: visible_projects_ratio
+      threshold: 1.0
+      aggregation: min
+    description: >
+      Nach erfolgreichem Laden müssen 100 % der im Hub hinterlegten Projekte
+      in der Projektliste der PWA sichtbar und einzeln steuerbar sein.
+      Gemessen als Quotient aus angezeigten zu im Hub registrierten Projekten.
+
+  - name: phantom_action_rate
+    objective: 100
+    sli:
+      metric: blocked_actions_when_offline_ratio
+      threshold: 1.0
+      aggregation: min
+    description: >
+      Start- und Stopp-Schaltflächen müssen zu 100 % deaktiviert sein,
+      solange der Hub nicht erreichbar ist. Es dürfen keinerlei Aktionen
+      in eine Warteschlange gelegt oder verzögert ausgeführt werden
+      (Phantomaktionsrate = 0 %).

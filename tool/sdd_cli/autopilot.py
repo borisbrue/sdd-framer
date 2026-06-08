@@ -247,8 +247,8 @@ class AutopilotStateMachine:
                 end="", flush=True,
             )
             choice = input().strip().lower()[:1]
-            action_map = {"r": "retry", "s": "skip", "a": "abort"}
-            self.receive_escalation_response(action_map.get(choice, "abort"))  # type: ignore[arg-type]
+            action_map: dict[str, Literal["retry", "skip", "abort"]] = {"r": "retry", "s": "skip", "a": "abort"}
+            self.receive_escalation_response(action_map.get(choice, "abort"))
         except (EOFError, OSError):
             pass  # Kein Terminal verfügbar — WebUI übernimmt
 

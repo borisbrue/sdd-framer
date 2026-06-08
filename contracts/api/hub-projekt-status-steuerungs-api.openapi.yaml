@@ -1,0 +1,317 @@
+openapi: 3.1.0
+info:
+  title: Hub Projekt-Status & Steuerungs-API
+  version: 1.0.0
+  description: >
+    REST-API des Hub-Dienstes für den Abruf von Projektstatus-Informationen
+    und die Steuerung von Projektservern durch die SDD-Framer-PWA.
+servers:
+  - url: http://{hub_host}:{hub_port}/api/v1
+    description: Hub-Instanz (lokal oder im Netzwerk)
+    variables:
+      hub_host:
+        default: localhost
+        description: Hostname oder IP-Adresse des Hub-Dienstes
+      hub_port:
+        default: '8080'
+        description: Port des Hub-Dienstes
+paths:
+  /health:
+    get:
+      summary: Erreichbarkeit des Hubs prüfen
+      description: >
+        Heartbeat-Endpunkt zur aktiven Überprüfung der Hub-Erreichbarkeit (FR-08).
+        Antwortet immer mit einem definierten Status, solange der Hub-Prozess läuft.
+      operationId: checkHealth
+      tags:
+        - Verbindung
+      responses:
+        '200':
+          description: Hub ist erreichbar und betriebsbereit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+                timestamp: '2026-06-08T10:00:00Z'
+        '503':
+          description: Hub-Prozess läuft, aber ein interner Dienst ist nicht verfügbar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: degraded
+                timestamp: '2026-06-08T10:00:00Z'
+  /projects:
+    get:
+      summary: Alle Projekte mit Serverstatus abrufen
+      description: >
+        Gibt die vollständige Liste aller im Hub registrierten Projekte mit
+        aktuellem Serverstatus zurück (FR-01, FR-02). Antwortzeit ≤ 2 Sekunden.
+        Das Feld `retrievedAt` wird von der PWA für den Offline-Hinweis genutzt (FR-06).
+      operationId: listProjects
+      tags:
+        - Projekte
+      responses:
+        '200':
+          description: Vollständige Projektliste
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+              example:
+                projects:
+                  - id: proj-001
+                    name: Mein Webprojekt
+                    status: running
+                    updatedAt: '2026-06-08T09:58:00Z'
+                  - id: proj-002
+                    name: API-Backend
+                    status: stopped
+                    updatedAt: '2026-06-08T08:30:00Z'
+                retrievedAt: '2026-06-08T10:00:00Z'
+        '503':
+          description: Hub nicht erreichbar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /projects/{projectId}:
+    get:
+      summary: Einzelnes Projekt abrufen
+      description: >
+        Gibt den aktuellen Serverstatus eines einzelnen Projekts zurück (FR-01).
+        Wird nach Start/Stopp-Aktionen zur sofortigen Statusaktualisierung
+        ohne Seitenneuladung genutzt (FR-07).
+      operationId: getProject
+      tags:
+        - Projekte
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Projektstatus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+              example:
+                id: proj-001
+                name: Mein Webprojekt
+                status: running
+                updatedAt: '2026-06-08T09:58:00Z'
+        '404':
+          description: Projekt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PROJECT_NOT_FOUND
+                message: Das Projekt 'proj-999' wurde nicht gefunden.
+        '503':
+          description: Hub nicht erreichbar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /projects/{projectId}/start:
+    post:
+      summary: Projektserver starten
+      description: >
+        Startet den Server des angegebenen Projekts (FR-03). Nur möglich,
+        wenn der Hub erreichbar ist und der Projektstatus `stopped` ist (FR-05).
+        Die sichtbare Statusänderung erfolgt innerhalb von ≤ 5 Sekunden.
+      operationId: startProject
+      tags:
+        - Projektsteuerung
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '202':
+          description: Startanforderung angenommen, Statuswechsel wird asynchron durchgeführt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+              example:
+                projectId: proj-002
+                status: starting
+                requestedAt: '2026-06-08T10:00:05Z'
+        '409':
+          description: Projekt befindet sich nicht im Status `stopped`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_STATE_TRANSITION
+                message: Das Projekt 'proj-001' ist bereits im Status 'running'.
+        '404':
+          description: Projekt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Hub nicht erreichbar — Aktion wird nicht ausgeführt (FR-05)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /projects/{projectId}/stop:
+    post:
+      summary: Projektserver stoppen
+      description: >
+        Stoppt den Server des angegebenen Projekts (FR-04). Nur möglich,
+        wenn der Hub erreichbar ist und der Projektstatus `running` ist (FR-05).
+        Die sichtbare Statusänderung erfolgt innerhalb von ≤ 5 Sekunden.
+      operationId: stopProject
+      tags:
+        - Projektsteuerung
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '202':
+          description: Stoppanforderung angenommen, Statuswechsel wird asynchron durchgeführt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+              example:
+                projectId: proj-001
+                status: stopping
+                requestedAt: '2026-06-08T10:01:00Z'
+        '409':
+          description: Projekt befindet sich nicht im Status `running`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_STATE_TRANSITION
+                message: Das Projekt 'proj-002' ist bereits im Status 'stopped'.
+        '404':
+          description: Projekt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Hub nicht erreichbar — Aktion wird nicht ausgeführt (FR-05)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  parameters:
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      description: Eindeutige Projekt-ID im Hub
+      schema:
+        type: string
+        example: proj-001
+  schemas:
+    ServerStatus:
+      type: string
+      enum:
+        - running
+        - stopped
+        - starting
+        - stopping
+        - error
+      description: Mögliche Betriebszustände eines Projektservers
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - status
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Eindeutige Projekt-ID im Hub
+          example: proj-001
+        name:
+          type: string
+          description: Anzeigename des Projekts
+          example: Mein Webprojekt
+        status:
+          $ref: '#/components/schemas/ServerStatus'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Zeitpunkt der letzten Statusänderung
+          example: '2026-06-08T09:58:00Z'
+    ProjectList:
+      type: object
+      required:
+        - projects
+        - retrievedAt
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+          description: Vollständige Liste aller im Hub registrierten Projekte
+        retrievedAt:
+          type: string
+          format: date-time
+          description: >
+            Zeitpunkt des Abrufs — wird von der PWA für den Offline-Hinweis
+            mit Zeitstempel des letzten erfolgreichen Abrufs genutzt (FR-06).
+          example: '2026-06-08T10:00:00Z'
+    ActionResult:
+      type: object
+      required:
+        - projectId
+        - status
+        - requestedAt
+      properties:
+        projectId:
+          type: string
+          description: ID des betroffenen Projekts
+          example: proj-002
+        status:
+          $ref: '#/components/schemas/ServerStatus'
+        requestedAt:
+          type: string
+          format: date-time
+          description: Zeitpunkt der Aktionsannahme durch den Hub
+          example: '2026-06-08T10:00:05Z'
+    HealthStatus:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+            - degraded
+          description: Betriebszustand des Hub-Dienstes
+        timestamp:
+          type: string
+          format: date-time
+          description: Zeitpunkt der Statusermittlung
+          example: '2026-06-08T10:00:00Z'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Maschinenlesbarer Fehlercode
+          example: PROJECT_NOT_FOUND
+        message:
+          type: string
+          description: Menschenlesbare Fehlerbeschreibung
+          example: Das Projekt mit der ID 'proj-999' wurde nicht gefunden.
