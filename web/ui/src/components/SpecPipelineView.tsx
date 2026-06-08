@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-// useCallback bleibt für load() in SpecPipelineView
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -43,7 +42,7 @@ interface PipelineState {
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
 function StatusIcon({ status }: { status: Stage["status"] }) {
-  const size = 22;
+  const size = 18;
   if (status === "done") return (
     <svg width={size} height={size} viewBox="0 0 22 22">
       <circle cx="11" cy="11" r="10" fill="var(--green)" opacity="0.2" stroke="var(--green)" strokeWidth="1.5" />
@@ -77,7 +76,7 @@ function SubStatusDot({ status }: { status: Substep["status"] }) {
     : "var(--border)";
   return (
     <span style={{
-      display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+      display: "inline-block", width: 7, height: 7, borderRadius: "50%",
       background: color, flexShrink: 0,
     }} />
   );
@@ -148,10 +147,7 @@ function ActionButton({ action, onDone, onTriggered }: { action: Action; onDone:
         {loading ? "…" : action.label}
       </button>
       {result && (
-        <span style={{
-          fontSize: 11,
-          color: result.startsWith("✓") ? "var(--green)" : "var(--red)",
-        }}>
+        <span style={{ fontSize: 11, color: result.startsWith("✓") ? "var(--green)" : "var(--red)" }}>
           {result}
         </span>
       )}
@@ -159,92 +155,103 @@ function ActionButton({ action, onDone, onTriggered }: { action: Action; onDone:
   );
 }
 
-// ── Single stage node ──────────────────────────────────────────────────────────
+// ── Horizontal connector ───────────────────────────────────────────────────────
 
-function StageNode({ stage, onRefresh, onTriggered }: { stage: Stage; onRefresh: () => void; onTriggered?: (id: string) => void }) {
-  const isActive = stage.status === "active";
-  const isFailed = stage.status === "failed";
-
+function HorizontalConnector({ fromStatus }: { fromStatus: Stage["status"] }) {
   return (
     <div style={{
-      display: "flex", flexDirection: "row", gap: 14, alignItems: "flex-start",
-    }}>
-      {/* Icon column */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <StatusIcon status={stage.status} />
-      </div>
-
-      {/* Content */}
-      <div style={{
-        flex: 1, paddingBottom: 4,
-        opacity: stage.status === "pending" ? 0.5 : 1,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-          <span style={{
-            fontWeight: isActive || isFailed ? 700 : 500,
-            fontSize: 13,
-            color: isFailed ? "var(--red)" : isActive ? "var(--text)" : "var(--text)",
-          }}>
-            {stage.label}
-          </span>
-          {stage.count !== undefined && stage.count > 0 && (
-            <span style={{
-              fontSize: 10, background: "var(--border)", color: "var(--muted)",
-              borderRadius: 10, padding: "1px 6px",
-            }}>
-              {stage.count}
-            </span>
-          )}
-        </div>
-
-        {stage.detail && (
-          <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
-            {stage.detail}
-          </div>
-        )}
-
-        {/* Substeps */}
-        {stage.substeps && stage.substeps.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 6 }}>
-            {stage.substeps.map(sub => (
-              <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
-                <SubStatusDot status={sub.status} />
-                <span style={{ color: sub.status === "pending" ? "var(--muted)" : "var(--text)" }}>
-                  {sub.label}
-                </span>
-                {sub.detail && (
-                  <span style={{ color: "var(--muted)", marginLeft: 4 }}>{sub.detail}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Actions */}
-        {stage.actions && stage.actions.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-            {stage.actions.map(a => (
-              <ActionButton key={a.id} action={a} onDone={onRefresh} onTriggered={onTriggered} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Connector line ─────────────────────────────────────────────────────────────
-
-function Connector({ fromStatus }: { fromStatus: Stage["status"] }) {
-  return (
-    <div style={{
-      width: 2, height: 20, marginLeft: 10,
+      width: 20, height: 2, flexShrink: 0,
+      alignSelf: "flex-start", marginTop: 14,
       background: fromStatus === "done" ? "var(--green)"
         : fromStatus === "active" ? "var(--accent)"
         : "var(--border)",
-      opacity: fromStatus === "pending" ? 0.3 : 0.6,
+      opacity: fromStatus === "pending" || fromStatus === "skipped" ? 0.25 : 0.6,
       borderRadius: 1,
     }} />
+  );
+}
+
+// ── Stage chip ─────────────────────────────────────────────────────────────────
+
+function StageChip({ stage, expanded, onClick }: { stage: Stage; expanded: boolean; onClick: () => void }) {
+  const isActive = stage.status === "active";
+  const isFailed = stage.status === "failed";
+  return (
+    <button
+      onClick={onClick}
+      title={stage.label + (stage.detail ? " – " + stage.detail : "")}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+        padding: "6px 8px", borderRadius: 6, border: "none",
+        cursor: "pointer", flexShrink: 0,
+        background: expanded ? "var(--surface)" : "transparent",
+        outline: isActive ? "2px solid var(--accent)"
+          : isFailed ? "2px solid var(--red)"
+          : expanded ? "1px solid var(--border)"
+          : "none",
+        opacity: stage.status === "pending" || stage.status === "skipped" ? 0.45 : 1,
+      }}
+    >
+      <StatusIcon status={stage.status} />
+      <span style={{
+        fontSize: 10, fontWeight: isActive || isFailed ? 700 : 400,
+        color: isFailed ? "var(--red)" : isActive ? "var(--text)" : "var(--muted)",
+        maxWidth: 72, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {stage.label}
+      </span>
+      {stage.count !== undefined && stage.count > 0 && (
+        <span style={{
+          fontSize: 9, background: "var(--border)", color: "var(--muted)",
+          borderRadius: 8, padding: "0 4px", lineHeight: "14px",
+        }}>
+          {stage.count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+// ── Expanded stage detail panel ────────────────────────────────────────────────
+
+function StageDetailPanel({ stage, onRefresh, onTriggered }: { stage: Stage; onRefresh: () => void; onTriggered?: (id: string) => void }) {
+  const borderColor = stage.status === "failed" ? "var(--red)"
+    : stage.status === "active" ? "var(--accent)"
+    : "var(--border)";
+  return (
+    <div style={{
+      marginTop: 8, padding: "10px 14px", borderRadius: 6,
+      background: "var(--surface)", border: `1px solid ${borderColor}`,
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: "var(--text)" }}>
+        {stage.label}
+      </div>
+      {stage.detail && (
+        <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>
+          {stage.detail}
+        </div>
+      )}
+      {stage.substeps && stage.substeps.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 8 }}>
+          {stage.substeps.map(sub => (
+            <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+              <SubStatusDot status={sub.status} />
+              <span style={{ color: sub.status === "pending" ? "var(--muted)" : "var(--text)" }}>
+                {sub.label}
+              </span>
+              {sub.detail && <span style={{ color: "var(--muted)", marginLeft: 4 }}>{sub.detail}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {stage.actions && stage.actions.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {stage.actions.map(a => (
+            <ActionButton key={a.id} action={a} onDone={onRefresh} onTriggered={onTriggered} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -260,17 +267,25 @@ interface Props {
 export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
   const [state, setState] = useState<PipelineState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     fetch(`/api/specs/${specId}/pipeline`)
-      .then(r => r.ok ? r.json() : r.json().then((e: {detail: string}) => { throw new Error(e.detail); }))
-      .then(setState)
+      .then(r => r.ok ? r.json() : r.json().then((e: { detail: string }) => { throw new Error(e.detail); }))
+      .then((data: PipelineState) => {
+        setState(data);
+        setExpandedId(prev => {
+          if (prev && data.stages.some(s => s.id === prev)) return prev;
+          const auto = data.stages.find(s => s.status === "active" || s.status === "failed");
+          return auto?.id ?? null;
+        });
+      })
       .catch(e => setError(e.message));
   }, [specId]);
 
   useEffect(() => {
+    setExpandedId(null);
     load();
-    // Poll every 15s when a stage is active
     const interval = setInterval(() => {
       if (state?.stages.some(s => s.status === "active")) load();
     }, 15000);
@@ -286,52 +301,68 @@ export default function SpecPipelineView({ specId, onActionTriggered }: Props) {
     <div style={{ padding: 12, color: "var(--muted)", fontSize: 12 }}>Lade Pipeline…</div>
   );
 
+  const expandedStage = state.stages.find(s => s.id === expandedId);
+
+  const stageRow: React.ReactNode[] = [];
+  state.stages.forEach((stage, i) => {
+    stageRow.push(
+      <StageChip
+        key={stage.id}
+        stage={stage}
+        expanded={expandedId === stage.id}
+        onClick={() => setExpandedId(prev => prev === stage.id ? null : stage.id)}
+      />
+    );
+    if (i < state.stages.length - 1) {
+      stageRow.push(<HorizontalConnector key={`c${i}`} fromStatus={stage.status} />);
+    }
+  });
+
   return (
-    <div className="card" style={{ padding: "16px 20px" }}>
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16,
-      }}>
+    <div className="card" style={{ padding: "14px 20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>Pipeline</span>
         <button
           onClick={load}
-          style={{
-            background: "none", border: "none", cursor: "pointer",
-            color: "var(--muted)", fontSize: 11, padding: "2px 6px",
-          }}
+          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 11, padding: "2px 6px" }}
           title="Aktualisieren"
         >
           ↻
         </button>
       </div>
 
-      {/* Stage list */}
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {state.stages.map((stage, i) => (
-          <div key={stage.id}>
-            <StageNode stage={stage} onRefresh={load} onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)} />
-            {i < state.stages.length - 1 && (
-              <div style={{ marginLeft: 10 }}>
-                <Connector fromStatus={stage.status} />
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Horizontal stage row */}
+      <div style={{ display: "flex", alignItems: "flex-start", overflowX: "auto", paddingBottom: 2 }}>
+        {stageRow}
       </div>
+
+      {/* Expanded stage detail */}
+      {expandedStage && (
+        <StageDetailPanel
+          stage={expandedStage}
+          onRefresh={load}
+          onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)}
+        />
+      )}
 
       {/* Next action banner */}
       {state.next_action && (
         <div style={{
-          marginTop: 16, padding: "10px 14px",
+          marginTop: 12, padding: "8px 12px",
           background: "var(--bg)", border: "1px solid var(--border)",
           borderRadius: 6, display: "flex", alignItems: "center", gap: 10,
         }}>
           <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>Nächster Schritt</span>
-          <ActionButton action={state.next_action} onDone={load} onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)} />
+          <ActionButton
+            action={state.next_action}
+            onDone={load}
+            onTriggered={id => LOG_ACTION_IDS.has(id) && onActionTriggered?.(id)}
+          />
         </div>
       )}
 
       {/* Status chips */}
-      <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
         {state.container_running && (
           <span style={{
             fontSize: 10, padding: "2px 8px", borderRadius: 10,
