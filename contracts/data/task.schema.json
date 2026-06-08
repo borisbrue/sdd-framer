@@ -90,6 +90,15 @@
     },
     "run_id": {
       "type": ["string", "null"]
+    },
+    "test_file": {
+      "type": ["string", "null"]
+    },
+    "test_command": {
+      "type": ["string", "null"]
+    },
+    "test_framework": {
+      "type": ["string", "null"]
     }
   },
   "if": {

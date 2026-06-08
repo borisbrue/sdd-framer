@@ -63,6 +63,9 @@ class Task:
     test_ids: list[str] = field(default_factory=list)
     actual_tokens: int | None = None
     run_id: str | None = None
+    test_file: str | None = None
+    test_command: str | None = None
+    test_framework: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -86,6 +89,9 @@ class Task:
             "test_ids": self.test_ids,
             "actual_tokens": self.actual_tokens,
             "run_id": self.run_id,
+            "test_file": self.test_file,
+            "test_command": self.test_command,
+            "test_framework": self.test_framework,
         }
 
     @classmethod
@@ -111,4 +117,7 @@ class Task:
             test_ids=d.get("test_ids", []),
             actual_tokens=d.get("actual_tokens"),
             run_id=d.get("run_id"),
+            test_file=d.get("test_file"),
+            test_command=d.get("test_command"),
+            test_framework=d.get("test_framework"),
         )

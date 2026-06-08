@@ -2821,6 +2821,10 @@ def decompose(spec_id: str, yes: bool) -> None:
         )
         if t.description:
             console.print(f"      {t.description[:80]}")
+        if t.test_file:
+            console.print(f"      [dim]Test: {t.test_file}[/]")
+        elif t.type.value == "code":
+            console.print(f"      [yellow]⚠ kein test_file definiert[/]")
 
     if not yes:
         click.confirm("\nTask-Liste bestätigen?", abort=True)

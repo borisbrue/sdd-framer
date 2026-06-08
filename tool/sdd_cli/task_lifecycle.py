@@ -5,6 +5,7 @@ SPEC-0034 FR-05: mark_passed() erfordert grüne Tests (TaskTestRequiredError, CO
 """
 from __future__ import annotations
 
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Protocol
@@ -25,13 +26,40 @@ class PytestTestRunner:
     def run(self, test_id: str, repo_root: Path) -> tuple[bool, str]:
         pattern = test_id.lower().replace("-", "_")
         result = subprocess.run(
-            ["python", "-m", "pytest", "-x", "-q", "--tb=short", f"-k", pattern],
+            ["python", "-m", "pytest", "-x", "-q", "--tb=short", "-k", pattern],
             capture_output=True,
             text=True,
             cwd=repo_root,
         )
         output = result.stdout + result.stderr
         return result.returncode == 0, output
+
+
+class TaskCommandRunner:
+    """Runs task.test_command directly — framework-agnostic (pytest, deno, npm, …)."""
+
+    def run_command(self, command: str, repo_root: Path) -> tuple[bool, str]:
+        result = subprocess.run(
+            shlex.split(command),
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+        )
+        return result.returncode == 0, result.stdout + result.stderr
+
+    def verify_red(self, task: Task, repo_root: Path) -> tuple[bool, str]:
+        """Returns (is_red, output). is_red=True means the test fails as expected."""
+        if not task.test_command:
+            return False, "Kein test_command definiert"
+        ok, output = self.run_command(task.test_command, repo_root)
+        return not ok, output
+
+    def verify_green(self, task: Task, repo_root: Path) -> tuple[bool, str]:
+        """Returns (is_green, output). is_green=True means the test passes."""
+        if not task.test_command:
+            return False, "Kein test_command definiert"
+        return self.run_command(task.test_command, repo_root)
+
 
 MAX_RETRIES = 3
 
@@ -64,6 +92,7 @@ class TaskLifecycle:
         self._repo_root = repo_root or Path(".")
         self._runner: TestRunner = runner or PytestTestRunner()
         self._enforce_test_gate = enforce_test_gate
+        self._cmd_runner = TaskCommandRunner()
 
     @property
     def task(self) -> Task:
@@ -89,24 +118,33 @@ class TaskLifecycle:
         self.transition(TaskStatus.REVIEW)
 
     def mark_passed(self) -> None:
-        """SPEC-0034 FR-05/CON-0124: passed nur wenn alle test_ids grün sind.
+        """SPEC-0034 FR-05/CON-0124: passed nur wenn test_command grün ist.
 
-        enforce_test_gate=True aktiviert das Gate; ohne dieses Flag verhält sich
-        mark_passed() wie vor SPEC-0034 (Backward-Kompatibilität).
+        Bevorzugt task.test_command (framework-agnostisch). Fällt auf test_ids +
+        PytestTestRunner zurück wenn kein test_command vorhanden.
+        enforce_test_gate=True ist jetzt der Default.
         """
         if self._enforce_test_gate:
-            if not self._task.test_ids:
+            if self._task.test_command:
+                ok, output = self._cmd_runner.verify_green(self._task, self._repo_root)
+                if not ok:
+                    last = output.strip().splitlines()[-1] if output.strip() else "Test fehlgeschlagen"
+                    self.transition(TaskStatus.FAILED)
+                    self._task.error_context.append(last)
+                    return
+            elif self._task.test_ids:
+                for test_id in self._task.test_ids:
+                    ok, output = self._runner.run(test_id, self._repo_root)
+                    if not ok:
+                        last = output.strip().splitlines()[-1] if output.strip() else "Test fehlgeschlagen"
+                        self.transition(TaskStatus.FAILED)
+                        self._task.error_context.append(last)
+                        return
+            else:
                 self._task.error_context.append("Kein Test zugewiesen – mark_passed() blockiert")
                 raise TaskTestRequiredError(
-                    f"Task {self._task.id!r} hat test_ids=[] – mark_passed() nicht erlaubt"
+                    f"Task {self._task.id!r} hat test_ids=[] und kein test_command – mark_passed() nicht erlaubt"
                 )
-            for test_id in self._task.test_ids:
-                ok, output = self._runner.run(test_id, self._repo_root)
-                if not ok:
-                    first_line = output.strip().splitlines()[-1] if output.strip() else "Test fehlgeschlagen"
-                    self.transition(TaskStatus.FAILED)
-                    self._task.error_context.append(first_line)
-                    return
         self.transition(TaskStatus.PASSED)
 
     def mark_failed(self, reason: str) -> None:

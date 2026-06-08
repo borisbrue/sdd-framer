@@ -15,18 +15,36 @@ from .task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
 
 _SYSTEM_PROMPT = """\
 Du bist ein Software-Architekt. Deine Aufgabe: Zerlege ein Spec in atomare, \
-implementierbare Tasks.
+implementierbare Tasks nach dem TDD-Prinzip (Test-first).
 
 Regeln:
 - Jeder Task adressiert genau eine funktionale Verantwortlichkeit (atomic).
 - Gib NUR valides JSON zurück – kein Markdown, kein Text darum herum.
-- Jeder Task hat: title, description, type (code|test|config|doc),
-  complexity (low|medium|high), context_size (S|M|L), estimated_tokens (int > 0),
-  dependencies (Liste von Titeln anderer Tasks die vorher abgeschlossen sein müssen),
-  parallel_group (String-Label für Tasks die parallel laufen können, null wenn sequenziell).
-- Tasks die sich NICHT gegenseitig beeinflussen und keine Abhängigkeiten haben,
-  bekommen dasselbe parallel_group-Label (z.B. "group-1").
-- Tasks mit dependencies müssen nach ihren Abhängigkeiten laufen (parallel_group=null).
+- Jeder Task hat folgende Felder:
+    title, description, type (code|test|config|doc),
+    complexity (low|medium|high), context_size (S|M|L), estimated_tokens (int > 0),
+    dependencies (Liste von Titeln anderer Tasks die vorher abgeschlossen sein müssen),
+    parallel_group (String-Label für Tasks die parallel laufen können, null wenn sequenziell),
+    test_file (Pfad zur Test-Datei die DIESEN Task verifiziert, muss noch nicht existieren),
+    test_command (Shell-Befehl um NUR diese Test-Datei auszuführen),
+    test_framework (pytest | deno | npm | jest | vitest).
+- test_file und test_command sind PFLICHTFELDER für jeden Task vom type "code".
+  Bei type "test", "config", "doc": test_file=null, test_command=null, test_framework=null.
+- test_file-Konventionen:
+    Python-Code → "tests/unit/test_<snake_case_title>.py" (pytest)
+    TypeScript/React-Logik → "<pkg>/src/__tests__/<slug>.test.ts" (deno oder vitest)
+    TypeScript-Komponente → "<pkg>/src/__tests__/<slug>.test.tsx" (vitest)
+    API/Integration → "tests/integration/test_<slug>.py" (pytest)
+- test_command muss NUR die eine test_file ausführen, nicht das gesamte Testsuite.
+  Beispiele:
+    pytest: "pytest tests/unit/test_hub_logic.py -x --tb=short"
+    deno:   "deno test --no-check --unstable-sloppy-imports --allow-read --allow-env web/pwa/src/__tests__/hub_logic.test.ts"
+- Die test_file muss so gewählt sein, dass sie VOR der Implementierung rot ist
+  (weil sie Code importiert der noch nicht existiert) und NACH der Implementierung grün.
+- Extrahiere reine Logik aus Komponenten/Views in separate Module wenn möglich,
+  damit sie direkt testbar sind (ohne DOM, ohne Mock-Framework).
+- Tasks die sich NICHT gegenseitig beeinflussen: parallel_group setzen.
+- Tasks mit dependencies: parallel_group=null.
 - Mindestens ein Task pro FR im Spec.
 - Keine doppelten Titel.
 - Keine zirkulären dependencies.
@@ -41,7 +59,10 @@ Ausgabeformat (JSON-Array):
     "context_size": "M",
     "estimated_tokens": 3000,
     "dependencies": [],
-    "parallel_group": "group-1"
+    "parallel_group": "group-1",
+    "test_file": "tests/unit/test_my_feature.py",
+    "test_command": "pytest tests/unit/test_my_feature.py -x --tb=short",
+    "test_framework": "pytest"
   }
 ]
 """
@@ -139,6 +160,9 @@ class TaskDecomposer:
                 estimated_tokens=estimated,
                 dependencies=item.get("dependencies", []),
                 parallel_group=item.get("parallel_group"),
+                test_file=item.get("test_file") or None,
+                test_command=item.get("test_command") or None,
+                test_framework=item.get("test_framework") or None,
             ))
 
         if not tasks:
