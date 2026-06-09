@@ -190,6 +190,19 @@ class SpecFinalizer:
         error: str | None = None
 
         if tests_passed:
+            # FR-06/CON-0153: Compliance-Kette vor _mark_implemented
+            compliance_error = self._run_compliance_check(spec_id)
+            if compliance_error:
+                return FinalizeReport(
+                    spec_id=spec_id,
+                    branch=effective_branch,
+                    commit_hash=commit_hash,
+                    tests_passed=False,
+                    test_output=test_output,
+                    pr_url=None,
+                    pr_path=None,
+                    error=compliance_error,
+                )
             pr_url, pr_path = self._create_pr(spec_id)
         else:
             error = f"Tests fehlgeschlagen im Container:\n{test_output[:1000]}"
@@ -204,6 +217,40 @@ class SpecFinalizer:
             pr_path=pr_path,
             error=error,
         )
+
+    def _run_compliance_check(self, spec_id: str) -> str | None:
+        """Gibt None zurück wenn Compliance OK, sonst formatierten Fehlertext."""
+        from .compliance import run_compliance_chain
+        from .decompose import TaskDecomposer
+        from .frontmatter import parse_safe
+
+        spec_doc = None
+        for md in self._cfg.specs_dir.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == spec_id:
+                spec_doc = doc
+                break
+        if spec_doc is None:
+            return None
+
+        tasks = TaskDecomposer().load(spec_id, self._cfg)
+        issues = run_compliance_chain(
+            spec=spec_doc,
+            tasks=tasks,
+            cfg_raw=self._cfg.raw,
+            tests_dir=self._cfg.tests_dir,
+            project_root=self._cfg.root,
+        )
+        errors = [i for i in issues if i.severity == "error"]
+        if not errors:
+            return None
+
+        lines = ["✗ Compliance-Gate blockiert finalize:"]
+        for issue in errors:
+            lines.append(f"  • {issue.message}")
+            if issue.hint:
+                lines.append(f"    → {issue.hint}")
+        return "\n".join(lines)
 
     def _create_pr(self, spec_id: str) -> tuple[str | None, Path | None]:
         strategy = GhFallbackPRStrategy()

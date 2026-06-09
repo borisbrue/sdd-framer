@@ -53,7 +53,7 @@ def init(project_root: str | Path | None = None) -> None:
         from urllib.parse import urlparse
         parsed = urlparse(_external_url)
         hostname = parsed.hostname
-        for dev_port in (5173, 5174):
+        for dev_port in (5173, 5174, 8082, 8083):
             for s in ("http", "https"):
                 origin = f"{s}://{hostname}:{dev_port}"
                 if origin not in _allowed_origins:
@@ -106,8 +106,10 @@ def _detect_lan_url() -> str:
             return ""
         project_root = os.environ.get("SDD_PROJECT_ROOT", "")
         cert_dir = (Path(project_root) if project_root else Path.cwd()) / ".certs"
-        scheme = "https" if (cert_dir / "cert.pem").exists() else "http"
-        return f"{scheme}://{lan_ip}:{port}"
+        if (cert_dir / "cert.pem").exists():
+            # HTTPS läuft auf port+1 (Konvention aus ui.py), HTTP bleibt auf port.
+            return f"https://{lan_ip}:{port + 1}"
+        return f"http://{lan_ip}:{port}"
     except Exception:
         return ""
 

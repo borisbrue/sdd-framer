@@ -1,4 +1,4 @@
-<!-- skill: sdd-review | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
+<!-- skill: sdd-review | version: 0.3.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-review – SOLID-Analyse + Pattern-Vorschläge
 
@@ -16,7 +16,7 @@ Liste alle Contracts mit `status: draft` auf und frage welchen der Nutzer review
 Frage: "Welche SPEC, CON-ID oder TST-ID soll reviewed werden?"
 
 **Bei TST-XXXX:** überspringe Schritte 2–4 (SOLID/Pattern/Regression gelten nicht für Tests)
-und gehe direkt zu Schritt 5b.
+und gehe direkt zu Schritt 5c.
 
 ## Schritt 2: SOLID-Analyse ausführen
 ```bash
@@ -89,7 +89,24 @@ Bei nur `warning`/`info`: Review-Flow fährt automatisch fort.
 Bei 0 Befunden in beiden Stufen: "✓ Kein Regressionsrisiko gefunden"
 Falls LLM nicht erreichbar: `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)` — Stufe-1-Ergebnisse werden normal angezeigt.
 
-## Schritt 5: Contract-Review (nur für CON-XXXX)
+## Schritt 5: Contract-Review
+
+### 5a: Bei SPEC-XXXX — Draft-Contracts sequenziell reviewen
+
+Ermittle alle Contracts der Spec mit `status: draft`:
+```bash
+grep -rl "spec: SPEC-XXXX" .sdd/contracts/ | xargs grep -l "^status: draft"
+```
+
+Gibt es Draft-Contracts: Führe Schritt 5b für jeden Contract sequenziell durch.
+Danach, wenn alle Contracts der Spec `approved` sind:
+```bash
+sdd spec approve SPEC-XXXX
+```
+
+Gibt es keine Draft-Contracts (alle bereits `approved`): weiter zu Schritt 6.
+
+### 5b: Inhaltlicher Review eines einzelnen Contracts (CON-XXXX direkt oder aus 5a)
 
 Lade als Kontext:
 1. Den Contract selbst
@@ -105,12 +122,26 @@ Prüfe inhaltlich:
 - Ist der Contract atomar (eine Verantwortlichkeit)?
 - Gibt es Überschneidungen oder Widersprüche mit den anderen Contracts desselben Specs?
 
-Frage ob Contract-Status auf `approved` gesetzt werden soll:
-```bash
-sdd contract approve CON-XXXX
-```
+Falls Anpassungen nötig: liste sie konkret auf und warte auf Bestätigung bevor
+die Contract-Datei geändert wird.
 
-## Schritt 5b: Test-Review (nur für TST-XXXX)
+Frage ob Contract-Status auf `approved` gesetzt werden soll.
+Bei "ja": setze `status: approved` im Frontmatter der Contract-Datei (Edit-Tool).
+Bei "nein": markiere den Contract als übersprungen — `sdd spec approve` wird
+am Ende nur aufgerufen wenn wirklich alle Contracts der Spec `approved` sind.
+
+Nach dem letzten Contract (bei CON-XXXX direkt oder am Ende von 5a):
+Prüfe ob alle Contracts der Spec jetzt `approved` sind:
+```bash
+grep -rl "spec: SPEC-XXXX" .sdd/contracts/ | xargs grep -l "^status: draft"
+```
+Gibt es keine Draft-Contracts mehr:
+```bash
+sdd spec approve SPEC-XXXX
+```
+Gibt es noch Draft-Contracts: nenne sie explizit — `sdd spec approve` bleibt aus.
+
+## Schritt 5c: Test-Review (nur für TST-XXXX)
 
 Lade als Kontext:
 1. Die Test-Datei selbst (aus TST `artifact:`-Frontmatter)

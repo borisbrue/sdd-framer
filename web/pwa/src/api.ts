@@ -191,6 +191,23 @@ export async function postHubAction(
   if (!res.ok) throw new Error(`hub_action_error:${res.status}`);
 }
 
+export interface HubQrPayload {
+  sdd: number;
+  name: string;
+  url: string;
+  token: string;
+  hub?: string;
+  root?: string;
+}
+
+export async function fetchHubQrPayload(hubUrl: string, projectId: string): Promise<HubQrPayload> {
+  const res = await fetch(`${hubUrl}/projects/${projectId}/qr-payload`, {
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) throw Object.assign(new Error(`hub_qr_error`), { status: res.status });
+  return res.json();
+}
+
 export async function triggerTestRun(project: Project, specId: string): Promise<TestReport> {
   const res = await fetch(`${project.baseUrl}/api/specs/${specId}/test-run`, {
     method: "POST",

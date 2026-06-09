@@ -347,8 +347,8 @@ def start_server(
                 f"http://localhost:5173", f"http://localhost:8000",
                 f"http://localhost:{port}", f"https://localhost:{port + 1}",
                 # PWA-Dev (Vite) und PWA-Server (sdd pwa start) – beide Varianten erlauben
-                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
-                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174, 8080)],
+                *[f"http://{_lan_ip}:{p}" for p in (5173, 5174, 8080, 8081, 8082, 8083)],
+                *[f"https://{_lan_ip}:{p}" for p in (5173, 5174, 8080, 8081, 8082, 8083)],
                 f"http://{_lan_ip}:{port}",
                 f"https://{_lan_ip}:{port + 1}",
             ]

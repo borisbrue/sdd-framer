@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HubProject, fetchHubHealth, fetchHubProjects, fetchHubQrPayload, postHubAction } from "../api";
-import { Project, ProjectRegistry, generateId } from "../config";
+import { HubProject, fetchHubHealth, fetchHubProjects, postHubAction } from "../api";
 import {
   ConnectionMonitor,
   ConnectionState,
@@ -13,46 +12,24 @@ import {
 
 const POLL_INTERVAL_MS = 8000;
 const HEALTH_INTERVAL_MS = 8000;
-const HUB_URL_KEY = "sdd_hub_url";
 
-export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Project) => void }) {
-  const [hubUrl, setHubUrl] = useState<string>(() => localStorage.getItem(HUB_URL_KEY) ?? "");
-  const [inputValue, setInputValue] = useState("");
+interface Props {
+  hubUrl: string;
+}
+
+export default function HubPanel({ hubUrl }: Props) {
   const [connection, setConnection] = useState<ConnectionState>("unknown");
   const [projects, setProjects] = useState<HubProject[]>([]);
   const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [pendingActions, setPendingActions] = useState<Set<string>>(new Set());
-  const [addingProjects, setAddingProjects] = useState<Set<string>>(new Set());
-  const [addMessage, setAddMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const monitorRef = useRef(new ConnectionMonitor());
   const isMounted = useRef(true);
 
-  function saveHubUrl(url: string) {
-    const normalized = url.trim().replace(/\/$/, "");
-    localStorage.setItem(HUB_URL_KEY, normalized);
-    setHubUrl(normalized);
-    setInputValue("");
-    setConnection("unknown");
-    setProjects([]);
-    setLastFetchedAt(null);
-    monitorRef.current = new ConnectionMonitor();
-  }
-
-  function clearHubUrl() {
-    localStorage.removeItem(HUB_URL_KEY);
-    setHubUrl("");
-    setConnection("unknown");
-    setProjects([]);
-    setLastFetchedAt(null);
-    monitorRef.current = new ConnectionMonitor();
-  }
-
   // ── Health monitor ──────────────────────────────────────────────────────────
 
   const checkHealth = useCallback(async () => {
-    if (!hubUrl) return;
     const ok = await fetchHubHealth(hubUrl);
     if (!isMounted.current) return;
     const next = ok
@@ -64,7 +41,6 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
   // ── Project polling ─────────────────────────────────────────────────────────
 
   const loadProjects = useCallback(async () => {
-    if (!hubUrl) return;
     try {
       const list = await fetchHubProjects(hubUrl);
       if (!isMounted.current) return;
@@ -80,9 +56,7 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
   // ── Bootstrap ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!hubUrl) return;
     isMounted.current = true;
-    setLoading(true);
     let healthTimer: ReturnType<typeof setInterval>;
     let pollTimer: ReturnType<typeof setInterval>;
 
@@ -112,44 +86,6 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
     prevConnection.current = connection;
   }, [connection, loadProjects]);
 
-  // ── Add to PWA ──────────────────────────────────────────────────────────────
-
-  async function handleAddProject(project: HubProject) {
-    if (addingProjects.has(project.id)) return;
-    setAddingProjects(prev => new Set(prev).add(project.id));
-    setAddMessage(null);
-    try {
-      const payload = await fetchHubQrPayload(hubUrl, project.id);
-      const existing = ProjectRegistry.getAll().find(
-        p => p.baseUrl === payload.url || (payload.root && p.projectRoot === payload.root),
-      );
-      if (existing) {
-        setAddMessage({ text: `"${project.name}" ist bereits in der Projektliste.`, isError: true });
-        return;
-      }
-      const newProject: Project = {
-        id: generateId(),
-        name: payload.name,
-        baseUrl: payload.url,
-        token: payload.token,
-        addedAt: new Date().toISOString(),
-        projectRoot: payload.root,
-        hubUrl: payload.hub,
-      };
-      ProjectRegistry.add(newProject);
-      setAddMessage({ text: `"${project.name}" hinzugefügt.`, isError: false });
-      onProjectAdded?.(newProject);
-    } catch {
-      setAddMessage({ text: "Projekt konnte nicht hinzugefügt werden.", isError: true });
-    } finally {
-      setAddingProjects(prev => {
-        const next = new Set(prev);
-        next.delete(project.id);
-        return next;
-      });
-    }
-  }
-
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   async function handleAction(project: HubProject, action: "start" | "stop") {
@@ -157,6 +93,7 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
 
     setPendingActions(prev => new Set(prev).add(project.id));
 
+    // Optimistic update (FR-07)
     const nextStatus = optimisticStatus(action);
     setProjects(prev =>
       prev.map(p => p.id === project.id ? { ...p, status: nextStatus } : p),
@@ -165,10 +102,12 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
     try {
       await postHubAction(hubUrl, project.id, action);
     } catch {
+      // Revert optimistic update on failure
       setProjects(prev =>
         prev.map(p => p.id === project.id ? { ...p, status: project.status } : p),
       );
     } finally {
+      // Poll for real status, then clear pending
       await loadProjects();
       if (isMounted.current) {
         setPendingActions(prev => {
@@ -180,57 +119,7 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
     }
   }
 
-  // ── Render: no URL configured ────────────────────────────────────────────────
-
-  if (!hubUrl) {
-    return (
-      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 17, color: "var(--accent)", marginBottom: 24 }}>
-          Hub
-        </div>
-        <div style={{
-          background: "var(--surface)", borderRadius: 10, padding: 20,
-          border: "1px solid var(--border)",
-        }}>
-          <p style={{ color: "var(--text)", fontSize: 14, marginBottom: 16 }}>
-            Hub-URL eingeben um Projekte zu sehen und zu steuern.
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input
-              type="url"
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && inputValue.trim() && saveHubUrl(inputValue)}
-              placeholder="https://hub.example.com"
-              style={{
-                width: "100%", boxSizing: "border-box",
-                padding: "10px 12px", borderRadius: 8,
-                border: "1px solid var(--border)",
-                background: "var(--bg)", color: "var(--text)",
-                fontSize: 14,
-              }}
-              autoFocus
-            />
-            <button
-              onClick={() => inputValue.trim() && saveHubUrl(inputValue)}
-              disabled={!inputValue.trim()}
-              style={{
-                padding: "10px 0", borderRadius: 8, fontWeight: 600, fontSize: 14,
-                background: inputValue.trim() ? "var(--accent)" : "var(--surface)",
-                color: inputValue.trim() ? "#1d2021" : "var(--muted)",
-                border: `1px solid ${inputValue.trim() ? "var(--accent)" : "var(--border)"}`,
-                cursor: inputValue.trim() ? "pointer" : "not-allowed",
-              }}
-            >
-              Verbinden
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Render: connected ────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   const isOffline = connection === "offline";
   const isUnknown = connection === "unknown";
@@ -238,23 +127,14 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <div style={{ fontWeight: 700, fontSize: 17, color: "var(--accent)" }}>Hub</div>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 16,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 17, color: "var(--accent)" }}>
+          Hub
+        </div>
         <ConnectionBadge state={connection} />
-      </div>
-      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16, wordBreak: "break-all", display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ flex: 1 }}>{hubUrl}</span>
-        <button
-          onClick={clearHubUrl}
-          title="Verbindung trennen"
-          style={{
-            flexShrink: 0, fontSize: 11, padding: "2px 8px", borderRadius: 6,
-            background: "transparent", color: "var(--muted)",
-            border: "1px solid var(--border)", cursor: "pointer",
-          }}
-        >
-          ✕
-        </button>
       </div>
 
       {/* Offline banner */}
@@ -272,6 +152,15 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
         </div>
       )}
 
+      {/* No hubUrl configured */}
+      {!hubUrl && (
+        <div style={centeredStyle}>
+          <p style={{ color: "var(--muted)" }}>
+            Kein Hub konfiguriert. Scanne einen Hub-QR-Code um fortzufahren.
+          </p>
+        </div>
+      )}
+
       {loading && (
         <p style={{ color: "var(--muted)", textAlign: "center" }}>Verbinde mit Hub…</p>
       )}
@@ -286,20 +175,6 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
         </div>
       )}
 
-      {addMessage && (
-        <div
-          role="alert"
-          style={{
-            background: addMessage.isError ? "rgba(251,73,52,0.12)" : "rgba(142,192,124,0.12)",
-            border: `1px solid ${addMessage.isError ? "var(--red)" : "var(--green)"}`,
-            borderRadius: 8, padding: "10px 14px", marginBottom: 16,
-            color: addMessage.isError ? "var(--red)" : "var(--green)", fontSize: 13,
-          }}
-        >
-          {addMessage.text}
-        </div>
-      )}
-
       {projects.map(project => (
         <ProjectRow
           key={project.id}
@@ -307,8 +182,6 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
           online={!isOffline && !isUnknown}
           pending={pendingActions.has(project.id)}
           onAction={handleAction}
-          adding={addingProjects.has(project.id)}
-          onAdd={onProjectAdded ? handleAddProject : undefined}
         />
       ))}
     </div>
@@ -318,14 +191,12 @@ export default function HubPanel({ onProjectAdded }: { onProjectAdded?: (p: Proj
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function ProjectRow({
-  project, online, pending, onAction, adding, onAdd,
+  project, online, pending, onAction,
 }: {
   project: HubProject;
   online: boolean;
   pending: boolean;
   onAction: (p: HubProject, a: "start" | "stop") => void;
-  adding?: boolean;
-  onAdd?: (p: HubProject) => void;
 }) {
   const inTransition = isTransitionState(project.status as ServerStatus);
   const startEnabled = canStart(project.status as ServerStatus, online, pending);
@@ -376,15 +247,6 @@ function ProjectRow({
               Fehler
             </span>
           )}
-          {project.status === "running" && onAdd && (
-            <ActionButton
-              label={adding ? "…" : "+"}
-              disabled={adding ?? false}
-              onClick={() => onAdd(project)}
-              color="var(--accent)"
-              title="Zu Projektliste hinzufügen"
-            />
-          )}
         </div>
       </div>
     </div>
@@ -392,20 +254,19 @@ function ProjectRow({
 }
 
 function ActionButton({
-  label, disabled, onClick, color, title,
+  label, disabled, onClick, color,
 }: {
   label: string;
   disabled: boolean;
   onClick: () => void;
   color: string;
-  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       aria-disabled={disabled}
-      title={title ?? (disabled ? "Nicht verfügbar" : label)}
+      title={disabled ? "Nicht verfügbar" : label}
       style={{
         fontSize: 12, padding: "5px 12px", borderRadius: 6,
         border: `1px solid ${disabled ? "var(--border)" : color}`,

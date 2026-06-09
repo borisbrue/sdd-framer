@@ -74,6 +74,17 @@ class ProcessManager:
         proc = self._processes.get(project_id)
         if proc is not None and proc.poll() is None:
             return "running", proc.pid
+        # After hub restart self._processes is empty; verify via OS if registry says running.
+        entry = self._registry.get(project_id)
+        if entry.status == "running" and entry.pid is not None:
+            try:
+                os.kill(entry.pid, 0)
+                return "running", entry.pid
+            except ProcessLookupError:
+                self._registry.update_status(project_id, "stopped", None)
+            except PermissionError:
+                # Process exists but we lack signal permission — treat as running.
+                return "running", entry.pid
         return "stopped", None
 
     async def _watch_processes(self) -> None:

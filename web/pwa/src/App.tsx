@@ -57,24 +57,13 @@ export default function App() {
 
   const activeProject = projects.find(p => p.id === activeId) ?? null;
 
-  // Kein Projekt → direkt in den "Hinzufügen"-Screen
-  if (projects.length === 0 && !addVisible) {
-    return (
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-        <AddProjectScreen
-          onAdded={handleAdded}
-          onCancel={() => undefined}
-        />
-      </div>
-    );
-  }
-
+  // Full-screen overlays (no nav bar)
   if (addVisible) {
     return (
       <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         <AddProjectScreen
           onAdded={handleAdded}
-          onCancel={() => setAddVisible(false)}
+          onCancel={projects.length > 0 ? () => setAddVisible(false) : () => undefined}
         />
       </div>
     );
@@ -104,19 +93,20 @@ export default function App() {
     );
   }
 
+  // Main layout — nav bar always visible, Hub tab always accessible
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", paddingTop: "env(safe-area-inset-top)" }}>
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {tab === "dashboard" && (
-          <DashboardTab
-            project={activeProject}
-            onProjectReload={reload}
-            onSelectSpec={setSelectedSpecId}
-          />
+          projects.length === 0
+            ? <NoDashboard onAdd={() => setAddVisible(true)} />
+            : <DashboardTab
+                project={activeProject}
+                onProjectReload={reload}
+                onSelectSpec={setSelectedSpecId}
+              />
         )}
-        {tab === "hub" && (
-          <HubPanel hubUrl={activeProject?.hubUrl ?? ""} />
-        )}
+        {tab === "hub" && <HubPanel onProjectAdded={handleAdded} />}
         {tab === "projects" && (
           <ProjectSwitcher
             projects={projects}
@@ -135,22 +125,15 @@ export default function App() {
             position: "fixed",
             right: 20,
             bottom: "calc(70px + env(safe-area-inset-bottom))",
-            width: 52,
-            height: 52,
+            width: 52, height: 52,
             borderRadius: "50%",
             background: "var(--accent)",
             color: "#1d2021",
             border: "none",
-            fontSize: 26,
-            fontWeight: 300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            fontSize: 26, fontWeight: 300,
+            display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-            cursor: "pointer",
-            zIndex: 100,
-            padding: 0,
-            lineHeight: 1,
+            cursor: "pointer", zIndex: 100, padding: 0, lineHeight: 1,
           }}
           title="Neue Spec anlegen"
         >
@@ -159,24 +142,15 @@ export default function App() {
       )}
 
       <nav className="tab-bar">
-        <button
-          className={tab === "dashboard" ? "active" : ""}
-          onClick={() => setTab("dashboard")}
-        >
+        <button className={tab === "dashboard" ? "active" : ""} onClick={() => setTab("dashboard")}>
           <span className="tab-icon">📋</span>
           Dashboard
         </button>
-        <button
-          className={tab === "hub" ? "active" : ""}
-          onClick={() => setTab("hub")}
-        >
+        <button className={tab === "hub" ? "active" : ""} onClick={() => setTab("hub")}>
           <span className="tab-icon">🔌</span>
           Hub
         </button>
-        <button
-          className={tab === "projects" ? "active" : ""}
-          onClick={() => setTab("projects")}
-        >
+        <button className={tab === "projects" ? "active" : ""} onClick={() => setTab("projects")}>
           <span className="tab-icon">📡</span>
           Projekte
         </button>
@@ -185,6 +159,17 @@ export default function App() {
           Hinzufügen
         </button>
       </nav>
+    </div>
+  );
+}
+
+function NoDashboard({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, gap: 16, textAlign: "center" }}>
+      <p style={{ color: "var(--muted)", fontSize: 15 }}>Kein SDD-Projekt verbunden.</p>
+      <button onClick={onAdd} style={{ padding: "12px 24px", fontSize: 14, fontWeight: 600 }}>
+        + Projekt hinzufügen
+      </button>
     </div>
   );
 }

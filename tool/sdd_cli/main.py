@@ -1323,6 +1323,25 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
             console.print(f"[red]✗[/] {msg}")
         sys.exit(2)
 
+    # FR-05/CON-0153: vollständige Compliance-Kette vor spec-approved
+    from .compliance import run_compliance_chain
+    from .decompose import TaskDecomposer
+    tasks = TaskDecomposer().load(spec_id, cfg)
+    compliance_issues = run_compliance_chain(
+        spec=spec_doc,
+        tasks=tasks,
+        cfg_raw=cfg.raw,
+        tests_dir=cfg.tests_dir,
+        project_root=cfg.root,
+    )
+    compliance_errors = [i for i in compliance_issues if i.severity == "error"]
+    if compliance_errors:
+        for issue in compliance_errors:
+            console.print(f"[red]✗[/] {issue.message}")
+            if issue.hint:
+                console.print(f"  [dim]{issue.hint}[/]")
+        sys.exit(2)
+
     g.mark_phase_complete(spec_id, "spec-approved", consistency_check={
         "fr_coverage": fr_coverage,
         "scenarios_covered": scenarios_covered,
