@@ -1,20 +1,46 @@
 ---
 id: SPEC-0042
-title: "Holdout-Runner Tiered Loop & Smoke Test"
+title: Holdout-Runner Tiered Loop & Smoke Test
 type: feature
-status: draft
-owner: "Boris"
+status: approved
+owner: Boris
 created: 2026-06-09
 updated: 2026-06-09
 version: 0.1.0
 priority: high
-tags: [holdout, evaluate, sdd-implement, loop]
-depends_on: []
-contracts: []
-tests: []
+tags:
+- holdout
+- evaluate
+- sdd-implement
+- loop
+depends_on:
+- SPEC-0004
+contracts:
+- CON-0161
+- CON-0162
+- CON-0163
+- CON-0164
+tests:
+- TST-0188
+- TST-0189
+- TST-0190
+- TST-0191
+fr_test_map:
+  FR-01:
+  - TST-0189
+  FR-02:
+  - TST-0190
+  FR-03:
+  - TST-0190
+  FR-04:
+  - TST-0188
+  - TST-0191
+  FR-05:
+  - TST-0188
+  FR-06:
+  - TST-0191
 adrs: []
 ---
-
 # Holdout-Runner Tiered Loop & Smoke Test
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
