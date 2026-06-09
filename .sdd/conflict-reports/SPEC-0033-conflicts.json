@@ -1,0 +1,63 @@
+{
+  "spec_id": "SPEC-0033",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0033-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-02/FR-03",
+      "conflicting_contract": "SPEC-0004:Erfolgskriterium: Holdout-Szenarien vom Code-Generierungs-Agenten strukturell isoliert",
+      "detail": "SPEC-0004's Orchestrator-Pipeline erzeugt HOL-Dateien bereits in sdd-implement Schritt 1.5; SPEC-0033 extrahiert dieselbe Logik als eigenständigen Befehl, ohne explizit zu regeln, ob beide Pfade dieselbe Generierungs-Implementierung delegieren oder duplizieren.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0033-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "US-01/FR-03",
+      "conflicting_contract": "SPEC-0007:POST /api/orchestrate startet Orchestrator-Lauf als Background-Task",
+      "detail": "POST /api/orchestrate (SPEC-0007) löst den vollen Pipeline-Lauf inklusive Holdout-Generierung aus; sdd generate-holdouts (SPEC-0033) erzeugt HOL-Dateien zusätzlich auf einem separaten Pfad, sodass für eine approved Spec zwei unkoordinierte Generierungs-Trigger existieren.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0033-R003",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "Motivation: nachträgliche Ergänzung von Holdouts für ältere Specs / Review-Anwendungsfall",
+      "conflicting_contract": "SPEC-0010:Problem: unkontrollierte neue Contracts ohne zugeordneten Test",
+      "detail": "Beide Specs lösen dasselbe Problem fehlender Contract-Absicherung: SPEC-0010 über automatisch ausgelöste LLM-Review-Tasks bei Inhaltsänderungen, SPEC-0033 über einen On-Demand-Batch-Befehl — ohne gegenseitige Referenz oder Abgrenzung der Verantwortlichkeit.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0033-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-06",
+      "conflicting_contract": "SPEC-0014:Execution Gate: blockiert sdd execute bis alle Qualitätsphasen bestanden sind",
+      "detail": "SPEC-0033 FR-06 definiert autonom, welche Spec-Statuswerte (approved, in-progress) für generate-holdouts zulässig sind; SPEC-0014's Execution Gate könnte für denselben Status-Übergang andere Regeln oder Reihenfolgeabhängigkeiten festlegen und damit widersprüchliche Validierungslogik erzeugen.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0033-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-07",
+      "conflicting_contract": "SPEC-0006:Erfolgskriterium: strukturierte Auswertung (Pass/Fail/Skip, Contract-Coverage) als CLI-Ausgabe",
+      "detail": "Sowohl sdd test-run (SPEC-0006) als auch sdd generate-holdouts (SPEC-0033) definieren unabhängig voneinander tabellarische CLI-Ausgaben für spec-bezogene Artefakte, ohne ein gemeinsames Output-Format festzulegen, was zu inkonsistenter UX führt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-09T10:34:05Z"
+}

@@ -3096,5 +3096,99 @@ def config_test_llm_cmd(llm_id: str | None) -> None:
         sys.exit(1)
 
 
+@cli.command(
+    "generate-holdouts",
+    help="Generiert Holdout-Szenarien für eine Spec via LLM (SPEC-0033).",
+)
+@click.argument("spec_id")
+def generate_holdouts_cmd(spec_id: str) -> None:
+    from .generate_holdouts import (
+        load_and_validate_spec,
+        resolve_contract_files,
+        get_existing_hol_ids_for_spec,
+        write_hol_file,
+        generate_holdout_scenarios,
+    )
+    from .llm import get_completion_provider
+    from .ids import next_id
+
+    cfg = _ensure_project()
+
+    try:
+        spec = load_and_validate_spec(spec_id, cfg)
+    except FileNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+    contract_ids: list[str] = spec.get("contracts") or []
+    contracts = resolve_contract_files(contract_ids, cfg)
+
+    skipped_missing = [cid for cid in contract_ids if not any(c["id"] == cid for c in contracts)]
+    for cid in skipped_missing:
+        console.print(f"[yellow]⚠[/] Contract {cid} nicht gefunden – übersprungen.")
+
+    existing_hols = get_existing_hol_ids_for_spec(spec_id, cfg)
+    spec_content = (spec["_path"]).read_text(encoding="utf-8")
+
+    provider = get_completion_provider(cfg, component="completion")
+
+    created: list[tuple[str, str]] = []
+    skipped_count = 0
+
+    for contract in contracts:
+        cid = contract["id"]
+
+        existing_for_contract = {
+            hid for hid in existing_hols
+            if (cfg.holdout_dir / f"{hid}-*.md").exists()
+        }
+        already_have = any(
+            parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+            for p in cfg.holdout_dir.rglob("*.md")
+        ) if cfg.holdout_dir.exists() else False
+
+        if already_have:
+            count = sum(
+                1 for p in cfg.holdout_dir.rglob("*.md")
+                if parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+                   and parse_safe(p).frontmatter.get("spec") == spec_id
+            )
+            console.print(f"  [dim]→ {cid}: {count} Holdout(s) bereits vorhanden – übersprungen.[/]")
+            skipped_count += count
+            continue
+
+        try:
+            scenarios = generate_holdout_scenarios(
+                contract["content"], cid, spec_content, provider
+            )
+        except RuntimeError as exc:
+            console.print(f"[red]✗[/] LLM-Fehler für {cid}: {exc}")
+            continue
+
+        for scenario in scenarios:
+            hid = next_id(cfg, "holdout")
+            path = write_hol_file(hid, spec_id, cid, scenario, cfg)
+            created.append((hid, cid))
+            console.print(f"  [green]+[/] {hid}  ({cid})  {path.name}")
+
+    table = Table(title=f"Holdouts für {spec_id}", show_header=True)
+    table.add_column("HOL-ID", style="cyan")
+    table.add_column("Contract", style="blue")
+    for hid, cid in created:
+        table.add_row(hid, cid)
+    if created:
+        console.print(table)
+
+    total = len(created)
+    console.print(f"\n[green]✓[/] {total} Holdout(s) angelegt", end="")
+    if skipped_count:
+        console.print(f", {skipped_count} Holdouts übersprungen (bereits vorhanden)")
+    else:
+        console.print("")
+
+
 if __name__ == "__main__":
     cli()
