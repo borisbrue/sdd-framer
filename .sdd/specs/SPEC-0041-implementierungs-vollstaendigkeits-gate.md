@@ -2,7 +2,7 @@
 id: SPEC-0041
 title: Implementierungs-Vollständigkeits-Gate
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-06-09
 updated: '2026-06-09'

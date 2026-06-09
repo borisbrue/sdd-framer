@@ -1888,7 +1888,7 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
 # sdd install-hooks  (SPEC-0010 FR-02)
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("install-hooks",
-             help="Installiert einen Git-Pre-Commit-Hook der sdd status-check --fix ausführt.")
+             help="Installiert Git-Pre-Commit-Hooks: Status-Check + Regressions-Gate (SPEC-0041 FR-08).")
 def install_hooks_cmd() -> None:
     cfg = _ensure_project()
     git_dir = cfg.root / ".git"
@@ -1902,16 +1902,29 @@ def install_hooks_cmd() -> None:
 
     hook_script = (
         "#!/bin/sh\n"
-        "# Installiert von sdd install-hooks (SPEC-0010)\n"
-        "sdd status-check --fix\n"
+        "# Installiert von sdd install-hooks (SPEC-0010 + SPEC-0041)\n"
+        "sdd status-check --fix || exit 1\n"
+        "sdd pre-commit-gate\n"
     )
     hook_path.write_text(hook_script, encoding="utf-8")
     hook_path.chmod(0o755)
 
     console.print(f"[green]✓[/] Pre-Commit-Hook installiert: [bold]{hook_path}[/]")
     console.print(
-        "  Bei jedem [cyan]git commit[/] wird [cyan]sdd status-check --fix[/] ausgeführt."
+        "  Bei jedem [cyan]git commit[/] wird [cyan]sdd status-check --fix[/] "
+        "und das [cyan]Regressions-Gate[/] ausgeführt."
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd pre-commit-gate  (SPEC-0041 FR-08)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.command("pre-commit-gate",
+             help="Regressions-Gate: bricht Commit ab wenn Spec-Tests nach main.py/routes/App.tsx-Änderung rot sind.",
+             hidden=True)
+def pre_commit_gate_cmd() -> None:
+    from .pre_commit_hook import main as _hook_main
+    sys.exit(_hook_main())
 
 
 # ─────────────────────────────────────────────────────────────────────────────

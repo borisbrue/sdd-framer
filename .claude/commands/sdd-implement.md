@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.5.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-implement | version: 0.6.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -307,6 +307,77 @@ sdd finalize $ARGUMENTS --skip-container
 `▶ sdd finalize $ARGUMENTS --skip-container` (kein Container vorhanden – erwartet)
 
 Zeige den `FinalizeReport` (Branch, Commit-Hash, PR-URL oder lokaler PR-Pfad).
+
+## Schritt 6b: FR-Vollständigkeits-Check + PR erstellen
+
+Nach erfolgreichem `sdd finalize`: prüfe ob jedes FR aus der Spec tatsächlich
+implementiert ist, bevor der PR erstellt wird.
+
+### 6b-1: FRs aus Spec extrahieren
+
+Lese `.sdd/specs/$ARGUMENTS-*.md`, Abschnitt `## N. Funktionale Anforderungen`.
+Extrahiere alle `FR-XX`-Bezeichner mit ihrer Beschreibung.
+
+### 6b-2: Implementierung pro FR prüfen
+
+Für jedes FR: lese die relevanten Code-Dateien (orientiere dich an Contracts,
+Task-Beschreibungen und dem Implementierungsabschnitt der Spec) und prüfe ob
+das beschriebene Verhalten nachweislich implementiert ist.
+
+Gib eine Tabelle aus:
+```
+FR-Check: $ARGUMENTS
+───────────────────────────────────────────────────────────
+FR-01  ✅  FrCoverageSpecification extrahiert FR-IDs  compliance.py:42
+FR-02  ✅  Task-Mapping via test_ids                  compliance.py:78
+FR-03  ⚠️  TypeAwareTestChecker — stufe-Feld prüft 'stufe', Schema sagt 'level'
+FR-04  ✅  RouteRegistrationChecker grep-basiert      compliance.py:190
+...
+FR-08  ❌  sdd install-hooks installiert Regressions-Hook nicht
+───────────────────────────────────────────────────────────
+Ergebnis: N/M FRs vollständig implementiert
+```
+
+Bewertungskriterien:
+- ✅ Code vorhanden, Verhalten entspricht Spec + Contracts
+- ⚠️ Implementiert, aber Abweichung vom Spec-Text (Nebenbefund, kein Blocker)
+- ❌ FR fehlt oder weicht so stark ab dass das Ziel nicht erreicht wird
+
+### 6b-3: Entscheidung
+
+**Alle FRs ✅ oder ⚠️ (kein ❌):** Fahre mit 6b-4 (PR erstellen) fort.
+
+**Mindestens ein ❌:** Kehre zu Schritt 4 zurück — implementiere die fehlenden
+FRs im TDD-Zyklus, dann erneut `sdd finalize` + Schritt 6b.
+
+### 6b-4: PR erstellen
+
+```bash
+gh pr create \
+  --base main \
+  --title "feat($ARGUMENTS): <spec-titel>" \
+  --body "$(cat .sdd/prs/PR-$ARGUMENTS.md 2>/dev/null || echo 'Implementierung von $ARGUMENTS')"
+```
+
+Falls `.sdd/prs/PR-$ARGUMENTS.md` nicht existiert, nutze dieses Template:
+
+```
+## Summary
+- Implementiert $ARGUMENTS gemäß Spec und Contracts
+- N/M FRs vollständig abgedeckt (alle Tests grün)
+
+## FR-Abdeckung
+<FR-Tabelle aus 6b-2 einfügen>
+
+## Test plan
+- [ ] `sdd validate` — 0 Fehler
+- [ ] Alle Unit-Tests grün
+- [ ] sdd finalize erfolgreich
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+Zeige die PR-URL nach erfolgreichem `gh pr create`.
 
 ## Schritt 7: Holdout-Evaluation
 
