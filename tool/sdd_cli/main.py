@@ -77,7 +77,7 @@ def _check_git_setup(target: Path) -> None:
         console.print("  [dim]→ Git-Init übersprungen. Manuell: [cyan]git init[/][/]")
         return
 
-    subprocess.run(["git", "-C", str(target), "init"], check=True)
+    subprocess.run(["git", "-C", str(target), "init", "-b", "main"], check=True)
     subprocess.run(["git", "-C", str(target), "add", ".sdd", ".claude"], capture_output=True)
     subprocess.run(
         ["git", "-C", str(target), "commit", "-m", "chore: sdd init"],
