@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 import sys
 from typing import Any
 
@@ -39,6 +40,103 @@ console = Console()
 @click.version_option(__version__)
 def cli() -> None:
     pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd init – Hilfsfunktionen
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _is_git_repo(path: Path) -> bool:
+    import subprocess
+    result = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
+def _check_git_setup(target: Path) -> None:
+    """Prüft ob ein Git-Repo existiert; bietet an es anzulegen und ggf. bei GitHub zu registrieren."""
+    import subprocess
+
+    if _is_git_repo(target):
+        return
+
+    console.print(
+        "\n[yellow]⚠[/] Kein Git-Repository gefunden.\n"
+        "  SDD benötigt Git für Branches, Commits und PRs.\n"
+        "  Jetzt initialisieren? [J/n] ",
+        end="",
+    )
+    try:
+        answer = input("").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        answer = "n"
+
+    if answer and not answer.startswith(("j", "y")):
+        console.print("  [dim]→ Git-Init übersprungen. Manuell: [cyan]git init[/][/]")
+        return
+
+    subprocess.run(["git", "-C", str(target), "init"], check=True)
+    subprocess.run(["git", "-C", str(target), "add", ".sdd", ".claude"], capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(target), "commit", "-m", "chore: sdd init"],
+        capture_output=True,
+    )
+    console.print("  [green]✓[/] Git-Repository initialisiert und erster Commit erstellt.")
+
+    if not shutil.which("gh"):
+        console.print(
+            "  [dim]→ gh CLI nicht gefunden – GitHub-Repo kann nicht automatisch angelegt werden.[/]"
+        )
+        return
+
+    console.print(
+        "  GitHub-Repository anlegen? [J/n] ",
+        end="",
+    )
+    try:
+        answer2 = input("").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        answer2 = "n"
+
+    if answer2 and not answer2.startswith(("j", "y")):
+        console.print("  [dim]→ Übersprungen. Manuell: [cyan]gh repo create[/][/]")
+        return
+
+    console.print("  Sichtbarkeit: [1] privat (Standard)  [2] öffentlich → ", end="")
+    try:
+        vis_answer = input("").strip()
+    except (EOFError, KeyboardInterrupt):
+        vis_answer = "1"
+
+    visibility = "public" if vis_answer == "2" else "private"
+    repo_name = target.name
+
+    proc = subprocess.run(
+        ["gh", "repo", "create", repo_name, f"--{visibility}", "--source=.", "--remote=origin", "--push"],
+        capture_output=True,
+        text=True,
+        cwd=str(target),
+    )
+    if proc.returncode == 0:
+        url = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else f"github.com/{repo_name}"
+        console.print(f"  [green]✓[/] GitHub-Repo angelegt: [bold]{url}[/]")
+    else:
+        console.print(f"  [yellow]⚠[/] gh repo create fehlgeschlagen: {proc.stderr.strip()[:200]}")
+        console.print("  Manuell: [cyan]gh repo create[/]")
+
+
+def _check_gh_available() -> None:
+    """Gibt eine Warnung aus wenn gh nicht im PATH ist."""
+    if shutil.which("gh"):
+        return
+    console.print(
+        "\n[yellow]⚠[/] gh CLI nicht gefunden – automatische PR-Erstellung nicht möglich.\n"
+        "  Installiere gh: [link]https://cli.github.com[/link]\n"
+        "  Oder direkt: curl -sL https://github.com/cli/cli/releases/latest "
+        "→ Binary nach ~/.local/bin/gh"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -118,6 +216,9 @@ def init(target: str, project_title: str, force: bool,
                 console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
         else:
             console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
+
+    _check_git_setup(Path(target).resolve())
+    _check_gh_available()
 
     console.print("\nNächste Schritte:")
     console.print("  1. [cyan]sdd new spec \"Mein erstes Feature\"[/]")

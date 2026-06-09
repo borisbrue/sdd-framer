@@ -2,7 +2,7 @@
 id: SPEC-0033
 title: sdd generate-holdouts – Automatische Holdout-Generierung per CLI
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-05-30
 updated: '2026-06-09'
