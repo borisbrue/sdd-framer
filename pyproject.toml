@@ -1,6 +1,6 @@
 [project]
 name = "sdd-framer"
-version = "0.1.52"
+version = "0.1.53"
 description = "Spec-Driven Development – CLI, Web API und Blueprint"
 requires-python = ">=3.10"
 authors = [{ name = "Boris" }]
