@@ -1,0 +1,83 @@
+{
+  "spec_id": "SPEC-0043",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0043-R001",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0007:§2 (POST /api/orchestrate – SSE-Streaming für Orchestrator-Output)",
+      "detail": "SPEC-0007 implementiert bereits einen SSE-Kanal für Echtzeit-Status-Updates des Orchestrator-Laufs; FR-01 führt einen zweiten unabhängigen SSE-Endpunkt für Holdout-Status ein, ohne die bestehende EventSource-Infrastruktur explizit zu referenzieren oder wiederzuverwenden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SSE-Endpunkt für Holdout-Status explizit als Erweiterung der SPEC-0007-Infrastruktur definiert (FR-01)",
+        "resolved_at": "2026-06-09T12:52:12Z"
+      }
+    },
+    {
+      "id": "CF-0043-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0016:§1 (Fire-and-forget + Push-Benachrichtigung via SSE)",
+      "detail": "SPEC-0016 (draft) plant eine generische SSE-Push-Infrastruktur für asynchrone KI-Jobs; FR-01 löst dasselbe Problem – Echtzeit-Status-Push ohne Seiten-Reload – als Insellösung, ohne den geplanten generischen Kanal zu nutzen oder abzuwarten.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0016 ist draft und noch nicht implementiert; FR-01 referenziert dieselbe SSE-Infrastruktur – kein eigenständiger Kanal",
+        "resolved_at": "2026-06-09T12:52:13Z"
+      }
+    },
+    {
+      "id": "CF-0043-R003",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0006:§2 (Fehlgeschlagene Tests als strukturierte Ergebnisliste im UI)",
+      "detail": "SPEC-0006 rendert fehlgeschlagene pytest-Tests bereits als aufbereitete Detail-Liste pro Spec; FR-03 definiert dieselbe UX-Struktur (aufklappbare Fehlerliste, je Szenario) für Holdout-Runs – eine gemeinsame ListComponent würde Implementierungsduplizierung vermeiden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "FR-03 wiederverwendet explizit die Detail-Listenkomponente aus SPEC-0006",
+        "resolved_at": "2026-06-09T12:52:13Z"
+      }
+    },
+    {
+      "id": "CF-0043-R004",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0006:§2 (Status-Badge running/passed/failed pro Spec)",
+      "detail": "SPEC-0006 zeigt bereits einen Pass/Fail-Status-Badge pro Spec für Test-Runs; FR-02 führt einen gleichartigen Badge (running/passed/failed) für Holdout-Läufe ein – ohne Abstimmung auf die bestehende Badge-Komponente entsteht ein zweites, visuell ähnliches Widget für denselben ContainerView.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "FR-02 wiederverwendet explizit die Badge-Komponente aus SPEC-0006",
+        "resolved_at": "2026-06-09T12:52:13Z"
+      }
+    },
+    {
+      "id": "CF-0043-R005",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0003:§2.1 REST-API (Route-Konvention: Pfad-Segment statt Query-Parameter)",
+      "detail": "SPEC-0003 verwendet durchgängig Pfad-Segmente zur Ressourcenidentifikation (z. B. GET /specs/{id}); FR-04 bricht diese Konvention mit GET /api/holdouts?spec_id=<id> als Query-Parameter – das widerspricht dem etablierten REST-Muster des Projekts.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "FR-04 auf Pfad-Segment GET /api/holdouts/{spec_id} korrigiert, konform mit SPEC-0003-Konvention",
+        "resolved_at": "2026-06-09T12:52:13Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-09T12:50:48Z"
+}

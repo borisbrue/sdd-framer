@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-06-09T12:34:07.360257+00:00",
+  "base_url": "http://localhost:19999",
+  "summary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "pass_rate": 0.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0033",
+      "title": "sdd --version gibt Exit 0 und Versionsnummer",
+      "contract": "",
+      "passed": false,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "sdd, version 0.1.54\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0034",
+      "title": "sdd validate gibt Exit 0 auf eigenem Projekt",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "exit_code": 1,
+            "stdout": "✗ 3 Fehler gefunden:\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: Spec hat keinen Contract \n(require_contract_per_spec).\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: FR-01 hat keinen \nzugeordneten Test\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: FR-02 hat keinen \nzugeordneten Test\n⚠ 54 Warnungen:\n  ⚠ .sdd/contracts/performance/CON-0068-container-start-slo.md: Artifact-Datei \nfehlt: contracts/performance/container-start.slo.yaml\n  ⚠ .sdd/contracts/performance/CON-00",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "exit_code: 1 != 0"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0035",
+      "title": "sdd new holdout erstellt Datei mit priority und type",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "skip",
+          "llm_reasoning": "normal-Fehler – edge-case übersprungen"
+        }
+      ]
+    }
+  ]
+}

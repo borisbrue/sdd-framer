@@ -1,0 +1,144 @@
+{
+  "timestamp": "2026-06-09T13:35:52.107801+00:00",
+  "base_url": "http://localhost:8000",
+  "summary": {
+    "total": 6,
+    "passed": 0,
+    "failed": 6,
+    "pass_rate": 0.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0036",
+      "title": "Laufender Holdout-Status abfragen",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0037",
+      "title": "Fehlgeschlagener Holdout mit Szenarien",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0038",
+      "title": "Unbekannte Spec-ID",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0039",
+      "title": "Badge zeigt running für aktiven Lauf",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0040",
+      "title": "Badge zeigt failed mit Detail-Liste",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0041",
+      "title": "Badge zeigt none ohne Holdout",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    }
+  ]
+}

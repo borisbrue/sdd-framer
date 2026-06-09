@@ -1,0 +1,144 @@
+{
+  "timestamp": "2026-06-09T13:43:01.181940+00:00",
+  "base_url": "http://localhost:8080",
+  "summary": {
+    "total": 6,
+    "passed": 1,
+    "failed": 5,
+    "pass_rate": 0.1667
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0036",
+      "title": "Laufender Holdout-Status abfragen",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}",
+          "llm_verdict": "fail",
+          "llm_reasoning": "status: 404 != 200; spec_id: None != 'SPEC-0043'; status: None != 'running'; updated_at: key fehlt (erwartet: present); run_id: key fehlt (erwartet: present)"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0037",
+      "title": "Fehlgeschlagener Holdout mit Szenarien",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}",
+          "llm_verdict": "fail",
+          "llm_reasoning": "status: 404 != 200; spec_id: None != 'SPEC-0043'; status: None != 'failed'; updated_at: key fehlt (erwartet: present); scenarios: key fehlt (erwartet: present)"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0038",
+      "title": "Unbekannte Spec-ID",
+      "contract": "CON-0159",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-9999\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-9999\"}",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0039",
+      "title": "Badge zeigt running für aktiven Lauf",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}",
+          "llm_verdict": "fail",
+          "llm_reasoning": "status: 404 != 200; status: None != 'running'; spec_id: None != 'SPEC-0043'"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0040",
+      "title": "Badge zeigt failed mit Detail-Liste",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}",
+          "llm_verdict": "fail",
+          "llm_reasoning": "status: 404 != 200; status: None != 'failed'; spec_id: None != 'SPEC-0043'; scenarios: key fehlt (erwartet: present)"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0041",
+      "title": "Badge zeigt none ohne Holdout",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-0043\"}",
+          "llm_verdict": "fail",
+          "llm_reasoning": "status: 404 != 200; status: None != 'none'; spec_id: None != 'SPEC-0043'"
+        }
+      ]
+    }
+  ]
+}

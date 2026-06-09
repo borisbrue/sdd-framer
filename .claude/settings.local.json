@@ -240,7 +240,9 @@
       "Bash(kill 468953)",
       "Bash(nohup /home/deck/.local/bin/sdd pwa start)",
       "Bash(echo \"PWA-Daemon neu gestartet, PID=$!\")",
-      "Bash(kill -9 470985)"
+      "Bash(kill -9 470985)",
+      "Bash(podman port *)",
+      "Bash(podman restart *)"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",
