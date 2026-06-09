@@ -19,6 +19,17 @@ export interface Project {
   auth_required?: boolean;
 }
 
+/** UUID v4 — works in both secure (HTTPS) and non-secure (HTTP) contexts. */
+export function generateId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 const PROJECTS_KEY = "sdd_projects";
 const ACTIVE_KEY = "sdd_active_project";
 const LEGACY_KEY = "sdd_config"; // SPEC-0024 → SPEC-0025 Migration (CON-0088)
@@ -35,7 +46,7 @@ export const ProjectRegistry = {
       try {
         const old = JSON.parse(legacy) as Record<string, string>;
         const project: Project = {
-          id: crypto.randomUUID(),
+          id: generateId(),
           name: "Mein SDD-Projekt",
           baseUrl: (old.baseUrl ?? old.base_url ?? "").replace(/\/$/, ""),
           token: old.token ?? "",

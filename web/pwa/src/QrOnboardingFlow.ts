@@ -7,7 +7,7 @@
  * Der `scan`-Schritt ist der einzige variable Teil — CameraQrFlow und ManualQrFlow
  * überschreiben ihn. Alle anderen Schritte sind fix und können nicht übersprungen werden.
  */
-import { Project, ProjectRegistry } from "./config";
+import { Project, ProjectRegistry, generateId } from "./config";
 
 export interface QrData {
   sdd: number;
@@ -100,7 +100,7 @@ export abstract class QrOnboardingFlow {
    */
   protected saveProject(data: QrData, newToken: string): Project {
     const project: Project = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: data.name,
       baseUrl: data.url,  // QR url → baseUrl (CON-0087 G-03)
       token: newToken,

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Status, ValidationResult } from "../api";
 
-interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; }
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; onShowHub?: () => void; hubActive?: boolean; }
 
-export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole }: Props) {
+export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole, onShowHub, hubActive }: Props) {
   const [status, setStatus] = useState<Status | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -50,6 +50,17 @@ export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerI
           {validating ? "…" : "▶ Validate"}
         </button>
         <button onClick={handleTrace}>↻ Trace</button>
+        {onShowHub && (
+          <button
+            onClick={onShowHub}
+            style={{
+              color: hubActive ? "var(--green)" : "var(--muted)",
+              borderColor: hubActive ? "var(--green)" : "var(--border)",
+            }}
+          >
+            ⬡ Hub
+          </button>
+        )}
         <button onClick={onShowAiUsage} style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
           ✦ KI-Kosten
         </button>

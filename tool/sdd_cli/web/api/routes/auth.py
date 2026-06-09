@@ -55,7 +55,8 @@ async def server_info():
     token = _get_current_token(config)
     # CON-0085 G-03: nur die ersten 8 Zeichen des SHA-256-Hashes — nie der Token selbst
     token_hash = hashlib.sha256(token.encode()).hexdigest()[:8] if token else ""
-    return {"name": name, "externalUrl": external_url, "tokenHash": token_hash}
+    hub_url = sdd_context.get_hub_url()
+    return {"name": name, "externalUrl": external_url, "tokenHash": token_hash, "hubUrl": hub_url}
 
 
 @router.get("/auth/qr-payload")

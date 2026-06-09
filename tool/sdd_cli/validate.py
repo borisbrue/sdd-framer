@@ -310,6 +310,9 @@ def validate(config: SddConfig) -> Report:
     # 5) Lifecycle-Regeln (SPEC-0010)
     _check_lifecycle_rules(report, contracts, specs, test_index)
 
+    # 6) FR-Coverage-Compliance (SPEC-0041 FR-07)
+    _check_fr_compliance(report, specs, config)
+
     return report
 
 
@@ -505,4 +508,34 @@ def _check_lifecycle_rules(
                     instruction=(
                         f"Review and approve {cid} or update {sid} status to 'review'."
                     ),
+                )
+
+
+def _check_fr_compliance(report: Report, specs: list, config: "SddConfig") -> None:
+    """FR-07: Compliance-Kette für approved/in-progress Specs (SPEC-0041)."""
+    from .compliance import run_compliance_chain
+    from .decompose import TaskDecomposer
+
+    target_statuses = {"approved", "in-progress"}
+    decomposer = TaskDecomposer()
+
+    for spec in specs:
+        status = spec.frontmatter.get("status")
+        if status not in target_statuses:
+            continue
+        tasks = decomposer.load(spec.frontmatter.get("id", ""), config)
+        issues = run_compliance_chain(
+            spec=spec,
+            tasks=tasks,
+            cfg_raw=config.raw,
+            tests_dir=config.tests_dir,
+            project_root=config.root,
+        )
+        for issue in issues:
+            if issue.severity == "error":
+                report.add(
+                    "error",
+                    spec.path,
+                    issue.message,
+                    instruction=issue.hint,
                 )

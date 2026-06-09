@@ -4,6 +4,7 @@ import AiUsageView from "./components/AiUsageView";
 import ContractDetail from "./components/ContractDetail";
 import DevConsole from "./components/DevConsole";
 import HoldoutDetail from "./components/HoldoutDetail";
+import HubPanel from "./components/HubPanel";
 import ServerInfoPanel from "./components/ServerInfoPanel";
 import SettingsPage from "./components/SettingsPage";
 import SpecDetail from "./components/SpecDetail";
@@ -36,6 +37,8 @@ export default function App() {
   const [showSettings, setShowSettings]     = useState(false);
   const [showServerInfo, setShowServerInfo] = useState(false);
   const [showConsole, setShowConsole]       = useState(false);
+  const [showHub, setShowHub]               = useState(false);
+  const [hubUrl, setHubUrl]                 = useState("");
   const [aiUsage, setAiUsage]     = useState<AiUsage | null>(null);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -60,6 +63,10 @@ export default function App() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    api.serverInfo().then(info => { if (info.hubUrl) setHubUrl(info.hubUrl); }).catch(() => {});
+  }, []);
 
   function navigate(id: string) {
     const type = idType(id);
@@ -92,10 +99,12 @@ export default function App() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <StatusBar
-        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); }}
-        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); }}
+        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); setShowHub(false); }}
+        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); setShowHub(false); }}
         onShowServerInfo={() => setShowServerInfo(v => !v)}
         onToggleConsole={() => setShowConsole(v => !v)}
+        onShowHub={() => { setShowHub(v => !v); setShowAiUsage(false); setShowSettings(false); }}
+        hubActive={showHub}
       />
       {showConsole && <DevConsole onClose={() => setShowConsole(false)} />}
 
@@ -172,9 +181,13 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
+          {showHub && (
+            <HubPanel hubUrl={hubUrl} />
+          )}
 
-          {!showAiUsage && !showSettings && selected?.type === "spec" && (
+          {!showAiUsage && !showSettings && !showHub && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
+
+          {!showAiUsage && !showSettings && !showHub && selected?.type === "spec" && (
             <SpecDetail
               key={selected.id}
               specId={selected.id}
@@ -185,7 +198,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && selected?.type === "contract" && (
+          {!showAiUsage && !showSettings && !showHub && selected?.type === "contract" && (
             <ContractDetail
               key={selected.id}
               contractId={selected.id}
@@ -193,7 +206,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && selected?.type === "test" && (
+          {!showAiUsage && !showSettings && !showHub && selected?.type === "test" && (
             <TestDetail
               key={selected.id}
               testId={selected.id}
@@ -201,7 +214,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && selected?.type === "holdout" && (
+          {!showAiUsage && !showSettings && !showHub && selected?.type === "holdout" && (
             <HoldoutDetail
               key={selected.id}
               holdoutId={selected.id}

@@ -1,0 +1,30 @@
+{
+  "spec_id": "SPEC-0041",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0041-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/main",
+      "conflicting_contract": "SPEC-0025:endpoint /api/main",
+      "detail": "Endpoint '/api/main' auch in SPEC-0025 definiert.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0041-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/main",
+      "conflicting_contract": "SPEC-0039:endpoint /api/main",
+      "detail": "Endpoint '/api/main' auch in SPEC-0039 definiert.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-09T07:36:19Z"
+}
