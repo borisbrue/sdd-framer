@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Status, ValidationResult } from "../api";
 
-interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; onShowHub?: () => void; hubActive?: boolean; }
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; onShowHub?: () => void; hubActive?: boolean; onShowDagMonitor?: () => void; dagMonitorActive?: boolean; }
 
-export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole, onShowHub, hubActive }: Props) {
+export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole, onShowHub, hubActive, onShowDagMonitor, dagMonitorActive }: Props) {
   const [status, setStatus] = useState<Status | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -50,6 +50,17 @@ export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerI
           {validating ? "…" : "▶ Validate"}
         </button>
         <button onClick={handleTrace}>↻ Trace</button>
+        {onShowDagMonitor && (
+          <button
+            onClick={onShowDagMonitor}
+            style={{
+              color: dagMonitorActive ? "var(--accent)" : "var(--muted)",
+              borderColor: dagMonitorActive ? "var(--accent)" : "var(--border)",
+            }}
+          >
+            ◈ DAG
+          </button>
+        )}
         {onShowHub && (
           <button
             onClick={onShowHub}

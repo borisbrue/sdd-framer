@@ -89,6 +89,22 @@ export const api = {
   getConfig:        () => req<ConfigData>("GET", "/config"),
   saveConfigRaw:    (yaml: string) => req<{ok: boolean}>("PUT", "/config", { yaml }),
   patchConfig:      (fields: ConfigPatch) => req<{ok: boolean}>("PATCH", "/config", fields),
+  getOrchestrateRuns: () => req<DagRun[]>("GET", "/orchestrate/runs"),
+  sendOrchestrateCommand: (runId: string, commandType: string, taskId: string) =>
+    req<{queued: boolean; command_type: string}>("POST", `/orchestrate/command/${runId}`, { command_type: commandType, task_id: taskId }),
+  streamDagEvents: (
+    runId: string,
+    onEvent: (ev: DagEventData) => void,
+    onClose: () => void,
+  ): EventSource => {
+    const es = new EventSource(`${BASE}/orchestrate/stream/${runId}`);
+    es.onmessage = (e) => {
+      try { onEvent(JSON.parse(e.data as string) as DagEventData); } catch { /* skip */ }
+    };
+    es.onerror = () => { es.close(); onClose(); };
+    return es;
+  },
+
   streamPipelineLog: (
     runId: string,
     onLine: (line: string) => void,
@@ -448,6 +464,31 @@ export async function fetchHubProjects(hubUrl: string): Promise<HubProjectList> 
   const res = await fetch(`${hubUrl}/projects`, { signal: AbortSignal.timeout(5000) });
   if (!res.ok) throw new Error(`hub_projects_error:${res.status}`);
   return res.json();
+}
+
+// ── DAG Monitor API (SPEC-0037) ───────────────────────────────────────────────
+
+export type DagTaskStatus = "pending" | "running" | "done" | "failed" | "skipped" | "paused";
+export type DagAgent = "local" | "cloud" | "none";
+
+export interface DagRun {
+  run_id: string;
+  spec_id: string;
+  status: string;
+  started_at: number;
+}
+
+export interface DagEventData {
+  run_id: string;
+  task_id: string;
+  status: DagTaskStatus;
+  agent: DagAgent;
+  model: string;
+  timestamp: string;
+  details: string;
+  phase?: string;
+  iteration?: number;
+  reason?: string;
 }
 
 export async function postHubAction(
