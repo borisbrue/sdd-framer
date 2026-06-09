@@ -1,18 +1,19 @@
 ---
 id: HOL-XXXX
-project: ""                # PRJ-XXXX
 title: "<Szenario-Name>"
-contract: CON-XXXX         # Welchen Contract prüft dieses Szenario?
 spec: SPEC-XXXX
-status: active             # active | disabled | wip
+contract: CON-XXXX
+status: wip              # active | disabled | wip
+priority: normal         # critical | normal | edge-case
+type: http               # http | cli  →  Detailtemplates: holdout/http.md | holdout/cli.md
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 tags: []
 ---
 
-# Holdout-Szenario: {{title}}
+# Holdout: {{title}}
 
-> **Contract:** {{contract}} · **Spec:** {{spec}} · **Status:** {{status}}
+> **Contract:** {{contract}} · **Spec:** {{spec}} · **Priority:** {{priority}}
 >
 > ⚠️ Dieses Dokument ist dem Code-generierenden Agenten **nicht** zugänglich.
 
@@ -20,18 +21,39 @@ tags: []
 
 <!-- Was soll das System in diesem Szenario tun? Plain English, kein Code. -->
 
-## Schritte
+## Setup
 
-1. ...
-2. ...
-3. ...
+<!-- Vorbereitungsschritte. Captured-Variablen stehen in ## Test als {captured.name} zur Verfügung. -->
+<!-- Abschnitt entfernen wenn kein Setup nötig. Vollständiges Beispiel: holdout/http.md -->
 
-## Erwartetes Ergebnis
+```yaml
+- step: <schritt_name>
+  action:
+    method: POST
+    path: /api/<endpoint>
+    body:
+      <key>: <value>
+  capture:
+    <variable>: data.<json_path>
+```
 
-<!-- Was ist das erwartete Verhalten / die erwartete Antwort? -->
-- ...
+## Test
 
-## Randbedingungen
+```yaml
+test:
+  action:
+    method: GET
+    path: /api/<endpoint>
+  assert:
+    status: 200
+    body:
+      data.ok: true
+```
 
-<!-- Welche Vorbedingungen müssen erfüllt sein? -->
-- ...
+## Evaluation Hint
+
+<!-- (1) Welche Assertion kann fehlschlagen → (2) Wo im Code → (3) Welcher Task-Delta behebt es. -->
+
+Wenn `status != <erwartet>`: ...
+Wenn `data.<field>` fehlt: Prüfe `<module>.py:<funktion>()` — ...
+Fix-Richtung: <Was muss der Task ändern>.

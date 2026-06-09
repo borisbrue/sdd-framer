@@ -91,36 +91,95 @@ def write_hol_file(
     hol_id: str,
     spec_id: str,
     contract_id: str,
-    scenario: dict[str, str],
+    scenario: dict[str, Any],
     cfg: SddConfig,
 ) -> Path:
     """Schreibt eine HOL-Datei mit allen Pflichtfeldern.
 
-    scenario: dict mit keys 'title', 'input', 'expected', 'evaluation_hint'.
+    scenario: dict mit keys 'title', 'priority', 'type', 'description',
+              optional 'setup' (list), 'test' (dict), optional 'teardown' (list),
+              'evaluation_hint'.
     """
+    import yaml as _yaml
+    from datetime import date
+
     holdout_dir = cfg.holdout_dir
     holdout_dir.mkdir(parents=True, exist_ok=True)
 
     title = scenario["title"]
+    priority = scenario.get("priority", "normal")
+    hol_type = scenario.get("type", "http")
     slug = slugify(title)
     target = holdout_dir / f"{hol_id}-{slug}.md"
-
-    body = (
-        f"\n## Input\n\n{scenario['input']}\n\n"
-        f"## Expected\n\n{scenario['expected']}\n\n"
-        f"## Evaluation Hint\n\n{scenario['evaluation_hint']}\n"
-    )
-
-    from datetime import date
     today = date.today().isoformat()
-    content = (
-        f"---\nid: {hol_id}\nproject: \"\"\ntitle: \"{title}\"\n"
-        f"contract: {contract_id}\nspec: {spec_id}\nstatus: ready\n"
-        f"created: {today}\nupdated: {today}\ntags: []\n---\n"
-        f"{body}"
+
+    frontmatter = (
+        f"---\n"
+        f"id: {hol_id}\n"
+        f"title: \"{title}\"\n"
+        f"spec: {spec_id}\n"
+        f"contract: {contract_id}\n"
+        f"status: wip\n"
+        f"priority: {priority}\n"
+        f"type: {hol_type}\n"
+        f"created: {today}\n"
+        f"updated: {today}\n"
+        f"tags: []\n"
+        f"---\n"
     )
-    target.write_text(content, encoding="utf-8")
+
+    header = (
+        f"\n# Holdout: {title}\n\n"
+        f"> **Contract:** {contract_id} · **Spec:** {spec_id} · **Priority:** {priority}\n"
+        f">\n"
+        f"> ⚠️ Dieses Dokument ist dem Code-generierenden Agenten **nicht** zugänglich.\n"
+    )
+
+    description = scenario.get("description", "")
+    body = f"\n## Beschreibung\n\n{description}\n" if description else ""
+
+    setup = scenario.get("setup")
+    if setup:
+        setup_yaml = _yaml.dump(setup, allow_unicode=True, default_flow_style=False)
+        body += f"\n## Setup\n\n```yaml\n{setup_yaml}```\n"
+
+    test = scenario.get("test")
+    if test:
+        test_yaml = _yaml.dump({"test": test}, allow_unicode=True, default_flow_style=False)
+        body += f"\n## Test\n\n```yaml\n{test_yaml}```\n"
+
+    teardown = scenario.get("teardown")
+    if teardown:
+        td_yaml = _yaml.dump(teardown, allow_unicode=True, default_flow_style=False)
+        body += f"\n## Teardown\n\n```yaml\n{td_yaml}```\n"
+
+    hint = scenario.get("evaluation_hint", "")
+    body += f"\n## Evaluation Hint\n\n{hint}\n"
+
+    target.write_text(frontmatter + header + body, encoding="utf-8")
     return target
+
+
+_SCENARIO_SCHEMA = """\
+Jedes Element ist ein JSON-Objekt mit diesen Feldern:
+  "title"           – kurzer Szenario-Titel (string)
+  "priority"        – "critical" | "normal" | "edge-case"
+                      critical = bricht sofort ab; normal = aggregiert; edge-case = nur wenn normal besteht
+  "type"            – "http" | "cli"
+  "description"     – 1-2 Sätze Plain English, was das System tun soll (string)
+  "setup"           – optionale Liste von Setup-Schritten (Array oder null).
+                      Jeder Schritt: { "step": "<name>", "action": <action>, "capture": { "<var>": "<json.path>" } }
+                      HTTP-Action: { "method": "POST|GET|...", "path": "/api/...", "body": {...} }
+                      Builtin-Action: { "builtin": "advance_time|write_file|delete_file", "seconds": N, "path": "...", "content": "..." }
+  "test"            – der eigentliche Testaufruf (object, Pflicht):
+                      { "action": <action>, "assert": <assert> }
+                      HTTP-Assert: { "status": 200, "body": { "<json.path>": <value> } }
+                        Assertion-Wert: Skalar (exakter Match), "{captured.var}", { "present": true }, { "contains": "..." }
+                      CLI-Assert: { "exit_code": 0, "stdout_contains": ["..."], "stderr_empty": true }
+  "teardown"        – optionale Liste von Teardown-Schritten, gleiche Struktur wie setup (Array oder null)
+  "evaluation_hint" – strukturierter Hinweis für den KI-Evaluator:
+                      "Wenn <assertion> != <erwartet>: <Ursache>. Prüfe <module.py:funktion()>. Fix-Richtung: <was ändern>."
+"""
 
 
 def generate_holdout_scenarios(
@@ -129,39 +188,44 @@ def generate_holdout_scenarios(
     spec_content: str,
     provider: Any,
     num_scenarios: int = 3,
-) -> list[dict[str, str]]:
+) -> list[dict[str, Any]]:
     """Ruft das LLM auf und leitet Holdout-Szenarien aus Spec + Contract ab.
 
     Returns:
-        Liste von Dicts mit keys: title, input, expected, evaluation_hint.
+        Liste von Dicts mit keys: title, priority, type, description,
+        setup (optional), test, teardown (optional), evaluation_hint.
     Raises:
         RuntimeError: bei LLM-Fehler nach 1 Retry.
     """
     prompt = (
-        f"Du bist ein SDD-Evaluator. Generiere {num_scenarios} Holdout-Szenarien "
+        f"Du bist ein SDD-Evaluator. Generiere {num_scenarios} ausführbare Holdout-Szenarien "
         f"für den folgenden Contract (ID: {contract_id}).\n\n"
         f"CONTRACT:\n{contract_content}\n\nSPEC-KONTEXT:\n{spec_content}\n\n"
-        "Antworte mit einem JSON-Array. Jedes Element hat folgende Felder:\n"
-        '  "title": kurzer Szenario-Titel\n'
-        '  "input": Was eingegeben / ausgelöst wird (konkret)\n'
-        '  "expected": Was das System zurückgeben / tun muss (prüfbar)\n'
-        '  "evaluation_hint": Aufzählung der Prüfpunkte für den Evaluator\n\n'
-        "Mindestens 1 Szenario muss ein Fehlerfall sein. Nur JSON, kein Markdown."
+        f"Antworte mit einem JSON-Array. {_SCENARIO_SCHEMA}\n"
+        "Regeln:\n"
+        "  - Mindestens 1 Szenario muss ein Fehlerfall sein (priority: normal oder edge-case).\n"
+        "  - Der Happy Path ist immer priority: critical.\n"
+        "  - Alle Pfade und Felder müssen aus dem Contract ableitbar sein – keine Erfindungen.\n"
+        "  - Nur JSON, kein Markdown, keine Erklärungen außerhalb des Arrays."
     )
 
     last_exc: Exception | None = None
     for attempt in range(2):
         try:
-            result = provider.complete(prompt, max_tokens=2048, timeout=60)
             import json
+            result = provider.complete(prompt, max_tokens=4096, timeout=90)
             scenarios = json.loads(result.text.strip())
             if not isinstance(scenarios, list):
                 raise ValueError("LLM hat kein JSON-Array zurückgegeben.")
             return [
                 {
                     "title": s.get("title", f"Szenario {i+1}"),
-                    "input": s.get("input", ""),
-                    "expected": s.get("expected", ""),
+                    "priority": s.get("priority", "normal"),
+                    "type": s.get("type", "http"),
+                    "description": s.get("description", ""),
+                    "setup": s.get("setup") or None,
+                    "test": s.get("test", {}),
+                    "teardown": s.get("teardown") or None,
                     "evaluation_hint": s.get("evaluation_hint", ""),
                 }
                 for i, s in enumerate(scenarios)

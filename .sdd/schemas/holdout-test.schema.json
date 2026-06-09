@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/holdout-test.schema.json",
+  "title": "SDD Holdout Test Block",
+  "description": "Schema für den ```yaml```-Block in ## Setup, ## Test und ## Teardown",
+
+  "$defs": {
+
+    "json_path": {
+      "type": "string",
+      "description": "Punkt-separierter Pfad in ein JSON-Objekt, z.B. 'data.session_id' oder 'items[0].id'"
+    },
+
+    "assertion_value": {
+      "description": "Assertion gegen einen Response-Wert. Skalar = exakter Match (Strings dürfen {captured.var} enthalten). Objekt = erweiterter Vergleich.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        {
+          "type": "object",
+          "properties": {
+            "present":     { "type": "boolean", "description": "Key muss vorhanden sein (true) oder fehlen (false)" },
+            "contains":    { "type": "string",  "description": "String-Wert muss Teilstring enthalten" },
+            "matches":     { "type": "string",  "description": "String-Wert muss Regex matchen" },
+            "gt":          { "type": "number",  "description": "Numerischer Wert muss größer sein" },
+            "gte":         { "type": "number" },
+            "lt":          { "type": "number" },
+            "lte":         { "type": "number" },
+            "length":      { "type": "integer", "description": "Array-/String-Länge" },
+            "min_length":  { "type": "integer" },
+            "max_length":  { "type": "integer" }
+          },
+          "additionalProperties": false,
+          "minProperties": 1
+        }
+      ]
+    },
+
+    "body_assertions": {
+      "type": "object",
+      "description": "Map von JSON-Pfad zu assertion_value, z.B. { 'data.ok': true, 'data.id': '{captured.spec_id}' }",
+      "additionalProperties": { "$ref": "#/$defs/assertion_value" }
+    },
+
+    "http_action": {
+      "type": "object",
+      "required": ["method", "path"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "path": {
+          "type": "string",
+          "description": "Pfad relativ zur Container-Basis-URL, z.B. /api/specs oder /api/specs/{captured.spec_id}"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "body": {
+          "description": "Request-Body (beliebiges JSON). Strings dürfen {captured.var} enthalten."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "cli_action": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Ausführbares Kommando im Container, z.B. 'sdd'"
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Argumente. Strings dürfen {captured.var} enthalten."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Arbeitsverzeichnis im Container (default: /workspace)"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "builtin_action": {
+      "type": "object",
+      "required": ["builtin"],
+      "properties": {
+        "builtin": {
+          "type": "string",
+          "enum": ["advance_time", "write_file", "delete_file", "wait"],
+          "description": "Eingebaute Test-Hilfsfunktion des Runners"
+        },
+        "seconds": {
+          "type": "integer",
+          "description": "Für advance_time: Zeitsprung in Sekunden"
+        },
+        "path": {
+          "type": "string",
+          "description": "Für write_file/delete_file: Pfad im Container"
+        },
+        "content": {
+          "type": "string",
+          "description": "Für write_file: Dateiinhalt"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "http_assert": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "integer",
+          "description": "Erwarteter HTTP-Statuscode"
+        },
+        "body": { "$ref": "#/$defs/body_assertions" },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/assertion_value" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "cli_assert": {
+      "type": "object",
+      "properties": {
+        "exit_code": {
+          "type": "integer",
+          "description": "Erwarteter Exit-Code (default: 0)"
+        },
+        "stdout": { "$ref": "#/$defs/body_assertions" },
+        "stdout_contains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alle Strings müssen in stdout vorkommen"
+        },
+        "stdout_not_contains": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "stderr_empty": {
+          "type": "boolean",
+          "description": "true = stderr muss leer sein"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "setup_step": {
+      "type": "object",
+      "required": ["step", "action"],
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Bezeichner des Schritts, wird in Fehlermeldungen angezeigt"
+        },
+        "action": {
+          "oneOf": [
+            { "$ref": "#/$defs/http_action" },
+            { "$ref": "#/$defs/cli_action" },
+            { "$ref": "#/$defs/builtin_action" }
+          ]
+        },
+        "capture": {
+          "type": "object",
+          "description": "Map von Variablenname zu JSON-Pfad im Response, z.B. { session_id: 'data.id' }",
+          "additionalProperties": { "$ref": "#/$defs/json_path" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "type": "object",
+  "properties": {
+
+    "setup": {
+      "type": "array",
+      "description": "Optionale Vorbereitungsschritte. Captured-Variablen stehen in ## Test als {captured.name} zur Verfügung.",
+      "items": { "$ref": "#/$defs/setup_step" }
+    },
+
+    "test": {
+      "type": "object",
+      "description": "Der eigentliche Testaufruf mit Assertions",
+      "required": ["action", "assert"],
+      "properties": {
+        "action": {
+          "oneOf": [
+            { "$ref": "#/$defs/http_action" },
+            { "$ref": "#/$defs/cli_action" }
+          ]
+        },
+        "assert": {
+          "oneOf": [
+            { "$ref": "#/$defs/http_assert" },
+            { "$ref": "#/$defs/cli_assert" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "teardown": {
+      "type": "array",
+      "description": "Optionale Aufräumschritte nach dem Test (laufen auch bei Fehler)",
+      "items": { "$ref": "#/$defs/setup_step" }
+    }
+
+  },
+  "required": ["test"],
+  "additionalProperties": false
+}

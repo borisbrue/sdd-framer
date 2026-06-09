@@ -19,14 +19,28 @@ def _make_provider(response: str) -> MagicMock:
 _SAMPLE_SCENARIOS = [
     {
         "title": "Happy Path",
-        "input": "sdd generate-holdouts SPEC-0001",
-        "expected": "Exit-Code 0, 2 HOL-Dateien angelegt",
+        "priority": "critical",
+        "type": "cli",
+        "description": "sdd generate-holdouts SPEC-0001 produziert HOL-Dateien.",
+        "setup": None,
+        "test": {
+            "action": {"command": "sdd", "args": ["generate-holdouts", "SPEC-0001"]},
+            "assert": {"exit_code": 0, "stdout_contains": ["HOL-"]},
+        },
+        "teardown": None,
         "evaluation_hint": "- Exit-Code 0\n- HOL-Dateien vorhanden",
     },
     {
         "title": "Draft-Spec wird abgelehnt",
-        "input": "sdd generate-holdouts SPEC-0002 (draft)",
-        "expected": "Exit-Code 1, Fehlermeldung 'approved oder in-progress'",
+        "priority": "normal",
+        "type": "cli",
+        "description": "sdd generate-holdouts mit Draft-Spec schlägt fehl.",
+        "setup": None,
+        "test": {
+            "action": {"command": "sdd", "args": ["generate-holdouts", "SPEC-0002"]},
+            "assert": {"exit_code": 1, "stdout_contains": ["approved oder in-progress"]},
+        },
+        "teardown": None,
         "evaluation_hint": "- Exit-Code 1\n- Fehlermeldung enthält 'approved'",
     },
 ]
@@ -44,8 +58,9 @@ def test_scenario_has_required_keys() -> None:
     result = generate_holdout_scenarios("contract body", "CON-0001", "spec body", provider)
     for scenario in result:
         assert "title" in scenario
-        assert "input" in scenario
-        assert "expected" in scenario
+        assert "priority" in scenario
+        assert "type" in scenario
+        assert "test" in scenario
         assert "evaluation_hint" in scenario
 
 

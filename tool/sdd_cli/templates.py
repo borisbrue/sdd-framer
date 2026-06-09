@@ -61,13 +61,15 @@ def render(template_text: str, context: dict[str, str]) -> str:
 
     # Frontmatter-Felder austauschen, falls vorhanden
     replacements = {
-        "id":      context.get("id"),
-        "title":   context.get("title"),
-        "spec":    context.get("spec"),
-        "contract":context.get("contract"),
-        "owner":   context.get("owner"),
-        "artifact":context.get("artifact"),
-        "project": context.get("project"),
+        "id":       context.get("id"),
+        "title":    context.get("title"),
+        "spec":     context.get("spec"),
+        "contract": context.get("contract"),
+        "owner":    context.get("owner"),
+        "artifact": context.get("artifact"),
+        "project":  context.get("project"),
+        "priority": context.get("priority"),
+        "type":     context.get("type"),
     }
 
     if replacements["id"]:
@@ -100,6 +102,14 @@ def render(template_text: str, context: dict[str, str]) -> str:
         out = re.sub(r'^artifact:\s*"[^"]*"(\s*#.*)?$',
                      f'artifact: "{replacements["artifact"]}"',
                      out, count=1, flags=re.MULTILINE)
+    if replacements["priority"]:
+        out = re.sub(r"^priority:\s*\S+(\s*#.*)?$",
+                     f'priority: {replacements["priority"]}',
+                     out, count=1, flags=re.MULTILINE)
+    if replacements["type"]:
+        out = re.sub(r"^type:\s*\S+(\s*#.*)?$",
+                     f'type: {replacements["type"]}',
+                     out, count=1, flags=re.MULTILINE)
 
     # Datum
     today = date.today().isoformat()
@@ -125,8 +135,16 @@ def copy_skeleton(config: SddConfig, skeleton_name: str, target: Path) -> None:
         shutil.copy(src, target)
 
 
-def load_template(config: SddConfig, kind: str, contract_format: str | None = None) -> tuple[str, str | None]:
-    """Liefert (template_text, optional_skeleton_filename)."""
+def load_template(
+    config: SddConfig,
+    kind: str,
+    contract_format: str | None = None,
+    subtype: str | None = None,
+) -> tuple[str, str | None]:
+    """Liefert (template_text, optional_skeleton_filename).
+
+    subtype: für kind='holdout' → 'http' oder 'cli' wählt das passende Template.
+    """
     if kind == "contract":
         if not contract_format or contract_format not in CONTRACT_TEMPLATES:
             raise ValueError(
@@ -136,6 +154,11 @@ def load_template(config: SddConfig, kind: str, contract_format: str | None = No
         subdir, name, skeleton = CONTRACT_TEMPLATES[contract_format]
         template_path = config.templates_dir / subdir / name
         return template_path.read_text(encoding="utf-8"), skeleton
+
+    if kind == "holdout" and subtype in ("http", "cli"):
+        candidate = config.templates_dir / "holdout" / f"{subtype}.md"
+        if candidate.exists():
+            return candidate.read_text(encoding="utf-8"), None
 
     subdir, name = TEMPLATE_MAP[kind]
     template_path = config.templates_dir / subdir / name

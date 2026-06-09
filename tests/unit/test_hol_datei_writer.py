@@ -18,9 +18,16 @@ def cfg(tmp_path: Path):
 
 SCENARIO = {
     "title": "Happy Path Test",
-    "input": "Der Nutzer ruft den Befehl auf.",
-    "expected": "Exit-Code 0 und mindestens 2 HOL-Dateien angelegt.",
-    "evaluation_hint": "- Exit-Code prüfen\n- HOL-Dateien zählen",
+    "priority": "critical",
+    "type": "cli",
+    "description": "Der Nutzer ruft den Befehl auf.",
+    "setup": None,
+    "test": {
+        "action": {"command": "sdd", "args": ["generate-holdouts", "SPEC-0033"]},
+        "assert": {"exit_code": 0, "stdout_contains": ["HOL-"]},
+    },
+    "teardown": None,
+    "evaluation_hint": "Wenn exit_code != 0: Befehl fehlt. Fix: sdd_cli/main.py:generate_holdouts_cmd.",
 }
 
 
@@ -40,7 +47,9 @@ def test_frontmatter_has_required_fields(cfg) -> None:
 
     assert fm["id"] == "HOL-0001"
     assert fm["spec"] == "SPEC-0033"
-    assert fm["status"] == "ready"
+    assert fm["status"] == "wip"
+    assert fm["priority"] == "critical"
+    assert fm["type"] == "cli"
     assert "title" in fm
 
 
@@ -48,8 +57,7 @@ def test_body_has_required_sections(cfg) -> None:
     path = write_hol_file("HOL-0001", "SPEC-0033", "CON-0157", SCENARIO, cfg)
     body = path.read_text(encoding="utf-8")
 
-    assert "## Input" in body
-    assert "## Expected" in body
+    assert "## Test" in body
     assert "## Evaluation Hint" in body
 
 
@@ -58,7 +66,7 @@ def test_file_placed_in_holdout_dir(cfg) -> None:
     assert path.parent == cfg.holdout_dir
 
 
-def test_status_is_ready(cfg) -> None:
+def test_status_is_wip(cfg) -> None:
     path = write_hol_file("HOL-0001", "SPEC-0033", "CON-0157", SCENARIO, cfg)
     text = path.read_text(encoding="utf-8")
-    assert "status: ready" in text
+    assert "status: wip" in text

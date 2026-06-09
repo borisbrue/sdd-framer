@@ -48,9 +48,17 @@ evaluator:
   model: claude-sonnet-4-6
   base_url: https://localhost:8000
   timeout_per_scenario: 60
-  runs_per_scenario: 3
+  runs_per_scenario: 3   # nur für Legacy-Holdouts (Prosa-Format)
   pass_threshold: 2
   cost_alert_usd: 1.0
+  container:
+    start_command: ["sdd", "hub", "--port", "8080", "--no-tunnel"]
+    app_port: 8080
+    host_port: 18080
+    health_path: /health
+    health_timeout_secs: 30
+    env:
+      SDD_ENV: test
 orchestrator:
   build_command: ''
   auto_merge: false

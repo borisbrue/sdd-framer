@@ -42,8 +42,15 @@ def sdd_project(tmp_path: Path):
 
 SCENARIO = {
     "title": "Happy Path",
-    "input": "Der Nutzer ruft den Befehl auf.",
-    "expected": "Exit-Code 0 und HOL-Dateien angelegt.",
+    "priority": "critical",
+    "type": "cli",
+    "description": "Der Nutzer ruft den Befehl auf.",
+    "setup": None,
+    "test": {
+        "action": {"command": "sdd", "args": ["generate-holdouts", "SPEC-0033"]},
+        "assert": {"exit_code": 0, "stdout_contains": ["HOL-"]},
+    },
+    "teardown": None,
     "evaluation_hint": "- Exit-Code prüfen\n- HOL-Dateien zählen",
 }
 
@@ -62,11 +69,11 @@ class TestTST0184:
         assert "status" in fm
         assert "title" in fm
 
-    def test_status_is_ready(self, cfg) -> None:
+    def test_status_is_wip(self, cfg) -> None:
         path = write_hol_file("HOL-0001", "SPEC-0033", "CON-0157", SCENARIO, cfg)
         fm_text = re.match(r"^---\s*\n(?P<yaml>.*?)\n---", path.read_text(encoding="utf-8"), re.DOTALL).group("yaml")
         fm = yaml.safe_load(fm_text)
-        assert fm["status"] == "ready"
+        assert fm["status"] == "wip"
 
     def test_spec_field_matches_spec_id(self, cfg) -> None:
         path = write_hol_file("HOL-0001", "SPEC-0033", "CON-0157", SCENARIO, cfg)
@@ -77,13 +84,15 @@ class TestTST0184:
     def test_body_contains_required_sections(self, cfg) -> None:
         path = write_hol_file("HOL-0001", "SPEC-0033", "CON-0157", SCENARIO, cfg)
         body = path.read_text(encoding="utf-8")
-        assert "## Input" in body
-        assert "## Expected" in body
+        assert "## Test" in body
         assert "## Evaluation Hint" in body
 
     def test_idempotenz_second_run_skips_existing(self, sdd_project: Path, monkeypatch) -> None:
         def _fake_generate(contract_content, contract_id, spec_content, provider, num_scenarios=3):
-            return [{"title": f"S{i}", "input": "x", "expected": "y", "evaluation_hint": "z"} for i in range(2)]
+            return [{"title": f"S{i}", "priority": "normal", "type": "cli",
+                     "description": "x", "setup": None,
+                     "test": {"action": {"command": "echo"}, "assert": {"exit_code": 0}},
+                     "teardown": None, "evaluation_hint": "z"} for i in range(2)]
 
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
