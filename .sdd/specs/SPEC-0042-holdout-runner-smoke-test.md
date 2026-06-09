@@ -2,10 +2,10 @@
 id: SPEC-0042
 title: Holdout-Runner Tiered Loop & Smoke Test
 type: feature
-status: approved
+status: in-progress
 owner: Boris
 created: 2026-06-09
-updated: 2026-06-09
+updated: '2026-06-09'
 version: 0.1.0
 priority: high
 tags:
@@ -40,6 +40,7 @@ fr_test_map:
   FR-06:
   - TST-0191
 adrs: []
+started_at: '2026-06-09T15:15:46Z'
 ---
 # Holdout-Runner Tiered Loop & Smoke Test
 
