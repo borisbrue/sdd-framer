@@ -43,6 +43,7 @@ from routes.interactive import router as interactive_router
 from routes.specs import router as specs_router
 from routes.tests import router as tests_router
 from routes.devlog import router as devlog_router
+from routes.holdouts import router as holdouts_router  # SPEC-0043
 import routes.devlog as _devlog
 
 # SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
@@ -73,6 +74,7 @@ app.add_middleware(
 )
 
 app.include_router(hub_router,           prefix="/api")  # Hub – vor SPA-Fallback
+app.include_router(holdouts_router,      prefix="/api")  # SPEC-0043 – vor interactive (Pfad-Konflikt)
 app.include_router(agent_flow_router,    prefix="/api")  # SPEC-0032
 app.include_router(dag_monitor_router,   prefix="/api")  # SPEC-0037
 app.include_router(interactive_router,   prefix="/api")  # SPEC-0028

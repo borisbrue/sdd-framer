@@ -1,4 +1,4 @@
-<!-- skill: sdd-review | version: 0.3.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-review | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-review – SOLID-Analyse + Pattern-Vorschläge
 
@@ -91,9 +91,17 @@ Falls LLM nicht erreichbar: `[llm] ⚠ LLM-Check übersprungen (kein API-Zugang)
 
 ## Schritt 5: Contract-Review
 
-### 5a: Bei SPEC-XXXX — Draft-Contracts sequenziell reviewen
+### 5a: Bei SPEC-XXXX — Contracts prüfen und reviewen
 
-Ermittle alle Contracts der Spec mit `status: draft`:
+Prüfe zunächst ob die Spec überhaupt Contracts hat:
+```bash
+grep "^contracts:" <spec-file>
+```
+
+**Keine Contracts verknüpft (`contracts: []`):** → weiter zu Schritt 7
+(Contracts werden dort automatisch erstellt und reviewed).
+
+**Contracts vorhanden — ermittle Draft-Contracts:**
 ```bash
 grep -rl "spec: SPEC-XXXX" .sdd/contracts/ | xargs grep -l "^status: draft"
 ```
@@ -172,5 +180,67 @@ durch den CLI-Befehl markiert — kein manueller Schritt nötig.
 Review abgeschlossen: SPEC-XXXX / CON-XXXX / TST-XXXX
 - SOLID: 1 Warnung (ISP), 0 Violations
 - Patterns: Strategy (angenommen), Decorator (abgelehnt)
-- Nächster Schritt: sdd spec approve SPEC-XXXX (wenn bereit)
+- Nächster Schritt: siehe Schritt 7 (bei SPEC) oder abgeschlossen
 ```
+
+## Schritt 7: Post-Spec-Flow (nur bei SPEC-XXXX)
+
+Dieser Schritt greift **nur wenn $ARGUMENTS eine SPEC-ID ist**.
+Bei CON-XXXX oder TST-XXXX: Skill endet nach Schritt 6.
+
+### 7a: Contracts automatisch erstellen (wenn keine vorhanden)
+
+Sind `contracts: []` im Spec-Frontmatter:
+
+Leite den Nutzer **nicht** weiter — erstelle alle notwendigen Contracts
+**automatisch** anhand der FRs und der Contracts-Tabelle aus der Spec:
+
+- Welche Contract-Typen werden benötigt?
+  - `api` → wenn FRs REST-Endpunkte beschreiben
+  - `behavior` → wenn Gherkin-Szenarien vorhanden (Abschnitt 6/7)
+  - `data` → wenn Datenmodelle spezifiziert werden
+  - `performance` → wenn NFRs messbare Latenzen/SLOs enthalten
+- Nächste freie CON-ID ermitteln (analog zu sdd-new)
+- Contract-Dokument + Artifact-Datei (OpenAPI YAML / .feature / etc.) schreiben
+- CON-IDs im Spec-Frontmatter eintragen
+
+Sind bereits Contracts verknüpft (alle `approved`): direkt zu Schritt 7c.
+
+### 7b: Contract-Reviews automatisch durchführen
+
+Führe für jeden soeben erstellten Contract **ohne Rückfrage** durch:
+1. `sdd solid-check CON-XXXX`
+2. `sdd regression-check CON-XXXX`
+3. Inhaltlichen Review (Prüffragen aus Schritt 5b) + Fixes direkt einarbeiten
+4. `status: approved` setzen
+
+### 7c: Ergebnisse präsentieren – gemeinsam besprechen
+
+Zeige eine kompakte Zusammenfassung aller Contract-Reviews:
+
+```
+── Contract-Reviews abgeschlossen ───────────────────────
+  CON-XXXX (api):      ✓ approved  [N Fixes]
+  CON-XXXX (behavior): ✓ approved  [N Fixes]
+  Fixes: [Liste der wichtigsten Änderungen]
+```
+
+**Warte auf Nutzer-Feedback.** Anpassungen an Contracts oder Spec
+gemeinsam besprechen, bevor Tests erstellt werden.
+
+### 7d: Tests automatisch anlegen (nach Bestätigung durch Nutzer)
+
+Sobald der Nutzer bestätigt (ja / ok / weiter / passt):
+
+Erstelle für jeden approved Contract **automatisch** alle notwendigen Tests:
+- TST-Dokument in `.sdd/tests/<level>/`
+- Testdatei in `tests/<level>/` (Sprache/Framework des Projekts)
+- FR-Test-Map (`fr_test_map`) im Spec-Frontmatter eintragen
+- `tests:`-Liste im Contract-Frontmatter mit TST-IDs befüllen
+
+Danach Spec approven:
+```bash
+sdd spec approve SPEC-XXXX
+```
+
+**Nächster Schritt nach Schritt 7:** `/sdd-implement SPEC-XXXX`

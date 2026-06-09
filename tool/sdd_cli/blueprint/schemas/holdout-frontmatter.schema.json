@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-blueprint.local/schemas/holdout-frontmatter.schema.json",
+  "title": "SDD Holdout Frontmatter",
+  "type": "object",
+  "required": ["id", "title", "spec", "status", "priority", "type"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^HOL-[0-9]{4,}$"
+    },
+    "title": { "type": "string" },
+    "spec": {
+      "type": "string",
+      "pattern": "^SPEC-[0-9]{4,}$"
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^CON-[0-9]{4,}$",
+      "description": "Optional: welchen Contract prüft dieses Szenario"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "disabled", "wip"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["critical", "normal", "edge-case"],
+      "description": "critical=bricht sofort ab; normal=aggregiert; edge-case=läuft nur wenn normal besteht"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["http", "cli"],
+      "description": "http=REST-Aufruf gegen Container; cli=Kommandozeilenaufruf im Container"
+    },
+    "created": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "updated": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

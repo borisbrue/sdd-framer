@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: "Holdout-Status API"
+  version: "0.1.0"
+  description: |
+    Dieser Contract gehört zu SPEC-0043 und Contract CON-0159.
+    Gibt den aktuellen Holdout-Status (neuester Lauf) für eine Spec zurück.
+    Änderungen erfordern Versions-Bump gemäß SemVer.
+  contact:
+    name: "Boris"
+
+servers:
+  - url: "http://localhost:8000"
+    description: "Local Development"
+
+paths:
+  /api/holdouts/{spec_id}:
+    get:
+      operationId: getHoldoutStatus
+      summary: "Holdout-Status für eine Spec abrufen"
+      description: "Gibt den Status des neuesten Holdout-Laufs für die angegebene Spec-ID zurück."
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          description: "Spec-ID, z.B. SPEC-0043"
+          schema:
+            type: string
+            pattern: "^SPEC-\\d{4}$"
+            example: "SPEC-0043"
+      responses:
+        "200":
+          description: "Holdout-Status erfolgreich abgerufen"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HoldoutStatus"
+        "404":
+          description: "Kein Holdout-Lauf für diese Spec gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: "Ungültige Spec-ID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/holdouts/{spec_id}/stream:
+    get:
+      operationId: streamHoldoutStatus
+      summary: "Holdout-Status per SSE abonnieren"
+      description: |
+        Server-Sent Events Stream für Echtzeit-Updates des Holdout-Status.
+        Sendet ein Event bei jeder Status-Änderung (running → passed/failed).
+        Konsistent mit der SSE-Infrastruktur aus SPEC-0007.
+      parameters:
+        - name: spec_id
+          in: path
+          required: true
+          description: "Spec-ID, z.B. SPEC-0043"
+          schema:
+            type: string
+            pattern: "^SPEC-\\d{4}$"
+            example: "SPEC-0043"
+      responses:
+        "200":
+          description: "SSE-Stream geöffnet"
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/HoldoutStatusEvent"
+        "404":
+          description: "Spec nicht gefunden"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: "Interner Server-Fehler beim Aufbau des SSE-Streams"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    HoldoutStatus:
+      type: object
+      required: [spec_id, status, updated_at]
+      properties:
+        spec_id:
+          type: string
+          pattern: "^SPEC-\\d{4}$"
+          example: "SPEC-0043"
+        status:
+          type: string
+          enum: [running, passed, failed, none]
+          description: "Status des neuesten Holdout-Laufs"
+        updated_at:
+          type: string
+          format: date-time
+          description: "Zeitstempel der letzten Status-Änderung"
+        run_id:
+          type: [string, "null"]
+          description: "ID des Holdout-Laufs (null wenn status=none)"
+        scenarios:
+          type: array
+          description: "Szenario-Details (nur bei status=failed befüllt)"
+          items:
+            $ref: "#/components/schemas/ScenarioResult"
+
+    ScenarioResult:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+          description: "Name des Szenarios"
+          example: "Login"
+        status:
+          type: string
+          enum: [passed, failed]
+        error_message:
+          type: [string, "null"]
+          description: "Fehlermeldung bei status=failed, sonst null"
+
+    HoldoutStatusEvent:
+      type: object
+      description: "SSE-Event-Payload (JSON in data:-Feld)"
+      required: [spec_id, status, updated_at]
+      properties:
+        spec_id:
+          type: string
+        status:
+          type: string
+          enum: [running, passed, failed, none]
+        updated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "Kein Holdout-Lauf für SPEC-0043 gefunden"

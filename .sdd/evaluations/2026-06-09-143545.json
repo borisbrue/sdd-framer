@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-06-09T12:35:45.355182+00:00",
+  "base_url": "http://localhost:19999",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "pass_rate": 1.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0033",
+      "title": "sdd --version gibt Exit 0 und Versionsnummer",
+      "contract": "",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "sdd, version 0.1.54\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0034",
+      "title": "sdd validate gibt Exit 0 auf eigenem Projekt",
+      "contract": "",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 1,
+            "stdout": "✗ 3 Fehler gefunden:\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: Spec hat keinen Contract \n(require_contract_per_spec).\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: FR-01 hat keinen \nzugeordneten Test\n  ✗ .sdd/specs/SPEC-0042-holdout-runner-smoke-test.md: FR-02 hat keinen \nzugeordneten Test\n⚠ 54 Warnungen:\n  ⚠ .sdd/contracts/performance/CON-0068-container-start-slo.md: Artifact-Datei \nfehlt: contracts/performance/container-start.slo.yaml\n  ⚠ .sdd/contracts/performance/CON-00",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0035",
+      "title": "sdd new holdout erstellt Datei mit priority und type",
+      "contract": "",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "Usage: sdd new holdout [OPTIONS]\n\n  Legt ein neues Holdout-Szenario an (HOL-XXXX, isoliert vom Code-Agenten).\n\nOptions:\n  --contract TEXT                 Zugehöriger Contract, z.B. CON-0001.\n  --spec TEXT                     Zugehörige Spec, z.B. SPEC-0004.  [required]\n  --title TEXT                    Titel des Holdout-Szenarios.  [required]\n  --priority [critical|normal|edge-case]\n                                  critical=bricht sofort ab;\n                                  normal=aggregiert; ",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    }
+  ]
+}

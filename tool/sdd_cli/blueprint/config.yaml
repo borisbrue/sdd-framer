@@ -47,9 +47,18 @@ evaluator:
   model: claude-sonnet-4-6
   base_url: http://localhost:8000
   timeout_per_scenario: 60
-  runs_per_scenario: 3
+  runs_per_scenario: 3   # nur für Legacy-Holdouts (Prosa-Format)
   pass_threshold: 2
   cost_alert_usd: 1.0
+  container:
+    # Befehl zum Starten der App im Container (projektspezifisch anpassen!)
+    start_command: ["python", "-m", "your_app.main", "--port", "8080"]
+    app_port: 8080        # Port der App im Container
+    host_port: 18080      # Freigegebener Port auf dem Host
+    health_path: /health  # GET → 200 bedeutet "bereit"
+    health_timeout_secs: 30
+    env:
+      APP_ENV: test
 orchestrator:
   build_command: ''
   auto_merge: false

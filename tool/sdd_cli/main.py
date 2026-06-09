@@ -412,22 +412,31 @@ def new_test(spec_id: str, contract_id: str, level: str, title: str) -> None:
 
 
 @new.command("holdout", help="Legt ein neues Holdout-Szenario an (HOL-XXXX, isoliert vom Code-Agenten).")
-@click.option("--contract", "contract_id", required=True,
+@click.option("--contract", "contract_id", default="",
               help="Zugehöriger Contract, z.B. CON-0001.")
 @click.option("--spec", "spec_id", required=True,
               help="Zugehörige Spec, z.B. SPEC-0004.")
 @click.option("--title", required=True, help="Titel des Holdout-Szenarios.")
-def new_holdout(contract_id: str, spec_id: str, title: str) -> None:
+@click.option("--priority", default="normal",
+              type=click.Choice(["critical", "normal", "edge-case"]),
+              help="critical=bricht sofort ab; normal=aggregiert; edge-case=nur wenn normal besteht.")
+@click.option("--type", "hol_type", default="http",
+              type=click.Choice(["http", "cli"]),
+              help="http=REST-Aufruf gegen Container; cli=Kommandozeilenaufruf im Container.")
+def new_holdout(contract_id: str, spec_id: str, title: str, priority: str, hol_type: str) -> None:
     cfg = _ensure_project()
     hid = next_id(cfg, "holdout")
     slug = slugify(title)
     target = cfg.holdout_dir / f"{hid}-{slug}.md"
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    tmpl, _ = load_template(cfg, "holdout")
+    tmpl, _ = load_template(cfg, "holdout", subtype=hol_type)
     text = render(tmpl, {
         "id": hid, "title": title,
-        "contract": contract_id, "spec": spec_id,
+        "contract": contract_id or "CON-XXXX",
+        "spec": spec_id,
+        "priority": priority,
+        "type": hol_type,
     })
     target.write_text(text, encoding="utf-8")
 
@@ -550,8 +559,9 @@ def trace() -> None:
 # sdd evaluate
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command(help="Führt Holdout-Szenarien gegen einen laufenden Service aus (Evaluator).")
-@click.option("--base-url", required=True, envvar="SDD_EVAL_BASE_URL",
-              help="Basis-URL des zu testenden Services, z.B. http://localhost:8080.")
+@click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
+              help="Basis-URL des zu testenden Services, z.B. http://localhost:8080. "
+                   "Wird ignoriert wenn --start-container gesetzt ist.")
 @click.option("--hol", "hol_ids", multiple=True,
               help="Einschränkung auf bestimmte HOL-IDs (wiederholbar). Default: alle aktiven.")
 @click.option("--save/--no-save", default=True,
@@ -562,18 +572,64 @@ def trace() -> None:
               help="SPEC-ID – bei finalem Fehlschlag wird Status auf evaluation-failed gesetzt.")
 @click.option("--final-attempt", is_flag=True,
               help="Letzter Retry-Versuch – setzt SPEC auf evaluation-failed wenn Tests nicht grün.")
-def evaluate_cmd(base_url: str, hol_ids: tuple, save: bool, output_json: bool,
-                 spec_id: str | None, final_attempt: bool) -> None:
+@click.option("--start-container", is_flag=True,
+              help="Container starten, Health-Check abwarten, nach Tests stoppen. "
+                   "Konfiguration via evaluator.container in config.yaml.")
+@click.option("--build", "build_image", is_flag=True,
+              help="Container-Image vor dem Start neu bauen (nur mit --start-container).")
+def evaluate_cmd(base_url: str | None, hol_ids: tuple, save: bool, output_json: bool,
+                 spec_id: str | None, final_attempt: bool,
+                 start_container: bool, build_image: bool) -> None:
     cfg = _ensure_project()
 
     ids_filter = list(hol_ids) if hol_ids else None
-    console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
 
+    if start_container:
+        from .eval_container import EvalContainer
+        container_ctx = EvalContainer(cfg, build=build_image)
+        console.print("[cyan]▶[/] Eval-Container wird gestartet …")
+        try:
+            with container_ctx as (resolved_url, container_name):
+                console.print(f"[green]✓[/] Container bereit: [bold]{resolved_url}[/]")
+                _run_evaluate(cfg, resolved_url, ids_filter, spec_id, final_attempt,
+                              save, output_json, container_name=container_name)
+        except RuntimeError as e:
+            console.print(f"[red]✗[/] {e}")
+            sys.exit(1)
+        return
+
+    # Kein Container: base_url ist Pflicht
+    if not base_url:
+        # Fallback auf config
+        base_url = cfg.raw.get("evaluator", {}).get("base_url", "")
+    if not base_url:
+        console.print(
+            "[red]✗[/] --base-url fehlt. Setze SDD_EVAL_BASE_URL, nutze --base-url "
+            "oder starte mit --start-container."
+        )
+        sys.exit(1)
+
+    console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
     try:
-        report = run_evaluation(cfg, base_url, hol_ids=ids_filter, spec_id=spec_id)
+        _run_evaluate(cfg, base_url, ids_filter, spec_id, final_attempt,
+                      save, output_json, container_name=None)
     except RuntimeError as e:
         console.print(f"[red]✗[/] {e}")
         sys.exit(1)
+
+
+def _run_evaluate(
+    cfg: "SddConfig",
+    base_url: str,
+    ids_filter: list[str] | None,
+    spec_id: str | None,
+    final_attempt: bool,
+    save: bool,
+    output_json: bool,
+    container_name: str | None,
+) -> None:
+    report = run_evaluation(cfg, base_url, hol_ids=ids_filter, spec_id=spec_id,
+                            container_name=container_name)
 
     report_path = None
     if save:

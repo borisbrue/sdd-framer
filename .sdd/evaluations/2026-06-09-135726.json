@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-06-09T13:57:26.237677+00:00",
+  "base_url": "http://localhost:8080",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "pass_rate": 1.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0037",
+      "title": "Fehlgeschlagener Holdout mit Szenarien",
+      "contract": "CON-0159",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "method": "HTTP",
+            "status": 200,
+            "body": "{\"spec_id\":\"SPEC-0043\",\"status\":\"failed\",\"updated_at\":\"2026-06-09T13:52:07.431114+00:00\",\"run_id\":\"2026-06-09T13:52:07.431114+00:00\",\"scenarios\":[{\"name\":\"Fehlgeschlagener Holdout mit Szenarien\",\"status\":\"failed\",\"error_message\":\"\"},{\"name\":\"Badge zeigt failed mit Detail-Liste\",\"status\":\"failed\",\"error_message\":\"\"}]}"
+          },
+          "response_status": 200,
+          "response_body": "{\"spec_id\":\"SPEC-0043\",\"status\":\"failed\",\"updated_at\":\"2026-06-09T13:52:07.431114+00:00\",\"run_id\":\"2026-06-09T13:52:07.431114+00:00\",\"scenarios\":[{\"name\":\"Fehlgeschlagener Holdout mit Szenarien\",\"status\":\"failed\",\"error_message\":\"\"},{\"name\":\"Badge zeigt failed mit Detail-Liste\",\"status\":\"failed\",\"error_message\":\"\"}]}",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0038",
+      "title": "Unbekannte Spec-ID",
+      "contract": "CON-0159",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "method": "HTTP",
+            "status": 404,
+            "body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-9999\"}"
+          },
+          "response_status": 404,
+          "response_body": "{\"code\":\"NOT_FOUND\",\"message\":\"Kein Holdout-Lauf für SPEC-9999\"}",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0040",
+      "title": "Badge zeigt failed mit Detail-Liste",
+      "contract": "CON-0160",
+      "passed": true,
+      "pass_count": 1,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "method": "HTTP",
+            "status": 200,
+            "body": "{\"spec_id\":\"SPEC-0043\",\"status\":\"failed\",\"updated_at\":\"2026-06-09T13:52:07.431114+00:00\",\"run_id\":\"2026-06-09T13:52:07.431114+00:00\",\"scenarios\":[{\"name\":\"Fehlgeschlagener Holdout mit Szenarien\",\"status\":\"failed\",\"error_message\":\"\"},{\"name\":\"Badge zeigt failed mit Detail-Liste\",\"status\":\"failed\",\"error_message\":\"\"}]}"
+          },
+          "response_status": 200,
+          "response_body": "{\"spec_id\":\"SPEC-0043\",\"status\":\"failed\",\"updated_at\":\"2026-06-09T13:52:07.431114+00:00\",\"run_id\":\"2026-06-09T13:52:07.431114+00:00\",\"scenarios\":[{\"name\":\"Fehlgeschlagener Holdout mit Szenarien\",\"status\":\"failed\",\"error_message\":\"\"},{\"name\":\"Badge zeigt failed mit Detail-Liste\",\"status\":\"failed\",\"error_message\":\"\"}]}",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    }
+  ]
+}

@@ -44,10 +44,11 @@ class ScenarioResult:
     title: str
     contract: str
     runs: list[ScenarioRun] = field(default_factory=list)
+    pass_threshold: int = PASS_THRESHOLD  # 1 für deterministische Runs, 2 für LLM-Runs
 
     @property
     def passed(self) -> bool:
-        return sum(1 for r in self.runs if r.passed) >= PASS_THRESHOLD
+        return sum(1 for r in self.runs if r.passed) >= self.pass_threshold
 
     @property
     def pass_count(self) -> int:
@@ -97,6 +98,7 @@ class EvaluationReport:
 
 
 _EVAL_STATUSES = {"active", "ready"}
+_STRUCTURED_STATUSES = {"active"}
 
 
 def _load_holdout_docs(config: SddConfig, spec_id: str | None = None) -> list:
@@ -222,16 +224,68 @@ def _run_scenario_once(
     )
 
 
-def run_evaluation(config: SddConfig, base_url: str,
-                   hol_ids: list[str] | None = None,
-                   spec_id: str | None = None) -> EvaluationReport:
-    """Führt alle aktiven HOL-Szenarien gegen base_url aus."""
+def run_evaluation(
+    config: SddConfig,
+    base_url: str,
+    hol_ids: list[str] | None = None,
+    spec_id: str | None = None,
+    container_name: str | None = None,
+) -> EvaluationReport:
+    """Führt alle aktiven HOL-Szenarien gegen base_url aus.
+
+    Strukturierte Holdouts (neues YAML-Format) werden deterministisch ausgeführt.
+    Legacy-Holdouts (Prosa) nutzen den LLM-Pfad (3 Runs, LLM plant + bewertet).
+    """
+    from .holdout_runner import is_structured_holdout, run_structured_evaluation
+
+    all_docs = _load_holdout_docs(config, spec_id=spec_id)
+    if hol_ids:
+        all_docs = [d for d in all_docs if d.frontmatter.get("id") in hol_ids]
+
+    structured_docs = [d for d in all_docs if is_structured_holdout(d)]
+    legacy_docs = [d for d in all_docs if not is_structured_holdout(d)]
+
+    print(f"  {len(structured_docs)} strukturierte + {len(legacy_docs)} Legacy-Holdouts", flush=True)
+
+    # Strukturierte Holdouts: deterministisch
+    docker_runtime = config.raw.get("docker", {}).get("runtime", "docker")
+
+    struct_report = run_structured_evaluation(
+        config, base_url,
+        hol_ids=hol_ids,
+        spec_id=spec_id,
+        provider=None,  # nur bei Fehlern benötigt; wird lazy geladen
+        runtime_cli=docker_runtime,
+        container_name=container_name,
+    ) if structured_docs else None
+
+    # Legacy-Holdouts: LLM-Pfad
+    if legacy_docs:
+        legacy_report = _run_legacy_evaluation(config, base_url, legacy_docs)
+    else:
+        legacy_report = None
+
+    # Reports zusammenführen
+    report = EvaluationReport(
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        base_url=base_url,
+    )
+    if struct_report:
+        report.scenarios.extend(struct_report.scenarios)
+    if legacy_report:
+        report.scenarios.extend(legacy_report.scenarios)
+
+    return report
+
+
+def _run_legacy_evaluation(
+    config: SddConfig,
+    base_url: str,
+    docs: list,
+) -> EvaluationReport:
+    """Legacy LLM-Pfad für Prosa-Holdouts (3 Runs, LLM plant + bewertet)."""
     from .llm import get_completion_provider
     provider = get_completion_provider(config, "evaluator")
-
-    docs = _load_holdout_docs(config, spec_id=spec_id)
-    if hol_ids:
-        docs = [d for d in docs if d.frontmatter.get("id") in hol_ids]
 
     report = EvaluationReport(
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -250,8 +304,6 @@ def run_evaluation(config: SddConfig, base_url: str,
     _parsed = urllib.parse.urlparse(base_url)
     _verify = _parsed.hostname not in ("localhost", "127.0.0.1", "::1")
 
-    print(f"  {len(docs)} Szenarien geladen", flush=True)
-
     with httpx.Client(follow_redirects=True, verify=_verify) as http:
         for doc in docs:
             fm = doc.frontmatter
@@ -260,7 +312,7 @@ def run_evaluation(config: SddConfig, base_url: str,
             contract = fm.get("contract", "")
             body_text = doc.body.strip()
 
-            print(f"  → {hol_id}: {title}", flush=True)
+            print(f"  → {hol_id} [legacy]: {title}", flush=True)
             result = ScenarioResult(hol_id=hol_id, title=title, contract=contract)
             for i in range(1, RUNS_PER_SCENARIO + 1):
                 print(f"    Run {i}/{RUNS_PER_SCENARIO} …", flush=True)
