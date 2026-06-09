@@ -45,6 +45,8 @@ class ScenarioResult:
     contract: str
     runs: list[ScenarioRun] = field(default_factory=list)
     pass_threshold: int = PASS_THRESHOLD  # 1 für deterministische Runs, 2 für LLM-Runs
+    priority: str = "normal"
+    task_delta: str | None = None
 
     @property
     def passed(self) -> bool:
@@ -74,9 +76,25 @@ class EvaluationReport:
         return (self.passed / self.total) if self.total else 0.0
 
     def to_dict(self) -> dict:
+        tier_summary: dict[str, dict[str, int]] = {
+            "critical":  {"passed": 0, "failed": 0, "skipped": 0},
+            "normal":    {"passed": 0, "failed": 0, "skipped": 0},
+            "edge-case": {"passed": 0, "failed": 0, "skipped": 0},
+        }
+        for s in self.scenarios:
+            tier = getattr(s, "priority", "normal") or "normal"
+            bucket = tier_summary.get(tier, tier_summary["normal"])
+            if any(r.llm_verdict == "skip" for r in s.runs):
+                bucket["skipped"] += 1
+            elif s.passed:
+                bucket["passed"] += 1
+            else:
+                bucket["failed"] += 1
+
         d = {
             "timestamp": self.timestamp,
             "base_url": self.base_url,
+            "tier_summary": tier_summary,
             "summary": {
                 "total": self.total,
                 "passed": self.passed,
@@ -92,6 +110,8 @@ class EvaluationReport:
                 "contract": s.contract,
                 "passed": s.passed,
                 "pass_count": s.pass_count,
+                "priority": getattr(s, "priority", "normal") or "normal",
+                "task_delta": getattr(s, "task_delta", None),
                 "runs": [asdict(r) for r in s.runs],
             })
         return d
@@ -230,6 +250,7 @@ def run_evaluation(
     hol_ids: list[str] | None = None,
     spec_id: str | None = None,
     container_name: str | None = None,
+    tier_filter: str | None = None,
 ) -> EvaluationReport:
     """Führt alle aktiven HOL-Szenarien gegen base_url aus.
 
@@ -257,6 +278,7 @@ def run_evaluation(
         provider=None,  # nur bei Fehlern benötigt; wird lazy geladen
         runtime_cli=docker_runtime,
         container_name=container_name,
+        tier_filter=tier_filter,
     ) if structured_docs else None
 
     # Legacy-Holdouts: LLM-Pfad

@@ -25,6 +25,7 @@ tests:
 - TST-0189
 - TST-0190
 - TST-0191
+- TST-0192
 fr_test_map:
   FR-01:
   - TST-0189

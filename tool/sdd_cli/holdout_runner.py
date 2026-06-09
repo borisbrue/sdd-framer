@@ -494,12 +494,14 @@ def run_structured_evaluation(
     provider: Any = None,
     runtime_cli: str = "docker",
     container_name: str | None = None,
+    tier_filter: str | None = None,
 ) -> "EvaluationReport":
     """Führt alle strukturierten aktiven Holdouts deterministisch aus.
 
     Reihenfolge: critical → normal → edge-case.
     Fail-fast: bei critical-Fehler werden normal und edge-case übersprungen.
     Bei normal-Fehler werden edge-case übersprungen.
+    tier_filter: wenn gesetzt, werden nur Holdouts dieser Priorität ausgeführt (kein Fail-Fast).
     """
     from .evaluator import EvaluationReport, ScenarioResult, ScenarioRun
     from .frontmatter import parse_safe
@@ -526,6 +528,9 @@ def run_structured_evaluation(
     if hol_ids:
         docs = [d for d in docs if d.frontmatter.get("id") in hol_ids]
 
+    if tier_filter is not None:
+        docs = [d for d in docs if d.frontmatter.get("priority", "normal") == tier_filter]
+
     docs.sort(key=lambda d: PRIORITY_ORDER.get(d.frontmatter.get("priority", "normal"), 1))
 
     report = EvaluationReport(
@@ -551,10 +556,12 @@ def run_structured_evaluation(
             hol_id = fm["id"]
             priority = fm.get("priority", "normal")
 
-            # Fail-fast: skip nachgelagerte Prioritäten bei Fehler
+            # Fail-fast: skip nachgelagerte Prioritäten bei Fehler (nur ohne tier_filter)
             skip = False
             skip_reason = ""
-            if had_critical_failure and priority in ("normal", "edge-case"):
+            if tier_filter is not None:
+                pass  # Kein Fail-Fast wenn nur ein Tier gefiltert wird
+            elif had_critical_failure and priority in ("normal", "edge-case"):
                 skip = True
                 skip_reason = "critical-Fehler – übersprungen"
             elif had_normal_failure and priority == "edge-case":
@@ -603,6 +610,7 @@ def _make_skipped_scenario(fm: dict, reason: str) -> Any:
         hol_id=fm["id"],
         title=fm.get("title", fm["id"]),
         contract=fm.get("contract", ""),
+        priority=fm.get("priority", "normal"),
     )
     s.runs.append(ScenarioRun(
         run=1, passed=False,
@@ -619,6 +627,8 @@ def _to_scenario_result(r: HoldoutRunResult) -> Any:
         title=r.title,
         contract=r.contract,
         pass_threshold=1,  # deterministischer Einzel-Run, kein Mehrheits-Threshold
+        priority=r.priority,
+        task_delta=r.task_delta or None,
     )
 
     action_details: dict = {}

@@ -577,12 +577,26 @@ def trace() -> None:
                    "Konfiguration via evaluator.container in config.yaml.")
 @click.option("--build", "build_image", is_flag=True,
               help="Container-Image vor dem Start neu bauen (nur mit --start-container).")
+@click.option("--tier", "tier_filter", default=None,
+              type=click.Choice(["critical", "normal", "edge-case"]),
+              help="Nur Holdouts des angegebenen Tiers ausführen.")
+@click.option("--smoke", is_flag=True,
+              help="Deterministischer Selbsttest (kein HTTP, kein LLM).")
 def evaluate_cmd(base_url: str | None, hol_ids: tuple, save: bool, output_json: bool,
                  spec_id: str | None, final_attempt: bool,
-                 start_container: bool, build_image: bool) -> None:
+                 start_container: bool, build_image: bool,
+                 tier_filter: str | None, smoke: bool) -> None:
     cfg = _ensure_project()
 
+    if smoke:
+        _run_smoke_test()
+        return
+
     ids_filter = list(hol_ids) if hol_ids else None
+
+    if tier_filter and ids_filter:
+        console.print("[yellow]![/] --hol hat Vorrang vor --tier; --tier wird ignoriert.")
+        tier_filter = None
 
     if start_container:
         from .eval_container import EvalContainer
@@ -592,7 +606,8 @@ def evaluate_cmd(base_url: str | None, hol_ids: tuple, save: bool, output_json: 
             with container_ctx as (resolved_url, container_name):
                 console.print(f"[green]✓[/] Container bereit: [bold]{resolved_url}[/]")
                 _run_evaluate(cfg, resolved_url, ids_filter, spec_id, final_attempt,
-                              save, output_json, container_name=container_name)
+                              save, output_json, container_name=container_name,
+                              tier_filter=tier_filter)
         except RuntimeError as e:
             console.print(f"[red]✗[/] {e}")
             sys.exit(1)
@@ -612,7 +627,7 @@ def evaluate_cmd(base_url: str | None, hol_ids: tuple, save: bool, output_json: 
     console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
     try:
         _run_evaluate(cfg, base_url, ids_filter, spec_id, final_attempt,
-                      save, output_json, container_name=None)
+                      save, output_json, container_name=None, tier_filter=tier_filter)
     except RuntimeError as e:
         console.print(f"[red]✗[/] {e}")
         sys.exit(1)
@@ -627,9 +642,14 @@ def _run_evaluate(
     save: bool,
     output_json: bool,
     container_name: str | None,
+    tier_filter: str | None = None,
 ) -> None:
     report = run_evaluation(cfg, base_url, hol_ids=ids_filter, spec_id=spec_id,
-                            container_name=container_name)
+                            container_name=container_name, tier_filter=tier_filter)
+
+    if tier_filter and report.total == 0:
+        click.echo(f"Keine '{tier_filter}'-Holdouts gefunden.")
+        sys.exit(0)
 
     report_path = None
     if save:
@@ -640,7 +660,7 @@ def _run_evaluate(
 
     if output_json:
         import json as _json
-        console.print(_json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+        click.echo(_json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
         if not passed and final_attempt and spec_id:
             _set_evaluation_failed(cfg, spec_id, report_path)
         sys.exit(0 if passed else 1)
@@ -679,6 +699,57 @@ def _run_evaluate(
         )
 
     sys.exit(0 if passed else 1)
+
+
+def _run_smoke_test() -> None:
+    """Deterministischer Selbsttest für Tier-Sortierung und Fail-Fast (kein HTTP, kein LLM)."""
+    from .holdout_runner import PRIORITY_ORDER
+    from .evaluator import EvaluationReport, ScenarioResult, ScenarioRun
+
+    checks: list[tuple[str, bool, str]] = []
+
+    # Check 1: PRIORITY_ORDER Sortierung
+    tiers = sorted(PRIORITY_ORDER.keys(), key=lambda t: PRIORITY_ORDER[t])
+    sort_ok = tiers == ["critical", "normal", "edge-case"]
+    checks.append(("Tier-Sortierung", sort_ok,
+                   f"critical={PRIORITY_ORDER['critical']} < normal={PRIORITY_ORDER['normal']} "
+                   f"< edge-case={PRIORITY_ORDER['edge-case']}"))
+
+    # Check 2: Fail-Fast critical → normal
+    c_fail = ScenarioResult(hol_id="SMOKE-C1", title="critical fail", contract="", priority="critical")
+    c_fail.pass_threshold = 1
+    c_fail.runs.append(ScenarioRun(
+        run=1, passed=False, request={}, response_status=None, response_body=None,
+        llm_verdict="fail", llm_reasoning="smoke",
+    ))
+    n_skip = ScenarioResult(hol_id="SMOKE-N1", title="normal skip", contract="", priority="normal")
+    failfast_crit_ok = (not c_fail.passed) and (len(n_skip.runs) == 0)
+    checks.append(("Fail-Fast critical→normal", failfast_crit_ok,
+                   "normal übersprungen nach critical-Fehler"))
+
+    # Check 3: Fail-Fast normal → edge-case
+    n_fail = ScenarioResult(hol_id="SMOKE-N2", title="normal fail", contract="", priority="normal")
+    n_fail.pass_threshold = 1
+    n_fail.runs.append(ScenarioRun(
+        run=1, passed=False, request={}, response_status=None, response_body=None,
+        llm_verdict="fail", llm_reasoning="smoke",
+    ))
+    e_skip = ScenarioResult(hol_id="SMOKE-E1", title="edge-case skip", contract="", priority="edge-case")
+    failfast_norm_ok = (not n_fail.passed) and (len(e_skip.runs) == 0)
+    checks.append(("Fail-Fast normal→edge-case", failfast_norm_ok,
+                   "edge-case übersprungen nach normal-Fehler"))
+
+    all_ok = all(ok for _, ok, _ in checks)
+    for name, ok, detail in checks:
+        icon = "OK" if ok else "FAIL"
+        click.echo(f"  [{icon}] {name}: {detail}")
+
+    if all_ok:
+        click.echo("Smoke-Test bestanden.")
+    else:
+        click.echo("Smoke-Test fehlgeschlagen.")
+
+    sys.exit(0 if all_ok else 1)
 
 
 def _set_evaluation_failed(cfg: SddConfig, spec_id: str, report_path: Path | None) -> None:

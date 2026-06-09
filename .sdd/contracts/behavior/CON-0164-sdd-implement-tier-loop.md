@@ -8,7 +8,8 @@ spec: SPEC-0042
 version: 0.1.0
 status: approved
 artifact: "contracts/behavior/sdd-implement-tier-loop.md"
-tests: []
+tests:
+- TST-0192
 ---
 
 # Contract: sdd-implement Schritt 5.5 — Tier-spezifische Loop-Verzweigung

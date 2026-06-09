@@ -1,0 +1,26 @@
+---
+spec_id: SPEC-0043
+branch: dev/SPEC-0043
+created: 2026-06-09
+test_result: skipped
+tests_passed: 0
+tests_total: 0
+merge_command: "git checkout main && git merge dev/SPEC-0043"
+diff_stat: |
+  
+pr_strategy: local
+---
+
+# PR: SPEC-0043
+
+## Diff
+
+```
+
+```
+
+## Merge
+
+```bash
+git checkout main && git merge dev/SPEC-0043
+```

@@ -343,26 +343,53 @@ Falls Tasks fehlen (N < Gesamt): liste sie auf und erkläre warum sie blockiert 
 
 ## Schritt 5.5: Holdout-Gate (Blocker vor Finalize)
 
-Alle Tasks grün — jetzt werden die Holdout-Szenarien geprüft.
-`sdd finalize` wird erst aufgerufen wenn dieser Schritt besteht.
+Alle Tasks grün — jetzt werden die Holdout-Szenarien tier-spezifisch geprüft.
+`sdd finalize` wird erst aufgerufen wenn alle Tiers bestehen.
+
+### 5.5a: Critical-Tier
 
 **CONTAINER_MODE=container:**
 ```bash
 sdd dev exec $ARGUMENTS bash -c \
   "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
-   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS"
+   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
 ```
 
 **CONTAINER_MODE=host:**
 ```bash
 pip install -q -e './tool/[evaluate]' > /dev/null && \
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS
+sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
 ```
 
 | Versuch | Ergebnis | Aktion |
 |---------|----------|--------|
-| 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren → zurück zu Schritt 4 |
+| 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren → zurück zu Schritt 4; Container neu starten |
 | 3 | fehlgeschlagen | `--final-attempt` anhängen → Status `evaluation-failed`, Bericht ausgeben, **Abbruch** |
+| beliebig | bestanden | → weiter mit 5.5b |
+
+### 5.5b: Normal-Tier
+
+```bash
+sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
+```
+(Gleiches Container/Host-Muster wie 5.5a.)
+
+| Versuch | Ergebnis | Aktion |
+|---------|----------|--------|
+| 1–2 | fehlgeschlagen | Code korrigieren → zurück zu Schritt 4 |
+| 3 | fehlgeschlagen | `--final-attempt` → **Abbruch** |
+| beliebig | bestanden | → weiter mit 5.5c |
+
+### 5.5c: Edge-Case-Tier
+
+```bash
+sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier edge-case
+```
+
+| Versuch | Ergebnis | Aktion |
+|---------|----------|--------|
+| 1–2 | fehlgeschlagen | Code korrigieren → zurück zu Schritt 4 |
+| 3 | fehlgeschlagen | `--final-attempt` → **Abbruch** |
 | beliebig | bestanden | → weiter mit Schritt 6 |
 
 ---
