@@ -5,6 +5,7 @@ import ContractDetail from "./components/ContractDetail";
 import DevConsole from "./components/DevConsole";
 import HoldoutDetail from "./components/HoldoutDetail";
 import HubPanel from "./components/HubPanel";
+import OrchestrateMonitorPage from "./components/OrchestrateMonitorPage";
 import ServerInfoPanel from "./components/ServerInfoPanel";
 import SettingsPage from "./components/SettingsPage";
 import SpecDetail from "./components/SpecDetail";
@@ -38,6 +39,7 @@ export default function App() {
   const [showServerInfo, setShowServerInfo] = useState(false);
   const [showConsole, setShowConsole]       = useState(false);
   const [showHub, setShowHub]               = useState(false);
+  const [showDagMonitor, setShowDagMonitor] = useState(false);
   const [hubUrl, setHubUrl]                 = useState("");
   const [aiUsage, setAiUsage]     = useState<AiUsage | null>(null);
   const [loading, setLoading]     = useState(true);
@@ -103,8 +105,10 @@ export default function App() {
         onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); setShowHub(false); }}
         onShowServerInfo={() => setShowServerInfo(v => !v)}
         onToggleConsole={() => setShowConsole(v => !v)}
-        onShowHub={() => { setShowHub(v => !v); setShowAiUsage(false); setShowSettings(false); }}
+        onShowHub={() => { setShowHub(v => !v); setShowAiUsage(false); setShowSettings(false); setShowDagMonitor(false); }}
         hubActive={showHub}
+        onShowDagMonitor={() => { setShowDagMonitor(v => !v); setShowHub(false); setShowAiUsage(false); setShowSettings(false); }}
+        dagMonitorActive={showDagMonitor}
       />
       {showConsole && <DevConsole onClose={() => setShowConsole(false)} />}
 
@@ -185,9 +189,13 @@ export default function App() {
             <HubPanel hubUrl={hubUrl} />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
+          {showDagMonitor && (
+            <OrchestrateMonitorPage onNavigate={navigate} />
+          )}
 
-          {!showAiUsage && !showSettings && !showHub && selected?.type === "spec" && (
+          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
+
+          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "spec" && (
             <SpecDetail
               key={selected.id}
               specId={selected.id}
@@ -198,7 +206,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && selected?.type === "contract" && (
+          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "contract" && (
             <ContractDetail
               key={selected.id}
               contractId={selected.id}
@@ -206,7 +214,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && selected?.type === "test" && (
+          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "test" && (
             <TestDetail
               key={selected.id}
               testId={selected.id}
@@ -214,7 +222,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && selected?.type === "holdout" && (
+          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "holdout" && (
             <HoldoutDetail
               key={selected.id}
               holdoutId={selected.id}

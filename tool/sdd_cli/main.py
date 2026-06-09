@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 import sys
 from typing import Any
 
@@ -39,6 +40,103 @@ console = Console()
 @click.version_option(__version__)
 def cli() -> None:
     pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd init – Hilfsfunktionen
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _is_git_repo(path: Path) -> bool:
+    import subprocess
+    result = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
+def _check_git_setup(target: Path) -> None:
+    """Prüft ob ein Git-Repo existiert; bietet an es anzulegen und ggf. bei GitHub zu registrieren."""
+    import subprocess
+
+    if _is_git_repo(target):
+        return
+
+    console.print(
+        "\n[yellow]⚠[/] Kein Git-Repository gefunden.\n"
+        "  SDD benötigt Git für Branches, Commits und PRs.\n"
+        "  Jetzt initialisieren? [J/n] ",
+        end="",
+    )
+    try:
+        answer = input("").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        answer = "n"
+
+    if answer and not answer.startswith(("j", "y")):
+        console.print("  [dim]→ Git-Init übersprungen. Manuell: [cyan]git init[/][/]")
+        return
+
+    subprocess.run(["git", "-C", str(target), "init", "-b", "main"], check=True)
+    subprocess.run(["git", "-C", str(target), "add", ".sdd", ".claude"], capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(target), "commit", "-m", "chore: sdd init"],
+        capture_output=True,
+    )
+    console.print("  [green]✓[/] Git-Repository initialisiert und erster Commit erstellt.")
+
+    if not shutil.which("gh"):
+        console.print(
+            "  [dim]→ gh CLI nicht gefunden – GitHub-Repo kann nicht automatisch angelegt werden.[/]"
+        )
+        return
+
+    console.print(
+        "  GitHub-Repository anlegen? [J/n] ",
+        end="",
+    )
+    try:
+        answer2 = input("").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        answer2 = "n"
+
+    if answer2 and not answer2.startswith(("j", "y")):
+        console.print("  [dim]→ Übersprungen. Manuell: [cyan]gh repo create[/][/]")
+        return
+
+    console.print("  Sichtbarkeit: [1] privat (Standard)  [2] öffentlich → ", end="")
+    try:
+        vis_answer = input("").strip()
+    except (EOFError, KeyboardInterrupt):
+        vis_answer = "1"
+
+    visibility = "public" if vis_answer == "2" else "private"
+    repo_name = target.name
+
+    proc = subprocess.run(
+        ["gh", "repo", "create", repo_name, f"--{visibility}", "--source=.", "--remote=origin", "--push"],
+        capture_output=True,
+        text=True,
+        cwd=str(target),
+    )
+    if proc.returncode == 0:
+        url = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else f"github.com/{repo_name}"
+        console.print(f"  [green]✓[/] GitHub-Repo angelegt: [bold]{url}[/]")
+    else:
+        console.print(f"  [yellow]⚠[/] gh repo create fehlgeschlagen: {proc.stderr.strip()[:200]}")
+        console.print("  Manuell: [cyan]gh repo create[/]")
+
+
+def _check_gh_available() -> None:
+    """Gibt eine Warnung aus wenn gh nicht im PATH ist."""
+    if shutil.which("gh"):
+        return
+    console.print(
+        "\n[yellow]⚠[/] gh CLI nicht gefunden – automatische PR-Erstellung nicht möglich.\n"
+        "  Installiere gh: [link]https://cli.github.com[/link]\n"
+        "  Oder direkt: curl -sL https://github.com/cli/cli/releases/latest "
+        "→ Binary nach ~/.local/bin/gh"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -118,6 +216,9 @@ def init(target: str, project_title: str, force: bool,
                 console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
         else:
             console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
+
+    _check_git_setup(Path(target).resolve())
+    _check_gh_available()
 
     console.print("\nNächste Schritte:")
     console.print("  1. [cyan]sdd new spec \"Mein erstes Feature\"[/]")
@@ -3094,6 +3195,100 @@ def config_test_llm_cmd(llm_id: str | None) -> None:
             has_error = True
     if has_error:
         sys.exit(1)
+
+
+@cli.command(
+    "generate-holdouts",
+    help="Generiert Holdout-Szenarien für eine Spec via LLM (SPEC-0033).",
+)
+@click.argument("spec_id")
+def generate_holdouts_cmd(spec_id: str) -> None:
+    from .generate_holdouts import (
+        load_and_validate_spec,
+        resolve_contract_files,
+        get_existing_hol_ids_for_spec,
+        write_hol_file,
+        generate_holdout_scenarios,
+    )
+    from .llm import get_completion_provider
+    from .ids import next_id
+
+    cfg = _ensure_project()
+
+    try:
+        spec = load_and_validate_spec(spec_id, cfg)
+    except FileNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+    contract_ids: list[str] = spec.get("contracts") or []
+    contracts = resolve_contract_files(contract_ids, cfg)
+
+    skipped_missing = [cid for cid in contract_ids if not any(c["id"] == cid for c in contracts)]
+    for cid in skipped_missing:
+        console.print(f"[yellow]⚠[/] Contract {cid} nicht gefunden – übersprungen.")
+
+    existing_hols = get_existing_hol_ids_for_spec(spec_id, cfg)
+    spec_content = (spec["_path"]).read_text(encoding="utf-8")
+
+    provider = get_completion_provider(cfg, component="completion")
+
+    created: list[tuple[str, str]] = []
+    skipped_count = 0
+
+    for contract in contracts:
+        cid = contract["id"]
+
+        existing_for_contract = {
+            hid for hid in existing_hols
+            if (cfg.holdout_dir / f"{hid}-*.md").exists()
+        }
+        already_have = any(
+            parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+            for p in cfg.holdout_dir.rglob("*.md")
+        ) if cfg.holdout_dir.exists() else False
+
+        if already_have:
+            count = sum(
+                1 for p in cfg.holdout_dir.rglob("*.md")
+                if parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+                   and parse_safe(p).frontmatter.get("spec") == spec_id
+            )
+            console.print(f"  [dim]→ {cid}: {count} Holdout(s) bereits vorhanden – übersprungen.[/]")
+            skipped_count += count
+            continue
+
+        try:
+            scenarios = generate_holdout_scenarios(
+                contract["content"], cid, spec_content, provider
+            )
+        except RuntimeError as exc:
+            console.print(f"[red]✗[/] LLM-Fehler für {cid}: {exc}")
+            continue
+
+        for scenario in scenarios:
+            hid = next_id(cfg, "holdout")
+            path = write_hol_file(hid, spec_id, cid, scenario, cfg)
+            created.append((hid, cid))
+            console.print(f"  [green]+[/] {hid}  ({cid})  {path.name}")
+
+    table = Table(title=f"Holdouts für {spec_id}", show_header=True)
+    table.add_column("HOL-ID", style="cyan")
+    table.add_column("Contract", style="blue")
+    for hid, cid in created:
+        table.add_row(hid, cid)
+    if created:
+        console.print(table)
+
+    total = len(created)
+    console.print(f"\n[green]✓[/] {total} Holdout(s) angelegt", end="")
+    if skipped_count:
+        console.print(f", {skipped_count} Holdouts übersprungen (bereits vorhanden)")
+    else:
+        console.print("")
 
 
 if __name__ == "__main__":

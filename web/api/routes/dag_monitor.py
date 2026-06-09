@@ -17,7 +17,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-sys.path.insert(0, str(Path(__file__).parents[4]))
+sys.path.insert(0, str(Path(__file__).parents[1]))
 from sdd_cli.dag_event import get_event_bus
 from sdd_cli.dag_command import build_command, get_command_queue
 

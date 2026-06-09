@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.6.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-implement | version: 0.7.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -16,10 +16,33 @@ in den Implementierungskontext einfließen. Dies sichert die Evaluator-Isolation
 - Lese Frontmatter der Spec. Falls `status == deprecated`:
   "✗ Spec ist deprecated – Implementierung nicht möglich." und abbrechen.
 
-## Schritt 1b: Auto-Approve + Container starten
+## Schritt 1b: Auto-Review + Approve + Container starten
 
-**Approve (automatisch, wenn noch nicht in-progress):**
-Falls `status` ≠ `in-progress`, führe automatisch aus:
+**Approve-Pfad (abhängig vom aktuellen Status):**
+
+Lese `status` aus dem Frontmatter der Spec.
+
+**Falls `status == draft` oder `status == review`:**
+Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
+
+> Führe das vollständige Review für $ARGUMENTS autonom durch:
+>
+> 1. `sdd solid-check $ARGUMENTS` — SOLID-Analyse ausgeben; Warnings loggen, keine Blockade
+> 2. `sdd pattern-suggest $ARGUMENTS` — sinnvolle Patterns automatisch annehmen (`sdd pattern accept`), alle anderen überspringen
+> 3. `sdd regression-check $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
+> 4. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
+>    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
+>    - Setze `status: approved` im Frontmatter wenn inhaltlich ok (Edit-Tool)
+>    - Kein interaktiver Bestätigungsschritt — autonom entscheiden
+> 5. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+>
+> Kein Warten auf Nutzereingabe. Bei Regression-Konflikt (error): Abbruch.
+
+Falls Review-Subagent mit Fehler endet (Regression-Konflikt, fehlende Contracts o.ä.):
+Zeige Fehlerbericht und abbrechen mit:
+"✗ Automatisches Review fehlgeschlagen – prüfe den Bericht oben und führe '/sdd-review $ARGUMENTS' manuell aus."
+
+**Falls `status == approved`:** führe direkt aus:
 ```bash
 sdd spec approve $ARGUMENTS
 ```
@@ -27,6 +50,8 @@ sdd spec approve $ARGUMENTS
 
 Falls der Befehl fehlschlägt: zeige Fehler-Output und abbrechen mit:
 "✗ Approve fehlgeschlagen – Contracts oder Tests fehlen vermutlich. Prüfe '/sdd-review $ARGUMENTS'."
+
+**Falls `status == in-progress`:** kein Approve-Schritt nötig.
 
 **Container-Runtime diagnostizieren:**
 Lese den konfigurierten Runtime-Namen aus `.sdd/config.yaml` (`docker.runtime`, Standard: `docker`).
@@ -109,6 +134,48 @@ Zeige Hinweis: "[WARN] Container-loser Modus aktiv – Tests laufen direkt auf d
 git checkout -b feat/$ARGUMENTS 2>/dev/null || git checkout feat/$ARGUMENTS
 ```
 `▶ Branch feat/$ARGUMENTS` erstellt oder ausgecheckt (kein Fehler wenn bereits vorhanden).
+
+## Schritt 1.5: Holdout-Szenarien sicherstellen
+
+Prüfe ob HOL-Dateien für diese Spec bereits existieren:
+```bash
+grep -rl "^spec: $ARGUMENTS" .sdd/holdout/ 2>/dev/null | wc -l
+```
+
+Falls **0 Holdouts** gefunden: spawne einen Subagenten (Agent-Tool) zur Generierung.
+
+**Subagent-Auftrag (vollständiger Prompt):**
+
+> Generiere Holdout-Szenarien für $ARGUMENTS.
+>
+> Lies ausschließlich:
+> 1. `.sdd/specs/$ARGUMENTS-*.md` — Spec-Inhalt
+> 2. Alle CON-IDs aus `contracts:`-Frontmatter → `.sdd/contracts/**/<CON-ID>-*.md`
+>
+> Lies nicht: `tool/`, `web/`, `tests/`, `.sdd/holdout/`, `*.py`, `*.ts`, `*.js`
+>
+> Leite pro Contract 2–4 Szenarien ab (Happy Path + mindestens 1 Fehlerfall).
+> Jedes Szenario beschreibt Verhalten aus Nutzerperspektive — kein Implementierungsdetail, kein Code.
+>
+> Für jedes Szenario:
+> ```bash
+> sdd new holdout --contract <CON-ID> --spec $ARGUMENTS --title "<Titel>"
+> ```
+> Befülle die erzeugte Datei sofort mit:
+> - `## Input` — Was eingegeben / ausgelöst wird
+> - `## Expected` — Was das System zurückgeben / tun muss (konkret, prüfbar)
+> - `## Evaluation Hint` — Aufzählung der Prüfpunkte für den Evaluator
+>
+> Kein Bestätigungsschritt — direkt schreiben.
+
+Nach Abschluss des Subagenten: zeige Anzahl der angelegten HOL-IDs.
+
+Falls Subagent fehlschlägt oder 0 HOL-Dateien erzeugt wurden:
+`[WARN] Holdout-Generierung fehlgeschlagen — Schritt 5.5 wird keine Szenarien evaluieren.`
+
+Falls Holdouts bereits existieren: kurz ausgeben wie viele, dann weiter.
+
+---
 
 ## Schritt 2: Kontext laden (Allowlist – kein Holdout)
 Lese folgende Dateien (und NUR diese):
@@ -274,6 +341,32 @@ Nach Abschluss aller Tasks:
 
 Falls Tasks fehlen (N < Gesamt): liste sie auf und erkläre warum sie blockiert sind.
 
+## Schritt 5.5: Holdout-Gate (Blocker vor Finalize)
+
+Alle Tasks grün — jetzt werden die Holdout-Szenarien geprüft.
+`sdd finalize` wird erst aufgerufen wenn dieser Schritt besteht.
+
+**CONTAINER_MODE=container:**
+```bash
+sdd dev exec $ARGUMENTS bash -c \
+  "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
+   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS"
+```
+
+**CONTAINER_MODE=host:**
+```bash
+pip install -q -e './tool/[evaluate]' > /dev/null && \
+sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS
+```
+
+| Versuch | Ergebnis | Aktion |
+|---------|----------|--------|
+| 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren → zurück zu Schritt 4 |
+| 3 | fehlgeschlagen | `--final-attempt` anhängen → Status `evaluation-failed`, Bericht ausgeben, **Abbruch** |
+| beliebig | bestanden | → weiter mit Schritt 6 |
+
+---
+
 ## Schritt 6: Finalisierung
 
 Führe zuerst `sdd validate` aus und behebe alle Fehler.
@@ -379,32 +472,6 @@ Falls `.sdd/prs/PR-$ARGUMENTS.md` nicht existiert, nutze dieses Template:
 
 Zeige die PR-URL nach erfolgreichem `gh pr create`.
 
-## Schritt 7: Holdout-Evaluation
-
-Nach erfolgreichem `sdd finalize` die Holdout-Szenarien evaluieren.
-
-**CONTAINER_MODE=container:** `sdd evaluate` läuft im Dev-Container.
-```bash
-sdd dev exec $ARGUMENTS bash -c \
-  "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
-   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS"
-```
-
-**CONTAINER_MODE=host:** `sdd evaluate` läuft direkt auf dem Host.
-```bash
-pip install -q -e './tool/[evaluate]' > /dev/null && \
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS
-```
-
-**Retry-Loop (max 3 Versuche, beide Modi):**
-
-| Versuch | Ergebnis | Aktion |
-|---------|----------|--------|
-| 1–2 | fehlgeschlagen | Traceback analysieren, Code korrigieren, `sdd finalize` + erneut evaluieren |
-| 3 | fehlgeschlagen | `--final-attempt` setzen → Status → `evaluation-failed`, Bericht anzeigen, Nutzer informieren |
-| beliebig | bestanden | Fertig |
-
-Beim 3. fehlgeschlagenen Versuch `--final-attempt` anhängen.
 
 ## Konventionen
 - Keine Kommentare außer wenn WHY nicht offensichtlich
