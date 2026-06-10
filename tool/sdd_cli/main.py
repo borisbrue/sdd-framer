@@ -3478,5 +3478,33 @@ def vision_challenge(feature_index: int, mode: str) -> None:
         sys.exit(1)
 
 
+@vision_group.command("stats", help="Zeigt Statistiken zur aktuellen Vision.")
+def vision_stats() -> None:
+    from .vision.document import VisionDocument, VisionNotFoundError
+    from .vision.stats import VisionStats
+    from pathlib import Path
+
+    root = find_project_root() or Path.cwd()
+    vision_file = root / ".sdd" / "vision.md"
+
+    try:
+        doc = VisionDocument.from_file(vision_file)
+    except VisionNotFoundError:
+        console.print(
+            "[red]✗[/] Keine vision.md gefunden. "
+            "Erstelle sie zuerst mit: [bold]sdd vision init[/]"
+        )
+        sys.exit(1)
+
+    stats = VisionStats.from_document(doc)
+    console.print(f"Features:        {stats.feature_count}")
+    console.print(
+        f"Tasks:           {stats.task_total}"
+        f"  (done: {stats.task_done} / offen: {stats.task_open})"
+    )
+    console.print(f"LLM Challenges:  {stats.llm_challenge_count}")
+    console.print(f"Code Challenges: {stats.code_challenge_count}")
+
+
 if __name__ == "__main__":
     cli()

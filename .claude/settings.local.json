@@ -248,7 +248,13 @@
       "Bash(awk '{print $2, $NF}')",
       "Bash(sdd holdout *)",
       "Bash(UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force /run/media/deck/SM512/Development/sdd-framer/dist/sdd_framer-0.1.58-py3-none-any.whl)",
-      "Bash(xargs -I{} sh -c 'echo \"---\"; basename {}; grep -m1 \"^title:\" {}')"
+      "Bash(xargs -I{} sh -c 'echo \"---\"; basename {}; grep -m1 \"^title:\" {}')",
+      "Bash(sdd task-route *)",
+      "Bash(UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force dist/sdd_cli-0.1.58-py3-none-any.whl)",
+      "Bash(UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force /run/media/deck/SM512/Development/sdd-framer/dist/sdd_cli-0.1.58-py3-none-any.whl)",
+      "Bash(ln -sf /home/deck/.local/share/uv/tools/sdd_cli/bin/sdd /home/deck/.local/bin/sdd)",
+      "Bash(ln -sf /home/deck/.local/share/uv/tools/sdd-cli/bin/sdd /home/deck/.local/bin/sdd)",
+      "Bash(sdd task-exec *)"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",
