@@ -232,7 +232,11 @@ def init(target: str, project_title: str, force: bool,
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd upgrade
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command(help="Aktualisiert ein bestehendes SDD-Projekt auf die aktuelle Paket-Version.")
+@cli.command(help=(
+    "Aktualisiert ein bestehendes SDD-Projekt auf die aktuelle Paket-Version. "
+    "Aktualisiert Schemas, Templates und fehlende Skill-Dateien (.claude/commands/) "
+    "– ohne Specs, Contracts oder Tests anzufassen."
+))
 @click.option("--path", "target", default=".", help="Projektverzeichnis (Default: aktuelles).")
 @click.option("--verbose", "-v", is_flag=True, help="Zeigt jede geänderte Datei.")
 def upgrade(target: str, verbose: bool) -> None:
@@ -446,39 +450,28 @@ def new_holdout(contract_id: str, spec_id: str, title: str, priority: str, hol_t
     )
 
 
-@new.command("agents-md", help="Generiert ein AGENTS.md-Skeleton im Projekt-Root oder einem Unterverzeichnis.")
-@click.option("--subdir", default="", help="Unterverzeichnis für Subkomponenten-AGENTS.md, z.B. 'services/auth'.")
-@click.option("--force", is_flag=True, help="Überschreibt eine vorhandene AGENTS.md.")
+@new.command("agents-md", help="[Entfernt] In sdd init integriert.")
+@click.option("--subdir", default="")
+@click.option("--force", is_flag=True)
 def new_agents_md(subdir: str, force: bool) -> None:
-    cfg = _ensure_project()
-    base = (cfg.root / subdir) if subdir else cfg.root
-    target = base / "AGENTS.md"
-    if target.exists() and not force:
-        console.print(f"[yellow]⚠[/] AGENTS.md existiert bereits: [bold]{target}[/]")
-        console.print("  Verwende [cyan]--force[/] um zu überschreiben.")
-        return
-
-    base.mkdir(parents=True, exist_ok=True)
-    tmpl, _ = load_template(cfg, "agents-md")
-    target.write_text(tmpl, encoding="utf-8")
-    console.print(f"[green]✓[/] AGENTS.md angelegt: [bold]{target}[/]")
-    if subdir:
-        console.print(f"  Subkomponente: [cyan]{subdir}[/] – beschreibe hier nur diesen Teil des Systems.")
-    console.print("  Fülle alle Sektionen aus – das Dokument gibt dem Code-Agenten seinen Kontext.")
+    console.print("[yellow]⚠[/] 'sdd new agents-md' wurde entfernt → in [cyan]sdd init[/] integriert.")
+    sys.exit(1)
 
 
-@new.command("github-workflow", help="Generiert einen GitHub-Actions-Workflow für sdd orchestrate.")
+@new.command("github-workflow", help="[Entfernt] In sdd init integriert.")
 def new_github_workflow() -> None:
+    console.print("[yellow]⚠[/] 'sdd new github-workflow' wurde entfernt → in [cyan]sdd init[/] integriert.")
+    sys.exit(1)
+
+
+@new.command("hotfix", help="Legt einen neuen Hotfix-Record an.")
+@click.argument("description")
+def new_hotfix(description: str) -> None:
+    from .hotfix import start as _start
     cfg = _ensure_project()
-    tmpl, _ = load_template(cfg, "github-actions")
-    target = cfg.root / ".github" / "workflows" / "sdd-orchestrate.yml"
-    if target.exists():
-        console.print(f"[yellow]⚠[/] Workflow existiert bereits: [bold]{target}[/]")
-        return
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(tmpl, encoding="utf-8")
-    console.print(f"[green]✓[/] GitHub-Actions-Workflow angelegt: [bold]{target}[/]")
-    console.print("  Trage [cyan]ANTHROPIC_API_KEY[/] als GitHub-Secret ein.")
+    hf_id = _start(cfg.root, description)
+    console.print(f"[green]✓[/] Hotfix [bold]{hf_id}[/] erstellt: {description}")
+    console.print(f"  Implementiere den Fix, dann: [cyan]sdd hotfix finalize {hf_id}[/]")
 
 
 def _hint_link_in_spec(spec_id: str, key: str, new_id: str) -> None:
@@ -540,81 +533,17 @@ def trace() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd evaluate
+# sdd evaluate — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command(help="Führt Holdout-Szenarien gegen einen laufenden Service aus (Evaluator).")
-@click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
-              help="Basis-URL des zu testenden Services, z.B. http://localhost:8080. "
-                   "Wird ignoriert wenn --start-container gesetzt ist.")
-@click.option("--hol", "hol_ids", multiple=True,
-              help="Einschränkung auf bestimmte HOL-IDs (wiederholbar). Default: alle aktiven.")
-@click.option("--save/--no-save", default=True,
-              help="Report in .sdd/evaluations/ persistieren (Default: ja).")
-@click.option("--json", "output_json", is_flag=True,
-              help="Report als JSON ausgeben statt als Rich-Tabelle.")
-@click.option("--spec", "spec_id", default=None,
-              help="SPEC-ID – bei finalem Fehlschlag wird Status auf evaluation-failed gesetzt.")
-@click.option("--final-attempt", is_flag=True,
-              help="Letzter Retry-Versuch – setzt SPEC auf evaluation-failed wenn Tests nicht grün.")
-@click.option("--start-container", is_flag=True,
-              help="Container starten, Health-Check abwarten, nach Tests stoppen. "
-                   "Konfiguration via evaluator.container in config.yaml.")
-@click.option("--build", "build_image", is_flag=True,
-              help="Container-Image vor dem Start neu bauen (nur mit --start-container).")
-@click.option("--tier", "tier_filter", default=None,
-              type=click.Choice(["critical", "normal", "edge-case"]),
-              help="Nur Holdouts des angegebenen Tiers ausführen.")
-@click.option("--smoke", is_flag=True,
-              help="Deterministischer Selbsttest (kein HTTP, kein LLM).")
-def evaluate_cmd(base_url: str | None, hol_ids: tuple, save: bool, output_json: bool,
-                 spec_id: str | None, final_attempt: bool,
-                 start_container: bool, build_image: bool,
-                 tier_filter: str | None, smoke: bool) -> None:
-    cfg = _ensure_project()
-
+@cli.command(help="[Entfernt] Verwende: sdd holdout run", hidden=False)
+@click.option("--smoke", is_flag=True, hidden=True, help="Deterministischer Selbsttest.")
+@click.pass_context
+def evaluate_cmd(ctx: click.Context, smoke: bool) -> None:
     if smoke:
         _run_smoke_test()
         return
-
-    ids_filter = list(hol_ids) if hol_ids else None
-
-    if tier_filter and ids_filter:
-        console.print("[yellow]![/] --hol hat Vorrang vor --tier; --tier wird ignoriert.")
-        tier_filter = None
-
-    if start_container:
-        from .eval_container import EvalContainer
-        container_ctx = EvalContainer(cfg, build=build_image)
-        console.print("[cyan]▶[/] Eval-Container wird gestartet …")
-        try:
-            with container_ctx as (resolved_url, container_name):
-                console.print(f"[green]✓[/] Container bereit: [bold]{resolved_url}[/]")
-                _run_evaluate(cfg, resolved_url, ids_filter, spec_id, final_attempt,
-                              save, output_json, container_name=container_name,
-                              tier_filter=tier_filter)
-        except RuntimeError as e:
-            console.print(f"[red]✗[/] {e}")
-            sys.exit(1)
-        return
-
-    # Kein Container: base_url ist Pflicht
-    if not base_url:
-        # Fallback auf config
-        base_url = cfg.raw.get("evaluator", {}).get("base_url", "")
-    if not base_url:
-        console.print(
-            "[red]✗[/] --base-url fehlt. Setze SDD_EVAL_BASE_URL, nutze --base-url "
-            "oder starte mit --start-container."
-        )
-        sys.exit(1)
-
-    console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
-    try:
-        _run_evaluate(cfg, base_url, ids_filter, spec_id, final_attempt,
-                      save, output_json, container_name=None, tier_filter=tier_filter)
-    except RuntimeError as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(1)
+    console.print("[yellow]⚠[/] 'sdd evaluate' wurde entfernt. Verwende: [cyan]sdd holdout run[/]")
+    sys.exit(1)
 
 
 def _run_evaluate(
@@ -745,6 +674,180 @@ def _set_evaluation_failed(cfg: SddConfig, spec_id: str, report_path: Path | Non
 
 
 cli.add_command(evaluate_cmd, name="evaluate")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd holdout group  (nach sdd hotfix)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("holdout", help="Holdout-Szenarien verwalten (generate, run).")
+def holdout_group() -> None:
+    pass
+
+
+@holdout_group.command("generate", help="Generiert Holdout-Szenarien für eine Spec via LLM.")
+@click.argument("spec_id")
+def holdout_generate(spec_id: str) -> None:
+    from .generate_holdouts import (
+        load_and_validate_spec,
+        resolve_contract_files,
+        get_existing_hol_ids_for_spec,
+        write_hol_file,
+        generate_holdout_scenarios,
+    )
+    from .llm import get_completion_provider
+    from .ids import next_id
+
+    cfg = _ensure_project()
+
+    try:
+        spec = load_and_validate_spec(spec_id, cfg)
+    except FileNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+    contract_ids: list[str] = spec.get("contracts") or []
+    contracts = resolve_contract_files(contract_ids, cfg)
+
+    skipped_missing = [cid for cid in contract_ids if not any(c["id"] == cid for c in contracts)]
+    for cid in skipped_missing:
+        console.print(f"[yellow]⚠[/] Contract {cid} nicht gefunden – übersprungen.")
+
+    existing_hols = get_existing_hol_ids_for_spec(spec_id, cfg)
+    spec_content = (spec["_path"]).read_text(encoding="utf-8")
+
+    provider = get_completion_provider(cfg, component="completion")
+
+    created: list[tuple[str, str]] = []
+    skipped_count = 0
+
+    for contract in contracts:
+        cid = contract["id"]
+
+        existing_for_contract = {
+            hid for hid in existing_hols
+            if (cfg.holdout_dir / f"{hid}-*.md").exists()
+        }
+        already_have = any(
+            parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+            for p in cfg.holdout_dir.rglob("*.md")
+        ) if cfg.holdout_dir.exists() else False
+
+        if already_have:
+            count = sum(
+                1 for p in cfg.holdout_dir.rglob("*.md")
+                if parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
+                   and parse_safe(p).frontmatter.get("spec") == spec_id
+            )
+            console.print(f"  [dim]→ {cid}: {count} Holdout(s) bereits vorhanden – übersprungen.[/]")
+            skipped_count += count
+            continue
+
+        try:
+            scenarios = generate_holdout_scenarios(
+                contract["content"], cid, spec_content, provider
+            )
+        except RuntimeError as exc:
+            console.print(f"[red]✗[/] LLM-Fehler für {cid}: {exc}")
+            continue
+
+        for scenario in scenarios:
+            hid = next_id(cfg, "holdout")
+            path = write_hol_file(hid, spec_id, cid, scenario, cfg)
+            created.append((hid, cid))
+            console.print(f"  [green]+[/] {hid}  ({cid})  {path.name}")
+
+    table = Table(title=f"Holdouts für {spec_id}", show_header=True)
+    table.add_column("HOL-ID", style="cyan")
+    table.add_column("Contract", style="blue")
+    for hid, cid in created:
+        table.add_row(hid, cid)
+    if created:
+        console.print(table)
+
+    total = len(created)
+    console.print(f"\n[green]✓[/] {total} Holdout(s) angelegt", end="")
+    if skipped_count:
+        console.print(f", {skipped_count} Holdouts übersprungen (bereits vorhanden)")
+    else:
+        console.print("")
+
+
+@holdout_group.command("run", help="Führt Holdout-Szenarien gegen einen Service aus.")
+@click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
+              help="Basis-URL des zu testenden Services, z.B. http://localhost:8080. "
+                   "Wird ignoriert wenn --start-container gesetzt ist.")
+@click.option("--hol", "hol_ids", multiple=True,
+              help="Einschränkung auf bestimmte HOL-IDs (wiederholbar). Default: alle aktiven.")
+@click.option("--save/--no-save", default=True,
+              help="Report in .sdd/evaluations/ persistieren (Default: ja).")
+@click.option("--json", "output_json", is_flag=True,
+              help="Report als JSON ausgeben statt als Rich-Tabelle.")
+@click.option("--spec", "spec_id", default=None,
+              help="SPEC-ID – bei finalem Fehlschlag wird Status auf evaluation-failed gesetzt.")
+@click.option("--final-attempt", is_flag=True,
+              help="Letzter Retry-Versuch – setzt SPEC auf evaluation-failed wenn Tests nicht grün.")
+@click.option("--start-container", is_flag=True,
+              help="Container starten, Health-Check abwarten, nach Tests stoppen. "
+                   "Konfiguration via evaluator.container in config.yaml.")
+@click.option("--build", "build_image", is_flag=True,
+              help="Container-Image vor dem Start neu bauen (nur mit --start-container).")
+@click.option("--tier", "tier_filter", default=None,
+              type=click.Choice(["critical", "normal", "edge-case"]),
+              help="Nur Holdouts des angegebenen Tiers ausführen.")
+@click.option("--smoke", is_flag=True,
+              help="Deterministischer Selbsttest (kein HTTP, kein LLM).")
+def holdout_run(base_url: str | None, hol_ids: tuple, save: bool, output_json: bool,
+                spec_id: str | None, final_attempt: bool,
+                start_container: bool, build_image: bool,
+                tier_filter: str | None, smoke: bool) -> None:
+    cfg = _ensure_project()
+
+    if smoke:
+        _run_smoke_test()
+        return
+
+    ids_filter = list(hol_ids) if hol_ids else None
+
+    if tier_filter and ids_filter:
+        console.print("[yellow]![/] --hol hat Vorrang vor --tier; --tier wird ignoriert.")
+        tier_filter = None
+
+    if start_container:
+        from .eval_container import EvalContainer
+        container_ctx = EvalContainer(cfg, build=build_image)
+        console.print("[cyan]▶[/] Eval-Container wird gestartet …")
+        try:
+            with container_ctx as (resolved_url, container_name):
+                console.print(f"[green]✓[/] Container bereit: [bold]{resolved_url}[/]")
+                _run_evaluate(cfg, resolved_url, ids_filter, spec_id, final_attempt,
+                              save, output_json, container_name=container_name,
+                              tier_filter=tier_filter)
+        except RuntimeError as e:
+            console.print(f"[red]✗[/] {e}")
+            sys.exit(1)
+        return
+
+    # Kein Container: base_url ist Pflicht
+    if not base_url:
+        # Fallback auf config
+        base_url = cfg.raw.get("evaluator", {}).get("base_url", "")
+    if not base_url:
+        console.print(
+            "[red]✗[/] --base-url fehlt. Setze SDD_EVAL_BASE_URL, nutze --base-url "
+            "oder starte mit --start-container."
+        )
+        sys.exit(1)
+
+    console.print(f"[cyan]▶[/] Evaluator startet gegen [bold]{base_url}[/] …")
+    try:
+        _run_evaluate(cfg, base_url, ids_filter, spec_id, final_attempt,
+                      save, output_json, container_name=None, tier_filter=tier_filter)
+    except RuntimeError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -882,114 +985,36 @@ def status() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd mark-false-positive
+# sdd mark-false-positive — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("mark-false-positive",
-             help="Markiert einen PR als False Positive (manuell gereverted/gefixt).")
+             help="[Entfernt] Verwende: sdd autonomy false-positive")
 @click.argument("pr_number")
-@click.option("--project", "project_id", required=True,
-              help="Projekt-ID, z.B. PRJ-0001.")
-def mark_false_positive_cmd(pr_number: str, project_id: str) -> None:
-    cfg = _ensure_project()
-    from .autonomy import record_false_positive
-    record_false_positive(cfg, project_id, pr_number)
-    console.print(
-        f"[yellow]⚠[/] PR [bold]{pr_number}[/] als False Positive markiert "
-        f"(Projekt [cyan]{project_id}[/])."
-    )
-    console.print(
-        "  Die Override-Rate wird beim nächsten [cyan]sdd level[/]-Aufruf aktualisiert."
-    )
+@click.option("--project", "project_id", required=False, default=None)
+def mark_false_positive_cmd(pr_number: str, project_id: str | None) -> None:
+    console.print("[yellow]⚠[/] 'sdd mark-false-positive' wurde entfernt. Verwende: [cyan]sdd autonomy false-positive[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd set-level
+# sdd set-level — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command("set-level", help="Setzt das Autonomy Level eines Projekts (1|2|3|3.5|4).")
+@cli.command("set-level", help="[Entfernt] Verwende: sdd autonomy set-level")
 @click.argument("project_id")
 @click.argument("level", type=float)
 def set_level_cmd(project_id: str, level: float) -> None:
-    cfg = _ensure_project()
-    try:
-        project = set_autonomy_level(cfg, project_id, level)
-    except ValueError as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(1)
-
-    label = level_label(level)
-    console.print(
-        f"[green]✓[/] [bold]{project_id}[/] → [cyan]{label}[/]"
-    )
-    crit = LEVEL_CRITERIA.get(level, {})
-    if crit.get("auto_merge"):
-        console.print("  Auto-Merge: [green]aktivierbar[/] (wenn Pass-Rate + Min. PRs erreicht)")
-    else:
-        console.print("  Auto-Merge: [dim]nicht erlaubt auf diesem Level[/]")
+    console.print("[yellow]⚠[/] 'sdd set-level' wurde entfernt. Verwende: [cyan]sdd autonomy set-level[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd level
+# sdd level — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command("level", help="Zeigt Autonomy-Level-Metriken und Upgrade-/Downgrade-Vorschläge.")
+@cli.command("level", help="[Entfernt] Verwende: sdd autonomy level")
 @click.argument("project_id")
 def level_cmd(project_id: str) -> None:
-    cfg = _ensure_project()
-    project = load_project(cfg, project_id)
-    if project is None:
-        console.print(f"[red]✗[/] Projekt nicht gefunden: {project_id}")
-        sys.exit(1)
-
-    stats = compute_level_stats(cfg, project_id, project.autonomy_level)
-
-    console.print(f"\n[bold]{project.name}[/] ([cyan]{project_id}[/])")
-    console.print(f"  Autonomy Level: [bold cyan]{level_label(stats.current_level)}[/]")
-    console.print(f"  Gesamt PRs:     {stats.total_prs}")
-
-    if stats.total_prs > 0:
-        rate_color = "green" if stats.pass_rate >= 0.9 else ("yellow" if stats.pass_rate >= 0.7 else "red")
-        console.print(f"  Pass-Rate:      [{rate_color}]{stats.pass_rate:.0%}[/]")
-        console.print(f"  Override-Rate:  {stats.override_rate:.0%}")
-
-    if stats.auto_merge_blocked:
-        console.print("  Auto-Merge:     [red]BLOCKIERT[/] (Pass-Rate unter Schwellwert)")
-    elif stats.current_level >= 3.5:
-        console.print("  Auto-Merge:     [green]freigegeben[/]")
-
-    if stats.upgrade_proposal is not None:
-        console.print(
-            f"\n  [green]▲ Upgrade-Vorschlag:[/] Level {stats.upgrade_proposal} — "
-            f"{LEVEL_CRITERIA[stats.upgrade_proposal]['label']}\n"
-            f"    Alle Schwellwerte erfüllt. Bestätige mit: "
-            f"[cyan]sdd set-level {project_id} {stats.upgrade_proposal}[/]"
-        )
-
-    if stats.downgrade_proposal is not None:
-        console.print(
-            f"\n  [yellow]▼ Downgrade-Vorschlag:[/] Level {stats.downgrade_proposal} — "
-            f"{LEVEL_CRITERIA[stats.downgrade_proposal]['label']}\n"
-            f"    {stats.consecutive_below_threshold} aufeinanderfolgende PRs unter Schwellwert.\n"
-            f"    Bestätige mit: [cyan]sdd set-level {project_id} {stats.downgrade_proposal}[/]"
-        )
-
-    # Level-Kriterien-Übersicht
-    table = Table(title="Level-Kriterien", show_lines=False, box=None)
-    table.add_column("Level", style="cyan", width=6)
-    table.add_column("Bezeichnung")
-    table.add_column("Min. Pass-Rate", justify="right")
-    table.add_column("Min. PRs", justify="right")
-    table.add_column("Auto-Merge")
-
-    for lvl, crit in sorted(LEVEL_CRITERIA.items()):
-        active = "► " if lvl == stats.current_level else "  "
-        table.add_row(
-            f"{active}{lvl}",
-            crit["label"],
-            f"{crit['min_pass_rate']:.0%}" if crit["min_pass_rate"] > 0 else "—",
-            str(crit["min_prs"]) if crit["min_prs"] > 0 else "—",
-            "[green]ja[/]" if crit["auto_merge"] else "[dim]nein[/]",
-        )
-    console.print()
-    console.print(table)
+    console.print("[yellow]⚠[/] 'sdd level' wurde entfernt. Verwende: [cyan]sdd autonomy level[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1403,62 +1428,21 @@ def _print_run_report(report: "_test_runner.RunReport") -> None:
     )
 
 
-@cli.command("test-run", help="Führt alle Tests einer Spec aus (via pytest).")
+@cli.command("test-run", help="[Entfernt] Verwende: sdd test run")
 @click.argument("spec_id", required=False)
-@click.option("--all", "run_all", is_flag=True, help="Tests aller Specs ausführen.")
-@click.option("--json", "output_json", is_flag=True, help="Ausgabe als JSON.")
+@click.option("--all", "run_all", is_flag=True)
+@click.option("--json", "output_json", is_flag=True)
 def test_run_cmd(spec_id: str | None, run_all: bool, output_json: bool) -> None:
-    cfg = _ensure_project()
-
-    if not spec_id and not run_all:
-        console.print("[red]✗[/] Entweder SPEC-ID angeben oder --all verwenden.")
-        sys.exit(2)
-
-    try:
-        if run_all:
-            reports = _test_runner.run_all(cfg)
-        else:
-            reports = [_test_runner.run(cfg, spec_id)]
-    except ValueError as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(2)
-    except RuntimeError as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(2)
-
-    if output_json:
-        import json as _json
-        data = [r.to_json() for r in reports]
-        console.print(_json.dumps(data if run_all else data[0], indent=2, ensure_ascii=False))
-    else:
-        for r in reports:
-            _print_run_report(r)
-
-    overall_exit = max(r.exit_code for r in reports)
-    sys.exit(overall_exit)
+    console.print("[yellow]⚠[/] 'sdd test-run' wurde entfernt. Verwende: [cyan]sdd test run[/]")
+    sys.exit(1)
 
 
-@cli.command("test-results", help="Zeigt den letzten gespeicherten Test-Run einer Spec.")
+@cli.command("test-results", help="[Entfernt] Verwende: sdd test results")
 @click.argument("spec_id")
-@click.option("--json", "output_json", is_flag=True, help="Ausgabe als JSON.")
+@click.option("--json", "output_json", is_flag=True)
 def test_results_cmd(spec_id: str, output_json: bool) -> None:
-    cfg = _ensure_project()
-    report = _test_runner.latest_report(cfg, spec_id)
-
-    if report is None:
-        console.print(
-            f"[yellow]⚠[/] Noch kein Test-Run für [bold]{spec_id}[/] gefunden. "
-            f"Starte mit: [cyan]sdd test-run {spec_id}[/]"
-        )
-        sys.exit(2)
-
-    if output_json:
-        import json as _json
-        console.print(_json.dumps(report.to_json(), indent=2, ensure_ascii=False))
-    else:
-        _print_run_report(report)
-
-    sys.exit(report.exit_code)
+    console.print("[yellow]⚠[/] 'sdd test-results' wurde entfernt. Verwende: [cyan]sdd test results[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1570,10 +1554,131 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
     console.print(f"  Contracts: {len(contracts)}, Tests: {len(tests)}")
 
 
+@spec_group.command("solid", help="SOLID-Analyse für eine Spec oder einen Contract.")
+@click.argument("artifact_id")
+@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
+@click.option(
+    "--principle",
+    type=click.Choice(["S", "O", "L", "I", "D"]),
+    default=None,
+    help="Nur ein SOLID-Prinzip prüfen.",
+)
+def spec_solid(artifact_id: str, output_json: bool, principle: str | None) -> None:
+    import json as _json
+    from .solid import create_analyzer, find_artifact, PRINCIPLE_LABELS
+
+    cfg = _ensure_project()
+    artifact = find_artifact(cfg, artifact_id)
+    if artifact is None:
+        msg = f"Artefakt nicht gefunden: {artifact_id}"
+        if output_json:
+            print(_json.dumps({"error": msg}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗[/] {msg}")
+        sys.exit(2)
+
+    artifact_text, artifact_type = artifact
+    analyzer = create_analyzer(cfg, principle_filter=principle)
+    report = analyzer.analyze(artifact_text, artifact_id, artifact_type)
+
+    if output_json:
+        print(_json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
+    else:
+        _print_solid_report(report, cfg.solid_gate_mode())
+
+    if cfg.solid_gate_mode() == "block" and report.has_violations():
+        if not output_json:
+            console.print(
+                "\n[red]✗ SOLID-Violation blockiert Phasenübergang[/] "
+                "(solid_gate.mode: block)"
+            )
+        sys.exit(1)
+
+
+@spec_group.command("regression", help="Prüft eine Spec auf Konflikte mit bestehenden Specs.")
+@click.argument("spec_id")
+@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
+def spec_regression(spec_id: str, output_json: bool) -> None:
+    import json as _json
+    from .regression_check import RegressionCheckChain
+
+    cfg = _ensure_project()
+
+    provider = None
+    try:
+        from .llm.factory import get_completion_provider
+        provider = get_completion_provider(cfg, "analyzer")
+    except Exception:
+        pass
+
+    chain = RegressionCheckChain(cfg.root)
+    result = chain.run(spec_id, provider=provider)
+
+    if output_json:
+        print(_json.dumps(
+            {
+                "spec_id": result.spec_id,
+                "findings": [f.to_dict() for f in result.findings],
+                "llm_skipped": result.llm_skipped,
+                "llm_skip_reason": result.llm_skip_reason,
+            },
+            indent=2,
+            ensure_ascii=False,
+        ))
+        if any(f.severity == "error" for f in result.findings):
+            sys.exit(1)
+        from .gate import ExecutionGate
+        g = ExecutionGate(cfg.root)
+        g.mark_phase_complete(spec_id, "regression-ok")
+        return
+
+    rule_findings = [f for f in result.findings if f.source == "rule"]
+    llm_findings = [f for f in result.findings if f.source == "llm"]
+    _sev_color = {"error": "red", "warning": "yellow", "info": "cyan"}
+
+    console.print(f"\n[bold]Regression-Check: {spec_id}[/]")
+    console.print("─" * 70)
+
+    console.print("\n[bold dim][rule] Stufe 1 – Regelbasiert[/]")
+    if rule_findings:
+        for f in rule_findings:
+            c = _sev_color.get(f.severity, "white")
+            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
+            console.print(f"    → {f.description}")
+    else:
+        console.print("  [green]✓[/] Kein regelbasierter Regressionskonflikt gefunden")
+
+    console.print("\n[bold dim][llm] Stufe 2 – LLM-Semantik[/]")
+    if result.llm_skipped:
+        console.print(f"  [yellow]⚠[/] LLM-Check übersprungen ({result.llm_skip_reason})")
+    elif llm_findings:
+        for f in llm_findings:
+            c = _sev_color.get(f.severity, "white")
+            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
+            console.print(f"    → {f.description}")
+    else:
+        console.print("  [green]✓[/] Kein inhaltlicher Regressionskonflikt gefunden")
+
+    has_errors = any(f.severity == "error" for f in result.findings)
+    if has_errors:
+        console.print("\n[red]✗[/] Error-Severity gefunden – Regression-Check gescheitert")
+        console.print(f"  Findings gespeichert: [cyan]sdd conflict list {spec_id}[/]")
+        sys.exit(1)
+    elif any(f.severity == "warning" for f in result.findings):
+        console.print("\n[yellow]⚠[/] Warnungen vorhanden – Findings gespeichert")
+        console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
+        console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
+
+    from .gate import ExecutionGate
+    g = ExecutionGate(cfg.root)
+    g.mark_phase_complete(spec_id, "regression-ok")
+    console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd contract propose / review
+# sdd contract propose / analyze
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.group("contract", help="Contract-Pipeline-Kommandos (Propose, Review).")
+@cli.group("contract", help="Contract-Pipeline-Kommandos (Propose, Analyze).")
 def contract_group() -> None:
     pass
 
@@ -1597,10 +1702,10 @@ def contract_propose(spec_id: str, contract_ids: tuple) -> None:
     )
 
 
-@contract_group.command("review", help="Führt Konfliktanalyse für vorgeschlagene Contracts durch.")
+@contract_group.command("analyze", help="Führt Konfliktanalyse für vorgeschlagene Contracts durch.")
 @click.argument("spec_id")
 @click.argument("contract_ids", nargs=-1, required=True)
-def contract_review(spec_id: str, contract_ids: tuple) -> None:
+def contract_analyze(spec_id: str, contract_ids: tuple) -> None:
     cfg = _ensure_project()
     from .gate import ExecutionGate
     from .conflict_detector import ConflictDetector
@@ -1703,6 +1808,64 @@ def test_generate(spec_id: str, contract_ids: tuple) -> None:
                               syntax_errors=result.syntax_errors)
         console.print("[red]✗[/] Syntaxfehler – Phase tests-generated fehlgeschlagen.")
         sys.exit(1)
+
+
+@test_group.command("run", help="Führt alle Tests einer Spec aus (via pytest).")
+@click.argument("spec_id", required=False)
+@click.option("--all", "run_all", is_flag=True, help="Tests aller Specs ausführen.")
+@click.option("--json", "output_json", is_flag=True, help="Ausgabe als JSON.")
+def test_run(spec_id: str | None, run_all: bool, output_json: bool) -> None:
+    cfg = _ensure_project()
+
+    if not spec_id and not run_all:
+        console.print("[red]✗[/] Entweder SPEC-ID angeben oder --all verwenden.")
+        sys.exit(2)
+
+    try:
+        if run_all:
+            reports = _test_runner.run_all(cfg)
+        else:
+            reports = [_test_runner.run(cfg, spec_id)]
+    except ValueError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(2)
+    except RuntimeError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(2)
+
+    if output_json:
+        import json as _json
+        data = [r.to_json() for r in reports]
+        console.print(_json.dumps(data if run_all else data[0], indent=2, ensure_ascii=False))
+    else:
+        for r in reports:
+            _print_run_report(r)
+
+    overall_exit = max(r.exit_code for r in reports)
+    sys.exit(overall_exit)
+
+
+@test_group.command("results", help="Zeigt den letzten gespeicherten Test-Run einer Spec.")
+@click.argument("spec_id")
+@click.option("--json", "output_json", is_flag=True, help="Ausgabe als JSON.")
+def test_results(spec_id: str, output_json: bool) -> None:
+    cfg = _ensure_project()
+    report = _test_runner.latest_report(cfg, spec_id)
+
+    if report is None:
+        console.print(
+            f"[yellow]⚠[/] Noch kein Test-Run für [bold]{spec_id}[/] gefunden. "
+            f"Starte mit: [cyan]sdd test run {spec_id}[/]"
+        )
+        sys.exit(2)
+
+    if output_json:
+        import json as _json
+        console.print(_json.dumps(report.to_json(), indent=2, ensure_ascii=False))
+    else:
+        _print_run_report(report)
+
+    sys.exit(report.exit_code)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1886,66 +2049,15 @@ def obsidian_watch(vault_path: str | None, interval: int | None) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd status-check  (SPEC-0010 FR-01 / FR-02)
+# sdd status-check  (SPEC-0010 FR-01 / FR-02) — interner pre-commit-Hook
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("status-check",
-             help="Prüft Content-Hashes und meldet veraltete Status. "
-                  "Mit --fix werden Status-Felder automatisch aktualisiert.")
-@click.option("--fix", is_flag=True,
-              help="Status-Felder im Frontmatter automatisch patchen.")
+             help="Nur intern verwendbar (pre-commit-Hook).",
+             hidden=True)
+@click.option("--fix", is_flag=True)
 def status_check_cmd(fix: bool) -> None:
-    cfg = _ensure_project()
-    from .lifecycle import (
-        check_transitions, apply_transitions, rebuild_hashes,
-        load_hashes, save_hashes,
-    )
-
-    hashes = load_hashes(cfg)
-    if not hashes:
-        console.print("[dim]Erstlauf: baue Content-Hash-Index neu auf …[/]")
-        hashes = rebuild_hashes(cfg)
-        save_hashes(cfg, hashes)
-        console.print(
-            f"[green]✓[/] {len(hashes)} Artefakt-Hash(es) initialisiert "
-            f"in [bold].sdd/content-hashes.json[/]."
-        )
-        _print_in_progress_section(cfg)
-        sys.exit(0)
-
-    changes = check_transitions(cfg)
-    exit_code = 0
-
-    if not changes:
-        console.print("[green]✓ Alle Status sind aktuell. Kein Übergang nötig.[/]")
-    else:
-        table = Table(title="Veraltete Status")
-        table.add_column("Artefakt", style="cyan")
-        table.add_column("Datei")
-        table.add_column("Alt")
-        table.add_column("Neu")
-        for ch in changes:
-            table.add_row(
-                ch.artifact_id,
-                str(ch.path.relative_to(cfg.root)),
-                f"[yellow]{ch.old_status}[/]",
-                f"[green]{ch.new_status}[/]",
-            )
-        console.print(table)
-
-        if fix:
-            apply_transitions(cfg, changes)
-            console.print(
-                f"[green]✓[/] {len(changes)} Status-Übergang(¨e) angewendet "
-                f"und in [bold].sdd/audit.log[/] festgehalten."
-            )
-        else:
-            console.print(
-                "\n  [dim]Starte [cyan]sdd status-check --fix[/] um die Übergänge anzuwenden.[/]"
-            )
-            exit_code = 1
-
-    _print_in_progress_section(cfg)
-    sys.exit(exit_code)
+    console.print("[yellow]⚠[/] Dieser Befehl ist nur intern verwendbar (pre-commit-Hook).")
+    sys.exit(1)
 
 
 def _print_in_progress_section(cfg: "object") -> None:
@@ -2140,106 +2252,25 @@ def pre_commit_gate_cmd() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd review-contract  (SPEC-0010 FR-05 / FR-06 / FR-07)
+# sdd review-contract — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("review-contract",
-             help="LLM-Review eines Contracts: prüft Vollständigkeit und erzeugt Testvorschlag.")
+             help="[Entfernt] Verwende: sdd review contract")
 @click.argument("con_id")
 def review_contract_cmd(con_id: str) -> None:
-    cfg = _ensure_project()
-    from .lifecycle import review_contract
-
-    console.print(f"[cyan]▶[/] LLM-Review für [bold]{con_id}[/] …")
-    try:
-        result = review_contract(cfg, con_id)
-    except ValueError as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(1)
-    except RuntimeError as e:
-        console.print(f"[red]✗[/] LLM nicht erreichbar: {e}")
-        sys.exit(1)
-
-    verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
-    console.print(
-        f"  Bewertung: [{verdict_color}]{result.llm_verdict}[/]"
-    )
-    console.print(
-        f"  [green]✓[/] TST-Datei angelegt: [bold]{result.tst_path.relative_to(cfg.root)}[/] "
-        f"([cyan]{result.tst_id}[/])"
-    )
-    if result.notes:
-        console.print(f"  Hinweise: {result.notes[:200]}")
-    if result.llm_verdict == "needs_revision":
-        console.print(
-            f"  [yellow]⚠[/] LLM Review Notes an [bold]{con_id}[/] angehängt."
-        )
+    console.print("[yellow]⚠[/] 'sdd review-contract' wurde entfernt. Verwende: [cyan]sdd review contract[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd review-pending  (SPEC-0010 FR-08 / FR-09)
+# sdd review-pending — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("review-pending",
-             help="Listet alle Contracts im Status review ohne Test. "
-                  "Mit --auto: führt sdd review-contract für jeden aus.")
-@click.option("--auto", is_flag=True,
-              help="Führt LLM-Review für jeden Eintrag sequenziell aus.")
+             help="[Entfernt] Verwende: sdd review pending")
+@click.option("--auto", is_flag=True)
 def review_pending_cmd(auto: bool) -> None:
-    cfg = _ensure_project()
-    from .lifecycle import pending_contracts, review_contract
-    from datetime import date
-
-    pending = pending_contracts(cfg)
-
-    if not pending:
-        console.print("[green]✓ Keine ausstehenden Contract-Reviews.[/]")
-        sys.exit(0)
-
-    table = Table(title="Pending Contract-Reviews")
-    table.add_column("Contract-ID", style="cyan")
-    table.add_column("Titel")
-    table.add_column("Spec")
-    table.add_column("Alter (Tage)", justify="right")
-
-    today = date.today()
-    for doc in pending:
-        fm = doc.frontmatter
-        created_raw = fm.get("created", "")
-        try:
-            created = date.fromisoformat(str(created_raw))
-            age = (today - created).days
-        except (ValueError, TypeError):
-            age = "?"
-        table.add_row(
-            fm.get("id", "?"),
-            fm.get("title", ""),
-            fm.get("spec", ""),
-            str(age),
-        )
-    console.print(table)
-
-    if not auto:
-        console.print(
-            f"\n  [dim]{len(pending)} ausstehend. "
-            "Starte [cyan]sdd review-pending --auto[/] für automatisches Review.[/]"
-        )
-        sys.exit(1)
-
-    from rich.progress import Progress
-    with Progress(console=console) as progress:
-        task = progress.add_task("LLM-Reviews …", total=len(pending))
-        for doc in pending:
-            cid = doc.frontmatter.get("id", "?")
-            progress.update(task, description=f"Reviewe {cid} …")
-            try:
-                result = review_contract(cfg, cid)
-                verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
-                console.print(
-                    f"  [green]✓[/] {cid} → [{verdict_color}]{result.llm_verdict}[/] "
-                    f"· {result.tst_id}"
-                )
-            except Exception as exc:
-                console.print(f"  [red]✗[/] {cid}: {exc}")
-            progress.advance(task)
+    console.print("[yellow]⚠[/] 'sdd review-pending' wurde entfernt. Verwende: [cyan]sdd review pending[/]")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2487,96 +2518,25 @@ def calibrate_cmd(spec_id: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd implement  (SPEC-0035)
+# sdd implement  (SPEC-0035) — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command("implement", help="Sub-Agenten-Delegation für sdd-implement (SPEC-0035).")
+@cli.command("implement", help="[Entfernt] Verwende /sdd-implement in Claude Code.", hidden=True)
 @click.argument("spec_id")
 def implement_cmd(spec_id: str) -> None:
-    from .decompose import TaskDecomposer
-    from .sub_agent import SubAgentOrchestrator, is_claude_provider
-
-    cfg = _ensure_project()
-
-    if not is_claude_provider(cfg):
-        console.print(f"[yellow][Fallback: Single-Context-Mode][/] Provider ist nicht Claude.")
-        console.print("Führe Implementierung im bestehenden Single-Context-Mode aus.")
-        return
-
-    decomposer = TaskDecomposer()
-    try:
-        tasks = decomposer.load(spec_id, cfg)
-    except Exception:
-        tasks = []
-
-    if not tasks:
-        console.print(f"[red]✗[/] Keine Tasks gefunden – führe 'sdd decompose {spec_id}' zuerst aus.")
-        sys.exit(1)
-
-    console.print(f"[cyan]▶[/] Sub-Agenten-Delegation: {len(tasks)} Tasks für [bold]{spec_id}[/]")
-
-    orchestrator = SubAgentOrchestrator(config=cfg, spec_id=spec_id)
-
-    def _spawn(task):
-        raise NotImplementedError(
-            "Sub-Agenten-Spawning via Claude Agent SDK noch nicht aktiviert – "
-            "nutze /sdd-implement SPEC-XXXX in Claude Code."
-        )
-
-    report = orchestrator.run(tasks, _spawn)
-
-    if report.halted and report.failed_task:
-        ft = report.failed_task
-        console.print(f"\n[red]✗[/] Orchestrator angehalten nach Task [bold]{ft.task_id}[/]: {ft.task_title}")
-        console.print(f"  Fehler: {ft.error}")
-        console.print(f"  Abgeschlossen: {len(report.completed_tasks)}/{len(tasks)} Tasks")
-        sys.exit(1)
-
-    console.print(f"[green]✓[/] {len(report.completed_tasks)} Tasks abgeschlossen.")
+    console.print("[yellow]⚠[/] 'sdd implement' wurde entfernt. Verwende: [cyan]/sdd-implement SPEC-XXXX[/] in Claude Code.")
+    sys.exit(1)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd solid-check  (SPEC-0015 FR-03)
+# sdd solid-check — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command("solid-check",
-             help="SOLID-Analyse für eine Spec oder einen Contract (SPEC-0015).")
+@cli.command("solid-check", help="[Entfernt] Verwende: sdd spec solid")
 @click.argument("artifact_id")
-@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
-@click.option(
-    "--principle",
-    type=click.Choice(["S", "O", "L", "I", "D"]),
-    default=None,
-    help="Nur ein SOLID-Prinzip prüfen.",
-)
+@click.option("--json", "output_json", is_flag=True)
+@click.option("--principle", type=click.Choice(["S", "O", "L", "I", "D"]), default=None)
 def solid_check(artifact_id: str, output_json: bool, principle: str | None) -> None:
-    import json as _json
-    from .solid import create_analyzer, find_artifact, PRINCIPLE_LABELS
-
-    cfg = _ensure_project()
-    artifact = find_artifact(cfg, artifact_id)
-    if artifact is None:
-        msg = f"Artefakt nicht gefunden: {artifact_id}"
-        if output_json:
-            print(_json.dumps({"error": msg}, ensure_ascii=False))
-        else:
-            console.print(f"[red]✗[/] {msg}")
-        sys.exit(2)
-
-    artifact_text, artifact_type = artifact
-    analyzer = create_analyzer(cfg, principle_filter=principle)
-    report = analyzer.analyze(artifact_text, artifact_id, artifact_type)
-
-    if output_json:
-        print(_json.dumps(report.to_dict(), indent=2, ensure_ascii=False))
-    else:
-        _print_solid_report(report, cfg.solid_gate_mode())
-
-    if cfg.solid_gate_mode() == "block" and report.has_violations():
-        if not output_json:
-            console.print(
-                "\n[red]✗ SOLID-Violation blockiert Phasenübergang[/] "
-                "(solid_gate.mode: block)"
-            )
-        sys.exit(1)
+    console.print("[yellow]⚠[/] 'sdd solid-check' wurde entfernt. Verwende: [cyan]sdd spec solid[/]")
+    sys.exit(1)
 
 
 def _print_solid_report(report: Any, mode: str) -> None:
@@ -2619,35 +2579,8 @@ def _print_solid_report(report: Any, mode: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd pattern-suggest  (SPEC-0015 FR-04)
+# sdd pattern-suggest — entfernt (wird intern von sdd review spec verwendet)
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command("pattern-suggest",
-             help="Pattern-Vorschläge für eine Spec oder einen Contract (SPEC-0015).")
-@click.argument("artifact_id")
-def pattern_suggest_cmd(artifact_id: str) -> None:
-    from .solid import find_artifact
-    from .pattern import create_suggester
-
-    cfg = _ensure_project()
-    artifact = find_artifact(cfg, artifact_id)
-    if artifact is None:
-        console.print(f"[red]✗[/] Artefakt nicht gefunden: {artifact_id}")
-        sys.exit(2)
-
-    artifact_text, artifact_type = artifact
-    suggester = create_suggester(cfg)
-    if suggester is None:
-        console.print("[yellow]![/] pattern_suggestions.enabled ist false – keine Vorschläge.")
-        return
-
-    console.print(f"[cyan]▶[/] Analysiere Pattern-Vorschläge für {artifact_id} …")
-    result = suggester.suggest(artifact_text, artifact_id, artifact_type)
-
-    _print_pattern_suggestions(result)
-    console.print(
-        f"\n  → Pattern annehmen: [cyan]sdd pattern accept {artifact_id} <PatternName> "
-        "--reason \"<Begründung>\"[/]"
-    )
 
 
 def _print_pattern_suggestions(result: Any) -> None:
@@ -2669,181 +2602,135 @@ def _print_pattern_suggestions(result: Any) -> None:
         console.print()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# sdd pattern accept / reject / list  (SPEC-0015 FR-05/06/07)
-# ─────────────────────────────────────────────────────────────────────────────
-@cli.group("pattern", help="Pattern-Register verwalten (accept, reject, list).")
-def pattern_group() -> None:
-    pass
-
-
-@pattern_group.command("accept",
-                       help="Nimmt ein Pattern an und dokumentiert die Entscheidung im Register.")
-@click.argument("spec_id")
-@click.argument("pattern_name")
-@click.option("--reason", default=None, help="Begründung der Annahme (Pflicht).")
-@click.option("--url", default=None, help="Refactoring Guru URL (optional).")
-def pattern_accept(spec_id: str, pattern_name: str, reason: str | None, url: str | None) -> None:
-    from .pattern import PatternRegistry
-
-    if not reason:
-        console.print("[red]✗[/] --reason ist erforderlich")
-        sys.exit(1)
-
-    cfg = _ensure_project()
-    registry = PatternRegistry(cfg.root)
-    registry.accept(spec_id, pattern_name, reason, url)
-    console.print(
-        f"[green]✓[/] Pattern [bold]{pattern_name}[/] für [cyan]{spec_id}[/] "
-        "als [green]accepted[/] dokumentiert."
-    )
-
-
-@pattern_group.command("reject",
-                       help="Lehnt ein Pattern ab und dokumentiert die Begründung im Register.")
-@click.argument("spec_id")
-@click.argument("pattern_name")
-@click.option("--reason", default=None, help="Ablehnungsgrund (Pflicht).")
-@click.option("--url", default=None, help="Refactoring Guru URL (optional).")
-def pattern_reject(spec_id: str, pattern_name: str, reason: str | None, url: str | None) -> None:
-    from .pattern import PatternRegistry
-
-    if not reason:
-        console.print("[red]✗[/] --reason ist erforderlich")
-        sys.exit(1)
-
-    cfg = _ensure_project()
-    registry = PatternRegistry(cfg.root)
-    registry.reject(spec_id, pattern_name, reason, url)
-    console.print(
-        f"[yellow]✗[/] Pattern [bold]{pattern_name}[/] für [cyan]{spec_id}[/] "
-        "als [red]rejected[/] dokumentiert."
-    )
-
-
-@pattern_group.command("list",
-                       help="Zeigt das Pattern-Register tabellarisch an.")
-@click.argument("spec_id", required=False, default=None)
-def pattern_list(spec_id: str | None) -> None:
-    from .pattern import PatternRegistry
-
-    cfg = _ensure_project()
-    registry = PatternRegistry(cfg.root)
-    entries = registry.list_patterns(spec_id)
-
-    if not entries:
-        console.print("[dim]Keine Pattern-Entscheidungen" +
-                      (f" für {spec_id}" if spec_id else "") + ".[/]")
-        return
-
-    table = Table(title="Pattern-Register" + (f" · {spec_id}" if spec_id else ""))
-    table.add_column("SPEC", style="cyan")
-    table.add_column("Pattern", style="bold")
-    table.add_column("Status")
-    table.add_column("Begründung")
-    table.add_column("Datum")
-
-    status_style = {"accepted": "green", "rejected": "red", "under-review": "yellow"}
-    for e in entries:
-        status = e.get("status", "under-review")
-        reason = e.get("acceptance_reason") or e.get("rejection_reason") or "—"
-        if len(reason) > 60:
-            reason = reason[:57] + "…"
-        decided = (e.get("decided_at") or "")[:10] or "—"
-        table.add_row(
-            e.get("spec_id", "—"),
-            e.get("pattern_name", "—"),
-            f"[{status_style.get(status, 'white')}]{status}[/]",
-            reason,
-            decided,
-        )
-    console.print(table)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# sdd regression-check  (SPEC-0030)
+# sdd regression-check — MIGRATION STUB
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command(
     "regression-check",
-    help="Prüft eine Spec auf Konflikte mit bestehenden Specs (SPEC-0030).",
+    help="[Entfernt] Verwende: sdd spec regression",
 )
 @click.argument("spec_id")
-@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
+@click.option("--json", "output_json", is_flag=True)
 def regression_check(spec_id: str, output_json: bool) -> None:
-    import json as _json
-    from .regression_check import RegressionCheckChain
+    console.print("[yellow]⚠[/] 'sdd regression-check' wurde entfernt. Verwende: [cyan]sdd spec regression[/]")
+    sys.exit(1)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd review group
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("review", help="Artefakt-Reviews (spec, contract, pending).")
+def review_group() -> None:
+    pass
+
+
+@review_group.command("spec", help="SOLID-Analyse + Pattern-Vorschläge für eine Spec.")
+@click.argument("spec_id")
+def review_spec(spec_id: str) -> None:
     cfg = _ensure_project()
+    if cfg.solid_gate_enabled():
+        _run_solid_phase(cfg, spec_id, "spec")
+    if cfg.pattern_suggestions_enabled():
+        _run_pattern_phase(cfg, spec_id, "spec")
+    console.print(f"\n[green]✓[/] Review abgeschlossen für [cyan]{spec_id}[/].")
 
-    provider = None
-    try:
-        from .llm.factory import get_completion_provider
-        provider = get_completion_provider(cfg, "analyzer")
-    except Exception:
-        pass
 
-    chain = RegressionCheckChain(cfg.root)
-    result = chain.run(spec_id, provider=provider)
+@review_group.command("contract", help="LLM-Review eines Contracts (Vollständigkeit, SOLID-Konformität).")
+@click.argument("con_id", required=False, default=None)
+@click.option("--spec", "spec_id", default=None, help="Alle Contracts einer Spec sequenziell reviewen.")
+def review_contract_group_cmd(con_id: str | None, spec_id: str | None) -> None:
+    cfg = _ensure_project()
+    from .lifecycle import review_contract
 
-    if output_json:
-        print(_json.dumps(
-            {
-                "spec_id": result.spec_id,
-                "findings": [f.to_dict() for f in result.findings],
-                "llm_skipped": result.llm_skipped,
-                "llm_skip_reason": result.llm_skip_reason,
-            },
-            indent=2,
-            ensure_ascii=False,
-        ))
-        if any(f.severity == "error" for f in result.findings):
+    if spec_id and not con_id:
+        # Loop über alle Contracts einer Spec
+        spec_doc = None
+        for md in cfg.specs_dir.rglob("*.md"):
+            doc = parse_safe(md)
+            if doc and doc.frontmatter.get("id") == spec_id:
+                spec_doc = doc
+                break
+        if spec_doc is None:
+            console.print(f"[red]✗[/] Spec nicht gefunden: {spec_id}")
             sys.exit(1)
-        from .gate import ExecutionGate
-        g = ExecutionGate(cfg.root)
-        g.mark_phase_complete(spec_id, "regression-ok")
+        contract_ids = spec_doc.frontmatter.get("contracts") or []
+        if not contract_ids:
+            console.print(f"[yellow]⚠[/] Keine Contracts für {spec_id}.")
+            return
+        for cid in contract_ids:
+            console.print(f"\n[cyan]▶[/] Review: [bold]{cid}[/] …")
+            try:
+                result = review_contract(cfg, cid)
+                verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
+                console.print(f"  [{verdict_color}]{result.llm_verdict}[/]")
+            except Exception as exc:
+                console.print(f"  [red]✗[/] {exc}")
         return
 
-    rule_findings = [f for f in result.findings if f.source == "rule"]
-    llm_findings = [f for f in result.findings if f.source == "llm"]
-    _sev_color = {"error": "red", "warning": "yellow", "info": "cyan"}
-
-    console.print(f"\n[bold]Regression-Check: {spec_id}[/]")
-    console.print("─" * 70)
-
-    console.print("\n[bold dim][rule] Stufe 1 – Regelbasiert[/]")
-    if rule_findings:
-        for f in rule_findings:
-            c = _sev_color.get(f.severity, "white")
-            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
-            console.print(f"    → {f.description}")
-    else:
-        console.print("  [green]✓[/] Kein regelbasierter Regressionskonflikt gefunden")
-
-    console.print("\n[bold dim][llm] Stufe 2 – LLM-Semantik[/]")
-    if result.llm_skipped:
-        console.print(f"  [yellow]⚠[/] LLM-Check übersprungen ({result.llm_skip_reason})")
-    elif llm_findings:
-        for f in llm_findings:
-            c = _sev_color.get(f.severity, "white")
-            console.print(f"  [{c}]{f.severity.upper()}[/] {f.spec_id} · {f.own_section} ↔ {f.section}")
-            console.print(f"    → {f.description}")
-    else:
-        console.print("  [green]✓[/] Kein inhaltlicher Regressionskonflikt gefunden")
-
-    has_errors = any(f.severity == "error" for f in result.findings)
-    if has_errors:
-        console.print("\n[red]✗[/] Error-Severity gefunden – Regression-Check gescheitert")
-        console.print(f"  Findings gespeichert: [cyan]sdd conflict list {spec_id}[/]")
+    if not con_id:
+        console.print("[red]✗[/] CON-ID oder --spec SPEC-ID angeben.")
         sys.exit(1)
-    elif any(f.severity == "warning" for f in result.findings):
-        console.print("\n[yellow]⚠[/] Warnungen vorhanden – Findings gespeichert")
-        console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
-        console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
 
-    from .gate import ExecutionGate
-    g = ExecutionGate(cfg.root)
-    g.mark_phase_complete(spec_id, "regression-ok")
-    console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
+    console.print(f"[cyan]▶[/] LLM-Review für [bold]{con_id}[/] …")
+    try:
+        result = review_contract(cfg, con_id)
+    except ValueError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
+    except RuntimeError as e:
+        console.print(f"[red]✗[/] LLM nicht erreichbar: {e}")
+        sys.exit(1)
+    verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
+    console.print(f"  Bewertung: [{verdict_color}]{result.llm_verdict}[/]")
+    if result.notes:
+        console.print(f"  Hinweise: {result.notes[:200]}")
+
+
+@review_group.command("pending", help="Listet Contracts im Status review. --auto: reviewed alle.")
+@click.option("--auto", is_flag=True)
+def review_pending_group_cmd(auto: bool) -> None:
+    cfg = _ensure_project()
+    from .lifecycle import pending_contracts, review_contract
+    from datetime import date
+
+    pending = pending_contracts(cfg)
+    if not pending:
+        console.print("[green]✓ Keine ausstehenden Contract-Reviews.[/]")
+        sys.exit(0)
+    table = Table(title="Pending Contract-Reviews")
+    table.add_column("Contract-ID", style="cyan")
+    table.add_column("Titel")
+    table.add_column("Spec")
+    table.add_column("Alter (Tage)", justify="right")
+    today = date.today()
+    for doc in pending:
+        fm = doc.frontmatter
+        created_raw = fm.get("created", "")
+        try:
+            created = date.fromisoformat(str(created_raw))
+            age = (today - created).days
+        except (ValueError, TypeError):
+            age = "?"
+        table.add_row(fm.get("id", "?"), fm.get("title", ""), fm.get("spec", ""), str(age))
+    console.print(table)
+    if not auto:
+        console.print(f"\n  [dim]{len(pending)} ausstehend. Starte [cyan]sdd review pending --auto[/] für automatisches Review.[/]")
+        sys.exit(1)
+    from rich.progress import Progress
+    with Progress(console=console) as progress:
+        task = progress.add_task("LLM-Reviews …", total=len(pending))
+        for doc in pending:
+            cid = doc.frontmatter.get("id", "?")
+            progress.update(task, description=f"Reviewe {cid} …")
+            try:
+                result = review_contract(cfg, cid)
+                verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
+                console.print(f"  [green]✓[/] {cid} → [{verdict_color}]{result.llm_verdict}[/]")
+            except Exception as exc:
+                console.print(f"  [red]✗[/] {cid}: {exc}")
+            progress.advance(task)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2970,75 +2857,114 @@ def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
         )
 
 
-# ── sdd dev – Isolierte Docker-Entwicklungsumgebung (SPEC-0021) ───────────────
 
-@cli.group("dev", help="Isolierte Docker-Entwicklungsumgebung pro Spec (SPEC-0021).")
-def dev_group() -> None:
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd autonomy group
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("autonomy", help="Autonomy-Level verwalten (level, set-level, false-positive).")
+def autonomy_group() -> None:
     pass
 
 
-@dev_group.command("start", help="Startet Docker-Container + Git-Branch für eine Spec.")
-@click.argument("spec_id")
-def dev_start(spec_id: str) -> None:
+@autonomy_group.command("level", help="Zeigt Autonomy-Level-Metriken und Upgrade-/Downgrade-Vorschläge.")
+@click.argument("project_id")
+def autonomy_level(project_id: str) -> None:
     cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).start(spec_id)
+    project = load_project(cfg, project_id)
+    if project is None:
+        console.print(f"[red]✗[/] Projekt nicht gefunden: {project_id}")
+        sys.exit(1)
+
+    stats = compute_level_stats(cfg, project_id, project.autonomy_level)
+
+    console.print(f"\n[bold]{project.name}[/] ([cyan]{project_id}[/])")
+    console.print(f"  Autonomy Level: [bold cyan]{level_label(stats.current_level)}[/]")
+    console.print(f"  Gesamt PRs:     {stats.total_prs}")
+
+    if stats.total_prs > 0:
+        rate_color = "green" if stats.pass_rate >= 0.9 else ("yellow" if stats.pass_rate >= 0.7 else "red")
+        console.print(f"  Pass-Rate:      [{rate_color}]{stats.pass_rate:.0%}[/]")
+        console.print(f"  Override-Rate:  {stats.override_rate:.0%}")
+
+    if stats.auto_merge_blocked:
+        console.print("  Auto-Merge:     [red]BLOCKIERT[/] (Pass-Rate unter Schwellwert)")
+    elif stats.current_level >= 3.5:
+        console.print("  Auto-Merge:     [green]freigegeben[/]")
+
+    if stats.upgrade_proposal is not None:
+        console.print(
+            f"\n  [green]▲ Upgrade-Vorschlag:[/] Level {stats.upgrade_proposal} — "
+            f"{LEVEL_CRITERIA[stats.upgrade_proposal]['label']}\n"
+            f"    Alle Schwellwerte erfüllt. Bestätige mit: "
+            f"[cyan]sdd autonomy set-level {project_id} {stats.upgrade_proposal}[/]"
+        )
+
+    if stats.downgrade_proposal is not None:
+        console.print(
+            f"\n  [yellow]▼ Downgrade-Vorschlag:[/] Level {stats.downgrade_proposal} — "
+            f"{LEVEL_CRITERIA[stats.downgrade_proposal]['label']}\n"
+            f"    {stats.consecutive_below_threshold} aufeinanderfolgende PRs unter Schwellwert.\n"
+            f"    Bestätige mit: [cyan]sdd autonomy set-level {project_id} {stats.downgrade_proposal}[/]"
+        )
+
+    # Level-Kriterien-Übersicht
+    table = Table(title="Level-Kriterien", show_lines=False, box=None)
+    table.add_column("Level", style="cyan", width=6)
+    table.add_column("Bezeichnung")
+    table.add_column("Min. Pass-Rate", justify="right")
+    table.add_column("Min. PRs", justify="right")
+    table.add_column("Auto-Merge")
+
+    for lvl, crit in sorted(LEVEL_CRITERIA.items()):
+        active = "► " if lvl == stats.current_level else "  "
+        table.add_row(
+            f"{active}{lvl}",
+            crit["label"],
+            f"{crit['min_pass_rate']:.0%}" if crit["min_pass_rate"] > 0 else "—",
+            str(crit["min_prs"]) if crit["min_prs"] > 0 else "—",
+            "[green]ja[/]" if crit["auto_merge"] else "[dim]nein[/]",
+        )
+    console.print()
+    console.print(table)
 
 
-@dev_group.command("exec", help="Führt einen Befehl im Dev-Container aus.")
-@click.argument("spec_id")
-@click.argument("cmd", nargs=-1, required=True)
-def dev_exec(spec_id: str, cmd: tuple) -> None:
+@autonomy_group.command("set-level", help="Setzt das Autonomy Level eines Projekts (1|2|3|3.5|4).")
+@click.argument("project_id")
+@click.argument("level", type=float)
+def autonomy_set_level(project_id: str, level: float) -> None:
     cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).exec_cmd(spec_id, list(cmd))
+    try:
+        project = set_autonomy_level(cfg, project_id, level)
+    except ValueError as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
+
+    label = level_label(level)
+    console.print(
+        f"[green]✓[/] [bold]{project_id}[/] → [cyan]{label}[/]"
+    )
+    crit = LEVEL_CRITERIA.get(level, {})
+    if crit.get("auto_merge"):
+        console.print("  Auto-Merge: [green]aktivierbar[/] (wenn Pass-Rate + Min. PRs erreicht)")
+    else:
+        console.print("  Auto-Merge: [dim]nicht erlaubt auf diesem Level[/]")
 
 
-@dev_group.command("close", help="Stoppt und entfernt den Dev-Container.")
-@click.argument("spec_id")
-@click.option("--delete-branch", is_flag=True, help="Löscht auch den Git-Branch dev/SPEC-XXXX.")
-def dev_close(spec_id: str, delete_branch: bool) -> None:
+@autonomy_group.command("false-positive", help="Markiert einen PR als False Positive.")
+@click.argument("pr_number")
+@click.option("--project", "project_id", required=True,
+              help="Projekt-ID, z.B. PRJ-0001.")
+def autonomy_false_positive(pr_number: str, project_id: str) -> None:
     cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).close(spec_id, delete_branch=delete_branch)
-
-
-@dev_group.command("pr", help="Erstellt einen lokalen PR nach Validierung.")
-@click.argument("spec_id")
-def dev_pr(spec_id: str) -> None:
-    cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).pr(spec_id)
-
-
-@dev_group.command("build", help="Baut das Docker-Image aus dem konfigurierten Dockerfile.")
-def dev_build() -> None:
-    cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).build()
-
-
-@dev_group.command("push", help="Schiebt das Image in die konfigurierte Registry.")
-def dev_push() -> None:
-    cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).push()
-
-
-@dev_group.command("up", help="Startet den Compose-Stack für eine Spec.")
-@click.argument("spec_id")
-def dev_up(spec_id: str) -> None:
-    cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).up(spec_id)
-
-
-@dev_group.command("down", help="Stoppt den Compose-Stack für eine Spec.")
-@click.argument("spec_id")
-def dev_down(spec_id: str) -> None:
-    cfg = _ensure_project()
-    from .dev_container import DevContainerManager
-    DevContainerManager(cfg).down(spec_id)
+    from .autonomy import record_false_positive
+    record_false_positive(cfg, project_id, pr_number)
+    console.print(
+        f"[yellow]⚠[/] PR [bold]{pr_number}[/] als False Positive markiert "
+        f"(Projekt [cyan]{project_id}[/])."
+    )
+    console.print(
+        "  Die Override-Rate wird beim nächsten [cyan]sdd autonomy level[/]-Aufruf aktualisiert."
+    )
 
 
 # ── SPEC-0026: LLM Task Distribution Engine ──────────────────────────────────
@@ -3310,96 +3236,12 @@ def config_test_llm_cmd(llm_id: str | None) -> None:
 
 @cli.command(
     "generate-holdouts",
-    help="Generiert Holdout-Szenarien für eine Spec via LLM (SPEC-0033).",
+    help="[Entfernt] Verwende: sdd holdout generate",
 )
 @click.argument("spec_id")
 def generate_holdouts_cmd(spec_id: str) -> None:
-    from .generate_holdouts import (
-        load_and_validate_spec,
-        resolve_contract_files,
-        get_existing_hol_ids_for_spec,
-        write_hol_file,
-        generate_holdout_scenarios,
-    )
-    from .llm import get_completion_provider
-    from .ids import next_id
-
-    cfg = _ensure_project()
-
-    try:
-        spec = load_and_validate_spec(spec_id, cfg)
-    except FileNotFoundError as exc:
-        console.print(f"[red]✗[/] {exc}")
-        sys.exit(1)
-    except ValueError as exc:
-        console.print(f"[red]✗[/] {exc}")
-        sys.exit(1)
-
-    contract_ids: list[str] = spec.get("contracts") or []
-    contracts = resolve_contract_files(contract_ids, cfg)
-
-    skipped_missing = [cid for cid in contract_ids if not any(c["id"] == cid for c in contracts)]
-    for cid in skipped_missing:
-        console.print(f"[yellow]⚠[/] Contract {cid} nicht gefunden – übersprungen.")
-
-    existing_hols = get_existing_hol_ids_for_spec(spec_id, cfg)
-    spec_content = (spec["_path"]).read_text(encoding="utf-8")
-
-    provider = get_completion_provider(cfg, component="completion")
-
-    created: list[tuple[str, str]] = []
-    skipped_count = 0
-
-    for contract in contracts:
-        cid = contract["id"]
-
-        existing_for_contract = {
-            hid for hid in existing_hols
-            if (cfg.holdout_dir / f"{hid}-*.md").exists()
-        }
-        already_have = any(
-            parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
-            for p in cfg.holdout_dir.rglob("*.md")
-        ) if cfg.holdout_dir.exists() else False
-
-        if already_have:
-            count = sum(
-                1 for p in cfg.holdout_dir.rglob("*.md")
-                if parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
-                   and parse_safe(p).frontmatter.get("spec") == spec_id
-            )
-            console.print(f"  [dim]→ {cid}: {count} Holdout(s) bereits vorhanden – übersprungen.[/]")
-            skipped_count += count
-            continue
-
-        try:
-            scenarios = generate_holdout_scenarios(
-                contract["content"], cid, spec_content, provider
-            )
-        except RuntimeError as exc:
-            console.print(f"[red]✗[/] LLM-Fehler für {cid}: {exc}")
-            continue
-
-        for scenario in scenarios:
-            hid = next_id(cfg, "holdout")
-            path = write_hol_file(hid, spec_id, cid, scenario, cfg)
-            created.append((hid, cid))
-            console.print(f"  [green]+[/] {hid}  ({cid})  {path.name}")
-
-    table = Table(title=f"Holdouts für {spec_id}", show_header=True)
-    table.add_column("HOL-ID", style="cyan")
-    table.add_column("Contract", style="blue")
-    for hid, cid in created:
-        table.add_row(hid, cid)
-    if created:
-        console.print(table)
-
-    total = len(created)
-    console.print(f"\n[green]✓[/] {total} Holdout(s) angelegt", end="")
-    if skipped_count:
-        console.print(f", {skipped_count} Holdouts übersprungen (bereits vorhanden)")
-    else:
-        console.print("")
+    console.print("[yellow]⚠[/] 'sdd generate-holdouts' wurde entfernt. Verwende: [cyan]sdd holdout generate[/]")
+    sys.exit(1)
 
 
 if __name__ == "__main__":

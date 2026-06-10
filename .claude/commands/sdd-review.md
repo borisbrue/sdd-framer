@@ -1,3 +1,6 @@
+---
+scope: spec-review
+---
 <!-- skill: sdd-review | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-review – SOLID-Analyse + Pattern-Vorschläge

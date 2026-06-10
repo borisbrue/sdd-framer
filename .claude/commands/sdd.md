@@ -33,10 +33,13 @@ Status-Farben (Markdown-Fettschrift für wichtige): **draft** = offen, implement
 **Verfügbare /sdd-Skills:**
 - /sdd           – Projektübersicht (dieser Befehl)
 - /sdd-new       – Spec, Contract, Test oder ADR erstellen
-- /sdd-validate  – Projekt validieren + Fehler erklären
-- /sdd-review    – SOLID-Analyse + Pattern-Vorschläge
-- /sdd-status    – Lifecycle-Status und Blockaden
+- /sdd-review    – SOLID-Analyse + Contract-Review
 - /sdd-implement – TDD-Implementierungsphase starten
+- /sdd-holdout   – Holdout-Szenarien generieren + evaluieren
+- /sdd-hotfix    – Schlanker Hotfix-Flow
+- /sdd-status    – Lifecycle-Status und Blockaden
+- /sdd-validate  – Projekt validieren + Fehler erklären
+- /sdd-config    – Geführte SDD-Konfiguration
 ```
 
 ## Schritt 4: Offene Punkte

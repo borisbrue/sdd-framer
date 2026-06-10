@@ -1,3 +1,6 @@
+---
+scope: hotfix-workflow
+---
 <!-- skill: sdd-hotfix | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-hotfix – Schlanker Hotfix-Flow

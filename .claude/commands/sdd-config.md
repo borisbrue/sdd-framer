@@ -1,3 +1,6 @@
+---
+scope: project-configuration
+---
 <!-- skill: sdd-config | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-19 -->
 
 # /sdd-config – Geführte SDD-Konfiguration

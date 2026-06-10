@@ -1,3 +1,6 @@
+---
+scope: lifecycle-status
+---
 <!-- skill: sdd-status | version: 0.1.1 | sdd-blueprint: true | updated: 2026-05-29 -->
 
 # /sdd-status – Lifecycle-Status und Blockaden

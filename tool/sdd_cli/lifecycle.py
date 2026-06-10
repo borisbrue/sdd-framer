@@ -195,23 +195,18 @@ def pending_contracts(config: SddConfig) -> list[Document]:
 
 @dataclass
 class ContractReviewResult:
-    tst_id: str
-    tst_path: Path
     llm_verdict: str  # "approved" | "needs_revision"
     notes: str
 
 
 def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
-    """LLM-Review für einen Contract.
+    """LLM-Review für einen Contract (CON-0170 / SPEC-0044 FR-07).
 
-    1. Sendet Contract + Referenz-Spec an LLM (via SPEC-0008-Provider)
-    2. Speichert TST-Datei mit Status draft und generated_by: llm
-    3. Verknüpft TST-ID im Contract-Frontmatter
-    4. Bei needs_revision: LLM-Notizen am Contract-Ende anhängen
+    Prüft Vollständigkeit, SOLID-Konformität und Klarheit.
+    Setzt status auf approved bei positivem Ergebnis.
+    Legt KEINE TST-Datei an — Verantwortlichkeit liegt bei sdd test generate.
     """
-    from .ids import next_id
     from .llm.factory import get_completion_provider
-    from .templates import load_template, render, slugify
 
     contract_doc = _find_doc_by_id(config.contracts_dir, con_id)
     if contract_doc is None:
@@ -247,27 +242,7 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
             spec_id=spec_id or None,
         )
 
-    verdict, notes, test_suggestion = _parse_review_output(result.text)
-
-    tst_id = next_id(config, "test")
-    slug = slugify(contract_doc.frontmatter.get("title", con_id))
-    tst_path = config.tests_dir / "contract" / f"{tst_id}-llm-{slug}.md"
-    tst_path.parent.mkdir(parents=True, exist_ok=True)
-
-    tmpl, _ = load_template(config, "test")
-    tst_text = render(tmpl, {
-        "id": tst_id,
-        "title": f"LLM-Review: {contract_doc.frontmatter.get('title', con_id)}",
-        "spec": spec_id,
-        "contract": con_id,
-    })
-    tst_text = re.sub(
-        r"^status:\s*\S+.*?$", "status: draft", tst_text, count=1, flags=re.MULTILINE
-    )
-    tst_text = _inject_generated_by(tst_text)
-    if test_suggestion:
-        tst_text += f"\n## Generierter Testvorschlag\n\n{test_suggestion}\n"
-    tst_path.write_text(tst_text, encoding="utf-8")
+    verdict, notes, _ = _parse_review_output(result.text)
 
     if spec_id:
         try:
@@ -281,15 +256,11 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
         except Exception:
             pass
 
-    _link_test_in_contract(contract_doc.path, tst_id)
-
     if verdict == "needs_revision" and notes:
         with contract_doc.path.open("a", encoding="utf-8") as fh:
             fh.write(f"\n## LLM Review Notes\n\n{notes}\n")
 
     return ContractReviewResult(
-        tst_id=tst_id,
-        tst_path=tst_path,
         llm_verdict=verdict,
         notes=notes,
     )
