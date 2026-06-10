@@ -1,3 +1,6 @@
+---
+scope: tdd-implementation
+---
 <!-- skill: sdd-implement | version: 0.7.0 | sdd-blueprint: true | updated: 2026-06-09 -->
 
 # /sdd-implement – TDD-Implementierungsphase

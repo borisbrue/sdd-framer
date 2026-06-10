@@ -1,3 +1,6 @@
+---
+scope: artifact-creation
+---
 <!-- skill: sdd-new | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-new – Neuen SDD-Spec, Contract, Test oder ADR erstellen

@@ -2,17 +2,17 @@
 id: SPEC-0044
 title: SDD Cleanup – CLI & Skill Consolidation
 type: refactoring
-status: draft
+status: implemented
 owner: Boris
 created: 2026-06-09
 updated: '2026-06-09'
 version: 0.1.0
 priority: high
 tags:
-  - cli
-  - skills
-  - ux
-  - refactoring
+- cli
+- skills
+- ux
+- refactoring
 depends_on: []
 contracts: []
 tests: []

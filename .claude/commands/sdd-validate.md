@@ -1,3 +1,6 @@
+---
+scope: project-validation
+---
 <!-- skill: sdd-validate | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
 # /sdd-validate – Validierung mit Fehler-Erklärungen

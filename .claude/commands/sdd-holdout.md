@@ -1,3 +1,6 @@
+---
+scope: spec-evaluation
+---
 <!-- skill: sdd-holdout | version: 0.1.0 | sdd-blueprint: true | updated: 2026-05-19 -->
 
 # /sdd-holdout – Holdout-Szenarien generieren
