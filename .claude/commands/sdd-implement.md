@@ -1,7 +1,7 @@
 ---
 scope: tdd-implementation
 ---
-<!-- skill: sdd-implement | version: 0.7.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-implement | version: 0.8.0 | sdd-blueprint: true | updated: 2026-06-10 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -219,6 +219,30 @@ Falls nicht: erweitere den Task manuell um ein sinnvolles `test_file`/`test_comm
 
 Zeige den Plan und starte sofort – keine Bestätigung erforderlich.
 
+## Schritt 3.5: Task-Routing prüfen
+
+Lese `task_routing` aus `.sdd/config.yaml`:
+```bash
+grep -A5 "task_routing:" .sdd/config.yaml
+```
+
+Setze **ROUTING_MODE** basierend auf dem Ergebnis:
+
+- `task_routing.enabled: false` (oder Block fehlt) → **ROUTING_MODE=claude** (Standardpfad, alle Tasks durch Claude)
+- `task_routing.enabled: true` UND `llm.local_llm` konfiguriert → **ROUTING_MODE=hybrid**
+- `task_routing.enabled: true` ABER kein `llm.local_llm` → **ROUTING_MODE=claude** + Warnung:
+  `[WARN] task_routing.enabled=true aber kein llm.local_llm konfiguriert – alle Tasks laufen via Claude.`
+
+Zeige kurz:
+```
+Routing-Modus: <claude|hybrid>
+  threshold: <complexity_threshold> (default: 30)
+  local_llm:  <model @ base_url> oder "nicht konfiguriert"
+```
+
+Bei **ROUTING_MODE=claude**: Schritt 4 läuft vollständig im Claude-Pfad (keine Änderung).
+Bei **ROUTING_MODE=hybrid**: Schritt 4 entscheidet pro Task via `sdd task-route`.
+
 ## Schritt 4: Per-Task TDD-Zyklus
 
 ⚠️ **KERNREGEL: Jeder `type=code`-Task durchläuft zwingend RED → GREEN.**
@@ -232,11 +256,18 @@ Tests laufen je nach CONTAINER_MODE:
 
 ### Für JEDEN `type=code`-Task (in Abhängigkeitsreihenfolge):
 
+**Bei ROUTING_MODE=hybrid:** Bestimme zuerst den Executor:
+```bash
+sdd task-route $ARGUMENTS <task-id>
+```
+Ausgabe ist `local` oder `claude`. Setze **TASK_EXECUTOR** entsprechend.
+
 #### 4a: Test-Datei erstellen (falls noch nicht vorhanden)
 
 Lese `task.test_file`. Falls die Datei noch nicht existiert:
 
 **Erstelle eine ECHTE fehlschlagende Test-Datei** — KEIN `pytest.skip()`, KEIN `pass`.
+(Immer Claude — unabhängig von TASK_EXECUTOR.)
 
 Der Test muss:
 - Die zu implementierende Funktion/Klasse/Modul direkt importieren
@@ -302,8 +333,39 @@ Falls der Test rot ist: ✓ Fortfahren mit 4c.
 
 #### 4c: Implementierung schreiben
 
+**TASK_EXECUTOR=claude (oder ROUTING_MODE=claude):**
+
 Schreibe den Implementierungscode für diesen Task (Spec + Contracts als Grundlage).
 Halte den Code minimal — nur was nötig ist damit der Test grün wird.
+
+**TASK_EXECUTOR=local:**
+
+Delegiere die Implementierung an das lokale LLM:
+
+```bash
+sdd task-exec $ARGUMENTS <task-id>
+```
+
+- Container-Modus: `sdd dev exec $ARGUMENTS sdd task-exec $ARGUMENTS <task-id>`
+
+Das Ergebnis ist exit-code 0 (Tests grün) oder exit-code 1 (Tests noch rot).
+
+Falls exit-code 1 → **Retry-Loop (max. 2 Versuche):**
+
+```bash
+# Versuch 2 mit Fehlerkontext aus dem vorherigen Lauf:
+sdd task-exec $ARGUMENTS <task-id> --iteration 2 --error-context "<pytest-output>"
+```
+
+Falls auch Versuch 2 fehlschlägt → **Eskalation zu Claude:**
+```
+[ESCALATE] Lokales LLM konnte Task '<title>' nach 2 Versuchen nicht lösen.
+           Claude übernimmt mit Fehlerkontext aus beiden Versuchen.
+```
+Claude analysiert den Traceback und implementiert direkt (4c-claude-Pfad).
+
+Zeige nach erfolgreichem lokalem LLM-Lauf:
+`[LOCAL] Task '<title>' durch lokales LLM implementiert (Versuch N).`
 
 #### 4d: Test GREEN verifizieren
 
@@ -311,7 +373,7 @@ Führe `task.test_command` erneut aus.
 
 Falls grün: ✓ Task abgeschlossen — weiter mit dem nächsten Task.
 
-Falls rot:
+Falls rot (Claude-Pfad):
 - Analysiere den Traceback
 - Korrigiere den Implementierungscode
 - Wiederhole 4d (max. 3 Iterationen)

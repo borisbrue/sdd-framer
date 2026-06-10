@@ -3235,6 +3235,112 @@ def config_test_llm_cmd(llm_id: str | None) -> None:
 
 
 @cli.command(
+    "task-route",
+    help="Gibt 'local' oder 'claude' für einen Task zurück (SPEC-0045 Routing).",
+)
+@click.argument("spec_id")
+@click.argument("task_id")
+def task_route_cmd(spec_id: str, task_id: str) -> None:
+    import json as _json
+    from .task_routing.config import load_task_routing_config
+    from .task_routing.task_exec import decide_routing
+
+    root = find_project_root()
+    cfg = load_config(root)
+    routing_cfg = load_task_routing_config(cfg.raw)
+
+    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
+    if not task_file.exists():
+        console.print(f"[red]✗[/] Task-Datei nicht gefunden: {task_file}")
+        sys.exit(1)
+
+    tasks = _json.loads(task_file.read_text())
+    task_dict = next((t for t in tasks if t.get("id") == task_id), None)
+    if task_dict is None:
+        console.print(f"[red]✗[/] Task-ID '{task_id}' nicht in {task_file} gefunden.")
+        sys.exit(1)
+
+    decision = decide_routing(task_dict, routing_cfg)
+    print(decision)
+
+
+@cli.command(
+    "task-exec",
+    help="Führt Implementierungsphase eines Tasks via lokalem LLM aus (SPEC-0045).",
+)
+@click.argument("spec_id")
+@click.argument("task_id")
+@click.option("--test-file", "test_file_override", default=None, help="Override Test-Datei-Pfad.")
+@click.option("--iteration", default=1, type=int, show_default=True, help="Versuchs-Nummer.")
+@click.option("--error-context", default="", help="pytest-Output des vorherigen Fehlversuchs.")
+def task_exec_cmd(
+    spec_id: str,
+    task_id: str,
+    test_file_override: str | None,
+    iteration: int,
+    error_context: str,
+) -> None:
+    import json as _json
+    from .task_routing.config import load_task_routing_config
+    from .task_routing.task_exec import ImplOnlyExecutor
+
+    root = find_project_root()
+    cfg = load_config(root)
+    routing_cfg = load_task_routing_config(cfg.raw)
+
+    if not routing_cfg.local_llm_configured:
+        console.print(
+            "[red]✗[/] Kein lokales LLM konfiguriert. "
+            "Setze llm.local_llm in .sdd/config.yaml."
+        )
+        sys.exit(1)
+
+    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
+    if not task_file.exists():
+        console.print(f"[red]✗[/] Task-Datei nicht gefunden: {task_file}")
+        sys.exit(1)
+
+    tasks = _json.loads(task_file.read_text())
+    task_dict = next((t for t in tasks if t.get("id") == task_id), None)
+    if task_dict is None:
+        console.print(f"[red]✗[/] Task-ID '{task_id}' nicht gefunden.")
+        sys.exit(1)
+
+    if test_file_override:
+        test_file = Path(test_file_override)
+    elif task_dict.get("test_file"):
+        test_file = root / task_dict["test_file"]
+    else:
+        console.print("[red]✗[/] Kein test_file im Task und kein --test-file angegeben.")
+        sys.exit(1)
+
+    if not test_file.exists():
+        console.print(f"[red]✗[/] Test-Datei nicht gefunden: {test_file}")
+        sys.exit(1)
+
+    executor = ImplOnlyExecutor(config=cfg, project_root=root)
+    console.print(f"[cyan]▶[/] Lokales LLM implementiert Task '{task_dict['title']}' (Versuch {iteration}) …")
+
+    try:
+        success, output = executor.execute(
+            task=task_dict,
+            test_file=test_file,
+            iteration=iteration,
+            error_context=error_context,
+        )
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+    if success:
+        console.print("[green]✓[/] Tests grün.")
+    else:
+        console.print("[yellow]✗[/] Tests noch rot.")
+        console.print(output)
+        sys.exit(1)
+
+
+@cli.command(
     "generate-holdouts",
     help="[Entfernt] Verwende: sdd holdout generate",
 )
