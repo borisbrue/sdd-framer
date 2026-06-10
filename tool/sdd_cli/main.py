@@ -269,7 +269,7 @@ def upgrade(target: str, verbose: bool) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd new …
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.group(help="Neue Specs, Contracts, Tests oder ADRs anlegen.")
+@cli.group(help="Scaffolding: Specs, Contracts, Tests, Holdouts anlegen.")
 def new() -> None:
     pass
 
@@ -479,22 +479,6 @@ def new_github_workflow() -> None:
     target.write_text(tmpl, encoding="utf-8")
     console.print(f"[green]✓[/] GitHub-Actions-Workflow angelegt: [bold]{target}[/]")
     console.print("  Trage [cyan]ANTHROPIC_API_KEY[/] als GitHub-Secret ein.")
-
-
-@new.command("adr", help="Legt eine neue Architecture Decision Record an.")
-@click.argument("title")
-def new_adr(title: str) -> None:
-    cfg = _ensure_project()
-    aid = next_id(cfg, "adr")
-    slug = slugify(title)
-    target = cfg.adr_dir / f"{aid}-{slug}.md"
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    tmpl, _ = load_template(cfg, "adr")
-    text = render(tmpl, {"id": aid, "title": title})
-    target.write_text(text, encoding="utf-8")
-
-    console.print(f"[green]✓[/] ADR angelegt: [bold]{target}[/]  ([cyan]{aid}[/])")
 
 
 def _hint_link_in_spec(spec_id: str, key: str, new_id: str) -> None:

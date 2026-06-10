@@ -46,7 +46,6 @@ def _spec_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str
         "owner": fm.get("owner", ""),
         "contracts": fm.get("contracts") or [],
         "tests": fm.get("tests") or [],
-        "adrs": fm.get("adrs") or [],
         "depends_on": fm.get("depends_on") or [],
         "tags": fm.get("tags") or [],
         "version": fm.get("version", ""),

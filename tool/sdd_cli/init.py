@@ -18,7 +18,6 @@ REQUIRED_DIRS = [
     ".sdd/templates/spec",
     ".sdd/templates/contract",
     ".sdd/templates/test",
-    ".sdd/templates/adr",
     ".sdd/schemas",
     ".sdd/specs/_archive",
     ".sdd/contracts/api",
@@ -31,7 +30,6 @@ REQUIRED_DIRS = [
     ".sdd/tests/acceptance",
     ".sdd/tests/performance",
     ".sdd/docs/architecture",
-    ".sdd/docs/adr",
     ".sdd/docs/diagrams",
 ]
 

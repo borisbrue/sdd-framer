@@ -14,7 +14,6 @@ TEMPLATE_MAP = {
     "spec":           ("spec",           "default.md"),
     "spec-bug-fix":   ("spec",           "bug-fix.md"),
     "test":           ("test",           "default.md"),
-    "adr":            ("adr",            "default.md"),
     "holdout":        ("holdout",        "default.md"),
     "agents-md":      ("agents-md",      "default.md"),
     "github-actions": ("github-actions", "sdd-orchestrate.yml"),

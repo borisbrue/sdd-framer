@@ -56,10 +56,6 @@ class SddConfig:
         return self.sdd_dir / "docs"
 
     @property
-    def adr_dir(self) -> Path:
-        return self.docs_dir / "adr"
-
-    @property
     def projects_dir(self) -> Path:
         return self.sdd_dir / "projects"
 
@@ -81,7 +77,7 @@ class SddConfig:
     def prefix(self, kind: str) -> str:
         _defaults = {
             "spec": "SPEC", "contract": "CON", "test": "TST",
-            "adr": "ADR", "project": "PRJ", "holdout": "HOL",
+            "project": "PRJ", "holdout": "HOL",
         }
         return self.raw.get("ids", {}).get(f"{kind}_prefix", _defaults.get(kind, kind.upper()))
 

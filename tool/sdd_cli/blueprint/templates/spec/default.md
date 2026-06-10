@@ -12,7 +12,6 @@ tags: []
 depends_on: []          # z.B. ["SPEC-0001"]
 contracts: []           # z.B. ["CON-0001"] – MUSS mindestens einen Eintrag enthalten
 tests: []               # z.B. ["TST-0001"] – MUSS mindestens einen Eintrag enthalten
-adrs: []                # z.B. ["ADR-0001"]
 ---
 
 # {{title}}
