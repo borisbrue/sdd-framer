@@ -70,13 +70,14 @@ def _resolve(raw: dict, component: str, default_block: str) -> dict:
 
 def get_completion_provider(
     config: "SddConfig",
-    component: Literal["evaluator", "analyzer", "ai_routes", "completion"] = "completion",
+    component: Literal["evaluator", "analyzer", "ai_routes", "completion", "local_llm"] = "completion",
 ) -> "CompletionProvider":
     """Gibt den CompletionProvider für die angegebene Komponente zurück.
 
     Unbekannter component-Wert → ValueError (kein stiller Fallback).
+    local_llm: nutzt llm.local_llm als Override, fällt auf llm.completion zurück.
     """
-    valid = ("evaluator", "analyzer", "ai_routes", "completion")
+    valid = ("evaluator", "analyzer", "ai_routes", "completion", "local_llm")
     if component not in valid:
         raise ValueError(
             f"Unbekannte Komponente: {component!r}. "

@@ -9,7 +9,7 @@ version: 0.1.0
 status: approved
 artifact: "contracts/behavior/review-contract-verantwortlichkeit.md"
 tests:
-  - TST-0198
+  - TST-0202
 ---
 
 # Contract: Verantwortlichkeitstrennung `sdd review contract` vs. `sdd test generate`

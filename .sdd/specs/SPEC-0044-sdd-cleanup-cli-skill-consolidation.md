@@ -1,24 +1,29 @@
 ---
 id: SPEC-0044
 title: SDD Cleanup – CLI & Skill Consolidation
-type: refactoring
+type: feature
 status: implemented
 owner: Boris
 created: 2026-06-09
-updated: '2026-06-09'
+updated: "2026-06-09"
 version: 0.1.0
 priority: high
 tags:
-- cli
-- skills
-- ux
-- refactoring
+  - cli
+  - skills
+  - ux
+  - refactoring
 depends_on: []
-contracts: []
-tests: []
+contracts:
+- CON-0169
+- CON-0170
+tests:
+- TST-0201
+- TST-0202
 fr_test_map: {}
 adrs: []
 ---
+
 # SDD Cleanup – CLI & Skill Consolidation
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
@@ -47,6 +52,7 @@ CLI und Skills so konsolidieren, dass alle Funktionen erhalten bleiben, aber jed
 nur noch an einem kanonischen Ort angeboten wird.
 
 **Erfolgskriterien (messbar):**
+
 - [ ] Jeder Skill hat einen eindeutigen, nicht-überlappenden Zweck (kein Skill deckt
       dasselbe ab wie ein anderer)
 - [ ] Die CLI folgt einem konsistenten Benennungsmuster (Verb-Gruppe-Unterbefehl-Schema)
@@ -54,6 +60,7 @@ nur noch an einem kanonischen Ort angeboten wird.
 - [ ] Kein LLM-Agent muss zwischen zwei Befehlen wählen, die dieselbe Funktion erfüllen
 
 **Nicht-Ziele (explizit):**
+
 - Web-UI-Routen / API-Endpunkte aufräumen (separates Vorhaben)
 - Neue Features hinzufügen
 - Hub-System komplett entfernen (nur CLI-Cleanup)
@@ -61,12 +68,12 @@ nur noch an einem kanonischen Ort angeboten wird.
 
 ## 3. User Stories
 
-| ID    | Als …             | möchte ich …                                                    | um …                                                        |
-|-------|-------------------|-----------------------------------------------------------------|-------------------------------------------------------------|
-| US-01 | Entwickler (neu)  | mit `sdd --help` sofort alle relevanten Befehle verstehen       | ohne Dokumentation loszulegen                               |
-| US-02 | LLM-Agent         | pro Aufgabe genau einen Skill/Befehl finden                     | keine Ambiguität bei Tool-Auswahl zu haben                  |
-| US-03 | Entwickler (alt)  | wissen, wohin veraltete Befehle verschoben/entfernt wurden      | meine Workflows anpassen zu können                          |
-| US-04 | Maintainer        | weniger Stubs und tote Code-Pfade pflegen                       | den Wartungsaufwand zu reduzieren                           |
+| ID    | Als …            | möchte ich …                                               | um …                                       |
+| ----- | ---------------- | ---------------------------------------------------------- | ------------------------------------------ |
+| US-01 | Entwickler (neu) | mit `sdd --help` sofort alle relevanten Befehle verstehen  | ohne Dokumentation loszulegen              |
+| US-02 | LLM-Agent        | pro Aufgabe genau einen Skill/Befehl finden                | keine Ambiguität bei Tool-Auswahl zu haben |
+| US-03 | Entwickler (alt) | wissen, wohin veraltete Befehle verschoben/entfernt wurden | meine Workflows anpassen zu können         |
+| US-04 | Maintainer       | weniger Stubs und tote Code-Pfade pflegen                  | den Wartungsaufwand zu reduzieren          |
 
 ## 4. Funktionale Anforderungen
 
@@ -152,6 +159,7 @@ nur noch an einem kanonischen Ort angeboten wird.
 ## 5. Architektur & Design Patterns
 
 ### Facade Pattern
+
 **Begründung:** Jeder Skill ist eine Facade über eine klar abgegrenzte Teilmenge der CLI.
 Skills und CLI-Befehle überlappen bewusst: der Skill ist der Claude-Code-Shortcut,
 der CLI-Befehl ist die LLM-agnostische Schnittstelle. Nach dem Cleanup hat jede Facade
@@ -159,6 +167,7 @@ einen eindeutigen Namen im `<noun> <verb>` Schema.
 [Refactoring Guru – Facade](https://refactoring.guru/design-patterns/facade)
 
 ### Command Pattern
+
 **Begründung:** Die CLI folgt bereits dem Command-Muster (jeder Befehl kapselt eine
 Operation). Das Cleanup sorgt dafür, dass jede Operation genau einem Command-Objekt
 entspricht — keine zwei Commands für dieselbe Operation.
@@ -167,68 +176,74 @@ entspricht — keine zwei Commands für dieselbe Operation.
 ## 6. Inventar der Änderungen
 
 ### Zu entfernende CLI-Gruppen
-| Gruppe | Befehle | Grund |
-|--------|---------|-------|
-| `sdd pattern` | `pattern-suggest`, `pattern accept`, `pattern reject`, `pattern list` | Pattern-Entscheidungen leben in der Spec unter "Architektur & Design Patterns"; separates Register ist redundant |
-| `sdd dev` | `start`, `exec`, `close`, `pr`, `build`, `push`, `up`, `down` | Container-Lifecycle wird intern von `sdd spec start`/`finalize` und `sdd orchestrate` verwaltet; `DevContainerManager`-Modul bleibt als interne Dependency erhalten |
+
+| Gruppe        | Befehle                                                               | Grund                                                                                                                                                               |
+| ------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sdd pattern` | `pattern-suggest`, `pattern accept`, `pattern reject`, `pattern list` | Pattern-Entscheidungen leben in der Spec unter "Architektur & Design Patterns"; separates Register ist redundant                                                    |
+| `sdd dev`     | `start`, `exec`, `close`, `pr`, `build`, `push`, `up`, `down`         | Container-Lifecycle wird intern von `sdd spec start`/`finalize` und `sdd orchestrate` verwaltet; `DevContainerManager`-Modul bleibt als interne Dependency erhalten |
 
 ### Verbleibende CLI-Gruppen (bisher als Kandidaten genannt, bleiben erhalten)
-| Gruppe | Grund |
-|--------|-------|
-| `sdd obsidian` | Aktiv genutzter bi-direktionaler Vault-Sync mit Obsidian |
-| `sdd pwa` | Eigenständige mobile UI für den SDD-Projektserver (kein Overlap mit `sdd ui`) |
+
+| Gruppe         | Grund                                                                         |
+| -------------- | ----------------------------------------------------------------------------- |
+| `sdd obsidian` | Aktiv genutzter bi-direktionaler Vault-Sync mit Obsidian                      |
+| `sdd pwa`      | Eigenständige mobile UI für den SDD-Projektserver (kein Overlap mit `sdd ui`) |
 
 ### Zu entfernende interne Stubs
-| Befehl | Grund |
-|--------|-------|
-| `sdd implement` | wirft `NotImplementedError`; Funktion liegt ausschließlich im Skill `/sdd-implement` |
+
+| Befehl                      | Grund                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| `sdd implement`             | wirft `NotImplementedError`; Funktion liegt ausschließlich im Skill `/sdd-implement`             |
 | `sdd status-check` (public) | wird intern von pre-commit-Hook und `sdd spec start` aufgerufen; kein direkter User/LLM-Use-Case |
-| `sdd new agents-md` | Funktion wird in `sdd init` (Erstanlage) und `sdd upgrade` (Nachrüsten) integriert (FR-06) |
-| `sdd new github-workflow` | Funktion wird in `sdd init` integriert (interaktive Rückfrage; FR-06) |
+| `sdd new agents-md`         | Funktion wird in `sdd init` (Erstanlage) und `sdd upgrade` (Nachrüsten) integriert (FR-06)       |
+| `sdd new github-workflow`   | Funktion wird in `sdd init` integriert (interaktive Rückfrage; FR-06)                            |
 
 ### Umbenennungen nach `sdd <noun> <verb>` Schema
+
 CLI-Befehle mit Skill-Gegenstück bleiben erhalten (LLM-Agnostik), werden aber in das
 einheitliche Benennungsschema überführt. `Alt → Neu`:
 
-| Alt | Neu | Skill-Gegenstück |
-|-----|-----|-----------------|
-| `sdd review-contract CON-ID` | `sdd review contract CON-ID` | `/sdd-review` |
-| `sdd spec review SPEC-ID` | `sdd review spec SPEC-ID` | `/sdd-review` |
-| `sdd review-pending` | `sdd review pending [--auto]` | — |
-| `sdd generate-holdouts SPEC-ID` | `sdd holdout generate SPEC-ID` | `/sdd-holdout` |
-| `sdd evaluate` | `sdd holdout run` | — |
-| `sdd test-run SPEC-ID` | `sdd test run SPEC-ID` | — |
-| `sdd test-results SPEC-ID` | `sdd test results SPEC-ID` | — |
-| `sdd solid-check ARTIFACT-ID` | `sdd spec solid ARTIFACT-ID` | — |
-| `sdd regression-check SPEC-ID` | `sdd spec regression SPEC-ID` | — |
-| `sdd mark-false-positive PR` | `sdd autonomy false-positive PR` | — |
-| `sdd level PROJECT-ID` | `sdd autonomy level PROJECT-ID` | — |
-| `sdd set-level PROJECT-ID LVL` | `sdd autonomy set-level PROJECT-ID LVL` | — |
-| `sdd new spec\|contract\|test\|holdout` | `sdd new spec\|contract\|test\|holdout\|hotfix` (+hotfix neu) | — |
+| Alt                                     | Neu                                                           | Skill-Gegenstück |
+| --------------------------------------- | ------------------------------------------------------------- | ---------------- |
+| `sdd review-contract CON-ID`            | `sdd review contract CON-ID`                                  | `/sdd-review`    |
+| `sdd spec review SPEC-ID`               | `sdd review spec SPEC-ID`                                     | `/sdd-review`    |
+| `sdd review-pending`                    | `sdd review pending [--auto]`                                 | —                |
+| `sdd generate-holdouts SPEC-ID`         | `sdd holdout generate SPEC-ID`                                | `/sdd-holdout`   |
+| `sdd evaluate`                          | `sdd holdout run`                                             | —                |
+| `sdd test-run SPEC-ID`                  | `sdd test run SPEC-ID`                                        | —                |
+| `sdd test-results SPEC-ID`              | `sdd test results SPEC-ID`                                    | —                |
+| `sdd solid-check ARTIFACT-ID`           | `sdd spec solid ARTIFACT-ID`                                  | —                |
+| `sdd regression-check SPEC-ID`          | `sdd spec regression SPEC-ID`                                 | —                |
+| `sdd mark-false-positive PR`            | `sdd autonomy false-positive PR`                              | —                |
+| `sdd level PROJECT-ID`                  | `sdd autonomy level PROJECT-ID`                               | —                |
+| `sdd set-level PROJECT-ID LVL`          | `sdd autonomy set-level PROJECT-ID LVL`                       | —                |
+| `sdd new spec\|contract\|test\|holdout` | `sdd new spec\|contract\|test\|holdout\|hotfix` (+hotfix neu) | —                |
 
 ### Namenskollision auflösen
-| Aktuell | Neu | Grund |
-|---------|-----|-------|
+
+| Aktuell                               | Neu                                    | Grund                                                                                                 |
+| ------------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `sdd contract review SPEC-ID CON-ID…` | `sdd contract analyze SPEC-ID CON-ID…` | gibt `sdd review contract` eindeutig für LLM-Review frei; `sdd contract` enthält nur Pipeline-Befehle |
 
 ### Verbleibende kanonische Top-Level-Befehle (kein Gruppenfit)
-| Befehl | Begründung |
-|--------|------------|
-| `sdd init` | Einmalige Projekt-Initialisierung; kein sinnvoller Noun |
-| `sdd upgrade` | Paket-Migration; kein sinnvoller Noun |
-| `sdd validate` | Querschnittsbefehl über alle Artefakttypen |
-| `sdd trace` | Erzeugt projektweite Matrix |
-| `sdd orchestrate` | Autonomer Dark-Factory-Pfad |
-| `sdd maintenance` | CI/Drift-Sweep |
-| `sdd install-hooks` | Git-Setup; Einmalaufruf |
+
+| Befehl              | Begründung                                              |
+| ------------------- | ------------------------------------------------------- |
+| `sdd init`          | Einmalige Projekt-Initialisierung; kein sinnvoller Noun |
+| `sdd upgrade`       | Paket-Migration; kein sinnvoller Noun                   |
+| `sdd validate`      | Querschnittsbefehl über alle Artefakttypen              |
+| `sdd trace`         | Erzeugt projektweite Matrix                             |
+| `sdd orchestrate`   | Autonomer Dark-Factory-Pfad                             |
+| `sdd maintenance`   | CI/Drift-Sweep                                          |
+| `sdd install-hooks` | Git-Setup; Einmalaufruf                                 |
 
 ## 7. Contracts (was wird garantiert)
 
-*(werden nach Spec-Approval ergänzt)*
+_(werden nach Spec-Approval ergänzt)_
 
 ## 8. Tests (wie wird verifiziert)
 
-*(werden nach Contract-Approval ergänzt)*
+_(werden nach Contract-Approval ergänzt)_
 
 ## 9. Offene Fragen
 
@@ -257,6 +272,6 @@ einheitliche Benennungsschema überführt. `Alt → Neu`:
 
 ## 11. Änderungshistorie
 
-| Datum      | Version | Autor  | Änderung            |
-|------------|---------|--------|---------------------|
-| 2026-06-09 | 0.1.0   | Boris  | Initiale Erstellung |
+| Datum      | Version | Autor | Änderung            |
+| ---------- | ------- | ----- | ------------------- |
+| 2026-06-09 | 0.1.0   | Boris | Initiale Erstellung |
