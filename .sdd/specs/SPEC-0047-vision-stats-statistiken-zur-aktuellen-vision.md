@@ -2,7 +2,7 @@
 id: SPEC-0047
 title: Vision Stats – Statistiken zur aktuellen Vision
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-10
 updated: '2026-06-10'

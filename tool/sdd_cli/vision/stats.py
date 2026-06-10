@@ -20,36 +20,27 @@ class VisionStats:
             "llm_challenge_count", "code_challenge_count",
         ):
             if getattr(self, field) < 0:
-                raise ValueError(f"{field} must be >= 0, got {getattr(self, field)}")
+                raise ValueError(f"{field} must be >= 0")
         if self.task_done + self.task_open != self.task_total:
             raise ValueError(
                 f"task_done ({self.task_done}) + task_open ({self.task_open}) "
                 f"!= task_total ({self.task_total})"
             )
         if self.llm_challenge_count > self.feature_count:
-            raise ValueError(
-                f"llm_challenge_count ({self.llm_challenge_count}) > "
-                f"feature_count ({self.feature_count})"
-            )
+            raise ValueError("llm_challenge_count must not exceed feature_count")
         if self.code_challenge_count > self.feature_count:
-            raise ValueError(
-                f"code_challenge_count ({self.code_challenge_count}) > "
-                f"feature_count ({self.feature_count})"
-            )
+            raise ValueError("code_challenge_count must not exceed feature_count")
 
     @classmethod
     def from_document(cls, doc: VisionDocument) -> "VisionStats":
-        features = doc.features if doc.features else []
-        tasks = doc.tasks if doc.tasks else []
-
+        features = doc.features or []
+        tasks = doc.tasks or []
         task_done = sum(1 for t in tasks if t.done)
-        task_open = len(tasks) - task_done
-
         return cls(
             feature_count=len(features),
             task_total=len(tasks),
             task_done=task_done,
-            task_open=task_open,
+            task_open=len(tasks) - task_done,
             llm_challenge_count=sum(1 for f in features if f.llm_challenge is not None),
             code_challenge_count=sum(1 for f in features if f.code_challenge is not None),
         )
