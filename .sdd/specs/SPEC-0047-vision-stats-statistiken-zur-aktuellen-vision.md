@@ -27,7 +27,7 @@ fr_test_map:
   - TST-0206
   FR-03:
   - TST-0206
-started_at: '2026-06-10T20:10:56Z'
+started_at: '2026-06-10T20:18:08Z'
 ---
 # Vision Stats – Statistiken zur aktuellen Vision
 
