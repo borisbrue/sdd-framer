@@ -3244,5 +3244,133 @@ def generate_holdouts_cmd(spec_id: str) -> None:
     sys.exit(1)
 
 
+@cli.group("vision", help="Produktvision verwalten (SPEC-0046).")
+def vision_group() -> None:
+    pass
+
+
+@vision_group.command("init", help="Erstellt .sdd/vision.md interaktiv.")
+@click.pass_context
+def vision_init(ctx: click.Context) -> None:
+    from .vision.init import VisionInitWizard, VisionAlreadyExistsError
+
+    root = find_project_root()
+    sdd_dir = root / ".sdd"
+    answers: dict[str, str] = {}
+    for key, prompt in [
+        ("vision_statement", "Vision Statement"),
+        ("target_audience", "Zielgruppe"),
+        ("tech_stack", "Tech Stack"),
+        ("competitive_landscape", "Competitive Landscape"),
+        ("core_problems", "Kernprobleme"),
+    ]:
+        value = click.prompt(prompt, default="", show_default=False)
+        if value:
+            answers[key] = value
+
+    try:
+        VisionInitWizard(sdd_dir=sdd_dir).run(answers=answers)
+        console.print(f"[green]✓[/] {sdd_dir / 'vision.md'} erstellt.")
+    except VisionAlreadyExistsError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@vision_group.command("show", help="Gibt das Vision-Dokument aus.")
+def vision_show() -> None:
+    from .vision.show import VisionReader, VisionNotFoundError
+
+    root = find_project_root()
+    try:
+        VisionReader(sdd_dir=root / ".sdd").show()
+    except VisionNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@vision_group.command("edit", help="Öffnet das Vision-Dokument im Editor.")
+def vision_edit() -> None:
+    from .vision.edit import VisionEditor, VisionNotFoundError
+
+    root = find_project_root()
+    try:
+        VisionEditor(sdd_dir=root / ".sdd").open()
+    except VisionNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@vision_group.command("add-feature", help="Fügt eine Feature-Idee zur Vision hinzu.")
+@click.option("--title", prompt="Titel", help="Feature-Titel")
+@click.option("--description", default="", prompt="Beschreibung (optional)", show_default=False, help="Kurzbeschreibung")
+def vision_add_feature(title: str, description: str) -> None:
+    from .vision.document import VisionDocument, VisionNotFoundError
+
+    root = find_project_root()
+    vision_file = root / ".sdd" / "vision.md"
+    try:
+        doc = VisionDocument.from_file(vision_file)
+        doc.add_feature(title, description)
+        doc.save()
+        console.print(f"[green]✓[/] Feature '{title}' hinzugefügt.")
+    except VisionNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@vision_group.command("add-task", help="Fügt einen Task zur Vision hinzu.")
+@click.option("--title", prompt="Titel", help="Task-Titel")
+def vision_add_task(title: str) -> None:
+    from .vision.document import VisionDocument, VisionNotFoundError
+
+    root = find_project_root()
+    vision_file = root / ".sdd" / "vision.md"
+    try:
+        doc = VisionDocument.from_file(vision_file)
+        doc.add_task(title)
+        doc.save()
+        console.print(f"[green]✓[/] Task '{title}' hinzugefügt.")
+    except VisionNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
+@vision_group.command("challenge", help="LLM- und/oder Code-Challenge für eine Feature-Idee.")
+@click.argument("feature_index", type=int)
+@click.option("--llm", "mode", flag_value="llm", help="Nur LLM-Challenge.")
+@click.option("--code", "mode", flag_value="code", help="Nur Code-Challenge.")
+@click.option("--both", "mode", flag_value="both", default=True, help="LLM + Code (Standard).")
+def vision_challenge(feature_index: int, mode: str) -> None:
+    import asyncio
+    from .vision.challenge import LLMChallengeStrategy, CodeChallengeStrategy
+    from .vision.document import VisionNotFoundError
+
+    root = find_project_root()
+    cfg = load_config(root)
+    vision_file = root / ".sdd" / "vision.md"
+
+    try:
+        if mode in ("llm", "both"):
+            strategy = LLMChallengeStrategy(vision_file=vision_file, config=cfg)
+            asyncio.run(strategy.challenge(feature_index=feature_index))
+            console.print("[green]✓[/] LLM Challenge abgeschlossen.")
+        if mode in ("code", "both"):
+            strategy_code = CodeChallengeStrategy(vision_file=vision_file, project_root=root)
+            strategy_code.challenge(feature_index=feature_index)
+            console.print("[green]✓[/] Code Challenge abgeschlossen.")
+    except VisionNotFoundError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     cli()

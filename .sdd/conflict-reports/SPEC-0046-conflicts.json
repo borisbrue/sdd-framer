@@ -1,0 +1,83 @@
+{
+  "spec_id": "SPEC-0046",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0046-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "US-03 (Feature-Idee gegen LLM challengen → low/medium/high/unknown)",
+      "conflicting_contract": "SPEC-0011:Abschnitt 2 (Primärziel: Aufwandsschätzung vor Implementierung)",
+      "detail": "Beide Specs liefern eine Aufwandsschätzung vor der Implementierung – SPEC-0011 datengetrieben aus historischen Token-Kosten, SPEC-0046 LLM-generiert; dasselbe Nutzerbedürfnis wird ohne gegenseitige Abgrenzung doppelt spezifiziert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Komplementär: SPEC-0011 schätzt Aufwand datengetrieben aus historischen Token-Kosten; SPEC-0046 liefert qualitative LLM-Einschätzung (low/medium/high) im Pre-Spec-Kontext. Unterschiedliche Methode, unterschiedliche Workflow-Phase.",
+        "resolved_at": "2026-06-10T15:13:46Z"
+      }
+    },
+    {
+      "id": "CF-0046-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "US-04 (Feature-Idee gegen bestehenden Code challengen → betroffene Dateien/Module)",
+      "conflicting_contract": "SPEC-0014:Abschnitt 1 (Fehlende Impact-Transparenz vor Execution)",
+      "detail": "SPEC-0014 definiert bereits eine Code-Impact-Analyse (welche SPECs/Contracts/Tests sind betroffen) als Teil des Execution Gate; SPEC-0046 spezifiziert dieselbe Kernlogik erneut für den Pre-Spec-Kontext, ohne auf die bestehende Implementierung zu verweisen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Komplementär: SPEC-0014 analysiert Impact auf SPEC/Contract/Test-Ebene vor Execution; SPEC-0046 analysiert betroffene Dateien/Module vor dem ersten Spec-Commit. Unterschiedliche Granularität und Zeitpunkt im Workflow.",
+        "resolved_at": "2026-06-10T15:13:47Z"
+      }
+    },
+    {
+      "id": "CF-0046-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "US-03 (LLM-Challenge mit Aufwandseinschätzung und Begründung)",
+      "conflicting_contract": "SPEC-0016:Abschnitt 2 (Fire-and-forget, persistenter Verlauf, Push-Benachrichtigung)",
+      "detail": "SPEC-0016 etabliert ein generisches Framework für asynchrone, persistente KI-Analysen; der LLM-Challenge-Call in SPEC-0046 ist ein weiterer async AI-Job – ohne explizite Einbindung in SPEC-0016 entsteht eine zweite, inkompatible Job-Infrastruktur.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Aufgelöst: FR-04 verweist explizit auf SPEC-0016-Async-Job-Framework (depends_on: SPEC-0016). LLM-Challenge ist ein konformer Job-Typ im SPEC-0016-Framework, keine zweite Infrastruktur.",
+        "resolved_at": "2026-06-10T15:13:47Z"
+      }
+    },
+    {
+      "id": "CF-0046-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "US-03 (Feature-Idee gegen LLM challengen)",
+      "conflicting_contract": "SPEC-0005:Abschnitt 2 (KI als Claude CLI Subprocess, kontextsensitive Analyse)",
+      "detail": "SPEC-0005 etabliert Claude CLI als Subprocess-Aufruf für kontextsensitive Analyse-Anfragen; SPEC-0046 spezifiziert einen strukturell identischen Aufruf für Feature-Ideen, ohne die in SPEC-0005 bereits definierte Analyzer-Infrastruktur wiederzuverwenden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Kein Konflikt: SPEC-0046 nutzt via SPEC-0008-AIProvider-Abstraktionsschicht dieselbe Infrastruktur wie SPEC-0005, nicht eine separate. Unterschiedliches Prompt-Ziel (Feature-Aufwand vs. Spec-Analyse).",
+        "resolved_at": "2026-06-10T15:13:47Z"
+      }
+    },
+    {
+      "id": "CF-0046-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "US-03 (LLM-Challenge)",
+      "conflicting_contract": "SPEC-0008:Abschnitt 1 (Vier LLM-Integrationspunkte, OCP-Anforderung)",
+      "detail": "SPEC-0008 fordert, dass jeder neue LLM-Aufruf über die Provider-Abstraktionsschicht geht; SPEC-0046 spezifiziert einen neuen LLM-Integrationspunkt ohne Referenz auf diese Schicht und würde bei direkter Implementierung gegen das OCP aus SPEC-0008 verstoßen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Aufgelöst: SPEC-0046 v0.1.2 bindet LLM-Challenge explizit an AIProvider-Abstraktionsschicht aus SPEC-0008 (depends_on: SPEC-0008, FR-04 referenziert AIProvider-Interface).",
+        "resolved_at": "2026-06-10T15:13:47Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-10T15:12:52Z"
+}
