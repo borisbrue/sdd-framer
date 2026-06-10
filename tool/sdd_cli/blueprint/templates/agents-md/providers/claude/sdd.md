@@ -32,7 +32,7 @@ Status-Farben (Markdown-Fettschrift für wichtige): **draft** = offen, implement
 ```
 **Verfügbare /sdd-Skills:**
 - /sdd           – Projektübersicht (dieser Befehl)
-- /sdd-new       – Spec, Contract, Test oder ADR erstellen
+- /sdd-new       – Spec, Contract oder Test erstellen
 - /sdd-validate  – Projekt validieren + Fehler erklären
 - /sdd-review    – SOLID-Analyse + Pattern-Vorschläge
 - /sdd-status    – Lifecycle-Status und Blockaden

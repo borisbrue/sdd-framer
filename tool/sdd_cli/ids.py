@@ -1,4 +1,4 @@
-"""Vergabe und Erkennung von eindeutigen IDs (SPEC, CON, TST, ADR)."""
+"""Vergabe und Erkennung von eindeutigen IDs (SPEC, CON, TST)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,7 +12,6 @@ KINDS = {
     "spec":     "spec_prefix",
     "contract": "contract_prefix",
     "test":     "test_prefix",
-    "adr":      "adr_prefix",
     "project":  "project_prefix",
     "holdout":  "holdout_prefix",
 }
@@ -26,8 +25,6 @@ def search_dirs(config: SddConfig, kind: str) -> list[Path]:
         return [config.contracts_dir]
     if kind == "test":
         return config.all_test_dirs
-    if kind == "adr":
-        return [config.adr_dir]
     if kind == "project":
         return [config.projects_dir]
     if kind == "holdout":

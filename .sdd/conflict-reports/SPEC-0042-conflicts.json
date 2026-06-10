@@ -1,0 +1,68 @@
+{
+  "spec_id": "SPEC-0042",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0042-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0004:Evaluator-Pipeline (Holdout-Isolation, 3×-Pass-Threshold, fail-fast-Semantik)",
+      "detail": "SPEC-0004 definiert bereits die vollständige Evaluator-Architektur mit Holdout-Prioritäten und fail-fast-Semantik; FR-01 erweitert denselben `sdd evaluate`-Befehl um ein --tier-Flag, ohne eine Abgrenzung zur bestehenden SPEC-0004-Implementierung oder ein Migrationskonzept zu benennen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0042 erweitert sdd evaluate additiv (--tier Flag). Keine Änderung an bestehender Evaluator-Pipeline-Logik; SPEC-0004 wird als depends_on referenziert.",
+        "resolved_at": "2026-06-09T15:11:18Z"
+      }
+    },
+    {
+      "id": "CF-0042-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "FR-02",
+      "conflicting_contract": "SPEC-0004:Evaluation-Report-Schema (strukturierter JSON-Output des Evaluators)",
+      "detail": "SPEC-0004 impliziert ein festgelegtes Report-Schema für den Evaluator-Output; FR-02 ergänzt ein 'priority'-Feld, ohne das in SPEC-0004 definierte Schema zu referenzieren – konkretes Konfliktpotenzial beim JSON-Schema falls das Feld dort bereits unter anderem Namen existiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "priority-Feld ist bereits in ScenarioResult (holdout_runner.py) vorhanden. tier_summary ist neues Top-Level-Feld ohne Schema-Kollision.",
+        "resolved_at": "2026-06-09T15:11:18Z"
+      }
+    },
+    {
+      "id": "CF-0042-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "US-04",
+      "conflicting_contract": "SPEC-0006:sdd test-run (automatisierter Run mit Exit-Code-Semantik und strukturiertem Ergebnis-Output)",
+      "detail": "SPEC-0006 löst bereits das Interface-Muster 'einen Befehl ausführen → strukturiertes Pass/Fail-Feedback erhalten'; US-04 fordert dasselbe Muster als Smoke-Test-Befehl für den Holdout-Runner, ohne SPEC-0006 als Vorlage oder Erweiterungspunkt zu referenzieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "--smoke ist ein Selbsttest des Runners ohne HTTP-Aufruf; anderer Scope als sdd test-run (SPEC-0006).",
+        "resolved_at": "2026-06-09T15:11:19Z"
+      }
+    },
+    {
+      "id": "CF-0042-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "US-01",
+      "conflicting_contract": "SPEC-0014:Staged Execution Gate (gestufte Bedingungsprüfung vor und während Execution)",
+      "detail": "SPEC-0014 definiert eine mehrstufige Gate-Logik, die Execution stoppt und tier-abhängige Bedingungen prüft; SPEC-0042's Verzweigung 'critical → Container-Neustart, normal/edge-case → Task-Patch' implementiert denselben gate-basierten Steuerungsansatz im sdd-implement-Loop ohne Bezug auf SPEC-0014.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Tier-Verzweigung in sdd-implement konkretisiert das Gate-Konzept aus SPEC-0014 im Loop-Kontext. Keine Duplizierung der Gate-Infrastruktur.",
+        "resolved_at": "2026-06-09T15:11:19Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-09T15:10:52Z"
+}

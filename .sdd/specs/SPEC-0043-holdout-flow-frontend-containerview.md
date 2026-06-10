@@ -2,7 +2,7 @@
 id: SPEC-0043
 title: Holdout-Flow im Frontend ContainerView sichtbar machen
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-09
 updated: '2026-06-09'

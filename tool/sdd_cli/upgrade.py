@@ -10,7 +10,6 @@ Was wird NICHT angefasst:
   - .sdd/specs/       → Nutzer-Specs
   - .sdd/contracts/   → Nutzer-Contracts
   - .sdd/tests/       → Nutzer-Tests
-  - .sdd/docs/adr/    → Nutzer-ADRs
 """
 from __future__ import annotations
 

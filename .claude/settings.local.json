@@ -242,7 +242,10 @@
       "Bash(echo \"PWA-Daemon neu gestartet, PID=$!\")",
       "Bash(kill -9 470985)",
       "Bash(podman port *)",
-      "Bash(podman restart *)"
+      "Bash(podman restart *)",
+      "Bash(UV_TOOL_DIR=/home/deck/.local/share/uv/tools uv tool install --force dist/sdd_framer-0.1.56-py3-none-any.whl)",
+      "Bash(grep -v \"^--$\")",
+      "Bash(awk '{print $2, $NF}')"
     ],
     "additionalDirectories": [
       "/run/media/deck/SM512/Development/sdd-framer/specs",

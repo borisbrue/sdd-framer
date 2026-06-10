@@ -1,14 +1,14 @@
 <!-- skill: sdd-new | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
 
-# /sdd-new – Neuen SDD-Spec, Contract, Test oder ADR erstellen
+# /sdd-new – Neuen SDD-Spec, Contract oder Test erstellen
 
 ## Aufgabe
 Führe den Nutzer interaktiv durch die Erstellung eines neuen SDD-Dokuments.
-`$ARGUMENTS` enthält den Typ: `spec`, `contract`, `test` oder `adr`.
+`$ARGUMENTS` enthält den Typ: `spec`, `contract` oder `test`.
 
 ## Schritt 1: Typ bestimmen
-Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr / holdout)"
-Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr, h=holdout.
+Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / holdout)"
+Akzeptiere Abkürzungen: s=spec, c=contract, t=test, h=holdout.
 
 Falls Typ `holdout`: verweise auf `/sdd-holdout $SPEC_ID` — Holdouts werden
 über einen eigenen Skill erstellt (isolierter Kontext, keine Sourcecode-Sicht).
@@ -79,11 +79,3 @@ Template: `.sdd/templates/test/default.md`. Speichere in `tests/<stufe>/`.
 
 **Nächster Schritt:** `/sdd-review TST-XXXX` — Test reviewen bevor implementiert wird.
 
-## Schritt 2d: ADR erstellen
-Fragen:
-1. Welche Entscheidung wird dokumentiert? (Titel)
-2. Kontext und Problem?
-3. Entscheidung und Begründung?
-4. Konsequenzen?
-
-Template: `.sdd/templates/adr/default.md`. Nächste ADR-ID ermitteln.
