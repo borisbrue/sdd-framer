@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sdd-cli"
-version = "0.1.57"
+version = "0.1.58"
 description = "Spec-Driven Development CLI – Blueprint für sprachneutrales SDD"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.23",
     "ruff>=0.4",
 ]
 evaluate = [

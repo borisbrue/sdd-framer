@@ -104,6 +104,23 @@ pattern_suggestions:
   enabled: true
   max_suggestions: 4
   source: refactoring-guru
+llm:
+  completion:
+    provider: anthropic
+    model: claude-haiku-4-5-20251001
+  # Lokales LLM für task_routing (SPEC-0045) – openai-compatible (Ollama, LM Studio, llama.cpp)
+  # local_llm:
+  #   provider: openai-compat
+  #   base_url: "http://localhost:11434/v1"
+  #   model: "qwen2.5-coder:14b"
+  #   api_key: "lm-studio"          # optional; default lm-studio
+
+task_routing:
+  enabled: false                   # true = lokales LLM für triviale Tasks nutzen
+  complexity_threshold: 30         # Tasks mit score <= threshold → executor: local
+  max_retries: 3                   # Versuche vor Eskalation zu Claude
+  max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
+
 docker:
   runtime: docker
   image: sdd-dev:latest

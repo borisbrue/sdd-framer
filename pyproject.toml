@@ -1,6 +1,6 @@
 [project]
 name = "sdd-framer"
-version = "0.1.57"
+version = "0.1.58"
 description = "Spec-Driven Development – CLI, Web API und Blueprint"
 requires-python = ">=3.10"
 authors = [{ name = "Boris" }]
@@ -38,6 +38,7 @@ members = ["tool"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 100
