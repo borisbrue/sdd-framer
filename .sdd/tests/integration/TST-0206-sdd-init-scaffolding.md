@@ -1,5 +1,5 @@
 ---
-id: TST-0201
+id: TST-0206
 project: PRJ-0001
 title: "`sdd init` integriert Skill-Dateien-Check und GitHub-Actions-Rückfrage"
 level: integration

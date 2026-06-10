@@ -1,7 +1,7 @@
 version: 1.0.0
 project:
   name: SDD-Framer
-  description: <PROJECT_DESCRIPTION>
+  description: Spec-Driven Development CLI und Blueprint-System für strukturierte Softwareentwicklung
   owners:
   - Boris
 ids:
@@ -100,9 +100,17 @@ llm:
   evaluator:
     provider: claude-cli
     model: claude-sonnet-4-6
-skills:
-  provider: claude
-  version: 0.1.0
+  local_llm:
+    provider: openai-compat
+    base_url: http://localhost:1234/v1
+    model: google/gemma-4-e4b
+    api_key: lm-studio
+    temperature: 0.0
+task_routing:
+  enabled: true
+  complexity_threshold: 30
+  max_concurrent: 3
+  max_retries: 3
 solid_gate:
   enabled: true
   mode: warn
@@ -124,6 +132,6 @@ docker:
 pwa:
   auth:
     token: 1dcc9db3d45429d5606a6dfbc53c2cc0db8f3454f62008e016f21a358f94395d
-title: ''
+title: SDD Framer
 hub:
   port: 8100
