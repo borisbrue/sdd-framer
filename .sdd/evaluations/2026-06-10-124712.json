@@ -1,0 +1,1708 @@
+{
+  "timestamp": "2026-06-10T10:47:12.695451+00:00",
+  "base_url": "https://localhost:8000",
+  "tier_summary": {
+    "critical": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "normal": {
+      "passed": 1,
+      "failed": 28,
+      "skipped": 0
+    },
+    "edge-case": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "summary": {
+    "total": 31,
+    "passed": 2,
+    "failed": 29,
+    "pass_rate": 0.0645
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0033",
+      "title": "sdd --version gibt Exit 0 und Versionsnummer",
+      "contract": "",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "critical",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "sdd, version 0.1.57\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0034",
+      "title": "sdd validate gibt Exit 0 auf eigenem Projekt",
+      "contract": "",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 1,
+            "stdout": "✗ 1 Fehler gefunden:\n  ✗ .sdd/specs/SPEC-0044-sdd-cleanup-cli-skill-consolidation.md: Frontmatter \nungültig: 'refactoring' is not one of ['feature', 'bug-fix']\n⚠ 66 Warnungen:\n  ⚠ .sdd/contracts/performance/CON-0068-container-start-slo.md: Artifact-Datei \nfehlt: contracts/performance/container-start.slo.yaml\n  ⚠ .sdd/contracts/performance/CON-0003-login.md: Artifact-Datei fehlt: \ncontracts/performance/login.slo.yaml\n  ⚠ .sdd/contracts/performance/CON-0073-log-latency-slo.md: Artifact-Datei \nfehl",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0037",
+      "title": "Fehlgeschlagener Holdout mit Szenarien",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0038",
+      "title": "Unbekannte Spec-ID",
+      "contract": "CON-0159",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0040",
+      "title": "Badge zeigt failed mit Detail-Liste",
+      "contract": "CON-0160",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "HTTP",
+            "status": null,
+            "body": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "fail",
+          "llm_reasoning": "Action-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0035",
+      "title": "sdd new holdout erstellt Datei mit priority und type",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "edge-case",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "skip",
+          "llm_reasoning": "normal-Fehler – edge-case übersprungen"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0001",
+      "title": "Job-Status bei inaktiver Spec gibt idle zurück",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/specs/SPEC-0099/job",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0002",
+      "title": "Holdout-Generierung schlägt fehl wenn keine Contracts vorhanden",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0042/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0003",
+      "title": "Review-Aktion persistiert Ergebnis und schließt Gate-Phase ab",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0015/review",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0004",
+      "title": "Contract per PUT vollständig überschreiben (atomares Schreiben)",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/specs/SPEC-0007/contracts/CON-0021",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "body": "# Neuer Inhalt\n\nDieser Text ersetzt den gesamten bisherigen Inhalt."
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0005",
+      "title": "Holdout-Assist verwendet keinen Sourcecode-Kontext",
+      "contract": "",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/HOL-0005/assist",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Welche Edge Cases sollte dieses Holdout-Szenario abdecken?"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0006",
+      "title": "AgentFlow new-spec Happy Path bis done",
+      "contract": "CON-0114",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "new-spec"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "new-spec"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "new-spec"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0007",
+      "title": "AgentFlow Invarianten done-409 und ungueltige flow_type-422",
+      "contract": "CON-0114",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "unknown-type"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "unknown-type"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "unknown-type"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0008",
+      "title": "FlowSession Decision Point ja resumiert laufenden Job",
+      "contract": "CON-0115",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0009",
+      "title": "Nutzer startet einen neuen Review-Flow",
+      "contract": "CON-0114",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flows",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flows",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flows",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "type": "review",
+              "spec_id": "SPEC-0032"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0011",
+      "title": "PWA ruft bestehenden Flow-State nach Neustart ab",
+      "contract": "CON-0114",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/flows/sessions/{session_id}/state",
+            "headers": {
+              "Accept": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/flows/sessions/{session_id}/state",
+            "headers": {
+              "Accept": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/flows/sessions/{session_id}/state",
+            "headers": {
+              "Accept": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0012",
+      "title": "Ungültiger Flow-Typ wird abgelehnt",
+      "contract": "CON-0114",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "delete-everything"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "delete-everything"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flow/start",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "flow_type": "delete-everything"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0013",
+      "title": "Abgeschlossene Session akzeptiert keine weiteren Antworten",
+      "contract": "CON-0115",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flows/sessions/{session_id}/answer",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "answer": "some response"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flows/sessions/done-session-id/answer",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "answer": "some response"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/sessions/{session_id}/answer",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "answer": "some answer"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0014",
+      "title": "Entscheidungspunkt pausiert Flow und löst Push-Notification aus",
+      "contract": "CON-0115",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/flow/decision",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "session_id": "test-session-001",
+              "decision_point": "Pattern annehmen?",
+              "options": [
+                "ja",
+                "nein"
+              ]
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/sessions/{session_id}",
+            "headers": {
+              "Accept": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/sessions/session-001/decision-point",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "question": "Pattern annehmen?",
+              "options": [
+                "ja",
+                "nein"
+              ]
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0015",
+      "title": "Ungültige Entscheidungs-Antwort wird abgelehnt",
+      "contract": "CON-0115",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/agent/flow/{session_id}/reply",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "answer": "vielleicht"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0017",
+      "title": "Gültige HTTPS-Tunnel-URL wird akzeptiert",
+      "contract": "CON-0116",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/config",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/config/tunnel-url",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "GET",
+            "path": "/api/config",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0018",
+      "title": "HTTP-URL (ohne S) wird abgelehnt",
+      "contract": "CON-0116",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "http://example.com/tunnel"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "PUT",
+            "path": "/api/config",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "yaml": "tunnel:\n  url: http://sdd.example.com"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "http://example.com/tunnel"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0019",
+      "title": "URL mit trailing slash wird abgelehnt",
+      "contract": "CON-0116",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "https://sdd.example.com/"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "https://sdd.example.com/"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/yaml"
+            },
+            "body": "tunnel:\n  url: \"https://sdd.example.com/\"\n"
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0020",
+      "title": "Unbekannte Felder im tunnel-Block werden abgelehnt",
+      "contract": "CON-0116",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "https://example.tunnel.local",
+                "token": "abc123"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "tunnel": {
+                "url": "https://example.tunnel.dev",
+                "token": "abc123"
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/config/validate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "config": {
+                "tunnel": {
+                  "url": "https://example.com",
+                  "token": "abc123"
+                }
+              }
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0026",
+      "title": "Holdouts für gültige Spec mit Contracts generieren",
+      "contract": "CON-0157",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0027",
+      "title": "Spec mit status draft wird abgelehnt",
+      "contract": "CON-0157",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0028",
+      "title": "Spec ohne verlinkte Contracts bricht ab",
+      "contract": "CON-0157",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0029",
+      "title": "Unbekannte Spec-ID führt zu Fehlermeldung",
+      "contract": "CON-0157",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-9999/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-9999/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-9999/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0030",
+      "title": "Erzeugte HOL-Datei enthält alle Pflichtfelder",
+      "contract": "CON-0158",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/generate-holdouts",
+            "headers": {},
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0031",
+      "title": "Zweiter Aufruf erzeugt keine Duplikate",
+      "contract": "CON-0158",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/generate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {}
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts/generate",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/generate-holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "spec": "SPEC-0033"
+            }
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0032",
+      "title": "HOL-IDs sind eindeutig und kollisionsfrei",
+      "contract": "CON-0158",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {
+            "method": "POST",
+            "path": "/api/specs/SPEC-0033/holdouts",
+            "headers": {
+              "Content-Type": "application/json"
+            },
+            "body": null
+          },
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "HTTP-Fehler: [Errno 111] Connection refused"
+        }
+      ]
+    }
+  ]
+}
