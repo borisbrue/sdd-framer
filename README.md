@@ -812,8 +812,7 @@ sdd start SPEC-XXXX    → Container starten, Implementierung beginnen
   pipeline/            # Gate-Status pro Spec
   patterns/            # Pattern-Register
 
-docs/
-  adr/                 # ADR-XXXX – Architecture Decision Records
+docs/ adr/                 # ADR-XXXX – Architecture Decision Records
   traceability.md      # Generiert von `sdd trace`
 
 tests/
@@ -920,3 +919,5 @@ sdd finalize <SPEC-XXXX> --no-commit
 ## Lizenz
 
 MIT
+
+BR
