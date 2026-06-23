@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, AiUsage, Contract, Spec, Test } from "./api";
+import { api, AiUsage, Contract, PatternUsage, Spec, Test } from "./api";
 import AiUsageView from "./components/AiUsageView";
+import PatternsView from "./components/PatternsView";
 import ContractDetail from "./components/ContractDetail";
 import DevConsole from "./components/DevConsole";
 import HoldoutDetail from "./components/HoldoutDetail";
@@ -35,6 +36,8 @@ export default function App() {
   const [history, setHistory]     = useState<Selection[]>([]);
   const [showSpecForm, setShowSpecForm]     = useState(false);
   const [showAiUsage, setShowAiUsage]       = useState(false);
+  const [showPatterns, setShowPatterns]     = useState(false);
+  const [patterns, setPatterns]             = useState<PatternUsage[]>([]);
   const [showSettings, setShowSettings]     = useState(false);
   const [showServerInfo, setShowServerInfo] = useState(false);
   const [showConsole, setShowConsole]       = useState(false);
@@ -101,14 +104,16 @@ export default function App() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <StatusBar
-        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); setShowHub(false); }}
-        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); setShowHub(false); }}
+        onShowAiUsage={() => { api.aiUsage().then(setAiUsage); setShowAiUsage(v => !v); setShowSettings(false); setShowServerInfo(false); setShowHub(false); setShowPatterns(false); }}
+        onShowSettings={() => { setShowSettings(v => !v); setShowAiUsage(false); setShowServerInfo(false); setShowHub(false); setShowPatterns(false); }}
         onShowServerInfo={() => setShowServerInfo(v => !v)}
         onToggleConsole={() => setShowConsole(v => !v)}
-        onShowHub={() => { setShowHub(v => !v); setShowAiUsage(false); setShowSettings(false); setShowDagMonitor(false); }}
+        onShowHub={() => { setShowHub(v => !v); setShowAiUsage(false); setShowSettings(false); setShowDagMonitor(false); setShowPatterns(false); }}
         hubActive={showHub}
-        onShowDagMonitor={() => { setShowDagMonitor(v => !v); setShowHub(false); setShowAiUsage(false); setShowSettings(false); }}
+        onShowDagMonitor={() => { setShowDagMonitor(v => !v); setShowHub(false); setShowAiUsage(false); setShowSettings(false); setShowPatterns(false); }}
         dagMonitorActive={showDagMonitor}
+        onShowPatterns={() => { api.patterns().then(setPatterns); setShowPatterns(v => !v); setShowAiUsage(false); setShowSettings(false); setShowHub(false); setShowDagMonitor(false); }}
+        patternsActive={showPatterns}
       />
       {showConsole && <DevConsole onClose={() => setShowConsole(false)} />}
 
@@ -152,7 +157,7 @@ export default function App() {
 
         {/* Main */}
         <main ref={mainRef} style={{ flex: 1, overflowY: "auto", padding: 20, paddingBottom: showConsole ? 280 : 20, display: "flex", flexDirection: "column", gap: 0 }}>
-          {(selected || history.length > 0) && !showAiUsage && (
+          {(selected || history.length > 0) && !showAiUsage && !showPatterns && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, fontSize: 12, color: "var(--muted)" }}>
               {history.length > 0 && (
                 <button onClick={goBack} style={{ padding: "3px 10px", fontSize: 12 }}>← Zurück</button>
@@ -177,6 +182,10 @@ export default function App() {
             <AiUsageView usage={aiUsage} onClose={() => setShowAiUsage(false)} />
           )}
 
+          {showPatterns && (
+            <PatternsView patterns={patterns} onClose={() => setShowPatterns(false)} />
+          )}
+
           {showSettings && (
             <SettingsPage
               currentTheme={theme}
@@ -193,9 +202,9 @@ export default function App() {
             <OrchestrateMonitorPage onNavigate={navigate} />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
+          {!showAiUsage && !showPatterns && !showSettings && !showHub && !showDagMonitor && !selected && <EmptyState onNewSpec={() => setShowSpecForm(true)} />}
 
-          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "spec" && (
+          {!showAiUsage && !showPatterns && !showSettings && !showHub && !showDagMonitor && selected?.type === "spec" && (
             <SpecDetail
               key={selected.id}
               specId={selected.id}
@@ -206,7 +215,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "contract" && (
+          {!showAiUsage && !showPatterns && !showSettings && !showHub && !showDagMonitor && selected?.type === "contract" && (
             <ContractDetail
               key={selected.id}
               contractId={selected.id}
@@ -214,7 +223,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "test" && (
+          {!showAiUsage && !showPatterns && !showSettings && !showHub && !showDagMonitor && selected?.type === "test" && (
             <TestDetail
               key={selected.id}
               testId={selected.id}
@@ -222,7 +231,7 @@ export default function App() {
             />
           )}
 
-          {!showAiUsage && !showSettings && !showHub && !showDagMonitor && selected?.type === "holdout" && (
+          {!showAiUsage && !showPatterns && !showSettings && !showHub && !showDagMonitor && selected?.type === "holdout" && (
             <HoldoutDetail
               key={selected.id}
               holdoutId={selected.id}

@@ -1,0 +1,14 @@
+{
+  "spec_id": "CON-0184",
+  "pipeline_phase": "regression-ok",
+  "phase_history": [
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-06-23T12:03:10Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

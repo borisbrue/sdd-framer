@@ -49,6 +49,7 @@ export const api = {
   aiFillTest: (b: { test_id: string; spec_context: string; contract_description?: string }) =>
     req<AiResponse>("POST", "/ai/fill-test", b),
   aiUsage:            ()                        => req<AiUsage>("GET", "/ai/usage"),
+  patterns:           ()                        => req<PatternUsage[]>("GET", "/patterns"),
   copilotGenerateSpec:     (b: AiGenerateSpec)     => req<AiResponse>("POST", "/copilot/generate-spec", b),
   copilotImproveSpec:      (b: AiImproveSpec)      => req<AiResponse>("POST", "/copilot/improve-spec", b),
   copilotSuggestContracts: (b: AiSuggestContracts) => req<AiResponse>("POST", "/copilot/suggest-contracts", b),
@@ -324,6 +325,16 @@ export interface AiUsageEntry {
   cost_usd: number;
 }
 export interface AiResponse { result: string; usage: AiUsageEntry; }
+
+// SPEC-0049 – Pattern-Nutzung
+export interface PatternSpecRef { spec_id: string; reason: string; }
+export interface PatternCodeLocation { file: string; line: number; annotation: string; }
+export interface PatternUsage {
+  pattern_name: string;
+  specs: PatternSpecRef[];
+  refactoring_guru_url: string | null;
+  code_locations: PatternCodeLocation[];
+}
 export interface AiUsage {
   summary: {
     total_calls: number; total_cost_usd: number;

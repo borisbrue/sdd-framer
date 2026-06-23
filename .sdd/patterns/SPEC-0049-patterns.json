@@ -1,0 +1,22 @@
+{
+  "spec_id": "SPEC-0049",
+  "generated_at": "2026-06-23T11:56:36Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-06-23T11:56:36Z",
+      "acceptance_reason": "Pattern-Quellen (Katalog-Reader, Code-Annotation-Scanner) als austauschbare PatternSource-Strategien; weitere Quellen (AST) ohne Aenderung am Aggregator andockbar (OCP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "accepted",
+      "decided_at": "2026-06-23T11:56:36Z",
+      "acceptance_reason": "PatternUsageService kapselt Quellen + Merge hinter einer Methode; Route und UI kennen nur die Fassade (SRP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/facade"
+    }
+  ]
+}

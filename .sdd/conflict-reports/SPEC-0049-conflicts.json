@@ -1,0 +1,41 @@
+{
+  "spec_id": "SPEC-0049",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0049-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien (GET /api/patterns)",
+      "conflicting_contract": "SPEC-0015:Pattern-Katalog (_catalog.json / accept-reject)",
+      "detail": "SPEC-0049 liest und präsentiert exakt die Pattern-Daten (accepted/suggested/rejected, refactoring_guru_url, Begründung), die SPEC-0015 erzeugt und im Katalog speichert – gleiche Datendomäne, aber Lese- statt Schreibpfad, daher reine Erweiterung ohne Doppellösung.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0049-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien (GET /api/patterns + Nav-Eintrag)",
+      "conflicting_contract": "SPEC-0003:2.1 REST-API (FastAPI, web/api/)",
+      "detail": "SPEC-0049 fügt einen weiteren Endpunkt und eine React-View in die von SPEC-0003 definierte API-/SPA-Struktur ein – konsistente Erweiterung des Web-UI-Frameworks, keine konkurrierende Zweitimplementierung.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0049-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Kontext & Motivation (Katalognutzung)",
+      "conflicting_contract": "SPEC-0048:Katalog als LLM-Kontext",
+      "detail": "Beide Specs konsumieren denselben Pattern-Katalog (_catalog.json), aber für unterschiedliche Zwecke – SPEC-0048 als LLM-Kontext, SPEC-0049 zur read-only UI-Anzeige; keine funktionale Redundanz, nur geteilte Datenquelle.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-23T11:56:16Z"
+}
