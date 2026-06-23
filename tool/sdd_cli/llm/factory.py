@@ -24,7 +24,7 @@ _COMPLETION_BUILTIN: dict[str, dict] = {
     "evaluator":  {"provider": "anthropic", "model": _DEFAULT_ANTHROPIC_MODEL},
     "analyzer":   {"provider": "claude-cli"},
     "ai_routes":  {"provider": "anthropic", "model": "claude-sonnet-4-6"},
-    "completion": {"provider": "anthropic", "model": _DEFAULT_ANTHROPIC_MODEL},
+    "completion": {"provider": "claude-cli"},
 }
 
 

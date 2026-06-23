@@ -94,6 +94,10 @@ cost_estimation:
       cache_read_per_million: 0.3
   budget_alert_usd: 5.0
   default_model: claude-haiku-4-5-20251001
+# LLM-Routing ist standardmäßig KEYFREI: die Komponente 'completion' (Contract-Review,
+# SOLID-Check, Pattern-Vorschläge) nutzt ohne Konfiguration den claude-cli-Provider
+# (Claude-Code-CLI headless, kein ANTHROPIC_API_KEY). anthropic/openai-compat/huggingface
+# bleiben als explizites Opt-in über llm.<component>.provider wählbar (SPEC-0050).
 llm:
   ai_routes:
     provider: claude-cli

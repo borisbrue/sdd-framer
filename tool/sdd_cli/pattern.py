@@ -61,6 +61,7 @@ class PatternSuggestionResult:
     artifact_type: str   # spec|contract
     generated_at: str
     pattern_suggestions: list[PatternSuggestion] = field(default_factory=list)
+    llm_error: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -68,6 +69,7 @@ class PatternSuggestionResult:
             "artifact_type": self.artifact_type,
             "generated_at": self.generated_at,
             "pattern_suggestions": [p.to_dict() for p in self.pattern_suggestions],
+            "llm_error": self.llm_error,
         }
 
 
@@ -101,17 +103,20 @@ class PatternSuggester:
             artifact_text, artifact_id, artifact_type, self._max, catalog_context=catalog_context
         )
         now = _utc_now()
+        llm_error: str | None = None
         try:
             result = self._provider.complete(prompt, max_tokens=2048)
             suggestions = _parse_pattern_response(result.text, artifact_id)
-        except Exception:
+        except Exception as exc:
             suggestions = []
+            llm_error = str(exc)
 
         return PatternSuggestionResult(
             artifact_id=artifact_id,
             artifact_type=artifact_type,
             generated_at=now,
             pattern_suggestions=suggestions[: self._max],
+            llm_error=llm_error,
         )
 
 

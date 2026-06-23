@@ -1,0 +1,53 @@
+{
+  "spec_id": "SPEC-0050",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0050-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium 1+2 (Default-Auflösung & lautes Scheitern)",
+      "conflicting_contract": "SPEC-0008:Provider-Factory / config-Auflösung",
+      "detail": "SPEC-0008 etabliert die Provider-Factory und das config-basierte Routing (ai_routes/evaluator/completion); SPEC-0050 ändert exakt dieses Auflösungs- und Fallback-Verhalten der Factory (completion → claude-cli statt anthropic, kein stiller Fallback) – beide definieren die Default-Provider-Wahl.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: SPEC-0050 korrigiert genau das von SPEC-0008 etablierte Factory-Default-/Fallback-Verhalten (completion -> claude-cli, kein stiller Fallback). Verfeinerung, keine konkurrierende Loesung.",
+        "resolved_at": "2026-06-23T12:19:30Z"
+      }
+    },
+    {
+      "id": "CF-0050-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium 3 (sichtbare LLM-Fehler in pattern/solid)",
+      "conflicting_contract": "SPEC-0015:LLM-gestützter SOLID-/Pattern-Check (solid.py, pattern.py)",
+      "detail": "SPEC-0015 definiert das Verhalten von solid.py und pattern.py bei LLM-Aufrufen; SPEC-0050 ändert deren Fehlerbehandlung (LLM-Fehler nicht mehr als 'compliant'/'keine Vorschläge' schlucken, sondern als [WARN] melden) – beide Specs legen das Ergebnisverhalten derselben Komponenten fest.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: SPEC-0050 schaerft die Fehlerbehandlung der von SPEC-0015 definierten solid.py/pattern.py (LLM-Fehler sichtbar statt schlucken). Erweiterung des Ergebnisverhaltens.",
+        "resolved_at": "2026-06-23T12:19:30Z"
+      }
+    },
+    {
+      "id": "CF-0050-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Nicht-Ziele (anthropic/openai-compat bleiben Opt-in)",
+      "conflicting_contract": "SPEC-0013:Opt-in-Provider (huggingface)",
+      "detail": "SPEC-0013 fügt huggingface als weiteren auswählbaren Provider hinzu; SPEC-0050 redefiniert die Auswahl-/Fallback-Semantik aller nicht-default Provider (kein stiller Wechsel) und berührt damit indirekt die Nutzbarkeit jedes Opt-in-Providers.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: anthropic/openai-compat/huggingface bleiben Opt-in (SPEC-0013); SPEC-0050 entfernt nur den STILLEN Wechsel, nicht die explizite Waehlbarkeit.",
+        "resolved_at": "2026-06-23T12:19:31Z"
+      }
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-06-23T12:18:59Z"
+}
