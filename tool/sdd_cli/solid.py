@@ -70,6 +70,15 @@ class SolidReport:
     def has_violations(self) -> bool:
         return any(f.severity == "violation" for f in self.findings)
 
+    @property
+    def had_llm_error(self) -> bool:
+        """True, wenn ein Checker-Fehler (z.B. LLM nicht erreichbar) auftrat.
+
+        Macht eine LLM-Infrastruktur-Störung sichtbar, statt sie als 'compliant'
+        zu tarnen (SPEC-0050 / CON-0187).
+        """
+        return any(f.location == "Checker-Fehler" for f in self.findings)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Strategy: SolidChecker Protocol + Implementations

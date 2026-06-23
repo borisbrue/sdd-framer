@@ -1,0 +1,22 @@
+{
+  "spec_id": "SPEC-0050",
+  "generated_at": "2026-06-23T15:27:42Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:27:42Z",
+      "acceptance_reason": "Pattern-Quellen als austauschbare PatternSource-Strategien hinter der Factory; weitere Quellen ohne Aenderung am Aggregator (OCP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:27:42Z",
+      "acceptance_reason": "PatternUsageService/Factory kapselt Provider-Auswahl hinter einer Methode; Aufrufer kennen nur die Fassade (SRP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/factory-method"
+    }
+  ]
+}

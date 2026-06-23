@@ -2584,6 +2584,11 @@ def _print_solid_report(report: Any, mode: str) -> None:
 
 
 def _print_pattern_suggestions(result: Any) -> None:
+    if getattr(result, "llm_error", None):
+        console.print(
+            f"[yellow][WARN] Pattern-Vorschläge übersprungen: {result.llm_error}[/]"
+        )
+        return
     if not result.pattern_suggestions:
         console.print("[dim]Keine Pattern-Vorschläge generiert.[/]")
         return
@@ -2825,6 +2830,12 @@ def _run_solid_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
 
     console.print("\n── SOLID-Analyse ──────────────────────────────────────────")
     _print_solid_report(report, cfg.solid_gate_mode())
+
+    if report.had_llm_error:
+        console.print(
+            "[yellow][WARN] SOLID-Analyse unvollständig – LLM nicht erreichbar; "
+            "Ergebnis NICHT als 'compliant' werten.[/]"
+        )
 
     if cfg.solid_gate_mode() == "block" and report.has_violations():
         console.print(

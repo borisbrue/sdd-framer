@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-06T11:23:15Z",
+  "last_updated": "2026-06-23T15:27:42Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -77,6 +77,34 @@
       "accepted_at": "2026-06-06T11:23:15Z",
       "acceptance_reason": "AutopilotStateMachine mit Zuständen idle→decomposing→implementing→testing→reviewing→finalizing→done/escalated verhindert verschachtelte if/elif-Transitionen; States sind einzeln testbar und kapseln je eine Phase",
       "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0049",
+      "accepted_at": "2026-06-23T11:56:36Z",
+      "acceptance_reason": "Pattern-Quellen (Katalog-Reader, Code-Annotation-Scanner) als austauschbare PatternSource-Strategien; weitere Quellen (AST) ohne Aenderung am Aggregator andockbar (OCP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Facade",
+      "spec_id": "SPEC-0049",
+      "accepted_at": "2026-06-23T11:56:36Z",
+      "acceptance_reason": "PatternUsageService kapselt Quellen + Merge hinter einer Methode; Route und UI kennen nur die Fassade (SRP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/facade"
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0050",
+      "accepted_at": "2026-06-23T15:27:42Z",
+      "acceptance_reason": "Pattern-Quellen als austauschbare PatternSource-Strategien hinter der Factory; weitere Quellen ohne Aenderung am Aggregator (OCP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Facade",
+      "spec_id": "SPEC-0050",
+      "accepted_at": "2026-06-23T15:27:42Z",
+      "acceptance_reason": "PatternUsageService/Factory kapselt Provider-Auswahl hinter einer Methode; Aufrufer kennen nur die Fassade (SRP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/factory-method"
     }
   ]
 }
