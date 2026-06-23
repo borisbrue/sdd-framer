@@ -44,6 +44,7 @@ from routes.specs import router as specs_router
 from routes.tests import router as tests_router
 from routes.devlog import router as devlog_router
 from routes.holdouts import router as holdouts_router  # SPEC-0043
+from routes.patterns import router as patterns_router  # SPEC-0049
 import routes.devlog as _devlog
 
 # SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
@@ -79,6 +80,7 @@ app.include_router(agent_flow_router,    prefix="/api")  # SPEC-0032
 app.include_router(dag_monitor_router,   prefix="/api")  # SPEC-0037
 app.include_router(interactive_router,   prefix="/api")  # SPEC-0028
 app.include_router(specs_router,         prefix="/api")
+app.include_router(patterns_router,      prefix="/api")  # SPEC-0049
 app.include_router(pipeline_router,      prefix="/api")
 app.include_router(contracts_router,     prefix="/api")
 app.include_router(tests_router,         prefix="/api")

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Status, ValidationResult } from "../api";
 
-interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; onShowHub?: () => void; hubActive?: boolean; onShowDagMonitor?: () => void; dagMonitorActive?: boolean; }
+interface Props { onShowAiUsage: () => void; onShowSettings: () => void; onShowServerInfo: () => void; onToggleConsole: () => void; onShowHub?: () => void; hubActive?: boolean; onShowDagMonitor?: () => void; dagMonitorActive?: boolean; onShowPatterns?: () => void; patternsActive?: boolean; }
 
-export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole, onShowHub, hubActive, onShowDagMonitor, dagMonitorActive }: Props) {
+export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerInfo, onToggleConsole, onShowHub, hubActive, onShowDagMonitor, dagMonitorActive, onShowPatterns, patternsActive }: Props) {
   const [status, setStatus] = useState<Status | null>(null);
   const [validating, setValidating] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -75,6 +75,13 @@ export default function StatusBar({ onShowAiUsage, onShowSettings, onShowServerI
         <button onClick={onShowAiUsage} style={{ color: "var(--accent)", borderColor: "var(--accent)" }}>
           ✦ KI-Kosten
         </button>
+        {onShowPatterns && (
+          <button onClick={onShowPatterns}
+                  style={{ color: patternsActive ? "var(--accent)" : "var(--muted)",
+                           borderColor: patternsActive ? "var(--accent)" : "var(--border)" }}>
+            ◇ Patterns
+          </button>
+        )}
         <button onClick={onShowServerInfo} style={{ color: "var(--muted)", borderColor: "var(--border)" }}>
           ⬛ QR
         </button>

@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Pattern-Usage API
+  version: 0.1.0
+  description: >
+    Read-only Endpunkt, der die projektweit akzeptierten Design-Patterns
+    zusammen mit ihren Code-Fundstellen liefert (SPEC-0049).
+paths:
+  /api/patterns:
+    get:
+      operationId: getPatternUsage
+      summary: Liefert akzeptierte Patterns mit Code-Fundstellen
+      description: >
+        Aggregiert die akzeptierten Patterns aus .sdd/patterns/_catalog.json
+        mit den im Quellcode annotierten Fundstellen. Nur Patterns mit Status
+        'accepted' werden zurückgegeben.
+      responses:
+        "200":
+          description: Liste der akzeptierten Patterns (kann leer sein).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatternUsage"
+components:
+  schemas:
+    PatternUsage:
+      type: object
+      required: [pattern_name, specs, refactoring_guru_url, code_locations]
+      properties:
+        pattern_name:
+          type: string
+          description: Kanonischer Pattern-Name aus dem Katalog.
+          example: Strategy
+        specs:
+          type: array
+          description: Specs, die dieses Pattern akzeptiert haben.
+          items:
+            $ref: "#/components/schemas/SpecRef"
+        refactoring_guru_url:
+          type: string
+          nullable: true
+          description: Refactoring-Guru-Link oder null.
+          example: https://refactoring.guru/design-patterns/strategy
+        code_locations:
+          type: array
+          description: >
+            Fundstellen der Annotation im Code. Leer, wenn das Pattern
+            akzeptiert ist, aber keine Annotation im Code gefunden wurde.
+          items:
+            $ref: "#/components/schemas/CodeLocation"
+    SpecRef:
+      type: object
+      required: [spec_id, reason]
+      properties:
+        spec_id:
+          type: string
+          example: SPEC-0015
+        reason:
+          type: string
+          description: Begründung der Akzeptanz aus dem Katalog.
+    CodeLocation:
+      type: object
+      required: [file, line, annotation]
+      properties:
+        file:
+          type: string
+          description: Repo-relativer Pfad der Quelldatei.
+          example: tool/sdd_cli/routing.py
+        line:
+          type: integer
+          minimum: 1
+          description: 1-basierte Zeilennummer der Annotation.
+          example: 3
+        annotation:
+          type: string
+          description: Die gefundene Annotationszeile (getrimmt).
+          example: "Strategy Pattern (Refactoring Guru): LlmRoutingStrategy ist austauschbares Protocol."
