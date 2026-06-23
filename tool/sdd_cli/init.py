@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import stat
 from dataclasses import dataclass
 from importlib.resources import files as _pkg_files
 from pathlib import Path
@@ -155,12 +156,77 @@ def merge_claude_settings(target: Path, blueprint_root: Path) -> bool:
 
     current_allow: list[str] = existing.setdefault("permissions", {}).setdefault("allow", [])
     added = [e for e in new_entries if e not in current_allow]
-    if not added:
+    changed = bool(added)
+    if added:
+        current_allow.extend(added)
+
+    # Hooks (z.B. Guardrail) additiv + idempotent mergen (SPEC-0051 FR-02)
+    if _merge_hooks(existing, blueprint_settings.get("hooks", {})):
+        changed = True
+
+    if not changed:
         return False
 
-    current_allow.extend(added)
     dst.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
     return True
+
+
+def _hook_block_present(target_blocks: list, block: dict) -> bool:
+    """True, wenn ein Block mit gleichem matcher und überlappendem Hook-Command existiert."""
+    cmds = {h.get("command") for h in block.get("hooks", []) if h.get("type") == "command"}
+    for tb in target_blocks:
+        if tb.get("matcher") != block.get("matcher"):
+            continue
+        tb_cmds = {h.get("command") for h in tb.get("hooks", []) if h.get("type") == "command"}
+        if cmds & tb_cmds:
+            return True
+    return False
+
+
+def _merge_hooks(existing: dict, blueprint_hooks: dict) -> bool:
+    """Mergt Hook-Blöcke additiv und idempotent. Returns True bei Änderung."""
+    if not blueprint_hooks:
+        return False
+    changed = False
+    hooks = existing.setdefault("hooks", {})
+    for event, blocks in blueprint_hooks.items():
+        target_blocks = hooks.setdefault(event, [])
+        for block in blocks:
+            if not _hook_block_present(target_blocks, block):
+                target_blocks.append(block)
+                changed = True
+    return changed
+
+
+def copy_guardrail_hook(target: Path, blueprint_root: Path) -> Path | None:
+    """Kopiert den Guardrail-Hook-Wrapper aus dem Blueprint nach .claude/hooks/ (ausführbar)."""
+    src = blueprint_root / ".claude" / "hooks" / "autonomous-guardrail.sh"
+    if not src.exists():
+        return None
+    dst_dir = target / ".claude" / "hooks"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    dst = dst_dir / "autonomous-guardrail.sh"
+    shutil.copy(src, dst)
+    dst.chmod(dst.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return dst
+
+
+def write_autonomous_local(target: Path) -> None:
+    """Setzt permissions.defaultMode=bypassPermissions in settings.local.json (opt-in, lokal).
+
+    Schreibt NICHT in committed settings.json; ergänzt .gitignore (SPEC-0051 FR-03).
+    """
+    local = target / ".claude" / "settings.local.json"
+    local.parent.mkdir(parents=True, exist_ok=True)
+    data: dict = json.loads(local.read_text(encoding="utf-8")) if local.exists() else {}
+    data.setdefault("permissions", {})["defaultMode"] = "bypassPermissions"
+    local.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    gitignore = target / ".gitignore"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if "settings.local.json" not in existing:
+        prefix = "" if (not existing or existing.endswith("\n")) else "\n"
+        gitignore.write_text(existing + prefix + ".claude/settings.local.json\n", encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,6 +239,7 @@ def init_project(
     force: bool = False,
     skill_provider: str = "claude",
     force_skills: bool = False,
+    autonomous: bool = False,
 ) -> dict[str, list[Path]]:
     """Legt die SDD-Struktur an.
 
@@ -229,9 +296,14 @@ def init_project(
         target, src_root, provider=skill_provider, force=force_skills,
     )
 
-    # Claude-Settings mergen (nur beim Claude-Provider)
+    # Claude-Settings mergen + Guardrail-Hook installieren (nur beim Claude-Provider)
     if skill_provider == "claude":
         merge_claude_settings(target, src_root)
+        hook = copy_guardrail_hook(target, src_root)
+        if hook is not None:
+            created.append(hook)
+        if autonomous:
+            write_autonomous_local(target)
 
     # Globale mkcert-Zertifikate kopieren (wenn ~/.local/share/sdd/certs/ vorhanden)
     global_certs = Path.home() / ".local/share/sdd/certs"

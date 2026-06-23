@@ -6,6 +6,13 @@
 Zeige eine kompakte Übersicht des SDD-Projekts: alle Specs mit Status,
 verfügbare Skills und offene Blockaden.
 
+> **Autonomie-Setup (SPEC-0051):** `sdd init` installiert den PreToolUse-Guardrail-Hook
+> (`.claude/hooks/autonomous-guardrail.sh`) automatisch. Für vollautonome Läufe (Spec → PR
+> ohne Permission-Prompts) `sdd init --autonomous` nutzen – das setzt
+> `permissions.defaultMode: bypassPermissions` nur lokal in `.claude/settings.local.json`
+> (gitignored, nicht für Clones erzwungen). Der Guardrail blockt katastrophale Kommandos
+> auch unter Bypass.
+
 ## Schritt 1: Projekt prüfen
 - Prüfe ob `.sdd/config.yaml` existiert.
   Falls nicht: "Kein SDD-Projekt gefunden. Führe zuerst 'sdd init' aus." und abbrechen.
