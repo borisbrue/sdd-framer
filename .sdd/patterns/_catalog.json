@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-23T15:27:42Z",
+  "last_updated": "2026-06-23T15:58:49Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -105,6 +105,34 @@
       "accepted_at": "2026-06-23T15:27:42Z",
       "acceptance_reason": "PatternUsageService/Factory kapselt Provider-Auswahl hinter einer Methode; Aufrufer kennen nur die Fassade (SRP)",
       "refactoring_guru_url": "https://refactoring.guru/design-patterns/factory-method"
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0051",
+      "accepted_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "Guardrail-Blockregeln als isoliert testbare Einheiten; Force-Flag-Regel aenderbar ohne andere zu beruehren (OCP)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0051",
+      "accepted_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "Settings-Merge-Geruest bleibt an einer Stelle; hooks als zusaetzlicher Schritt mit gleicher Dedup/Idempotenz (DRY)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    },
+    {
+      "pattern_name": "Facade",
+      "spec_id": "SPEC-0051",
+      "accepted_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "sdd init kapselt das mehrschrittige Autonomie-Setup (Blueprint-Copy + Settings-Merge + Local-Override) hinter einer Schnittstelle",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/facade"
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "spec_id": "SPEC-0051",
+      "accepted_at": "2026-06-23T15:58:49Z",
+      "acceptance_reason": "Geordnete Auswertung der Guardrail-Regeln: erste passende Regel gewinnt + Short-Circuit; pro Kommando-Segment",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/chain-of-responsibility"
     }
   ]
 }

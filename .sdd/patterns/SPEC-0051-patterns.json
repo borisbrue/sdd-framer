@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0051",
+  "generated_at": "2026-06-23T15:54:43Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "Guardrail-Blockregeln als isoliert testbare Einheiten; Force-Flag-Regel aenderbar ohne andere zu beruehren (OCP)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Template Method",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "Settings-Merge-Geruest bleibt an einer Stelle; hooks als zusaetzlicher Schritt mit gleicher Dedup/Idempotenz (DRY)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:54:43Z",
+      "acceptance_reason": "sdd init kapselt das mehrschrittige Autonomie-Setup (Blueprint-Copy + Settings-Merge + Local-Override) hinter einer Schnittstelle",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/facade"
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "status": "accepted",
+      "decided_at": "2026-06-23T15:58:49Z",
+      "acceptance_reason": "Geordnete Auswertung der Guardrail-Regeln: erste passende Regel gewinnt + Short-Circuit; pro Kommando-Segment",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/chain-of-responsibility"
+    }
+  ]
+}

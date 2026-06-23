@@ -151,8 +151,11 @@ def _check_gh_available() -> None:
                    "Verfügbar: claude, copilot, openai.")
 @click.option("--force-skills", is_flag=True,
               help="Überschreibt vorhandene Skill-Dateien im Ziel-Projekt (SPEC-0018 FR-03).")
+@click.option("--autonomous", is_flag=True,
+              help="Aktiviert hands-off Bypass (defaultMode=bypassPermissions) in "
+                   ".claude/settings.local.json – persönlich, nicht committed (SPEC-0051).")
 def init(target: str, project_title: str, force: bool,
-         provider: str, force_skills: bool) -> None:
+         provider: str, force_skills: bool, autonomous: bool) -> None:
     from .init import get_skill_provider, SKILL_PROVIDERS
     try:
         prov = get_skill_provider(provider)
@@ -167,6 +170,7 @@ def init(target: str, project_title: str, force: bool,
         force=force,
         skill_provider=provider,
         force_skills=force_skills,
+        autonomous=autonomous,
     )
 
     n_core = len(result["created"])
@@ -2867,6 +2871,29 @@ def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
             f"  → Entscheiden mit: [cyan]sdd pattern accept {artifact_id} <PatternName>[/]"
         )
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd guard group (SPEC-0051 – PreToolUse-Guardrail-Backend)
+# ─────────────────────────────────────────────────────────────────────────────
+@cli.group("guard", help="Autonomer Bypass-Guardrail (Backend für den PreToolUse-Hook).")
+def guard_group() -> None:
+    pass
+
+
+@guard_group.command("check", help="Liest PreToolUse-Hook-JSON von stdin, gibt permissionDecision (deny) aus.")
+def guard_check_cmd() -> None:
+    import json as _json
+    from .guard import decide
+
+    raw = sys.stdin.read()
+    try:
+        data = _json.loads(raw) if raw.strip() else {}
+    except _json.JSONDecodeError:
+        return  # fail-open: ungültiges Hook-Input → erlauben (kein Output)
+    result = decide(data)
+    if result is not None:
+        click.echo(_json.dumps(result))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
