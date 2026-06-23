@@ -1,7 +1,7 @@
 ---
 scope: tdd-implementation
 ---
-<!-- skill: sdd-implement | version: 0.8.0 | sdd-blueprint: true | updated: 2026-06-10 -->
+<!-- skill: sdd-implement | version: 0.9.0 | sdd-blueprint: true | updated: 2026-06-23 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -30,9 +30,19 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 
 > Führe das vollständige Review für $ARGUMENTS autonom durch:
 >
-> 1. `sdd solid-check $ARGUMENTS` — SOLID-Analyse ausgeben; Warnings loggen, keine Blockade
-> 2. `sdd pattern-suggest $ARGUMENTS` — sinnvolle Patterns automatisch annehmen (`sdd pattern accept`), alle anderen überspringen
-> 3. `sdd regression-check $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
+> 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse + Pattern-Vorschläge kombiniert ausgeben
+>    (ersetzt die früheren separaten Befehle `solid-check`/`pattern-suggest`, seit SPEC-0044
+>    entfernt). Warnings loggen, keine Blockade.
+> 2. Sinnvolle Pattern-Vorschläge direkt per Python-API annehmen, alle anderen überspringen
+>    (`sdd pattern accept/reject` existiert seit SPEC-0044 nicht mehr als CLI-Befehl):
+>    ```bash
+>    python3 -c "
+>    from pathlib import Path
+>    from sdd_cli.pattern import PatternRegistry
+>    PatternRegistry(Path('.')).accept('$ARGUMENTS', '<PatternName>', '<Begründung>')
+>    "
+>    ```
+> 3. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
 > 4. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
 >    - Setze `status: approved` im Frontmatter wenn inhaltlich ok (Edit-Tool)
@@ -185,8 +195,12 @@ Lese folgende Dateien (und NUR diese):
 1. `.sdd/specs/$ARGUMENTS-*.md` – vollständiger Spec-Inhalt
 2. Alle CON-IDs aus `contracts:`-Frontmatter → zugehörige Contract-Dateien in `.sdd/contracts/`
 3. `.sdd/patterns/$ARGUMENTS-patterns.json` – falls vorhanden
-4. `AGENTS.md` – falls vorhanden (zeige [WARN] wenn fehlend)
-5. Vorhandene Test-Dateien aus TST-`artifact`-Feldern in `.sdd/tests/`
+4. `.sdd/patterns/_catalog.json` – globaler Pattern-Katalog (projektweite Aggregation
+   akzeptierter Patterns über alle Specs). Bei Verfügbarkeit per
+   `PatternRegistry.catalog_summary(exclude_spec_id=$ARGUMENTS)` (CON-0183) zu einer
+   kompakten Zusammenfassung formatieren, die den Eintrag der eigenen Spec ausschließt.
+5. `AGENTS.md` – falls vorhanden (zeige [WARN] wenn fehlend)
+6. Vorhandene Test-Dateien aus TST-`artifact`-Feldern in `.sdd/tests/`
 
 **Nicht lesen:** `.sdd/holdout/` – nie, unter keinen Umständen.
 
@@ -194,6 +208,9 @@ Fasse den geladenen Kontext kurz zusammen:
 - Spec: Titel, Status, N Contracts, M Tests
 - Contracts: [CON-IDs]
 - Pattern-Register: [Pattern-Namen falls vorhanden]
+- Falls die Katalog-Zusammenfassung aus `_catalog.json` nicht leer ist, zeige zusätzlich
+  eine Zeile: "Etablierte Patterns im Projekt: [...]" (kompakte Zusammenfassung der
+  projektweiten, fremden Patterns – leer/fehlend → Zeile entfällt komplett).
 
 ## Schritt 3: Task-Plan via Decompose laden
 
@@ -252,7 +269,9 @@ Tasks ohne grünen Test werden NICHT als erledigt markiert.
 Code wird auf dem Host-Filesystem geschrieben (Read/Edit/Write-Tools).
 Tests laufen je nach CONTAINER_MODE:
 - **host**: direkt auf dem Host
-- **container**: via `sdd dev exec $ARGUMENTS <cmd>`
+- **container**: via `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') <cmd>`
+  (`sdd dev exec` existiert seit SPEC-0044 nicht mehr als CLI-Befehl — CON-0165 — die
+  Container-Runtime/Containername-Konvention sind dieselben wie im Diagnose-Schritt 1b)
 
 ### Für JEDEN `type=code`-Task (in Abhängigkeitsreihenfolge):
 
@@ -321,7 +340,7 @@ React-Komponenten ohne DOM-Setup sind schwer testbar — die Logik darunter ist 
 Führe `task.test_command` aus:
 
 - Host-Modus: direkt ausführen
-- Container-Modus: `sdd dev exec $ARGUMENTS <test_command>`
+- Container-Modus: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') <test_command>`
 
 **Erwartetes Ergebnis: Test MUSS fehlschlagen** (ImportError, NameError, AssertionError usw.)
 
@@ -346,7 +365,7 @@ Delegiere die Implementierung an das lokale LLM:
 sdd task-exec $ARGUMENTS <task-id>
 ```
 
-- Container-Modus: `sdd dev exec $ARGUMENTS sdd task-exec $ARGUMENTS <task-id>`
+- Container-Modus: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') sdd task-exec $ARGUMENTS <task-id>`
 
 Das Ergebnis ist exit-code 0 (Tests grün) oder exit-code 1 (Tests noch rot).
 
@@ -385,7 +404,7 @@ Nach jedem grünen Task: Führe die vollständige Test-Suite aus um Regressionen
 
 - Host, Python: `pytest tests/ -x --tb=short`
 - Host, TypeScript: `npm test` (im jeweiligen Package-Verzeichnis)
-- Container: `sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short`
+- Container: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') pytest tests/ -x --tb=short`
 
 Bei Regression: repariere bevor du zum nächsten Task übergehst.
 
@@ -413,17 +432,20 @@ Alle Tasks grün — jetzt werden die Holdout-Szenarien tier-spezifisch geprüft
 
 ### 5.5a: Critical-Tier
 
+`sdd evaluate` existiert seit der Holdout-Konsolidierung nicht mehr — Ersatz ist
+`sdd holdout run` mit identischen Flags (`--base-url`, `--spec`, `--tier`).
+
 **CONTAINER_MODE=container:**
 ```bash
-sdd dev exec $ARGUMENTS bash -c \
+<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') bash -c \
   "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
-   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
+   sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
 ```
 
 **CONTAINER_MODE=host:**
 ```bash
 pip install -q -e './tool/[evaluate]' > /dev/null && \
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
 ```
 
 | Versuch | Ergebnis | Aktion |
@@ -435,7 +457,7 @@ sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
 ### 5.5b: Normal-Tier
 
 ```bash
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
 ```
 (Gleiches Container/Host-Muster wie 5.5a.)
 
@@ -448,7 +470,7 @@ sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
 ### 5.5c: Edge-Case-Tier
 
 ```bash
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier edge-case
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier edge-case
 ```
 
 | Versuch | Ergebnis | Aktion |

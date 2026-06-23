@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-06-23T10:24:08.487383+00:00",
+  "base_url": "https://localhost:8000",
+  "tier_summary": {
+    "critical": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "normal": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "edge-case": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "pass_rate": 1.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0096",
+      "title": "Katalog enthaelt nur eigene Spec-Eintraege - kein Abschnitt",
+      "contract": "CON-0182",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "edge-case",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "SELF_EXCLUDED_OK\nDu bist ein Software-Architekt der GoF-Design-Patterns und architekturelle Patterns auf Spezifikations- und Contract-Ebene empfiehlt.\nAnalysiere das folgende Artefakt und schlage 4 passende Patterns vor.\nVerwende den Refactoring Guru Katalog als Referenzrahmen (https://refactoring.guru/design-patterns/).\n\nFür jeden Vorschlag:\n  - Erkläre WARUM das Pattern hier passt (mindestens 1 Satz)\n  - Nenne eine abgelehnte Alternative mit Begründung\n  - Verlinke die Refactoring Guru Seite d",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0099",
+      "title": "Fehlender oder korrupter Katalog liefert leeren String",
+      "contract": "CON-0183",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "edge-case",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "MISSING_OK\nCORRUPT_OK\nEMPTY_LIST_OK\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0100",
+      "title": "Lange Begruendung wird auf 120 Zeichen gekuerzt mit Ellipse",
+      "contract": "CON-0183",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "edge-case",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "TRUNCATION_OK\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0101",
+      "title": "Mehr als max_entries Eintraege werden auf neueste begrenzt",
+      "contract": "CON-0183",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "edge-case",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "LIMIT_OK\nEXCLUDE_BEFORE_LIMIT_OK\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    }
+  ]
+}

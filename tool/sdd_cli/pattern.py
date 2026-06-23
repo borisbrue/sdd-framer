@@ -78,9 +78,15 @@ class PatternSuggestionResult:
 class PatternSuggester:
     """Schlägt passende Design Patterns via LLM vor (Refactoring Guru Katalog)."""
 
-    def __init__(self, provider: object, max_suggestions: int = 4) -> None:
+    def __init__(
+        self,
+        provider: object,
+        max_suggestions: int = 4,
+        registry: "PatternRegistry | None" = None,
+    ) -> None:
         self._provider = provider
         self._max = max(1, min(4, max_suggestions))
+        self._registry = registry
 
     def suggest(
         self,
@@ -88,7 +94,12 @@ class PatternSuggester:
         artifact_id: str,
         artifact_type: str = "spec",
     ) -> PatternSuggestionResult:
-        prompt = _build_pattern_prompt(artifact_text, artifact_id, artifact_type, self._max)
+        catalog_context = ""
+        if self._registry is not None:
+            catalog_context = self._registry.catalog_summary(exclude_spec_id=artifact_id)
+        prompt = _build_pattern_prompt(
+            artifact_text, artifact_id, artifact_type, self._max, catalog_context=catalog_context
+        )
         now = _utc_now()
         try:
             result = self._provider.complete(prompt, max_tokens=2048)
@@ -110,7 +121,8 @@ def create_suggester(config: "SddConfig") -> PatternSuggester | None:
         return None
     from .llm.factory import get_completion_provider
     provider = get_completion_provider(config, "completion")
-    return PatternSuggester(provider, max_suggestions=config.pattern_suggestions_max())
+    registry = PatternRegistry(config.root)
+    return PatternSuggester(provider, max_suggestions=config.pattern_suggestions_max(), registry=registry)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,6 +288,36 @@ class PatternRegistry:
             encoding="utf-8",
         )
 
+    def catalog_summary(
+        self,
+        max_entries: int = 10,
+        exclude_spec_id: str | None = None,
+    ) -> str:
+        """Kompakte, LLM-taugliche Textzusammenfassung des globalen Katalogs."""
+        catalog = self._load_catalog()
+        entries = catalog.get("accepted_patterns", [])
+        if exclude_spec_id is not None:
+            entries = [e for e in entries if e.get("spec_id") != exclude_spec_id]
+        # Sekundärschlüssel (Listenposition) bricht Ties bei gleicher Sekunden-Genauigkeit
+        # von accepted_at zugunsten der zuletzt eingefügten (= neuesten) Einträge auf.
+        indexed = sorted(
+            enumerate(entries),
+            key=lambda pair: (pair[1].get("accepted_at", ""), pair[0]),
+            reverse=True,
+        )
+        entries = [e for _, e in indexed][:max_entries]
+        lines = [
+            f"- {e.get('pattern_name')} ({e.get('spec_id')}): {_truncate(e.get('acceptance_reason') or '')}"
+            for e in entries
+        ]
+        return "\n".join(lines)
+
+
+def _truncate(reason: str, limit: int = 120) -> str:
+    if len(reason) <= limit:
+        return reason
+    return reason[:limit] + "…"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Prompt Construction
@@ -286,7 +328,16 @@ def _build_pattern_prompt(
     artifact_id: str,
     artifact_type: str,
     max_suggestions: int,
+    catalog_context: str = "",
 ) -> str:
+    catalog_block = ""
+    if catalog_context:
+        catalog_block = (
+            "BEREITS AKZEPTIERTE PATTERNS IM PROJEKT:\n"
+            f"{catalog_context}\n"
+            "Referenziere/verwende bei thematischer Nähe ein oben gelistetes Pattern "
+            "statt ein neues vorzuschlagen.\n\n"
+        )
     return (
         "Du bist ein Software-Architekt der GoF-Design-Patterns und architekturelle Patterns "
         "auf Spezifikations- und Contract-Ebene empfiehlt.\n"
@@ -301,6 +352,8 @@ def _build_pattern_prompt(
         f"ARTEFAKT-ID: {artifact_id}\n"
         "INHALT:\n"
         f"{text}\n\n"
+        f"{catalog_block}"
+        "AUSGABE-FORMAT:\n"
         "Antworte AUSSCHLIESSLICH als valides JSON (kein Markdown, kein Text davor/danach):\n"
         "{\n"
         '  "artifact_id": "' + artifact_id + '",\n'

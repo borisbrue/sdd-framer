@@ -1,7 +1,7 @@
 ---
 scope: spec-review
 ---
-<!-- skill: sdd-review | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-review | version: 0.5.0 | sdd-blueprint: true | updated: 2026-06-23 -->
 
 # /sdd-review – SOLID-Analyse + Pattern-Vorschläge
 
@@ -21,11 +21,24 @@ Frage: "Welche SPEC, CON-ID oder TST-ID soll reviewed werden?"
 **Bei TST-XXXX:** überspringe Schritte 2–4 (SOLID/Pattern/Regression gelten nicht für Tests)
 und gehe direkt zu Schritt 5c.
 
-## Schritt 2: SOLID-Analyse ausführen
+## Schritt 2: SOLID-Analyse + Pattern-Vorschläge ausführen
+
+`sdd solid-check` und `sdd pattern-suggest` existieren seit SPEC-0044 nicht mehr als
+eigenständige Befehle (CON-0165) — beides läuft jetzt kombiniert über `sdd review`:
+
 ```bash
-sdd solid-check $ID
+sdd review spec $ID        # bei SPEC-XXXX
+sdd review contract $ID    # bei CON-XXXX
 ```
-Zeige das Ergebnis übersichtlich:
+
+Die Ausgabe enthält zwei Abschnitte: "SOLID-Analyse" und "Pattern-Vorschläge".
+
+Hinweis: Die Pattern-Vorschläge beziehen seit SPEC-0048 automatisch den projektweiten
+Pattern-Katalog (`.sdd/patterns/_catalog.json`) als Kontext ein — bereits in anderen
+Specs akzeptierte Patterns werden bei thematischer Nähe referenziert statt erneut
+vorgeschlagen.
+
+Zeige das SOLID-Ergebnis übersichtlich:
 
 ```
 ── SOLID-Analyse: SPEC-XXXX ────────────────────────────
@@ -40,35 +53,50 @@ Zeige das Ergebnis übersichtlich:
 
 Bei SOLID-Verletzungen: erkläre konsequenz für Implementierung und Maintainability.
 
-## Schritt 3: Pattern-Vorschläge
-```bash
-sdd pattern-suggest $ID
-```
-Zeige jeden Vorschlag mit:
+Zeige jeden Pattern-Vorschlag mit:
 - Pattern-Name + Kategorie (Behavioral / Structural / Creational)
 - Warum hier passend (konkret auf das Artefakt bezogen)
 - Alternative (was stattdessen möglich wäre + Ablehnungsgrund)
 - Refactoring-Guru-Link
 
-Frage für jeden Vorschlag: "Annehmen? (ja/nein/überspringen)"
+Gibt es keine Vorschläge ("Keine Pattern-Vorschläge generiert"): weiter zu Schritt 4
+ohne Rückfrage.
+
+## Schritt 3: Pattern-Entscheidungen persistieren
+
+`sdd pattern accept/reject` existiert seit SPEC-0044 ebenfalls nicht mehr als CLI-Befehl
+(CON-0165). Laut Migrationshinweis im Changelog werden Entscheidungen direkt über die
+Python-API der Registry persistiert — kein Shell-Out auf einen nicht existierenden Befehl.
+
+Frage für jeden Vorschlag aus Schritt 2: "Annehmen? (ja/nein/überspringen)"
 
 Bei "ja":
 ```bash
-sdd pattern accept $ID <PatternName> --reason "<Begründung>"
+python3 -c "
+from pathlib import Path
+from sdd_cli.pattern import PatternRegistry
+PatternRegistry(Path('.')).accept('$ID', '<PatternName>', '<Begründung>', url='<RefactoringGuruURL>')
+"
 ```
 
 Bei "nein": frage nach Ablehnungsgrund, dann:
 ```bash
-sdd pattern reject $ID <PatternName> --reason "<Grund>"
+python3 -c "
+from pathlib import Path
+from sdd_cli.pattern import PatternRegistry
+PatternRegistry(Path('.')).reject('$ID', '<PatternName>', '<Grund>')
+"
 ```
+
+Bei "überspringen": keine Aktion, weder Registry noch Katalog werden verändert.
 
 ## Schritt 4: Regression-Check
 
-[WARN] Falls `sdd regression-check` nicht verfügbar ist: Schritt überspringen und
-`[WARN] sdd regression-check nicht verfügbar` ausgeben.
+[WARN] Falls `sdd spec regression` nicht verfügbar ist: Schritt überspringen und
+`[WARN] sdd spec regression nicht verfügbar` ausgeben.
 
 ```bash
-sdd regression-check $ID
+sdd spec regression $ID
 ```
 
 Zeige Stufe-1- und Stufe-2-Befunde **getrennt** mit Präfix `[rule]` bzw. `[llm]`:
@@ -172,7 +200,7 @@ geändert wird.
 **Führe IMMER — unabhängig davon ob Test-Anpassungen nötig waren — den Regression-Check
 auf der übergeordneten Spec durch** (SPEC-ID aus `spec:`-Frontmatter des Tests):
 ```bash
-sdd regression-check <SPEC-ID>
+sdd spec regression <SPEC-ID>
 ```
 Zeige das Ergebnis wie in Schritt 4 beschrieben. Bei `error`-Severity: stoppen und Konflikt
 melden. Bei `warning`/`info` oder 0 Befunden: Gate-Phase `regression-ok` wird automatisch
@@ -212,8 +240,8 @@ Sind bereits Contracts verknüpft (alle `approved`): direkt zu Schritt 7c.
 ### 7b: Contract-Reviews automatisch durchführen
 
 Führe für jeden soeben erstellten Contract **ohne Rückfrage** durch:
-1. `sdd solid-check CON-XXXX`
-2. `sdd regression-check CON-XXXX`
+1. `sdd spec solid CON-XXXX`
+2. `sdd spec regression CON-XXXX`
 3. Inhaltlichen Review (Prüffragen aus Schritt 5b) + Fixes direkt einarbeiten
 4. `status: approved` setzen
 
