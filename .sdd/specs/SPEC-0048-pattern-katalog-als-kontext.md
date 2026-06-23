@@ -2,7 +2,7 @@
 id: SPEC-0048
 title: Pattern-Katalog als Kontext – Design-Entscheidungen über Specs hinweg wiederverwenden
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-23
 updated: '2026-06-23'
