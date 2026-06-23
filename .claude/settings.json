@@ -374,5 +374,20 @@
       "/run/media/deck/SM512/Development/sdd-framer/tool/sdd_cli/web/ui/dist/assets",
       "/run/media/deck/SM512/Development/sdd-framer/.claude/commands"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/autonomous-guardrail.sh\"",
+            "timeout": 10,
+            "statusMessage": "Guardrail-Check"
+          }
+        ]
+      }
+    ]
   }
 }
