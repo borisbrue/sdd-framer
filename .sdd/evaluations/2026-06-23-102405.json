@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-06-23T10:24:05.112935+00:00",
+  "base_url": "https://localhost:8000",
+  "tier_summary": {
+    "critical": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "normal": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    "edge-case": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "pass_rate": 1.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0095",
+      "title": "Leerer oder fehlender Katalog erzeugt keinen Pattern-Abschnitt",
+      "contract": "CON-0182",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "SUMMARY_EMPTY_OK\nDu bist ein Software-Architekt der GoF-Design-Patterns und architekturelle Patterns auf Spezifikations- und Contract-Ebene empfiehlt.\nAnalysiere das folgende Artefakt und schlage 4 passende Patterns vor.\nVerwende den Refactoring Guru Katalog als Referenzrahmen (https://refactoring.guru/design-patterns/).\n\nFür jeden Vorschlag:\n  - Erkläre WARUM das Pattern hier passt (mindestens 1 Satz)\n  - Nenne eine abgelehnte Alternative mit Begründung\n  - Verlinke die Refactoring Guru Seite d",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0097",
+      "title": "sdd-implement Kontextschritt zeigt etablierte Patterns im Projekt",
+      "contract": "CON-0182",
+      "passed": true,
+      "pass_count": 1,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": true,
+          "request": {
+            "exit_code": 0,
+            "stdout": "1\n",
+            "stderr": ""
+          },
+          "response_status": null,
+          "response_body": "",
+          "llm_verdict": "pass",
+          "llm_reasoning": "OK"
+        }
+      ]
+    }
+  ]
+}
