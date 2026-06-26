@@ -26,11 +26,13 @@ class OpenAICompatCompletionProvider:
         model: str,
         api_key: str = "lm-studio",
         temperature: float = 0.0,
+        enable_thinking: bool = True,
     ) -> None:
         self._base_url = base_url
         self._model = model
         self._api_key = api_key or "lm-studio"
         self._temperature = temperature
+        self._enable_thinking = enable_thinking
 
     def complete(
         self,
@@ -64,6 +66,9 @@ class OpenAICompatCompletionProvider:
         }
         if timeout is not None:
             create_kwargs["timeout"] = timeout
+        if not self._enable_thinking:
+            # Disables Qwen3/DeepSeek extended thinking mode in LM Studio
+            create_kwargs["extra_body"] = {"enable_thinking": False}
 
         response = client.chat.completions.create(**create_kwargs)
         raw_usage = response.usage
@@ -73,7 +78,7 @@ class OpenAICompatCompletionProvider:
             model=self._model,
         ) if raw_usage else None
         return CompletionResult(
-            text=response.choices[0].message.content.strip(),
+            text=(response.choices[0].message.content or "").strip(),
             usage=usage,
         )
 

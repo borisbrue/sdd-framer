@@ -105,7 +105,7 @@ class PatternSuggester:
         now = _utc_now()
         llm_error: str | None = None
         try:
-            result = self._provider.complete(prompt, max_tokens=2048)
+            result = self._provider.complete(prompt, max_tokens=6144)
             suggestions = _parse_pattern_response(result.text, artifact_id)
         except Exception as exc:
             suggestions = []

@@ -104,12 +104,26 @@ llm:
   evaluator:
     provider: claude-cli
     model: claude-sonnet-4-6
-  local_llm:
+  completion:
     provider: openai-compat
-    base_url: http://localhost:1234/v1
-    model: google/gemma-3-4b
+    base_url: http://192.168.0.149:1234/v1
+    model: qwen3.6-35b-a3b
     api_key: lm-studio
     temperature: 0.0
+    enable_thinking: false
+  orchestrator:
+    provider: openai-compat
+    base_url: http://192.168.0.149:1234/v1
+    model: qwen3.6-35b-a3b
+    api_key: lm-studio
+    enable_thinking: false
+  local_llm:
+    provider: openai-compat
+    base_url: http://192.168.0.149:1234/v1
+    model: qwen3.6-35b-a3b
+    api_key: lm-studio
+    temperature: 0.0
+    enable_thinking: false
 task_routing:
   enabled: true
   complexity_threshold: 30
