@@ -220,12 +220,18 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
             spec_text = spec_doc.path.read_text(encoding="utf-8")
 
     contract_text = contract_doc.path.read_text(encoding="utf-8")
-    prompt = _build_review_prompt(contract_text, spec_text)
+    artifact_rel = contract_doc.frontmatter.get("artifact", "")
+    artifact_text = ""
+    if artifact_rel and "<" not in artifact_rel:
+        artifact_path = config.root / artifact_rel
+        if artifact_path.exists():
+            artifact_text = artifact_path.read_text(encoding="utf-8")
+    prompt = _build_review_prompt(contract_text, spec_text, artifact_text)
 
     provider = get_completion_provider(config, "completion")
     import time as _time
     _t0 = _time.monotonic()
-    result = provider.complete(prompt, max_tokens=2048)
+    result = provider.complete(prompt, max_tokens=6144)
     _duration_ms = int((_time.monotonic() - _t0) * 1000)
 
     if result.usage:
@@ -301,8 +307,13 @@ def _link_test_in_contract(contract_path: Path, tst_id: str) -> None:
         )
 
 
-def _build_review_prompt(contract_text: str, spec_text: str) -> str:
+def _build_review_prompt(
+    contract_text: str,
+    spec_text: str,
+    artifact_text: str = "",
+) -> str:
     spec_section = f"\n\n## Referenz-Spec\n\n{spec_text}" if spec_text else ""
+    artifact_section = f"\n\n## Artifact\n\n{artifact_text}" if artifact_text else ""
     return (
         "Du bist ein SDD-Contract-Reviewer. Analysiere den folgenden Contract und:\n\n"
         "1. Prüfe Vollständigkeit und Konsistenz des Contracts\n"
@@ -315,7 +326,7 @@ def _build_review_prompt(contract_text: str, spec_text: str) -> str:
         "NOTES: <Begründung bei needs_revision, sonst leer>\n"
         "TEST_SUGGESTION:\n"
         "<Test-Code oder Gherkin-Szenario>\n\n"
-        f"## Contract\n\n{contract_text}{spec_section}"
+        f"## Contract\n\n{contract_text}{artifact_section}{spec_section}"
     )
 
 

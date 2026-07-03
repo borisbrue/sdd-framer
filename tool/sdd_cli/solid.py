@@ -117,7 +117,7 @@ class LlmSolidChecker:
         label = PRINCIPLE_LABELS[self.principle]
         prompt = _build_single_principle_prompt(artifact_text, artifact_id, self.principle, label)
         try:
-            result = self._provider.complete(prompt, max_tokens=1024)
+            result = self._provider.complete(prompt, max_tokens=4096)
             findings, _, _ = _parse_llm_response(result.text)
             return [f for f in findings if f.principle == self.principle] or findings
         except Exception as exc:
@@ -136,7 +136,7 @@ class BatchLlmSolidChecker:
     def check(self, artifact_text: str, artifact_id: str) -> list[SolidFinding]:
         prompt = _build_batch_prompt(artifact_text, artifact_id, self._filter)
         try:
-            result = self._provider.complete(prompt, max_tokens=2048)
+            result = self._provider.complete(prompt, max_tokens=6144)
             findings, _, _ = _parse_llm_response(result.text)
             if self._filter:
                 findings = [f for f in findings if f.principle == self._filter]

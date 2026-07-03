@@ -57,6 +57,12 @@ def _resolve(raw: dict, component: str, default_block: str) -> dict:
         comp = (raw.get("evaluator") or {}).get("llm") or {}
 
     api_key = comp.get("api_key") or block.get("api_key")
+    enable_thinking_comp = comp.get("enable_thinking")
+    enable_thinking_block = block.get("enable_thinking")
+    enable_thinking = (
+        enable_thinking_comp if enable_thinking_comp is not None
+        else (enable_thinking_block if enable_thinking_block is not None else True)
+    )
     return {
         "provider": comp.get("provider") or block.get("provider") or builtin.get("provider"),
         "model": comp.get("model") or block.get("model") or deprecated_model or builtin.get("model"),
@@ -65,6 +71,7 @@ def _resolve(raw: dict, component: str, default_block: str) -> dict:
         "temperature": comp.get("temperature") if comp.get("temperature") is not None
                        else (block.get("temperature") if block.get("temperature") is not None
                              else 0.0),
+        "enable_thinking": enable_thinking,
     }
 
 
@@ -155,6 +162,7 @@ def get_completion_provider(
         model=model,
         api_key=cfg["api_key"] or "lm-studio",
         temperature=cfg["temperature"],
+        enable_thinking=cfg["enable_thinking"],
     )
 
 

@@ -1,0 +1,333 @@
+{
+  "timestamp": "2026-06-26T14:35:00.805208+00:00",
+  "base_url": "http://localhost:8080",
+  "tier_summary": {
+    "critical": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    "normal": {
+      "passed": 0,
+      "failed": 8,
+      "skipped": 0
+    },
+    "edge-case": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "summary": {
+    "total": 8,
+    "passed": 0,
+    "failed": 8,
+    "pass_rate": 0.0
+  },
+  "scenarios": [
+    {
+      "hol_id": "HOL-0109",
+      "title": "Valide Config – kein Fehler, kein Warning",
+      "contract": "CON-0190",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0110",
+      "title": "Fehlende Pflichtfelder werden mit Pfad gemeldet",
+      "contract": "CON-0190",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0111",
+      "title": "Ungueltiger Provider-Wert wird mit erlaubten Werten gemeldet",
+      "contract": "CON-0190",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0112",
+      "title": "openai-compat ohne base_url ist Error, anthropic ohne api_key ist Warning",
+      "contract": "CON-0190",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0113",
+      "title": "Valide Config – sdd config validate gibt Exit-Code 0",
+      "contract": "CON-0191",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0114",
+      "title": "Fehlerhafte Config – sdd config validate gibt Exit-Code 1",
+      "contract": "CON-0191",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0115",
+      "title": "json-Flag gibt valides JSON-Array auch bei fehlerfreier Config",
+      "contract": "CON-0191",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    },
+    {
+      "hol_id": "HOL-0116",
+      "title": "json-Flag gibt Issue-Objekte mit level path message bei Fehlern",
+      "contract": "CON-0191",
+      "passed": false,
+      "pass_count": 0,
+      "priority": "normal",
+      "task_delta": null,
+      "runs": [
+        {
+          "run": 1,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 2,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        },
+        {
+          "run": 3,
+          "passed": false,
+          "request": {},
+          "response_status": null,
+          "response_body": null,
+          "llm_verdict": "error",
+          "llm_reasoning": "LLM-Planungsfehler: claude CLI nicht gefunden. Installiere Claude Code CLI und melde dich an."
+        }
+      ]
+    }
+  ]
+}

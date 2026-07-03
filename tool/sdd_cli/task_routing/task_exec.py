@@ -51,7 +51,8 @@ class ImplOnlyExecutor:
 
         if not write_targets:
             raise ValueError(
-                f"Keine fehlenden 'from tool.sdd_cli.*'-Importe in {test_file} gefunden. "
+                f"Keine fehlenden 'from sdd_cli.*'- oder 'from tool.sdd_cli.*'-Importe "
+                f"in {test_file} gefunden. "
                 "Alle importierten Module existieren bereits — nichts zu implementieren."
             )
 
@@ -62,7 +63,7 @@ class ImplOnlyExecutor:
                 iteration=iteration,
                 error_context=error_context,
             )
-            result = provider.complete(prompt, max_tokens=4096)
+            result = provider.complete(prompt, max_tokens=6144)
             code = _strip_code_block(result.text)
             impl_file.parent.mkdir(parents=True, exist_ok=True)
             impl_file.write_text(code)
@@ -83,7 +84,9 @@ class ImplOnlyExecutor:
         seen: set[str] = set()
         write_targets: list[tuple[str, Path]] = []
         context_files: list[tuple[str, Path]] = []
-        for m in re.finditer(r"from (tool\.sdd_cli\.[^\s]+) import", test_content):
+        for m in re.finditer(
+            r"from ((?:tool\.)?sdd_cli\.[^\s]+) import", test_content
+        ):
             module = m.group(1)
             if module not in seen:
                 seen.add(module)
@@ -95,7 +98,11 @@ class ImplOnlyExecutor:
         return write_targets, context_files
 
     def _module_to_path(self, module: str) -> Path:
+        # Normalize: sdd_cli.foo → tool/sdd_cli/foo.py
+        #            tool.sdd_cli.foo → tool/sdd_cli/foo.py
         parts = module.split(".")
+        if parts[0] != "tool":
+            parts = ["tool"] + parts
         return self._project_root.joinpath(*parts).with_suffix(".py")
 
     def _build_prompt(
@@ -245,18 +252,21 @@ def _build_skeleton(
     context_files: list[tuple[str, Path]],
 ) -> str:
     """Generiert ein ausfüllbares Code-Skelett für die Zieldatei."""
-    # Zieldatei → Modul-ID: tool/sdd_cli/vision/stats.py → tool.sdd_cli.vision.stats
+    # Zieldatei → Modul-IDs in beiden Varianten:
+    #   tool/sdd_cli/vision/stats.py → tool.sdd_cli.vision.stats  UND  sdd_cli.vision.stats
     parts = impl_file.with_suffix("").parts
     try:
-        target_module = ".".join(parts[parts.index("tool"):])
+        tool_module = ".".join(parts[parts.index("tool"):])
     except ValueError:
         return ""
+    short_module = ".".join(parts[parts.index("sdd_cli"):]) if "sdd_cli" in parts else tool_module
 
-    # Klassen die aus der ZIELDATEI importiert werden (einzeln, kein Comma-Split nötig)
+    # Klassen die aus der ZIELDATEI importiert werden – beide Import-Varianten prüfen
     cls_names: list[str] = list(dict.fromkeys(
         m.group(1)
+        for pattern in (tool_module, short_module)
         for m in re.finditer(
-            rf"from {re.escape(target_module)} import (\w+)", test_content
+            rf"from {re.escape(pattern)} import (\w+)", test_content
         )
     ))
     if not cls_names:
@@ -325,7 +335,7 @@ def _extract_api_signatures(test_content: str) -> str:
 
     # Klassen die in der Zieldatei importiert werden (aus dem Import-Pattern)
     for m in re.finditer(
-        r"from tool\.sdd_cli\.[^\s]+ import ([A-Z][A-Za-z0-9_]+)", test_content
+        r"from (?:tool\.)?sdd_cli\.[^\s]+ import ([A-Z][A-Za-z0-9_]+)", test_content
     ):
         cls_name = m.group(1)
         if cls_name in seen_classes:

@@ -3228,17 +3228,47 @@ def config_show_cmd(section: str | None) -> None:
     console.print(mgr.show(section=section))
 
 
-@config_group.command("validate", help="Prüft die gesamte Konfiguration auf Vollständigkeit.")
-def config_validate_cmd() -> None:
-    cfg = _ensure_project()
-    from .config_manager import ConfigManager
-    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
-    errors = mgr.validate()
-    if not errors:
-        console.print("[green]✓[/] Konfiguration ist valide.")
+@config_group.command("validate", help="Prüft config.yaml auf Pflichtfelder und Provider-Konsistenz (SPEC-0052).")
+@click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe ({level,path,message}[]).")
+def config_validate_cmd(output_json: bool) -> None:
+    import json as _json
+    from pathlib import Path as _Path
+    from .config_validator import ConfigValidator
+
+    root = find_project_root()
+    config_path = _Path(root) / ".sdd" / "config.yaml"
+    if not config_path.exists():
+        if output_json:
+            click.echo(_json.dumps([{"level": "error", "path": "config.yaml", "message": "config.yaml nicht gefunden."}]))
+        else:
+            console.print("[red]✗[/] config.yaml nicht gefunden.")
+        sys.exit(1)
+
+    try:
+        import yaml as _yaml
+        raw = _yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        if output_json:
+            click.echo(_json.dumps([{"level": "error", "path": "config.yaml", "message": f"YAML Parse-Fehler: {exc}"}]))
+        else:
+            console.print(f"[red]✗[/] YAML Parse-Fehler: {exc}")
+        sys.exit(1)
+
+    issues = ConfigValidator(raw).validate()
+    has_errors = any(i.level == "error" for i in issues)
+
+    if output_json:
+        click.echo(_json.dumps([{"level": i.level, "path": i.path, "message": i.message} for i in issues]))
     else:
-        for e in errors:
-            console.print(f"[red]✗[/] {e}")
+        if not issues:
+            console.print("[green]✓[/] Konfiguration ist valide.")
+        else:
+            for issue in issues:
+                color = "red" if issue.level == "error" else "yellow"
+                marker = "✗" if issue.level == "error" else "!"
+                console.print(f"[{color}]{marker}[/] [{issue.level}] {issue.path}: {issue.message}")
+
+    if has_errors:
         sys.exit(1)
 
 
