@@ -103,29 +103,25 @@ llm:
     provider: claude-cli
   evaluator:
     provider: claude-cli
-    model: claude-sonnet-4-6
+  analyzer:
+    provider: claude-cli
   completion:
-    provider: openai-compat
-    base_url: http://192.168.0.149:1234/v1
-    model: qwen3.6-35b-a3b
-    api_key: lm-studio
-    temperature: 0.0
-    enable_thinking: false
+    provider: claude-cli
   orchestrator:
-    provider: openai-compat
-    base_url: http://192.168.0.149:1234/v1
-    model: qwen3.6-35b-a3b
-    api_key: lm-studio
-    enable_thinking: false
-  local_llm:
-    provider: openai-compat
-    base_url: http://192.168.0.149:1234/v1
-    model: qwen3.6-35b-a3b
-    api_key: lm-studio
-    temperature: 0.0
-    enable_thinking: false
+    provider: claude-cli
+  # LM Studio auf 192.168.0.149 ist aktuell nicht erreichbar – deshalb keyfrei
+  # über die Claude-Code-CLI. Zum Reaktivieren: provider auf openai-compat
+  # zurücksetzen (base_url http://192.168.0.149:1234/v1, model qwen3.6-35b-a3b)
+  # und task_routing.enabled wieder auf true.
+  # local_llm:
+  #   provider: openai-compat
+  #   base_url: http://192.168.0.149:1234/v1
+  #   model: qwen3.6-35b-a3b
+  #   api_key: lm-studio
+  #   temperature: 0.0
+  #   enable_thinking: false
 task_routing:
-  enabled: true
+  enabled: false
   complexity_threshold: 30
   max_concurrent: 3
   max_retries: 3

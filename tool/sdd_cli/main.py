@@ -151,9 +151,10 @@ def _check_gh_available() -> None:
                    "Verfügbar: claude, copilot, openai.")
 @click.option("--force-skills", is_flag=True,
               help="Überschreibt vorhandene Skill-Dateien im Ziel-Projekt (SPEC-0018 FR-03).")
-@click.option("--autonomous", is_flag=True,
-              help="Aktiviert hands-off Bypass (defaultMode=bypassPermissions) in "
-                   ".claude/settings.local.json – persönlich, nicht committed (SPEC-0051).")
+@click.option("--autonomous/--no-autonomous", default=True, show_default=True,
+              help="Hands-off Bypass (defaultMode=bypassPermissions) in "
+                   ".claude/settings.local.json – persönlich, nicht committed (SPEC-0051). "
+                   "--no-autonomous für normale Permission-Prompts.")
 def init(target: str, project_title: str, force: bool,
          provider: str, force_skills: bool, autonomous: bool) -> None:
     from .init import get_skill_provider, SKILL_PROVIDERS
