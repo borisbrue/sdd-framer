@@ -1704,6 +1704,10 @@ def contract_propose(spec_id: str, contract_ids: tuple) -> None:
         f"[green]✓[/] Contracts vorgeschlagen für [cyan]{spec_id}[/]: "
         + ", ".join(f"[bold]{c}[/]" for c in contract_ids)
     )
+    # Phase 4 ist zustandsbasiert (CON-0025): sind die Contracts schon
+    # geschrieben, ist sie mit dem Vorschlag bereits erfüllt.
+    for phase in g.evaluate_condition_phases(spec_id):
+        console.print(f"[green]✓[/] Gate-Phase [bold]{phase}[/] erfüllt")
 
 
 @contract_group.command("analyze", help="Führt Konfliktanalyse für vorgeschlagene Contracts durch.")
