@@ -452,6 +452,10 @@ def new_holdout(contract_id: str, spec_id: str, title: str, priority: str, hol_t
     console.print(
         f"  [yellow]→[/] Datei ist in [bold].sdd/holdout/[/] – für den Code-Agenten nicht sichtbar."
     )
+    console.print(
+        "  [yellow]→[/] [bold]status: ready[/] – das Szenario wird evaluiert. "
+        "Auf [cyan]wip[/] setzen, um es vorübergehend auszuschließen."
+    )
 
 
 @new.command("agents-md", help="[Entfernt] In sdd init integriert.")
@@ -564,8 +568,18 @@ def _run_evaluate(
     report = run_evaluation(cfg, base_url, hol_ids=ids_filter, spec_id=spec_id,
                             container_name=container_name, tier_filter=tier_filter)
 
+    def _skip_note() -> str:
+        if not report.skipped_by_status:
+            return ""
+        detail = ", ".join(f"{n}x status: {st}"
+                           for st, n in sorted(report.skipped_by_status.items()))
+        return (f" {sum(report.skipped_by_status.values())} Szenario(en) wurden wegen "
+                f"ihres Status nicht evaluiert ({detail}).")
+
     if tier_filter and report.total == 0:
-        click.echo(f"Keine '{tier_filter}'-Holdouts gefunden.")
+        # Der Skip-Hinweis ist hier entscheidend: sonst sieht ein Lauf, in dem
+        # alle Szenarien auf wip stehen, aus wie "es gibt keine".
+        click.echo(f"Keine '{tier_filter}'-Holdouts gefunden.{_skip_note()}")
         sys.exit(0)
 
     report_path = None
@@ -605,6 +619,13 @@ def _run_evaluate(
         + (" · [green]Auto-Merge-Schwelle erreicht ✓[/]" if passed
            else " · [red]Unter 90 % – kein Auto-Merge[/]")
     )
+    if report.skipped_by_status:
+        console.print(f"[yellow]⚠[/]{_skip_note()}")
+        if report.total == 0:
+            console.print(
+                "  [dim]Ein Lauf ohne evaluierte Szenarien prüft nichts. "
+                "Setze status auf [cyan]ready[/] oder [cyan]active[/].[/]"
+            )
 
     if not passed and final_attempt and spec_id:
         _set_evaluation_failed(cfg, spec_id, report_path)
