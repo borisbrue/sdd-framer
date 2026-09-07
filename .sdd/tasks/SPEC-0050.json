@@ -8,11 +8,11 @@
     "complexity": "low",
     "context_size": "M",
     "estimated_tokens": 2500,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [],
     "error_context": [],
     "con_ids": [],
@@ -33,11 +33,11 @@
     "complexity": "medium",
     "context_size": "M",
     "estimated_tokens": 3500,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [
       "Factory: Builtin-Default completion auf claude-cli umstellen"
     ],
@@ -60,11 +60,11 @@
     "complexity": "low",
     "context_size": "M",
     "estimated_tokens": 2500,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [
       "Factory: Builtin-Default completion auf claude-cli umstellen"
     ],
@@ -87,11 +87,11 @@
     "complexity": "medium",
     "context_size": "M",
     "estimated_tokens": 3000,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [
       "Factory: Fail-Loud bei nicht nutzbarem Provider ohne stillen Fallback"
     ],
@@ -114,11 +114,11 @@
     "complexity": "medium",
     "context_size": "M",
     "estimated_tokens": 3000,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [
       "Factory: Fail-Loud bei nicht nutzbarem Provider ohne stillen Fallback"
     ],
@@ -141,11 +141,11 @@
     "complexity": "low",
     "context_size": "S",
     "estimated_tokens": 1500,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "b2fe5b8",
     "dependencies": [
       "Factory: Builtin-Default completion auf claude-cli umstellen"
     ],
@@ -168,11 +168,11 @@
     "complexity": "low",
     "context_size": "S",
     "estimated_tokens": 1500,
-    "status": "pending",
+    "status": "committed",
     "retry_count": 0,
     "llm_id": null,
     "container_id": null,
-    "commit_hash": null,
+    "commit_hash": "00a1a01",
     "dependencies": [
       "Factory: Builtin-Default completion auf claude-cli umstellen",
       "Factory: Fail-Loud bei nicht nutzbarem Provider ohne stillen Fallback"
