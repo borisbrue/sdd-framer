@@ -28,8 +28,15 @@ def container_name(spec_id: str) -> str:
     return f"sdd-dev-{spec_id.lower().replace('_', '-')}"
 
 
-def branch_name(spec_id: str) -> str:
-    return f"dev/{spec_id}"
+def branch_name(spec_id: str, *, prefix: str = "dev") -> str:
+    """Bildet den Branchnamen. Einzige Stelle, an der das Schema entsteht.
+
+    Es gibt zwei Konventionen: `dev/` fuer den Entwicklungscontainer (SPEC-0021)
+    und `feat/` fuer finalize. Vorher berechneten finalize.py und dieses Modul den
+    Namen unabhaengig voneinander — und liefen auseinander: committet wurde auf
+    feat/, der PR entstand von dev/, ohne die Arbeit zu enthalten.
+    """
+    return f"{prefix}/{spec_id}"
 
 
 # ── LLM env-var forwarding ───────────────────────────────────────────────────
@@ -201,7 +208,13 @@ def _branch_exists(branch: str) -> bool:
 
 class PRStrategy(abc.ABC):
     @abc.abstractmethod
-    def create(self, spec_id: str, cfg: SddConfig) -> None: ...
+    def create(self, spec_id: str, cfg: SddConfig, branch: str | None = None) -> None:
+        """branch=None faellt auf branch_name(spec_id) zurueck (dev/-Schema).
+
+        Aufrufer, die auf einem anderen Branch arbeiten, muessen ihn uebergeben —
+        sonst leitet die Strategie einen eigenen ab und der PR zeigt woandershin.
+        """
+        ...
 
 
 class GhFallbackPRStrategy(PRStrategy):
@@ -211,8 +224,8 @@ class GhFallbackPRStrategy(PRStrategy):
         self._title = title
         self._body = body
 
-    def create(self, spec_id: str, cfg: SddConfig) -> str | None:
-        branch = branch_name(spec_id)
+    def create(self, spec_id: str, cfg: SddConfig, branch: str | None = None) -> str | None:
+        branch = branch or branch_name(spec_id)
         title = self._title or f"feat({spec_id}): Implementierung via sdd finalize"
         body = self._body or (
             f"Automatisch generiert von `sdd finalize {spec_id}`.\n\n"
@@ -229,20 +242,29 @@ class GhFallbackPRStrategy(PRStrategy):
                 text=True,
             )
         except FileNotFoundError:
-            LocalGitStrategy().create(spec_id, cfg)
+            print("[WARN] 'gh' nicht gefunden – PR wird als lokale Datei abgelegt.",
+                  file=sys.stderr)
+            LocalGitStrategy().create(spec_id, cfg, branch)
             return None
         if result.returncode == 0:
             for line in result.stdout.splitlines():
                 if line.startswith("https://"):
                     return line.strip()
             return result.stdout.strip() or None
-        LocalGitStrategy().create(spec_id, cfg)
+        # Grund sichtbar machen, statt still auf die lokale Datei auszuweichen.
+        # Haeufigster Fall: der Branch liegt noch nicht auf dem Remote.
+        reason = (result.stderr or result.stdout).strip().splitlines()
+        print(f"[WARN] 'gh pr create' fehlgeschlagen (Branch {branch}) – "
+              f"PR wird als lokale Datei abgelegt.", file=sys.stderr)
+        for line in reason[:5]:
+            print(f"       {line}", file=sys.stderr)
+        LocalGitStrategy().create(spec_id, cfg, branch)
         return None
 
 
 class LocalGitStrategy(PRStrategy):
-    def create(self, spec_id: str, cfg: SddConfig) -> None:
-        branch = branch_name(spec_id)
+    def create(self, spec_id: str, cfg: SddConfig, branch: str | None = None) -> None:
+        branch = branch or branch_name(spec_id)
 
         result = _git(["diff", f"main..{branch}", "--stat"], capture=True, check=False)
         diff_stat = result.stdout.strip() if result.returncode == 0 else "(diff nicht verfügbar)"

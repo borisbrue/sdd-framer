@@ -18,6 +18,7 @@ from .config import SddConfig
 from .dev_container import (
     DevContainerManager,
     GhFallbackPRStrategy,
+    branch_name,
     container_name,
     get_runtime,
     save_test_result,
@@ -74,7 +75,7 @@ class SpecFinalizer:
         branch: str | None = None,
         skip_container: bool = False,
     ) -> FinalizeReport:
-        effective_branch = branch or f"{FINALIZE_BRANCH_PREFIX}/{spec_id}"
+        effective_branch = branch or branch_name(spec_id, prefix=FINALIZE_BRANCH_PREFIX)
         root = self._cfg.root
 
         # 1. Branch sicherstellen
@@ -112,16 +113,17 @@ class SpecFinalizer:
             )
 
         if skip_container:
-            pr_url, pr_path = self._create_pr(spec_id)
+            pr_url, pr_path, pr_error = self._create_pr(
+                spec_id, effective_branch, commit_hash)
             return FinalizeReport(
                 spec_id=spec_id,
                 branch=effective_branch,
                 commit_hash=commit_hash,
-                tests_passed=True,
+                tests_passed=pr_error is None,
                 test_output="⚠ Container-Tests wurden übersprungen",
                 pr_url=pr_url,
                 pr_path=pr_path,
-                error=None,
+                error=pr_error,
             )
 
         docker_cfg = self._cfg.raw.get("docker", {})
@@ -203,7 +205,11 @@ class SpecFinalizer:
                     pr_path=None,
                     error=compliance_error,
                 )
-            pr_url, pr_path = self._create_pr(spec_id)
+            pr_url, pr_path, pr_error = self._create_pr(
+                spec_id, effective_branch, commit_hash)
+            if pr_error:
+                error = pr_error
+                tests_passed = False
         else:
             error = f"Tests fehlgeschlagen im Container:\n{test_output[:1000]}"
 
@@ -252,12 +258,45 @@ class SpecFinalizer:
                 lines.append(f"    → {issue.hint}")
         return "\n".join(lines)
 
-    def _create_pr(self, spec_id: str) -> tuple[str | None, Path | None]:
+    def _create_pr(
+        self, spec_id: str, branch: str, commit_hash: str | None
+    ) -> tuple[str | None, Path | None, str | None]:
+        """Erstellt den PR vom finalisierten Branch. Gibt (url, pfad, fehler) zurueck.
+
+        Der Branch wird uebergeben, nicht erneut abgeleitet. Vorher rief diese
+        Methode strategy.create(spec_id, cfg) auf, worauf die Strategie sich ihren
+        Branch selbst bildete — ueber das dev/-Schema. Committet wurde aber auf
+        feat/, sodass der PR die finalisierte Arbeit nicht enthielt.
+        """
+        guard = self._branch_missing_commit(branch, commit_hash)
+        if guard:
+            # Kein PR und kein implemented-Status: ein PR ohne die finalisierte
+            # Arbeit ist schlimmer als ein Abbruch, weil er beim Merge nichts
+            # liefert und die Spec trotzdem Vollzug meldet.
+            return None, None, guard
+
         strategy = GhFallbackPRStrategy()
-        pr_url = strategy.create(spec_id, self._cfg)
+        pr_url = strategy.create(spec_id, self._cfg, branch=branch)
         pr_path = None if pr_url else self._cfg.root / ".sdd" / "prs" / f"PR-{spec_id}.md"
         self._mark_implemented(spec_id)
-        return pr_url, pr_path
+        return pr_url, pr_path, None
+
+    def _branch_missing_commit(self, branch: str, commit_hash: str | None) -> str | None:
+        """Prueft, ob der PR-Head den Finalize-Commit enthaelt."""
+        if not commit_hash:
+            return None
+        result = _git(
+            ["merge-base", "--is-ancestor", commit_hash, branch],
+            cwd=self._cfg.root,
+        )
+        if result.returncode == 0:
+            return None
+        return (
+            f"✗ Branch '{branch}' enthaelt den Finalize-Commit {commit_hash[:12]} nicht — "
+            f"kein PR erstellt.\n"
+            f"  Ein PR von diesem Branch wuerde die finalisierte Arbeit nicht enthalten.\n"
+            f"  Pruefe: git log --oneline {branch} | head"
+        )
 
     def _mark_implemented(self, spec_id: str) -> None:
         from .frontmatter import parse_safe, patch_status
