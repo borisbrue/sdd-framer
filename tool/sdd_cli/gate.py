@@ -24,6 +24,16 @@ _PHASE_PREDECESSOR: dict[str, str | None] = {
 }
 
 
+def _phase_rank(phase: str | None) -> int:
+    """Position einer Phase in PHASE_ORDER. None und Unbekanntes ergeben -1."""
+    if phase is None:
+        return -1
+    try:
+        return PHASE_ORDER.index(phase)
+    except ValueError:
+        return -1
+
+
 @dataclass
 class GateCheckResult:
     blocked: bool
@@ -266,6 +276,14 @@ class ExecutionGate:
         entry: dict = {"phase": phase, "completed_at": self._now(), "result": result}
         entry.update(extra)
         data["phase_history"].append(entry)
-        if result == "ok":
+        if result == "ok" and _phase_rank(phase) >= _phase_rank(data.get("pipeline_phase")):
+            # pipeline_phase nur vorwaerts bewegen. evaluate_condition_phases()
+            # schliesst Phasen nachtraeglich ab und laeuft aus can_start_phase()
+            # heraus, also aus einem Lesepfad. Ohne diesen Guard ueberschreibt ein
+            # spaet erfuelltes contracts-draft ein bereits gesetztes
+            # execute-unlocked und blockiert das Gate erneut.
+            #
+            # Die Historie bleibt davon unberuehrt: sie traegt den Abschluss
+            # weiterhin, nur der gemeldete Stand faellt nicht zurueck.
             data["pipeline_phase"] = phase
         self._save(spec_id, data)

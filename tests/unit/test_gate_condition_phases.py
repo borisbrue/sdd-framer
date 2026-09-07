@@ -202,3 +202,66 @@ class TestChainIsPassable:
             g.mark_phase_complete("SPEC-0001", phase)
 
         assert not g.check("SPEC-0001").blocked
+
+
+# ─── pipeline_phase bewegt sich nur vorwaerts ─────────────────────────────────
+
+class TestPipelinePhaseNeverRegresses:
+    """evaluate_condition_phases() schreibt aus einem Lesepfad heraus.
+
+    can_start_phase() ruft es auf, und mark_phase_complete() setzte
+    pipeline_phase bedingungslos. Eine nachtraeglich abgeschlossene
+    Bedingungsphase konnte damit einen weiter fortgeschrittenen Stand
+    ueberschreiben. Beide Faelle unten sind genau so aufgetreten.
+    """
+
+    def _phase(self, gate: ExecutionGate, spec_id: str = "SPEC-0001") -> str | None:
+        return gate._load(spec_id).get("pipeline_phase")
+
+    def test_late_spec_draft_does_not_overwrite_later_phase(self, tmp_path):
+        # `sdd regression` markiert regression-ok ohne can_start_phase-Guard
+        # (main.py:1636/1678). spec-draft war zu dem Zeitpunkt offen, weil es
+        # dafuer keinen CLI-Befehl gab.
+        _spec(tmp_path)
+        g = ExecutionGate(tmp_path)
+        g.mark_phase_complete("SPEC-0001", "regression-ok")
+
+        g.can_start_phase("SPEC-0001", "spec-approved")
+
+        assert self._phase(g) == "regression-ok"
+
+    def test_late_contracts_draft_does_not_relock_the_gate(self, tmp_path):
+        # Schlimmster Fall: die fehlende Artefaktdatei wird nach der Freigabe
+        # angelegt. contracts-draft wird dann erfuellt und darf execute-unlocked
+        # nicht ueberschreiben -- sonst blockiert `sdd execute` wieder.
+        _spec(tmp_path)
+        _contract(tmp_path, "CON-0001", "contracts/api/beispiel.yaml", with_artifact_file=False)
+        g = ExecutionGate(tmp_path)
+        g.mark_phase_complete("SPEC-0001", "contracts-proposed", proposed=["CON-0001"])
+        for phase in ("regression-ok", "spec-approved", "execute-unlocked"):
+            g.mark_phase_complete("SPEC-0001", phase)
+        assert self._phase(g) == "execute-unlocked"
+
+        _write(tmp_path / "contracts/api/beispiel.yaml", "openapi: 3.1.0\n")
+        g.can_start_phase("SPEC-0001", "execute-unlocked")
+
+        assert self._phase(g) == "execute-unlocked"
+        assert g.check("SPEC-0001").blocked is False
+
+    def test_phase_is_still_recorded_in_history(self, tmp_path):
+        # Der Guard unterdrueckt nur den Stand, nicht den Abschluss.
+        _spec(tmp_path)
+        g = ExecutionGate(tmp_path)
+        g.mark_phase_complete("SPEC-0001", "regression-ok")
+        g.can_start_phase("SPEC-0001", "spec-approved")
+
+        done = {e["phase"] for e in g._load("SPEC-0001")["phase_history"]
+                if e.get("result") == "ok"}
+        assert "spec-draft" in done
+
+    def test_normal_forward_progress_is_unaffected(self, tmp_path):
+        _spec(tmp_path)
+        g = ExecutionGate(tmp_path)
+        for phase in PHASE_ORDER:
+            g.mark_phase_complete("SPEC-0001", phase)
+            assert self._phase(g) == phase
