@@ -278,17 +278,6 @@ Tabellarische Übersicht aller Specs mit Status, Contract- und Test-Coverage.
 
 ---
 
-### `sdd status-check` — Content-Hash-Prüfung
-
-```bash
-sdd status-check [--fix]
-```
-
-Vergleicht Content-Hashes mit gespeichertem Stand und meldet veraltete Status.  
-`--fix`: Aktualisiert Status automatisch.
-
----
-
 ### `sdd start` — TDD-Implementierungsphase
 
 ```bash
@@ -423,7 +412,18 @@ sdd mark-false-positive <SPEC-XXXX>
 sdd install-hooks
 ```
 
-Installiert einen `pre-commit`-Hook, der `sdd status-check --fix` vor jedem Commit ausführt.
+Installiert einen `pre-commit`-Hook. Vor jedem Commit laufen dann:
+
+1. **Status-Check** — inhaltlich geänderte Specs und Contracts fallen von
+   `approved`/`implemented` zurück auf `review`. Sind die Dateien Teil des Commits,
+   wird der Statuswechsel mit eingecheckt. Schlägt der Check fehl, meldet er sich,
+   blockiert den Commit aber nicht.
+2. **Regressions-Gate** — betrifft der Commit `main.py`, `routes/*.py` oder `App.tsx`,
+   werden die Tests der betroffenen Specs ausgeführt und der Commit bei roten Tests
+   abgebrochen.
+
+Es gibt kein eigenes `sdd status-check`-Kommando mehr (entfernt mit SPEC-0044); die
+Prüfung läuft ausschließlich über diesen Hook.
 
 ---
 
