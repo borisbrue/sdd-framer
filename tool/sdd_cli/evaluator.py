@@ -62,6 +62,9 @@ class EvaluationReport:
     timestamp: str
     base_url: str
     scenarios: list[ScenarioResult] = field(default_factory=list)
+    # Wegen status ausgeschlossene Szenarien, nach Statuswert. Ohne diese Zahl
+    # ist ein leerer Lauf nicht von "keine Szenarien vorhanden" unterscheidbar.
+    skipped_by_status: dict[str, int] = field(default_factory=dict)
 
     @property
     def total(self) -> int:
@@ -100,6 +103,7 @@ class EvaluationReport:
                 "passed": self.passed,
                 "failed": self.total - self.passed,
                 "pass_rate": round(self.pass_rate, 4),
+                "skipped_by_status": dict(self.skipped_by_status),
             },
             "scenarios": [],
         }
@@ -118,13 +122,26 @@ class EvaluationReport:
 
 
 _EVAL_STATUSES = {"active", "ready"}
-_STRUCTURED_STATUSES = {"active"}
 
 
 def _load_holdout_docs(config: SddConfig, spec_id: str | None = None) -> list:
-    docs = []
+    docs, _ = _load_holdout_docs_with_skips(config, spec_id)
+    return docs
+
+
+def _load_holdout_docs_with_skips(
+    config: SddConfig, spec_id: str | None = None
+) -> tuple[list, dict[str, int]]:
+    """Laedt evaluierbare HOL-Dokumente und zaehlt die wegen Status verworfenen.
+
+    Die Zaehlung ist noetig, weil ein Szenario mit `status: wip` sonst spurlos
+    verschwindet: der Lauf meldet 0 Szenarien, und dass ueberhaupt welche da
+    waren, sieht niemand. Die Templates erzeugten genau diesen Status.
+    """
+    docs: list = []
+    skipped: dict[str, int] = {}
     if not config.holdout_dir.exists():
-        return docs
+        return docs, skipped
     for md in sorted(config.holdout_dir.rglob("*.md")):
         doc = parse_safe(md)
         if not doc:
@@ -132,12 +149,14 @@ def _load_holdout_docs(config: SddConfig, spec_id: str | None = None) -> list:
         fm = doc.frontmatter
         if not fm.get("id", "").startswith("HOL-"):
             continue
-        if fm.get("status", "active") not in _EVAL_STATUSES:
-            continue
         if spec_id and fm.get("spec") != spec_id:
             continue
+        status = fm.get("status", "active")
+        if status not in _EVAL_STATUSES:
+            skipped[status] = skipped.get(status, 0) + 1
+            continue
         docs.append(doc)
-    return docs
+    return docs, skipped
 
 
 def _build_plan_prompt(scenario_title: str, scenario_body: str, base_url: str) -> str:
@@ -259,7 +278,7 @@ def run_evaluation(
     """
     from .holdout_runner import is_structured_holdout, run_structured_evaluation
 
-    all_docs = _load_holdout_docs(config, spec_id=spec_id)
+    all_docs, skipped_by_status = _load_holdout_docs_with_skips(config, spec_id=spec_id)
     if hol_ids:
         all_docs = [d for d in all_docs if d.frontmatter.get("id") in hol_ids]
 
@@ -267,6 +286,10 @@ def run_evaluation(
     legacy_docs = [d for d in all_docs if not is_structured_holdout(d)]
 
     print(f"  {len(structured_docs)} strukturierte + {len(legacy_docs)} Legacy-Holdouts", flush=True)
+    if skipped_by_status:
+        detail = ", ".join(f"{n}x status: {st}" for st, n in sorted(skipped_by_status.items()))
+        print(f"  {sum(skipped_by_status.values())} Szenario(en) uebersprungen ({detail})",
+              flush=True)
 
     # Strukturierte Holdouts: deterministisch
     docker_runtime = config.raw.get("docker", {}).get("runtime", "docker")
@@ -291,6 +314,7 @@ def run_evaluation(
     report = EvaluationReport(
         timestamp=datetime.now(timezone.utc).isoformat(),
         base_url=base_url,
+        skipped_by_status=skipped_by_status,
     )
     if struct_report:
         report.scenarios.extend(struct_report.scenarios)

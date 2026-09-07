@@ -3,7 +3,9 @@ id: HOL-XXXX
 title: "<Szenario-Name>"
 spec: SPEC-XXXX
 contract: CON-XXXX
-status: wip              # active | disabled | wip
+status: ready            # ready | active | disabled | wip
+                         # ready und active werden evaluiert, wip und disabled nicht
+                         # (SPEC-0033 FR-03; evaluator._EVAL_STATUSES)
 priority: normal         # critical | normal | edge-case
 type: http
 created: YYYY-MM-DD
