@@ -2,10 +2,10 @@
 id: SPEC-0050
 title: Keyfreies LLM-Provider-Routing – claude-cli als Default, keine stillen Fallbacks
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-23
-updated: '2026-06-23'
+updated: '2026-09-07'
 version: 0.3.0
 priority: high
 tags:
@@ -75,21 +75,21 @@ nutzbar ist, scheitert der Aufruf **laut und klar** statt still auf den Key zur�
 ein leeres Ergebnis vorzutäuschen.
 
 **Erfolgskriterien (messbar):**
-- [ ] `get_completion_provider(config, "completion")` liefert ohne jegliche `llm`-Konfiguration
+- [x] `get_completion_provider(config, "completion")` liefert ohne jegliche `llm`-Konfiguration
   einen `claude-cli`-Provider (kein `anthropic`).
-- [ ] Ist der gewählte Provider nicht nutzbar (z. B. `claude` CLI fehlt, oder `anthropic` ohne
+- [x] Ist der gewählte Provider nicht nutzbar (z. B. `claude` CLI fehlt, oder `anthropic` ohne
   Key), schlägt der Aufruf mit einer eindeutigen Fehlermeldung fehl – **kein** automatischer
   Wechsel auf einen anderen Provider.
-- [ ] `pattern.py` und `solid.py` melden einen LLM-Fehler sichtbar (`[WARN] … übersprungen: <Grund>`)
+- [x] `pattern.py` und `solid.py` melden einen LLM-Fehler sichtbar (`[WARN] … übersprungen: <Grund>`)
   und geben ihn nicht als „keine Vorschläge" / „compliant" aus.
-- [ ] Der `anthropic`-Provider bleibt nutzbar, wenn explizit konfiguriert
+- [x] Der `anthropic`-Provider bleibt nutzbar, wenn explizit konfiguriert
   (`llm.completion.provider: anthropic` + Key) – unverändertes Verhalten.
-- [ ] Das Holdout-Gate (`evaluator`) bleibt unverändert keyfrei (Regressionssicherung).
-- [ ] Ein frisch per `sdd init` erzeugtes Projekt ist ohne `ANTHROPIC_API_KEY` arbeitsfähig —
+- [x] Das Holdout-Gate (`evaluator`) bleibt unverändert keyfrei (Regressionssicherung).
+- [x] Ein frisch per `sdd init` erzeugtes Projekt ist ohne `ANTHROPIC_API_KEY` arbeitsfähig —
   die Blueprint-`config.yaml` setzt keinen Key-Provider (FR-06).
-- [ ] Keine Komponente fällt ohne explizite Konfiguration auf einen Key-Provider zurück —
+- [x] Keine Komponente fällt ohne explizite Konfiguration auf einen Key-Provider zurück —
   weder über `_COMPLETION_BUILTIN` noch über den Fallback in `get_completion_provider` (FR-07).
-- [ ] Unit-Tests decken ab: Default-Auflösung auf claude-cli, lautes Scheitern ohne Fallback,
+- [x] Unit-Tests decken ab: Default-Auflösung auf claude-cli, lautes Scheitern ohne Fallback,
   sichtbare Fehlermeldung in pattern/solid, anthropic-Opt-in via Config.
 
 **Nicht-Ziele (explizit):**
