@@ -52,6 +52,11 @@ class SddConfig:
         return [d for d in [self.tests_dir, self.project_tests_dir] if d.exists()]
 
     @property
+    def adr_dir(self) -> Path:
+        """Ablageort der ADRs. Konfigurierbar wie traceability.output_path."""
+        return self.root / self.raw.get("adr", {}).get("output_dir", "docs/adr")
+
+    @property
     def docs_dir(self) -> Path:
         return self.sdd_dir / "docs"
 

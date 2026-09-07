@@ -11,6 +11,7 @@ from .config import SddConfig
 
 # Welches Template ist Standard für welche Art?
 TEMPLATE_MAP = {
+    "adr":            ("adr",            "default.md"),
     "spec":           ("spec",           "default.md"),
     "spec-bug-fix":   ("spec",           "bug-fix.md"),
     "test":           ("test",           "default.md"),

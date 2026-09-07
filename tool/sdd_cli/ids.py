@@ -1,4 +1,4 @@
-"""Vergabe und Erkennung von eindeutigen IDs (SPEC, CON, TST)."""
+"""Vergabe und Erkennung von eindeutigen IDs (SPEC, CON, TST, ADR)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,6 +14,7 @@ KINDS = {
     "test":     "test_prefix",
     "project":  "project_prefix",
     "holdout":  "holdout_prefix",
+    "adr":      "adr_prefix",
 }
 
 
@@ -29,6 +30,8 @@ def search_dirs(config: SddConfig, kind: str) -> list[Path]:
         return [config.projects_dir]
     if kind == "holdout":
         return [config.holdout_dir]
+    if kind == "adr":
+        return [config.adr_dir]
     raise ValueError(f"Unbekannte Art: {kind}")
 
 
