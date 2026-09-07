@@ -62,3 +62,18 @@ Feature: CLI-Cleanup — pattern und dev Gruppen entfernt
     Then enthält sie den Text "pattern" im Kontext einer Entfernung
     And enthält sie den Text "dev" im Kontext einer Entfernung
 ```
+
+## LLM Review Notes
+
+Der Contract ist inhaltlich sinnvoll, aber in vier Punkten nicht abnahmefähig:
+
+1. **Status-Widerspruch:** Frontmatter sagt `status: approved`, der Body-Header `**Status:** draft`. Eine der beiden Angaben ist falsch.
+2. **Kaputte Rückverlinkung:** Der Contract referenziert `spec: SPEC-0044`, aber SPEC-0044 listet unter `contracts:` nur CON-0169/CON-0170 und unter `tests:` nur TST-0201/TST-0202. Weder CON-0165 noch das hier deklarierte TST-0193 tauchen dort auf — die Traceability-Matrix bricht.
+3. **Nicht verifizierbare Assertion in der Gherkin-Datei:** `And die Fehlermeldung enthält "unbekannter Befehl"` ist gegen die reale Implementierung falsch. Die CLI ist eine Click-Gruppe (`sdd_cli.main.cli`); Click gibt englisch `Error: No such command 'pattern'.` mit Exit-Code 2 aus. Die Garantie muss entweder auf den tatsächlichen Text/Exit-Code 2 umformuliert oder auf „Gruppe nicht in `cli.commands` registriert" abstrahiert werden.
+4. **Unmessbare Garantien ohne Szenario:**
+   - „`sdd obsidian`/`sdd pwa` bleiben *vollständig funktionsfähig*" — nur `obsidian --help` ist abgedeckt, für `pwa` existiert gar kein Szenario; „vollständig" ist kein prüfbares Kriterium (Vorschlag: konkrete Subcommand-Liste einfrieren).
+   - „`DevContainerManager`-Modul bleibt als interne Dependency erhalten" — keinerlei Szenario; muss als Import-/Nutzungsassertion formuliert werden (`from sdd_cli.dev_container import DevContainerManager` importierbar).
+   - „`CHANGELOG.md` enthält den Text `dev` im Kontext einer Entfernung" — `dev` ist ein triviales Substring-Match; „im Kontext einer Entfernung" ist nicht operationalisiert. Vorschlag: Pflicht auf eine `### Removed`-Sektion, die die Zeichenketten `sdd pattern` und `sdd dev` enthält.
+   - Invariante „Obsidian- und PWA-Tests bleiben grün" nennt keine Testdateien.
+
+Zusätzlich ambig (aus der Spec geerbt): Die Subcommand-Liste mischt `pattern-suggest` (Top-Level-Schreibweise) mit `pattern accept/reject/list` (Gruppen-Schreibweise). Der Contract sollte festlegen, ob beide Formen verschwinden. Ebenfalls offen ist Spec-Frage 9.4 (Deprecation-Aliases vs. Hard-Cut) — der Contract setzt implizit den Hard-Cut, ohne das zu benennen.
