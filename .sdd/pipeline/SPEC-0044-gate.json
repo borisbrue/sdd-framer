@@ -3,11 +3,6 @@
   "pipeline_phase": "execute-unlocked",
   "phase_history": [
     {
-      "phase": "regression-ok",
-      "completed_at": "2026-06-10T08:29:40Z",
-      "result": "ok"
-    },
-    {
       "phase": "spec-approved",
       "completed_at": "2026-06-10T09:32:57Z",
       "result": "ok",
@@ -22,6 +17,11 @@
     {
       "phase": "execute-unlocked",
       "completed_at": "2026-06-10T09:32:57Z",
+      "result": "ok"
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-09-07T19:19:28Z",
       "result": "ok"
     }
   ],

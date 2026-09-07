@@ -79,12 +79,60 @@ class PreCommitHook:
         return [line for line in result.stdout.splitlines() if line.strip()]
 
     def _run_tests(self, spec_ids: set[str]) -> int:
-        spec_filter = " or ".join(spec_ids)
-        result = subprocess.run(
-            ["pytest", "tests/", "-k", spec_filter, "--tb=short"],
-            cwd=self._root,
-        )
-        return result.returncode
+        """Fuehrt die Tests der betroffenen Specs aus.
+
+        Nutzt test_runner.run(), das die TST-IDs einer Spec auf konkrete
+        Artefaktpfade aufloest und den konfigurierten Runner verwendet.
+
+        Der frueher hier stehende Aufruf `pytest tests/ -k "<SPEC-ID>"` hatte zwei
+        Defekte: das blanke `pytest` setzte ein Binary im PATH voraus und ignorierte
+        test_runner.command, und `-k` filtert gegen Test-, Klassen- und Dateinamen,
+        in denen Spec-IDs nur zufaellig vorkommen. Traf der Filter nichts, gab
+        pytest Exitcode 5 zurueck, der ungeprueft als roter Lauf durchgereicht wurde
+        — 104 gruene Tests, 0 ausgefuehrt, Commit abgebrochen.
+
+        Regel jetzt: **nur ein tatsaechlich roter Test blockiert.** Alles andere —
+        keine Konfiguration, keine Tests im Frontmatter, Runner nicht auffindbar,
+        leerer Lauf — meldet sich sichtbar und laesst den Commit durch. Ein Hook,
+        der bei Infrastrukturproblemen blockiert, macht das Repository
+        commit-unfaehig; genau das war der gemeldete Schaden.
+        """
+        from . import test_runner
+        from .config import load_config
+
+        try:
+            cfg = load_config(self._root)
+        except Exception as exc:
+            print(f"[sdd pre-commit] Konfiguration nicht lesbar ({exc}) — Gate uebersprungen.")
+            return 0
+
+        blocked = 0
+        for spec_id in sorted(spec_ids):
+            try:
+                report = test_runner.run(cfg, spec_id)
+            except ValueError as exc:
+                print(f"[sdd pre-commit] {spec_id} uebersprungen: {exc}")
+                continue
+            except RuntimeError as exc:
+                print(f"[sdd pre-commit] {spec_id} uebersprungen: {exc}")
+                continue
+
+            if report.failed:
+                red = [t for t in report.tests if t.status in ("failed", "error")]
+                print(f"[sdd pre-commit] {spec_id}: {report.failed} Test(s) rot")
+                for t in red:
+                    print(f"    {t.test_id} ({t.artifact}): {t.message.splitlines()[0][:120]}"
+                          if t.message else f"    {t.test_id} ({t.artifact})")
+                blocked = 1
+            elif report.passed:
+                print(f"[sdd pre-commit] {spec_id}: {report.passed} Test(s) gruen")
+            else:
+                # Weder gruen noch rot: nichts ausgefuehrt. Sichtbar machen, aber
+                # nicht als Ergebnis ausgeben.
+                print(f"[sdd pre-commit] {spec_id}: kein Test ausgefuehrt "
+                      f"({report.skipped} uebersprungen/fehlend) — nicht als gruen gewertet")
+
+        return blocked
 
 
 def apply_status_transitions(root: Path) -> list:

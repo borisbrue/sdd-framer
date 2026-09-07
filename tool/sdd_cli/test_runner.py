@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import shlex
 import shutil
 import sys
 from dataclasses import dataclass, field, asdict
@@ -89,6 +90,54 @@ def _resolve_artifact(config: SddConfig, tst_id: str) -> tuple[str, TestStatus, 
     return (artifact, "passed", "")  # status wird nach Ausführung überschrieben
 
 
+_RUNNER_CACHE: dict[str, list[str]] = {}
+
+
+def _resolve_runner(runner: str) -> list[str]:
+    """Bestimmt das aufrufbare Runner-Kommando. Wirft RuntimeError, wenn keins passt.
+
+    `sys.executable -m pytest` nutzt die Umgebung des aufrufenden Prozesses. Das ist
+    im sdd-Repo selbst richtig, in einem fremden Projekt aber der Interpreter, der
+    `sdd` ausfuehrt — und der hat pytest in der Regel nicht. Fruehere Fassungen
+    riefen entweder blank `pytest` (nicht im PATH ohne aktiviertes venv) oder
+    `sys.executable -m pytest` (kein Modul pytest) auf; beides landete als
+    *fehlgeschlagener Test* im Report statt als Infrastrukturproblem.
+
+    Reihenfolge: konfiguriertes Kommando, sonst der eigene Interpreter, sonst ein
+    pytest im PATH. Das Ergebnis wird gecacht, sonst kostet jeder Testlauf einen
+    zusaetzlichen --version-Aufruf.
+    """
+    if runner in _RUNNER_CACHE:
+        return _RUNNER_CACHE[runner]
+
+    candidates: list[list[str]] = []
+    if runner != "pytest":
+        # shlex, damit mehrwortige Kommandos wie `uv run pytest` funktionieren –
+        # shutil.which("uv run pytest") schlug vorher immer fehl.
+        parts = shlex.split(runner)
+        if parts and shutil.which(parts[0]):
+            candidates.append(parts)
+    else:
+        candidates.append([sys.executable, "-m", "pytest"])
+        if shutil.which("pytest"):
+            candidates.append(["pytest"])
+
+    for cand in candidates:
+        try:
+            probe = subprocess.run([*cand, "--version"], capture_output=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if probe.returncode == 0:
+            _RUNNER_CACHE[runner] = cand
+            return cand
+
+    raise RuntimeError(
+        f"Kein lauffaehiger Test-Runner gefunden (konfiguriert: {runner!r}). "
+        f"Installiere pytest oder setze test_runner.command in .sdd/config.yaml, "
+        f"z.B. auf 'uv run pytest'."
+    )
+
+
 def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[TestStatus, float, str]:
     """Führt pytest für ein einzelnes Artefakt aus. Gibt (status, duration_s, message) zurück."""
     runner = config.runner_command()
@@ -97,18 +146,7 @@ def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[Te
     if not abs_path.exists():
         return ("missing", 0.0, f"Artefakt-Datei nicht gefunden: {artifact_path}")
 
-    # sys.executable -m pytest nutzt dieselbe Python-Umgebung wie der aufrufende Prozess
-    # (z.B. web/api/.venv), sodass alle installierten Packages verfügbar sind.
-    # Fallback auf bare runner wenn explizit konfiguriert und nicht "pytest".
-    if runner == "pytest":
-        cmd = [sys.executable, "-m", "pytest", str(abs_path), "--tb=short", "-q"]
-    else:
-        if not shutil.which(runner):
-            raise RuntimeError(
-                f"'{runner}' nicht gefunden – bitte installieren oder "
-                f"test_runner.command in .sdd/config.yaml anpassen."
-            )
-        cmd = [runner, str(abs_path), "--tb=short", "-q"]
+    cmd = [*_resolve_runner(runner), str(abs_path), "--tb=short", "-q"]
     cmd += config.runner_extra_args()
     start = datetime.now(timezone.utc).timestamp()
     try:
@@ -126,6 +164,11 @@ def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[Te
     duration = round(datetime.now(timezone.utc).timestamp() - start, 3)
     if result.returncode == 0:
         return ("passed", duration, "")
+    if result.returncode == 5:
+        # pytest-Exitcode 5 = keine Tests gesammelt. Das ist kein Fehlschlag,
+        # sondern ein leerer Lauf – und muss davon unterscheidbar bleiben,
+        # statt als rotes Ergebnis durchgereicht zu werden.
+        return ("skipped", duration, f"Keine Tests gesammelt in {artifact_path}.")
     output = (result.stdout + result.stderr).strip()
     # Kurze Fehlermeldung: letzte 20 non-leer Zeilen
     lines = [l for l in output.splitlines() if l.strip()]
