@@ -31,7 +31,13 @@ Das Auflösungsverhalten von `sdd_cli.llm.factory.get_completion_provider` für 
   `ClaudeCliCompletionProvider` (INV-04, Holdout-Gate-Regression).
 - **test_no_silent_fallback:** `raw={"llm":{"completion":{"provider":"anthropic"}}}` ohne Key →
   Ergebnis ist KEIN `ClaudeCliCompletionProvider` (kein automatischer Provider-Wechsel, INV-03).
+- **test_blueprint_config_is_keyless:** Der `llm`-Block der Blueprint-`config.yaml` setzt fuer
+  keine Komponente `provider: anthropic` (FR-06). Der Fall existiert, weil FR-01 nur den
+  Builtin-Default betrifft — das Blueprint liefert eine eigene Konfiguration und ueberschrieb
+  den keyfreien Default fuer jedes neue Projekt wieder.
+- **test_blueprint_completion_is_claude_cli:** Der wichtigste Einzelfall daraus, weil
+  `completion` die meisten Aufrufer hat (FR-06).
 
 ## Abdeckung
 
-CON-0186 INV-01…INV-04 · SPEC-0050 FR-01, FR-02, FR-05.
+CON-0186 INV-01…INV-04 · SPEC-0050 FR-01, FR-02, FR-05, FR-06.

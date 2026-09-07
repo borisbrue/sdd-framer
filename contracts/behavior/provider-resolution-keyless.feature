@@ -23,3 +23,12 @@ Feature: Keyfreie Provider-Auflösung mit Fail-Loud
     Given config mit llm.evaluator.provider = "claude-cli"
     When get_completion_provider(config, "evaluator") aufgerufen wird
     Then wird ein claude-cli-Provider zurückgegeben
+
+  # FR-06: das Blueprint darf den keyfreien Builtin nicht wieder ueberschreiben.
+  # Die beiden Ebenen arbeiteten vorher gegeneinander — Builtin keyfrei, Blueprint
+  # auf anthropic —, sodass jedes neue Projekt doch einen Key verlangte.
+  Scenario: Ein per sdd init erzeugtes Projekt startet keyfrei
+    Given die Blueprint-config.yaml wird in ein neues Projekt kopiert
+    When der llm-Block dieses Projekts ausgewertet wird
+    Then ist fuer keine Komponente der Provider "anthropic" gesetzt
+    And das Projekt ist ohne ANTHROPIC_API_KEY arbeitsfaehig

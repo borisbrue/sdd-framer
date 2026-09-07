@@ -6,7 +6,7 @@ status: in-progress
 owner: Boris
 created: 2026-06-23
 updated: '2026-06-23'
-version: 0.1.0
+version: 0.2.0
 priority: high
 tags:
 - llm
@@ -32,6 +32,8 @@ fr_test_map:
   FR-04:
   - TST-0213
   FR-05:
+  - TST-0212
+  FR-06:
   - TST-0212
 started_at: '2026-06-23T15:03:12Z'
 ---
@@ -81,6 +83,8 @@ ein leeres Ergebnis vorzutäuschen.
 - [ ] Der `anthropic`-Provider bleibt nutzbar, wenn explizit konfiguriert
   (`llm.completion.provider: anthropic` + Key) – unverändertes Verhalten.
 - [ ] Das Holdout-Gate (`evaluator`) bleibt unverändert keyfrei (Regressionssicherung).
+- [ ] Ein frisch per `sdd init` erzeugtes Projekt ist ohne `ANTHROPIC_API_KEY` arbeitsfähig —
+  die Blueprint-`config.yaml` setzt keinen Key-Provider (FR-06).
 - [ ] Unit-Tests decken ab: Default-Auflösung auf claude-cli, lautes Scheitern ohne Fallback,
   sichtbare Fehlermeldung in pattern/solid, anthropic-Opt-in via Config.
 
@@ -134,6 +138,20 @@ Quelle: https://refactoring.guru/design-patterns/null-object (bewusste Abgrenzun
   dargestellt.
 - **FR-05:** Der `anthropic`-Provider bleibt über explizite Konfiguration
   (`llm.completion.provider: anthropic` + `api_key`) unverändert nutzbar.
+
+- **FR-06:** Die Blueprint-`config.yaml` (`tool/sdd_cli/blueprint/config.yaml`) setzt den
+  `llm`-Block auf `claude-cli`, sodass ein per `sdd init` erzeugtes Projekt ohne
+  `ANTHROPIC_API_KEY` arbeitsfähig ist.
+
+  **Warum das eine eigene FR braucht:** FR-01 wirkt auf den *Builtin*-Default, also auf den
+  Fall „keine `llm`-Konfiguration vorhanden". Das Blueprint liefert aber eine — und setzte
+  `completion` bisher ausdrücklich auf `anthropic`. Der keyfreie Builtin wurde damit für
+  **jedes neue Projekt** wieder überschrieben. FR-01 war erfüllt und das Primärziel trotzdem
+  verfehlt, weil die beiden Ebenen gegeneinander arbeiteten.
+
+  Nachgereicht am 2026-09-07, nachdem der Fall beim Aufsetzen eines realen Projekts
+  aufgefallen ist. Die Umsetzung lag zu diesem Zeitpunkt bereits vor; die FR dokumentiert
+  sie nach, statt Code ohne Anforderung stehen zu lassen.
 
 > Die Dokumentation des keyfreien Default-Verhaltens ist als Schritt 5 der
 > Implementierungsreihenfolge erfasst (keine eigene FR, da nicht funktional/testbar).
