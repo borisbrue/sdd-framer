@@ -1,7 +1,14 @@
-"""Pre-Commit-Hook — Blocking Regressions-Gate (SPEC-0041 FR-08, CON-0155).
+"""Pre-Commit-Hook — Status-Check und blockierendes Regressions-Gate.
 
-Liest git diff --cached, prüft ob main.py/routes/*.py/App.tsx betroffen sind,
-ermittelt betroffene Spec-IDs und führt deren Tests aus.
+Zwei Aufgaben, in dieser Reihenfolge:
+
+1. Status-Check (SPEC-0010 FR-02, CON-0167): inhaltlich geänderte Specs und
+   Contracts fallen von approved/implemented zurück auf review. `sdd status-check`
+   ist seit SPEC-0044 kein öffentlicher Befehl mehr, die Logik muss laut CON-0167
+   aber weiterhin im Hook laufen ("status-check intern lauffähig").
+2. Regressions-Gate (SPEC-0041 FR-08, CON-0155): liest git diff --cached, prüft
+   ob main.py/routes/*.py/App.tsx betroffen sind, ermittelt betroffene Spec-IDs
+   und führt deren Tests aus.
 """
 from __future__ import annotations
 
@@ -80,15 +87,90 @@ class PreCommitHook:
         return result.returncode
 
 
+def apply_status_transitions(root: Path) -> list:
+    """Führt die status-check-Logik intern aus (SPEC-0010 FR-02, CON-0167).
+
+    Scheitert bewusst weich: ein Fehler hier meldet sich sichtbar, blockiert den
+    Commit aber nicht. Ein Status-Check, der das Repository commit-unfähig macht,
+    wäre schlimmer als ein übersprungener Status-Check.
+    """
+    import sys
+
+    try:
+        from .config import load_config
+        from .lifecycle import apply_transitions, check_transitions
+
+        cfg = load_config(root)
+        changes = check_transitions(cfg)
+        if changes:
+            apply_transitions(cfg, changes)
+            for c in changes:
+                print(f"[sdd pre-commit] {c.artifact_id}: {c.old_status} → {c.new_status} "
+                      f"(Inhalt geändert)")
+            _restage(root, [c.path for c in changes])
+        _seed_new_hashes(cfg)
+        return changes
+    except Exception as exc:
+        print(f"[sdd pre-commit] Status-Check übersprungen: {exc}", file=sys.stderr)
+        return []
+
+
+def _seed_new_hashes(cfg) -> int:
+    """Traegt Hashes fuer bisher unbekannte Artefakte nach (TST-0050 TC-03).
+
+    check_transitions meldet nur Artefakte, fuer die bereits ein Hash gespeichert
+    ist — ohne diesen Schritt bleibt `stored_hash` fuer jede neue Datei ewig None
+    und es gibt nie einen Statuswechsel. Genau das war der Zustand: content-hashes.json
+    wurde von keiner Produktivstelle je befuellt.
+
+    Bestehende Hashes bleiben unangetastet, sonst ginge die Aenderungserkennung
+    fuer bereits verfolgte Artefakte verloren.
+    """
+    from .lifecycle import load_hashes, rebuild_hashes, save_hashes
+
+    hashes = load_hashes(cfg)
+    added = 0
+    for artifact_id, digest in rebuild_hashes(cfg).items():
+        if artifact_id not in hashes:
+            hashes[artifact_id] = digest
+            added += 1
+    if added:
+        save_hashes(cfg, hashes)
+    return added
+
+
+def _restage(root: Path, paths: list[Path]) -> None:
+    """Stagt gepatchte Dateien nach – aber nur die, die ohnehin im Commit sind.
+
+    Andernfalls zöge der Hook fremde Arbeitskopie-Änderungen in den Commit.
+    """
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        capture_output=True, text=True, cwd=root,
+    )
+    staged = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    to_add = []
+    for path in paths:
+        try:
+            rel = str(Path(path).resolve().relative_to(Path(root).resolve()))
+        except ValueError:
+            continue
+        if rel in staged:
+            to_add.append(rel)
+    if to_add:
+        subprocess.run(["git", "add", *to_add], cwd=root)
+
+
 def main() -> int:
     """Entry-Point für das installierte Hook-Skript."""
     import sys
-    from .config import SddConfig
 
     cwd = Path.cwd()
     config_path = cwd / ".sdd" / "config.yaml"
     if not config_path.exists():
         return 0
+
+    apply_status_transitions(cwd)
 
     import yaml
     raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}

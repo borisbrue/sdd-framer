@@ -2060,11 +2060,14 @@ def obsidian_watch(vault_path: str | None, interval: int | None) -> None:
 # sdd status-check  (SPEC-0010 FR-01 / FR-02) — interner pre-commit-Hook
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command("status-check",
-             help="Nur intern verwendbar (pre-commit-Hook).",
+             help="[Entfernt] Laeuft automatisch im pre-commit-Hook.",
              hidden=True)
 @click.option("--fix", is_flag=True)
 def status_check_cmd(fix: bool) -> None:
-    console.print("[yellow]⚠[/] Dieser Befehl ist nur intern verwendbar (pre-commit-Hook).")
+    console.print(
+        "[yellow]⚠[/] 'sdd status-check' wurde entfernt (SPEC-0044) → die Pruefung "
+        "laeuft automatisch in [cyan]sdd install-hooks[/]."
+    )
     sys.exit(1)
 
 
@@ -2232,10 +2235,12 @@ def install_hooks_cmd() -> None:
     hooks_dir.mkdir(exist_ok=True)
     hook_path = hooks_dir / "pre-commit"
 
+    # Kein `sdd status-check` mehr: der Befehl ist seit SPEC-0044 nicht mehr
+    # oeffentlich und bricht jeden Aufruf ab. Die Status-Check-Logik laeuft jetzt
+    # innerhalb von `sdd pre-commit-gate` (CON-0167: "intern lauffaehig").
     hook_script = (
         "#!/bin/sh\n"
         "# Installiert von sdd install-hooks (SPEC-0010 + SPEC-0041)\n"
-        "sdd status-check --fix || exit 1\n"
         "sdd pre-commit-gate\n"
     )
     hook_path.write_text(hook_script, encoding="utf-8")
@@ -2243,8 +2248,8 @@ def install_hooks_cmd() -> None:
 
     console.print(f"[green]✓[/] Pre-Commit-Hook installiert: [bold]{hook_path}[/]")
     console.print(
-        "  Bei jedem [cyan]git commit[/] wird [cyan]sdd status-check --fix[/] "
-        "und das [cyan]Regressions-Gate[/] ausgeführt."
+        "  Bei jedem [cyan]git commit[/] laufen [cyan]Status-Check[/] "
+        "und [cyan]Regressions-Gate[/]."
     )
 
 
