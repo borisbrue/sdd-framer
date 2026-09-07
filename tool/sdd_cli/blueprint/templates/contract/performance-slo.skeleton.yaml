@@ -1,0 +1,21 @@
+# Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX.
+# Änderungen erfordern Versions-Bump gemäß SemVer.
+
+service: "<Service-Name>"
+window: 30d
+
+objectives:
+  - name: latency
+    description: "Antwortzeit im 95. Perzentil"
+    indicator: p95_latency_ms
+    target: 300
+    comparison: "<="
+
+  - name: availability
+    description: "Anteil erfolgreicher Anfragen"
+    indicator: success_rate
+    target: 0.995
+    comparison: ">="
+
+error_budget:
+  policy: "Bei Verbrauch > 100 % keine Feature-Deploys bis zum Fenster-Ende."

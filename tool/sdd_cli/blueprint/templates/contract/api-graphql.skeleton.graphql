@@ -1,0 +1,21 @@
+# Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX.
+# Änderungen erfordern Versions-Bump gemäß SemVer.
+
+type Beispiel {
+  id: ID!
+  name: String!
+}
+
+input BeispielEingabe {
+  name: String!
+}
+
+type Query {
+  "Liefert ein Beispiel anhand seiner ID."
+  beispiel(id: ID!): Beispiel
+}
+
+type Mutation {
+  "Legt ein neues Beispiel an."
+  beispielAnlegen(eingabe: BeispielEingabe!): Beispiel!
+}
