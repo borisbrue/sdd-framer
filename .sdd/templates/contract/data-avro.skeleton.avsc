@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "Beispiel",
+  "namespace": "com.example.beispiel.v1",
+  "doc": "Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX. Änderungen erfordern Versions-Bump gemäß SemVer.",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "Eindeutige ID (UUID als String)."
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "Anzeigename, nicht leer."
+    },
+    {
+      "name": "zeitpunkt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Erstellungszeitpunkt."
+    }
+  ]
+}

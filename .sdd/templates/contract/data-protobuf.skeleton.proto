@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+// Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX.
+// Änderungen erfordern Versions-Bump gemäß SemVer.
+//
+// Reines Datenmodell ohne Service – für RPC-Contracts siehe Format `grpc`.
+
+package beispiel.v1;
+
+message Beispiel {
+  string id = 1;
+  string name = 2;
+  int64 zeitpunkt_millis = 3;
+}

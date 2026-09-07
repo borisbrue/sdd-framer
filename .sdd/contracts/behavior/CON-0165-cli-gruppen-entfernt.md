@@ -107,3 +107,18 @@ Die Substanz des Contracts ist korrekt und die Implementierung erfüllt sie bere
    - Invariante „Obsidian- und PWA-Tests bleiben grün" nennt keine Testdateien/Testpfade.
 5. **Artefakt-Pfad falsch:** Frontmatter sagt `contracts/behavior/cli-gruppen-entfernt.md`, die Datei liegt unter `.sdd/contracts/behavior/CON-0165-cli-gruppen-entfernt.md` (mit ID-Präfix).
 6. **Geerbte Ambiguität:** Die Subcommand-Liste mischt `pattern-suggest` (Top-Level) mit `pattern accept/reject/list` (Gruppe). Beide Formen sind faktisch entfernt und im CHANGELOG separat gelistet — der Contract muss das explizit machen. Zudem setzt er implizit den Hard-Cut, obwohl Spec-Frage 9.4 (Deprecation-Aliases) offen ist: Frage schließen oder Hard-Cut im Contract benennen.
+
+## LLM Review Notes
+
+Die Substanz ist korrekt und die Implementierung erfüllt die Garantien bereits (verifiziert: `pattern`/`dev` fehlen in `cli.commands`; `obsidian` = `{export, import, watch}`, `pwa` = `{start}` sind registriert; `from sdd_cli.dev_container import DevContainerManager` funktioniert; `CHANGELOG.md` hat eine `### Removed`-Sektion mit beiden Migrationshinweisen inkl. `pattern-suggest` und `implement`). Abnahmefähig ist der Contract dennoch nicht:
+
+1. **Status-Widerspruch:** Frontmatter `status: approved` vs. Body-Header `**Status:** draft`. Genau eine Angabe darf gelten — bei `approved` den Body nachziehen.
+2. **Traceability gebrochen:** SPEC-0044 listet unter `contracts:` nur CON-0169/CON-0170, unter `tests:` nur TST-0201/TST-0202. `.sdd/contracts/behavior/CON-0165-cli-gruppen-entfernt.md` und `.sdd/tests/integration/TST-0193-cli-gruppen-entfernt.md` existieren, fehlen aber in der Spec-Frontmatter → `sdd trace` bricht. Beide IDs eintragen.
+3. **Falsche Assertion im Gherkin:** `And die Fehlermeldung enthält "unbekannter Befehl"` ist gegen die Implementierung falsch. Verifiziert liefert Click `Error: No such command 'pattern'.` bei **Exit-Code 2**. Das Szenario wäre garantiert rot. Auf Exit-Code 2 + `"No such command"` umformulieren oder implementierungsnah auf `"pattern" not in cli.commands` abstrahieren.
+4. **Unmessbare Garantien ohne Szenario:**
+   - „`obsidian`/`pwa` bleiben *vollständig funktionsfähig*" — für `pwa` existiert kein Szenario; „vollständig" ist kein prüfbares Kriterium. Subcommand-Listen einfrieren: `obsidian` = `{export, import, watch}`, `pwa` = `{start}`.
+   - „`DevContainerManager` bleibt interne Dependency" — kein Szenario; als Import-Assertion auf `sdd_cli.dev_container` formulieren.
+   - „`CHANGELOG.md` enthält den Text `dev`" — triviales Substring-Match, „im Kontext einer Entfernung" ist nicht operationalisiert. Pflicht auf eine `### Removed`-Sektion mit den Literalen `sdd pattern` und `sdd dev` (so faktisch bereits umgesetzt).
+   - Invariante „Obsidian- und PWA-Tests bleiben grün" nennt keine Testdateien/Testpfade.
+5. **Artefakt-Pfad falsch:** Frontmatter sagt `contracts/behavior/cli-gruppen-entfernt.md`, die Datei liegt unter `.sdd/contracts/behavior/CON-0165-cli-gruppen-entfernt.md` (mit ID-Präfix).
+6. **Geerbte Ambiguität:** Die Subcommand-Liste mischt `pattern-suggest` (Top-Level) mit `pattern accept/reject/list` (Gruppe). Beide Formen sind faktisch entfernt und im CHANGELOG separat gelistet — der Contract muss das explizit machen. Zudem setzt er implizit den Hard-Cut, obwohl Spec-Frage 9.4 (Deprecation-Aliases) offen ist: Frage schließen oder Hard-Cut im Contract benennen.

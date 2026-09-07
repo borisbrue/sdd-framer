@@ -20,17 +20,23 @@ TEMPLATE_MAP = {
     # Contracts haben mehrere Formate – Auswahl per Flag
 }
 
+# Format -> (Template-Art, Dokument-Vorlage, Skeleton fuer die artifact-Datei).
+#
+# Das dritte Feld darf nicht None sein: `sdd new contract` schreibt fuer jedes
+# Format einen artifact:-Pfad ins Frontmatter. Fehlt das Skeleton, zeigt das
+# Frontmatter auf eine Datei, die nie entsteht — und `sdd validate` warnt fuer
+# jeden dieser Contracts. Acht der zehn Formate hatten kein Skeleton.
 CONTRACT_TEMPLATES = {
     "openapi":     ("contract", "api-openapi.md",          "api-openapi.skeleton.yaml"),
-    "asyncapi":    ("contract", "api-openapi.md",          None),  # Placeholder
-    "graphql":     ("contract", "api-openapi.md",          None),
-    "grpc":        ("contract", "api-openapi.md",          None),
-    "json-schema": ("contract", "data-jsonschema.md",      None),
-    "avro":        ("contract", "data-jsonschema.md",      None),
-    "protobuf":    ("contract", "data-jsonschema.md",      None),
+    "asyncapi":    ("contract", "api-openapi.md",          "api-asyncapi.skeleton.yaml"),
+    "graphql":     ("contract", "api-openapi.md",          "api-graphql.skeleton.graphql"),
+    "grpc":        ("contract", "api-openapi.md",          "api-grpc.skeleton.proto"),
+    "json-schema": ("contract", "data-jsonschema.md",      "data-jsonschema.skeleton.json"),
+    "avro":        ("contract", "data-jsonschema.md",      "data-avro.skeleton.avsc"),
+    "protobuf":    ("contract", "data-jsonschema.md",      "data-protobuf.skeleton.proto"),
     "gherkin":     ("contract", "behavior-gherkin.md",     "behavior-gherkin.skeleton.feature"),
-    "markdown":    ("contract", "behavior-gherkin.md",     None),
-    "slo-yaml":    ("contract", "performance-slo.md",      None),
+    "markdown":    ("contract", "behavior-gherkin.md",     "behavior-markdown.skeleton.md"),
+    "slo-yaml":    ("contract", "performance-slo.md",      "performance-slo.skeleton.yaml"),
 }
 
 

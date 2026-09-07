@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/beispiel.schema.json",
+  "title": "<Datenmodell-Name>",
+  "description": "Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX. Änderungen erfordern Versions-Bump gemäß SemVer.",
+  "type": "object",
+  "required": ["id", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

@@ -1,0 +1,43 @@
+asyncapi: 3.0.0
+info:
+  title: "<Event-API-Name>"
+  version: "0.1.0"
+  description: |
+    Dieser Contract gehört zu SPEC-XXXX und Contract CON-XXXX.
+    Änderungen erfordern Versions-Bump gemäß SemVer.
+servers:
+  production:
+    host: "broker.example.com:9092"
+    protocol: kafka
+
+channels:
+  beispielEreignis:
+    address: "beispiel.ereignis.v1"
+    messages:
+      beispielEreignis:
+        $ref: "#/components/messages/BeispielEreignis"
+
+operations:
+  empfangeBeispielEreignis:
+    action: receive
+    channel:
+      $ref: "#/channels/beispielEreignis"
+
+components:
+  messages:
+    BeispielEreignis:
+      name: BeispielEreignis
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/BeispielPayload"
+  schemas:
+    BeispielPayload:
+      type: object
+      required: [id, zeitpunkt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        zeitpunkt:
+          type: string
+          format: date-time
