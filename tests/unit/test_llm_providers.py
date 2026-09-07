@@ -25,23 +25,31 @@ def _make_config(raw: dict):
 # ─── TST-0028: Factory – Auflösungs-Hierarchie und temperature ────────────────
 
 class TestFactory:
-    def test_no_llm_section_evaluator_returns_anthropic_provider(self):
-        """Fehlt llm-Sektion → evaluator bekommt AnthropicCompletionProvider."""
+    def test_no_llm_section_evaluator_returns_claude_cli_provider(self):
+        """Fehlt llm-Sektion → evaluator bekommt ClaudeCliCompletionProvider (keyfrei)."""
         config = _make_config({})
+        from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
+        provider = get_completion_provider(config, "evaluator")
+        assert isinstance(provider, ClaudeCliCompletionProvider)
+
+    def test_no_llm_section_ai_routes_defaults_to_claude_cli(self):
+        """ai_routes Default ist claude-cli – keyfreier Betrieb ohne ANTHROPIC_API_KEY."""
+        config = _make_config({})
+        from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
+        provider = get_completion_provider(config, "ai_routes")
+        assert isinstance(provider, ClaudeCliCompletionProvider)
+
+    def test_explicit_anthropic_still_wins_over_keyless_default(self):
+        """Explizites provider: anthropic überschreibt den claude-cli-Default."""
+        config = _make_config({"llm": {"evaluator": {"provider": "anthropic",
+                                                     "model": "claude-sonnet-4-6"}}})
         with patch("sdd_cli.llm.providers.anthropic.AnthropicCompletionProvider.__init__",
                    return_value=None) as mock_init:
             from sdd_cli.llm.providers.anthropic import AnthropicCompletionProvider
             provider = get_completion_provider(config, "evaluator")
-        assert isinstance(provider, AnthropicCompletionProvider)
-
-    def test_no_llm_section_ai_routes_default_model_is_sonnet(self):
-        """ai_routes Default ist claude-sonnet-4-6."""
-        config = _make_config({})
-        with patch("sdd_cli.llm.providers.anthropic.AnthropicCompletionProvider.__init__",
-                   return_value=None) as mock_init:
-            get_completion_provider(config, "ai_routes")
             _, kwargs = mock_init.call_args
-            assert kwargs.get("model") == "claude-sonnet-4-6"
+        assert isinstance(provider, AnthropicCompletionProvider)
+        assert kwargs.get("model") == "claude-sonnet-4-6"
 
     def test_component_override_inherits_model_from_global_default(self):
         """Komponenten-Override erbt model vom globalen llm.completion (E-05)."""

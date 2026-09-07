@@ -21,9 +21,9 @@ _DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 # Built-in defaults per component (Ebene 3)
 _COMPLETION_BUILTIN: dict[str, dict] = {
-    "evaluator":  {"provider": "anthropic", "model": _DEFAULT_ANTHROPIC_MODEL},
+    "evaluator":  {"provider": "claude-cli"},
     "analyzer":   {"provider": "claude-cli"},
-    "ai_routes":  {"provider": "anthropic", "model": "claude-sonnet-4-6"},
+    "ai_routes":  {"provider": "claude-cli"},
     "completion": {"provider": "claude-cli"},
 }
 
@@ -92,7 +92,7 @@ def get_completion_provider(
         )
 
     cfg = _resolve(config.raw, component, "completion")
-    provider = cfg["provider"] or "anthropic"
+    provider = cfg["provider"] or "claude-cli"
 
     if provider not in _COMPLETION_PROVIDERS:
         raise ValueError(

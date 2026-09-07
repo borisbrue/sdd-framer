@@ -105,9 +105,19 @@ pattern_suggestions:
   max_suggestions: 4
   source: refactoring-guru
 llm:
+  # Keyfreier Betrieb: alle Komponenten laufen über die Claude-Code-CLI
+  # (`claude --print`) statt über die Anthropic-API. Kein ANTHROPIC_API_KEY nötig.
+  # Für API-Betrieb: provider auf `anthropic` setzen und model/api_key ergänzen.
   completion:
-    provider: anthropic
-    model: claude-haiku-4-5-20251001
+    provider: claude-cli
+  analyzer:
+    provider: claude-cli
+  evaluator:
+    provider: claude-cli
+  ai_routes:
+    provider: claude-cli
+  orchestrator:
+    provider: claude-cli
   # Lokales LLM für task_routing (SPEC-0045) – openai-compatible (Ollama, LM Studio, llama.cpp)
   # local_llm:
   #   provider: openai-compat
