@@ -32,3 +32,17 @@ Feature: Keyfreie Provider-Auflösung mit Fail-Loud
     When der llm-Block dieses Projekts ausgewertet wird
     Then ist fuer keine Komponente der Provider "anthropic" gesetzt
     And das Projekt ist ohne ANTHROPIC_API_KEY arbeitsfaehig
+
+  # FR-07: FR-01 deckte nur `completion` ab. evaluator/ai_routes und der Fallback
+  # fuer Komponenten ohne Builtin-Eintrag zeigten weiter auf anthropic — US-01 war
+  # damit nicht erfuellt, obwohl FR-01 als erfuellt galt.
+  Scenario Outline: Jede Komponente loest ohne Konfiguration keyfrei auf
+    Given config ohne llm-Sektion
+    When get_completion_provider(config, "<komponente>") aufgerufen wird
+    Then wird ein claude-cli-Provider zurueckgegeben
+
+    Examples:
+      | komponente |
+      | evaluator  |
+      | ai_routes  |
+      | local_llm  |

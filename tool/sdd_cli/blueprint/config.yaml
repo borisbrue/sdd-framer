@@ -132,7 +132,7 @@ task_routing:
   max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
 
 docker:
-  runtime: podman
+  runtime: docker
   image: sdd-dev:latest
   dockerfile: .sdd/Dockerfile
   registry:

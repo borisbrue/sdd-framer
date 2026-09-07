@@ -71,3 +71,20 @@ class TestTST0212:
         )
         llm = yaml.safe_load(blueprint.read_text(encoding="utf-8"))["llm"]
         assert llm["completion"]["provider"] == "claude-cli"
+
+    def test_evaluator_builtin_is_keyless(self) -> None:
+        # FR-07: der Builtin stand auf anthropic — das Holdout-Gate lief ohne Key nicht.
+        # FR-01 deckte nur `completion` ab, diese Luecke blieb dadurch offen.
+        provider = get_completion_provider(_cfg({}), "evaluator")
+        assert isinstance(provider, ClaudeCliCompletionProvider)
+
+    def test_ai_routes_builtin_is_keyless(self) -> None:
+        # FR-07: analog fuer ai_routes.
+        provider = get_completion_provider(_cfg({}), "ai_routes")
+        assert isinstance(provider, ClaudeCliCompletionProvider)
+
+    def test_component_without_builtin_falls_back_keyless(self) -> None:
+        # FR-07: local_llm hat keinen _COMPLETION_BUILTIN-Eintrag. Ohne Konfiguration
+        # greift der Fallback in get_completion_provider — der zeigte auf anthropic.
+        provider = get_completion_provider(_cfg({}), "local_llm")
+        assert isinstance(provider, ClaudeCliCompletionProvider)

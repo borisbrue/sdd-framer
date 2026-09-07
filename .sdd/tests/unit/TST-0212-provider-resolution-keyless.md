@@ -37,7 +37,15 @@ Das Auflösungsverhalten von `sdd_cli.llm.factory.get_completion_provider` für 
   den keyfreien Default fuer jedes neue Projekt wieder.
 - **test_blueprint_completion_is_claude_cli:** Der wichtigste Einzelfall daraus, weil
   `completion` die meisten Aufrufer hat (FR-06).
+- **test_evaluator_builtin_is_keyless:** `raw={}` -> `evaluator` loest auf
+  `ClaudeCliCompletionProvider` auf (FR-07). Der Builtin stand hier auf `anthropic`, womit
+  das Holdout-Gate ohne Key nicht lief.
+- **test_ai_routes_builtin_is_keyless:** `raw={}` -> `ai_routes` loest auf
+  `ClaudeCliCompletionProvider` auf (FR-07).
+- **test_component_without_builtin_falls_back_keyless:** `local_llm` hat keinen
+  Builtin-Eintrag; ohne Konfiguration greift der Fallback in `get_completion_provider`
+  und muss `claude-cli` liefern, nicht `anthropic` (FR-07).
 
 ## Abdeckung
 
-CON-0186 INV-01…INV-04 · SPEC-0050 FR-01, FR-02, FR-05, FR-06.
+CON-0186 INV-01…INV-04 · SPEC-0050 FR-01, FR-02, FR-05, FR-06, FR-07.
