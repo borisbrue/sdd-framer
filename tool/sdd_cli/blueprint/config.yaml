@@ -56,7 +56,10 @@ evaluator:
   model: claude-sonnet-4-6
   base_url: http://localhost:8000
   timeout_per_scenario: 60
-  runs_per_scenario: 3   # nur für Legacy-Holdouts (Prosa-Format)
+  # Wiederholungen pro Legacy-Szenario (Prosa-Format). 1, weil der
+  # Legacy-Pfad den Zustand zwischen Laeufen nicht zuruecksetzt:
+  # Lauf 2 sieht, was Lauf 1 angelegt hat. Erst mit Isolierung erhoehen.
+  runs_per_scenario: 1
   pass_threshold: 2
   cost_alert_usd: 1.0
   container:

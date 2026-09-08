@@ -24,7 +24,21 @@ from .llm.base import CompletionProvider
 
 
 PASS_THRESHOLD = 2
-RUNS_PER_SCENARIO = 3
+
+# Wiederholungen pro Legacy-Szenario. Default 1 statt bisher 3.
+#
+# Der Legacy-Pfad setzt den Zustand zwischen den Laeufen nicht zurueck. Jedes
+# Szenario, das etwas anlegt, gelingt in Lauf 1 und scheitert in 2 und 3 an dem,
+# was Lauf 1 hinterlassen hat — und ein Szenario, das einen Konflikt erwartet,
+# besteht ab Lauf 2 aus dem falschen Grund. Drei Laeufe ohne Reset messen also
+# nicht die Stabilitaet der Implementierung, sondern nur, ob das Szenario
+# idempotent ist.
+#
+# Ueber evaluator.runs_per_scenario weiter erhoehbar, sobald eine Isolierung
+# existiert. Der Schluessel stand schon in der config.yaml und wurde bis hierher
+# nie gelesen.
+DEFAULT_RUNS_PER_SCENARIO = 1
+RUNS_PER_SCENARIO = 3  # historischer Wert, nur noch fuer bestehende Aufrufer
 
 
 @dataclass
@@ -286,6 +300,17 @@ def run_evaluation(
     legacy_docs = [d for d in all_docs if not is_structured_holdout(d)]
 
     print(f"  {len(structured_docs)} strukturierte + {len(legacy_docs)} Legacy-Holdouts", flush=True)
+    if legacy_docs:
+        # Die Einschraenkung steht nirgends, wo ein Autor sie sieht: der
+        # Legacy-Pfad plant genau eine Anfrage pro Lauf und kennt weder Setup
+        # noch Teardown. Mehrschrittige Prosa-Szenarien koennen deshalb nicht
+        # bestehen — ohne Hinweis sucht man den Fehler in der Implementierung.
+        print(
+            "  [Legacy] Prosa-Holdouts fuehren genau eine Anfrage pro Lauf aus und "
+            "kennen kein Setup/Teardown.\n"
+            "           Mehrschrittige Szenarien brauchen das strukturierte Format.",
+            flush=True,
+        )
     if skipped_by_status:
         detail = ", ".join(f"{n}x status: {st}" for st, n in sorted(skipped_by_status.items()))
         print(f"  {sum(skipped_by_status.values())} Szenario(en) uebersprungen ({detail})",
@@ -324,14 +349,35 @@ def run_evaluation(
     return report
 
 
+def _legacy_runs_per_scenario(config: SddConfig) -> int:
+    """Anzahl Wiederholungen pro Legacy-Szenario aus der Konfiguration."""
+    raw = (config.raw.get("evaluator") or {}).get(
+        "runs_per_scenario", DEFAULT_RUNS_PER_SCENARIO)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return DEFAULT_RUNS_PER_SCENARIO
+
+
+def _majority_threshold(runs: int) -> int:
+    """Mehrheit der Laeufe, mindestens 1.
+
+    Mit PASS_THRESHOLD = 2 konnte ein Einzellauf nie bestehen — der Wert war auf
+    genau drei Laeufe zugeschnitten.
+    """
+    return 1 if runs <= 1 else (runs // 2) + 1
+
+
 def _run_legacy_evaluation(
     config: SddConfig,
     base_url: str,
     docs: list,
 ) -> EvaluationReport:
-    """Legacy LLM-Pfad für Prosa-Holdouts (3 Runs, LLM plant + bewertet)."""
+    """Legacy LLM-Pfad für Prosa-Holdouts (LLM plant + bewertet)."""
     from .llm import get_completion_provider
     provider = get_completion_provider(config, "evaluator")
+
+    runs_per_scenario = _legacy_runs_per_scenario(config)
 
     report = EvaluationReport(
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -359,9 +405,12 @@ def _run_legacy_evaluation(
             body_text = doc.body.strip()
 
             print(f"  → {hol_id} [legacy]: {title}", flush=True)
-            result = ScenarioResult(hol_id=hol_id, title=title, contract=contract)
-            for i in range(1, RUNS_PER_SCENARIO + 1):
-                print(f"    Run {i}/{RUNS_PER_SCENARIO} …", flush=True)
+            result = ScenarioResult(
+                hol_id=hol_id, title=title, contract=contract,
+                pass_threshold=_majority_threshold(runs_per_scenario),
+            )
+            for i in range(1, runs_per_scenario + 1):
+                print(f"    Run {i}/{runs_per_scenario} …", flush=True)
                 run = _run_scenario_once(i, title, body_text, base_url, http, provider)
                 verdict = "✓" if run.passed else "✗"
                 print(f"    Run {i} {verdict}  {run.llm_reasoning[:80]}", flush=True)
@@ -369,6 +418,15 @@ def _run_legacy_evaluation(
 
             status = "PASS" if result.passed else "FAIL"
             print(f"  {hol_id}: {status} ({result.pass_count}/{len(result.runs)})", flush=True)
+            if 0 < result.pass_count < len(result.runs):
+                # Uneinheitliche Laeufe deuten fast immer auf fehlenden
+                # Zustands-Reset hin, nicht auf Flakiness der Implementierung.
+                print(
+                    f"    ⚠ Laeufe gehen unterschiedlich aus. Der Legacy-Pfad setzt "
+                    f"den Zustand zwischen Laeufen nicht zurueck — Lauf 1 kann "
+                    f"Lauf 2 beeinflussen.",
+                    flush=True,
+                )
             report.scenarios.append(result)
 
     return report
