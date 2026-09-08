@@ -20,6 +20,7 @@ def test_new_agents_md_removed():
     assert result.returncode != 0, \
         "sdd new agents-md muss nach Cleanup fehlschlagen"
     combined = (result.stdout + result.stderr).lower()
+    # Hier stimmt der Verweis auf sdd init: seit #54 legt init die AGENTS.md an.
     assert "init" in combined, \
         "Fehlerausgabe muss auf 'sdd init' hinweisen"
 
@@ -29,8 +30,11 @@ def test_new_github_workflow_removed():
     assert result.returncode != 0, \
         "sdd new github-workflow muss nach Cleanup fehlschlagen"
     combined = (result.stdout + result.stderr).lower()
-    assert "init" in combined, \
-        "Fehlerausgabe muss auf 'sdd init' hinweisen"
+    # Der Hinweis lautete "in sdd init integriert" — das ist nie geschehen und
+    # wurde mit SPEC-0044 v0.2.0 zurueckgenommen (FR-06). Die Ausgabe verweist
+    # jetzt auf die Vorlage, die tatsaechlich existiert.
+    assert "templates/github-actions" in combined, \
+        "Fehlerausgabe muss auf die Vorlage hinweisen"
 
 
 def test_upgrade_has_skill_retrofit_logic():

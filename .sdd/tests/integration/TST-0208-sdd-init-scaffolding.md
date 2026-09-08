@@ -30,7 +30,9 @@ antwortet (Nachrüst-Logik vorhanden).
 ## Ablauf
 
 1. `sdd new agents-md` → Exit ≠ 0 + Hinweis auf `sdd init`
-2. `sdd new github-workflow` → Exit ≠ 0 + Hinweis auf `sdd init`
+2. `sdd new github-workflow` → Exit ≠ 0 + Hinweis auf die Vorlage unter
+   `.sdd/templates/github-actions/` (SPEC-0044 v0.2.0: FR-06 fuer den
+   Workflow zurueckgenommen, er wird nicht mehr von `sdd init` angelegt)
 3. `sdd upgrade --help` → Exit 0
 
 ## Verknüpfung mit Contract

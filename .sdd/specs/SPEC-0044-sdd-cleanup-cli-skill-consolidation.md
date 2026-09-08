@@ -5,8 +5,8 @@ type: feature
 status: implemented
 owner: Boris
 created: 2026-06-09
-updated: "2026-06-09"
-version: 0.1.0
+updated: "2026-09-08"
+version: 0.2.0
 priority: high
 tags:
   - cli
@@ -145,16 +145,25 @@ nur noch an einem kanonischen Ort angeboten wird.
   vorhanden sind. Fehlen sie, werden sie automatisch angelegt — analog zur bestehenden
   `REQUIRED_DIRS`-Logik in `init.py`.
 
-  **GitHub-Actions-Workflow:**
-  Fragt interaktiv, ob der CI-Workflow `.github/workflows/sdd-orchestrate.yml` angelegt
-  werden soll. Der Workflow triggert `sdd orchestrate` automatisch bei jedem Push auf
-  `main`, wenn Spec-Dateien geändert wurden (Dark-Factory-Pfad auf CI). Da dieser Workflow
-  einen `ANTHROPIC_API_KEY` als GitHub-Secret benötigt und nicht für alle Projekte
-  sinnvoll ist, erfolgt die Anlage nur nach expliziter Bestätigung durch den User.
+  **GitHub-Actions-Workflow:** ~~Fragt interaktiv, ob der CI-Workflow angelegt werden
+  soll.~~ **Zurückgenommen am 2026-09-08 (v0.2.0).** Der Workflow bleibt eine reine
+  Vorlage unter `.sdd/templates/github-actions/sdd-orchestrate.yml`, die bei Bedarf von
+  Hand kopiert wird. `sdd init` legt ihn nicht an.
 
-  Beide bisherigen Befehle entfallen als eigenständige User-Befehle:
-  - `sdd new agents-md` → in `sdd init` + `sdd upgrade` (Nachrüsten) integriert
-  - `sdd new github-workflow` → in `sdd init` integriert (mit Rückfrage)
+  **Begründung der Rücknahme.** Die ursprüngliche Formulierung verlangte eine interaktive
+  Rückfrage. Beide Voraussetzungen dafür sind inzwischen entfallen:
+
+  1. `sdd init` läuft standardmäßig autonom (SPEC-0051). Eine Rückfrage blockiert jeden
+     nicht-interaktiven Aufruf — in CI, in Skripten, in den `/sdd-*`-Abläufen.
+  2. Der Workflow setzt einen `ANTHROPIC_API_KEY` als GitHub-Secret voraus. Das
+     widerspricht dem keyfreien Betrieb aus SPEC-0050, der seit v0.3.0 der Default ist.
+
+  Eine Anforderung, die nur unter Bedingungen erfüllbar ist, die das Projekt bewusst
+  aufgegeben hat, gehört zurückgenommen und nicht mit einem Sonderfall gerettet.
+
+  Der Befehl entfällt als eigenständiger User-Befehl:
+  - `sdd new agents-md` → in `sdd init` integriert (umgesetzt am 2026-09-08)
+  - `sdd new github-workflow` → ersatzlos; Vorlage bleibt unter `.sdd/templates/`
 
 ## 5. Architektur & Design Patterns
 
@@ -196,7 +205,7 @@ entspricht — keine zwei Commands für dieselbe Operation.
 | `sdd implement`             | wirft `NotImplementedError`; Funktion liegt ausschließlich im Skill `/sdd-implement`             |
 | `sdd status-check` (public) | wird intern von pre-commit-Hook und `sdd spec start` aufgerufen; kein direkter User/LLM-Use-Case |
 | `sdd new agents-md`         | Funktion wird in `sdd init` (Erstanlage) und `sdd upgrade` (Nachrüsten) integriert (FR-06)       |
-| `sdd new github-workflow`   | Funktion wird in `sdd init` integriert (interaktive Rückfrage; FR-06)                            |
+| `sdd new github-workflow`   | ersatzlos entfallen; Vorlage bleibt unter `.sdd/templates/github-actions/` (FR-06, v0.2.0)       |
 
 ### Umbenennungen nach `sdd <noun> <verb>` Schema
 
