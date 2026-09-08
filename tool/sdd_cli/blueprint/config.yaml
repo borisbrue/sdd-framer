@@ -67,6 +67,10 @@ evaluator:
     start_command: ["python", "-m", "your_app.main", "--port", "8080"]
     app_port: 8080        # Port der App im Container
     host_port: 18080      # Freigegebener Port auf dem Host
+    # Adresse, unter der der Port erreichbar ist. 127.0.0.1 statt
+    # localhost, weil der Port per -p auf IPv4 veroeffentlicht wird und
+    # localhost auf manchen Systemen nur nach ::1 aufloest.
+    host: 127.0.0.1
     health_path: /health  # GET → 200 bedeutet "bereit"
     health_timeout_secs: 30
     env:
