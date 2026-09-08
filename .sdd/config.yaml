@@ -108,6 +108,9 @@ cost_estimation:
 # (Claude-Code-CLI headless, kein ANTHROPIC_API_KEY). anthropic/openai-compat/huggingface
 # bleiben als explizites Opt-in über llm.<component>.provider wählbar (SPEC-0050).
 llm:
+  # Zeitlimit fuer die Testcode-Generierung in `sdd start` (Sekunden).
+  # Bei umfangreichen Test-Dokumenten und claude-cli kann 300 knapp sein.
+  test_generation_timeout: 300
   ai_routes:
     provider: claude-cli
   evaluator:
