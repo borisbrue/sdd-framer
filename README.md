@@ -237,8 +237,12 @@ sdd new holdout --spec SPEC-XXXX --contract CON-XXXX --title "<Titel>"
 
 #### AGENTS.md
 
+Kein eigener Befehl mehr: `sdd init` legt die `AGENTS.md` im Projekt-Root an.
+Der Aufruf ist idempotent — eine bestehende Datei bleibt unangetastet, `--force`
+überschreibt sie.
+
 ```bash
-sdd new agents-md [--subdir <unterverzeichnis>] [--force]
+sdd init --name "<Titel>"     # legt AGENTS.md mit an, falls sie fehlt
 ```
 
 #### GitHub-Workflow

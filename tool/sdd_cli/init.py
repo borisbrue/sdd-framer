@@ -291,6 +291,19 @@ def init_project(
         config_dst.write_text(text, encoding="utf-8")
         created.append(config_dst)
 
+    # AGENTS.md im Projekt-Root anlegen.
+    #
+    # Die Vorlage lag im Blueprint, wurde aber nur nach .sdd/templates/ kopiert
+    # und nie in den Projekt-Root. `sdd validate` warnte deshalb in jedem frischen
+    # Projekt und verwies auf `sdd new agents-md` — einen Befehl, der seinerseits
+    # auf `sdd init` zurueckverweist und mit exit 1 endet. Der Hinweis "in sdd init
+    # integriert" stimmt erst mit dieser Zeile.
+    agents_src = src_root / "templates" / "agents-md" / "default.md"
+    agents_dst = target / "AGENTS.md"
+    if agents_src.exists() and (not agents_dst.exists() or force):
+        shutil.copy(agents_src, agents_dst)
+        created.append(agents_dst)
+
     # Skill-Dateien kopieren
     skill_created, skill_skipped = copy_skill_files(
         target, src_root, provider=skill_provider, force=force_skills,
