@@ -18,6 +18,19 @@ class GenerationResult:
 
 _SLUGIFY_RE = re.compile(r"[^a-z0-9]+")
 
+# Platzhalter, wie ihn `sdd new test` in artifact: schreibt – kein echter Pfad.
+_PLACEHOLDER_SEGMENT = "<level>"
+
+# Output-Pfade pro Contract-Format laut CON-0028 ("Generierungsstrategie pro
+# Format"). Greift nur, wenn kein TST-Dokument den Zielpfad deklariert.
+_FORMAT_DIR = {
+    "gherkin":     "behavior",
+    "markdown":    "behavior",
+    "openapi":     "api",
+    "json-schema": "data",
+    "slo-yaml":    "performance",
+}
+
 
 def _slug(text: str) -> str:
     return _SLUGIFY_RE.sub("_", text.lower()).strip("_")[:50]
@@ -193,6 +206,60 @@ class TestGenerator:
             "    pytest.skip(\"Test noch nicht implementiert\")\n\n"
         )
 
+    # ── Zielpfad aus dem Test-Dokument ────────────────────────────────────────
+    #
+    # Der Pfad war fest verdrahtet (.sdd/tests/contract/test_<con>.py). Damit
+    # entstand die unter `artifact:` deklarierte Datei nie, und der erzeugten
+    # Datei war kein Test-Dokument zugeordnet — die Traceability riss genau
+    # dort, wo sie in Code uebergehen soll.
+
+    def _find_test_doc(self, con_id: str) -> dict | None:
+        """Sucht das TST-Dokument, dessen contract:-Feld auf con_id zeigt."""
+        import re as _re
+
+        import yaml
+
+        for base in (self.repo_root / ".sdd" / "tests", self.repo_root / "tests"):
+            if not base.exists():
+                continue
+            for md in sorted(base.rglob("*.md")):
+                try:
+                    m = _re.match(r"^---\n(.*?)\n---\n?(.*)",
+                                  md.read_text(encoding="utf-8"), _re.DOTALL)
+                except OSError:
+                    continue
+                if not m:
+                    continue
+                fm = yaml.safe_load(m.group(1)) or {}
+                if not isinstance(fm, dict):
+                    continue
+                if str(fm.get("id", "")).startswith("TST-") and fm.get("contract") == con_id:
+                    return fm
+        return None
+
+    def _output_path(self, con_id: str, contract: dict) -> Path:
+        """Zielpfad fuer den generierten Testcode, in dieser Rangfolge:
+
+        1. `artifact:` des zugehoerigen TST-Dokuments — die deklarierte Datei.
+        2. `tests/<level>/` mit dem `level:` des Dokuments, falls kein artifact.
+        3. Die Format-Tabelle aus CON-0028, falls gar kein TST-Dokument da ist.
+
+        Der ausfuehrbare Testcode gehoert nach tests/; .sdd/ haelt die
+        SDD-Dokumente. Der fest verdrahtete Pfad .sdd/tests/contract/ verletzte
+        beides zugleich.
+        """
+        doc = self._find_test_doc(con_id) or {}
+
+        artifact = str(doc.get("artifact") or "").strip().strip('"')
+        if artifact and _PLACEHOLDER_SEGMENT not in artifact:
+            return self.repo_root / artifact
+
+        if doc.get("level"):
+            return self.repo_root / "tests" / str(doc["level"]).strip() / f"test_{con_id.lower()}.py"
+
+        fmt = str(contract.get("format") or "").strip()
+        return self.repo_root / "tests" / _FORMAT_DIR.get(fmt, "contract") / f"test_{con_id.lower()}.py"
+
     # ── File writing with manual-addition preservation ────────────────────────
 
     def _write_with_preservation(self, out_path: Path, new_content: str) -> None:
@@ -213,8 +280,7 @@ class TestGenerator:
             if contract is None:
                 continue
 
-            con_id_lower = con_id.lower()
-            out_path = self.repo_root / ".sdd" / "tests" / "contract" / f"test_{con_id_lower}.py"
+            out_path = self._output_path(con_id, contract)
 
             try:
                 content = self._render_template(contract)

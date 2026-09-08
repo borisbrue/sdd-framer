@@ -43,7 +43,23 @@ Jedes Szenario MUSS durch einen automatisierten Test abgedeckt sein.
 - **INV-07:** Generierte Tests dürfen nach Erstellung manuell ergänzt,
   aber nicht gelöscht werden.
 
-## Generierungsstrategie pro Format
+## Zielpfad des generierten Codes
+
+Der Pfad wird in dieser Rangfolge bestimmt:
+
+1. **`artifact:` des zugehoerigen TST-Dokuments** (gefunden ueber dessen
+   `contract:`-Feld). Nur so entsteht die Datei, die das Test-Dokument
+   deklariert — sonst reisst die Kette Spec → Contract → Test → Code.
+2. **`tests/<level>/test_{con_id_lower}.py`**, wenn das TST-Dokument kein
+   `artifact:` traegt. Das `level:` des Dokuments entscheidet, nicht der
+   Contract-Typ.
+3. **Die Format-Tabelle unten**, wenn zu dem Contract gar kein TST-Dokument
+   existiert.
+
+Der ausfuehrbare Testcode liegt in allen drei Faellen unter `tests/`;
+`.sdd/` haelt ausschliesslich die SDD-Dokumente.
+
+## Generierungsstrategie pro Format (Rueckfall, siehe Punkt 3 oben)
 
 | Contract-Format | Test-Framework  | Output-Pfad |
 |-----------------|-----------------|-------------|

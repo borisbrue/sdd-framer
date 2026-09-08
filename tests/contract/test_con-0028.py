@@ -70,14 +70,14 @@ def _write_openapi_contract(tmp_path: Path, con_id: str) -> Path:
 # ─── TC-01: Gherkin-Contract erzeugt pytest-bdd Testdatei ────────────────────
 
 def test_tc01_gherkin_generates_pytest_file(tmp_path):
-    """Gherkin-Contract → tests/contract/test_con-xxxx.py (CON-0028 INV-01)."""
+    """Gherkin-Contract → tests/behavior/test_con-xxxx.py (CON-0028, Format-Tabelle)."""
     _write_gherkin_contract(tmp_path, "CON-XXXX", FEATURE_CONTENT)
 
     from sdd_cli.test_generator import TestGenerator
     gen = TestGenerator(repo_root=tmp_path)
     result = gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    out = tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py"
+    out = tmp_path / "tests" / "behavior" / "test_con-xxxx.py"
     assert out.exists()
     assert len(result.generated_files) >= 1
 
@@ -90,7 +90,7 @@ def test_tc01b_generated_file_has_auto_header(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    out = tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py"
+    out = tmp_path / "tests" / "behavior" / "test_con-xxxx.py"
     first_line = out.read_text(encoding="utf-8").splitlines()[0]
     assert "AUTO-GENERATED" in first_line
     assert "CON-XXXX" in first_line
@@ -106,7 +106,7 @@ def test_tc02_all_scenarios_have_test_functions(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    content = (tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py").read_text(encoding="utf-8")
+    content = (tmp_path / "tests" / "behavior" / "test_con-xxxx.py").read_text(encoding="utf-8")
     test_funcs = [l for l in content.splitlines() if l.startswith("def test_")]
     assert len(test_funcs) >= 3
 
@@ -121,7 +121,7 @@ def test_tc03_error_scenario_generates_error_test(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    content = (tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py").read_text(encoding="utf-8")
+    content = (tmp_path / "tests" / "behavior" / "test_con-xxxx.py").read_text(encoding="utf-8")
     assert "fehler" in content.lower() or "error" in content.lower() or "raises" in content.lower()
 
 
@@ -136,7 +136,7 @@ def test_tc04_generated_file_is_syntactically_valid(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    out = tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py"
+    out = tmp_path / "tests" / "behavior" / "test_con-xxxx.py"
     result = subprocess.run(
         [sys.executable, "-m", "py_compile", str(out)],
         capture_output=True, text=True,
@@ -154,7 +154,7 @@ def test_tc05_rerun_preserves_manual_additions(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    out = tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py"
+    out = tmp_path / "tests" / "behavior" / "test_con-xxxx.py"
     original = out.read_text(encoding="utf-8")
     out.write_text(original + "\ndef test_custom_manual():\n    assert True\n", encoding="utf-8")
 
@@ -190,7 +190,7 @@ def test_tc07_openapi_generates_httpx_test(tmp_path):
     gen = TestGenerator(repo_root=tmp_path)
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
-    out = tmp_path / ".sdd" / "tests" / "contract" / "test_con-xxxx.py"
+    out = tmp_path / "tests" / "api" / "test_con-xxxx.py"
     assert out.exists()
     content = out.read_text(encoding="utf-8")
     assert "httpx" in content or "TestClient" in content or "client" in content.lower()
