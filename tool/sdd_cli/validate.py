@@ -532,9 +532,13 @@ def _check_fr_compliance(report: Report, specs: list, config: "SddConfig") -> No
             project_root=config.root,
         )
         for issue in issues:
-            if issue.severity == "error":
+            # Warnungen wurden hier bisher verworfen. Die Kette meldet im
+            # Berichtsmodus (strict=False) genau ueber diesen Weg, etwa offene
+            # Tasks — stillschweigend zu schlucken hiesse, die Pruefung zu
+            # haben und ihr Ergebnis nicht zu zeigen.
+            if issue.severity in ("error", "warning"):
                 report.add(
-                    "error",
+                    issue.severity,
                     spec.path,
                     issue.message,
                     instruction=issue.hint,

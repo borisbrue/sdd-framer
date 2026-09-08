@@ -246,6 +246,7 @@ class SpecFinalizer:
             cfg_raw=self._cfg.raw,
             tests_dir=self._cfg.tests_dir,
             project_root=self._cfg.root,
+            strict=True,
         )
         errors = [i for i in issues if i.severity == "error"]
         if not errors:

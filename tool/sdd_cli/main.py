@@ -1600,6 +1600,7 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
         cfg_raw=cfg.raw,
         tests_dir=cfg.tests_dir,
         project_root=cfg.root,
+        strict=True,
     )
     compliance_errors = [i for i in compliance_issues if i.severity == "error"]
     if compliance_errors:
