@@ -331,7 +331,8 @@ def run_evaluation(
 
     # Legacy-Holdouts: LLM-Pfad
     if legacy_docs:
-        legacy_report = _run_legacy_evaluation(config, base_url, legacy_docs)
+        legacy_report = _run_legacy_evaluation(
+            config, base_url, legacy_docs, tier_filter=tier_filter)
     else:
         legacy_report = None
 
@@ -372,12 +373,30 @@ def _run_legacy_evaluation(
     config: SddConfig,
     base_url: str,
     docs: list,
+    tier_filter: str | None = None,
 ) -> EvaluationReport:
-    """Legacy LLM-Pfad für Prosa-Holdouts (LLM plant + bewertet)."""
+    """Legacy LLM-Pfad für Prosa-Holdouts (LLM plant + bewertet).
+
+    Tier-Filter, priority und Fail-Fast waren ausschliesslich im strukturierten
+    Pfad umgesetzt (SPEC-0042 FR-01/FR-02/FR-04). Der Legacy-Pfad bekam den
+    Filter gar nicht erst uebergeben: `--tier critical` fuehrte alle Szenarien
+    aus, und jedes Ergebnis trug priority "normal", womit tier_summary die
+    Staffelung nicht auswerten konnte.
+    """
+    from .holdout_runner import PRIORITY_ORDER, _make_skipped_scenario
     from .llm import get_completion_provider
     provider = get_completion_provider(config, "evaluator")
 
     runs_per_scenario = _legacy_runs_per_scenario(config)
+
+    if tier_filter is not None:
+        docs = [d for d in docs
+                if d.frontmatter.get("priority", "normal") == tier_filter]
+    docs = sorted(docs, key=lambda d: PRIORITY_ORDER.get(
+        d.frontmatter.get("priority", "normal"), 1))
+
+    had_critical_failure = False
+    had_normal_failure = False
 
     report = EvaluationReport(
         timestamp=datetime.now(timezone.utc).isoformat(),
@@ -404,9 +423,29 @@ def _run_legacy_evaluation(
             contract = fm.get("contract", "")
             body_text = doc.body.strip()
 
-            print(f"  → {hol_id} [legacy]: {title}", flush=True)
+            priority = fm.get("priority", "normal")
+
+            # Fail-Fast wie im strukturierten Pfad: nachgelagerte Prioritaeten
+            # entfallen nach einem Fehlschlag. Bei gesetztem tier_filter greift
+            # es nicht, weil dann ohnehin nur eine Stufe laeuft.
+            skip_reason = ""
+            if tier_filter is not None:
+                pass
+            elif had_critical_failure and priority in ("normal", "edge-case"):
+                skip_reason = "critical-Fehler – übersprungen"
+            elif had_normal_failure and priority == "edge-case":
+                skip_reason = "normal-Fehler – edge-case übersprungen"
+
+            print(f"  → {hol_id} [legacy · {priority}]: {title}", flush=True)
+
+            if skip_reason:
+                print(f"    ⊘ {skip_reason}", flush=True)
+                report.scenarios.append(_make_skipped_scenario(fm, skip_reason))
+                continue
+
             result = ScenarioResult(
                 hol_id=hol_id, title=title, contract=contract,
+                priority=priority,
                 pass_threshold=_majority_threshold(runs_per_scenario),
             )
             for i in range(1, runs_per_scenario + 1):
@@ -415,6 +454,12 @@ def _run_legacy_evaluation(
                 verdict = "✓" if run.passed else "✗"
                 print(f"    Run {i} {verdict}  {run.llm_reasoning[:80]}", flush=True)
                 result.runs.append(run)
+
+            if not result.passed:
+                if priority == "critical":
+                    had_critical_failure = True
+                elif priority == "normal":
+                    had_normal_failure = True
 
             status = "PASS" if result.passed else "FAIL"
             print(f"  {hol_id}: {status} ({result.pass_count}/{len(result.runs)})", flush=True)
