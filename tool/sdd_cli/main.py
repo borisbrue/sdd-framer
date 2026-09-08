@@ -2717,6 +2717,18 @@ def _print_solid_report(report: Any, mode: str) -> None:
     if report.summary:
         console.print(f"\n  [dim]{report.summary}[/]")
 
+    # had_llm_error wurde bisher nur in _run_solid_phase geprueft. `sdd spec solid`
+    # zeigte deshalb fuenf gruene Haken und "Kein SOLID-Verstoss erkannt", auch
+    # wenn kein einziger Checker ein Ergebnis geliefert hatte.
+    if getattr(report, "had_llm_error", False):
+        console.print(
+            "\n[yellow][WARN] SOLID-Analyse unvollständig – Ergebnis NICHT als "
+            "'compliant' werten:[/]"
+        )
+        for f in report.findings:
+            if f.location == "Checker-Fehler":
+                console.print(f"  [yellow]·[/] [dim]{f.description[:160]}[/]")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd pattern-suggest — entfernt (wird intern von sdd review spec verwendet)
@@ -2972,10 +2984,16 @@ def _run_solid_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     _print_solid_report(report, cfg.solid_gate_mode())
 
     if report.had_llm_error:
+        # "LLM nicht erreichbar" war zu eng: had_llm_error deckt jetzt auch den
+        # Fall ab, dass das Modell antwortete, die Antwort aber nicht auswertbar
+        # war. Deshalb der konkrete Grund statt einer geratenen Ursache.
         console.print(
-            "[yellow][WARN] SOLID-Analyse unvollständig – LLM nicht erreichbar; "
-            "Ergebnis NICHT als 'compliant' werten.[/]"
+            "[yellow][WARN] SOLID-Analyse unvollständig – Ergebnis NICHT als "
+            "'compliant' werten:[/]"
         )
+        for f in report.findings:
+            if f.location == "Checker-Fehler":
+                console.print(f"  [yellow]·[/] [dim]{f.description[:160]}[/]")
 
     if cfg.solid_gate_mode() == "block" and report.has_violations():
         console.print(

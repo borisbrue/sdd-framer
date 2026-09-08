@@ -313,13 +313,34 @@ def _build_single_principle_prompt(text: str, artifact_id: str, principle: str, 
 # Response Parsing
 # ─────────────────────────────────────────────────────────────────────────────
 
+class SolidResponseError(RuntimeError):
+    """Die LLM-Antwort war nicht als JSON auswertbar.
+
+    Fliegt statt eines leeren Ergebnisses: vorher gab _parse_llm_response bei
+    unparsbarer Antwort `[], "compliant", ...` zurueck. Ohne Findings entstand
+    kein Checker-Fehler-Eintrag, SolidReport.had_llm_error blieb False, und die
+    Warnung in der CLI feuerte nicht — eine Antwort, die das Modell gar nicht
+    auswertbar geliefert hatte, erschien als bestandene Pruefung.
+
+    Die Aufrufer fangen sie in ihrem bestehenden `except Exception` ab und
+    erzeugen daraus ein Finding mit severity `info` — genau der Weg, den
+    CON-0045 INV-04 fuer Checker-Fehler vorsieht.
+    """
+
+
 def _parse_llm_response(text: str) -> tuple[list[SolidFinding], str, str]:
-    """Parst LLM-Antwort → (findings, overall_solid_score, summary)."""
+    """Parst LLM-Antwort → (findings, overall_solid_score, summary).
+
+    Wirft SolidResponseError, wenn die Antwort kein JSON enthaelt.
+    """
     cleaned = _extract_json(text)
     try:
         data = json.loads(cleaned)
-    except json.JSONDecodeError:
-        return [], "compliant", "Analyse konnte nicht geparst werden."
+    except json.JSONDecodeError as exc:
+        raise SolidResponseError(
+            f"Antwort nicht als JSON parsebar ({exc.msg}, Position {exc.pos}); "
+            f"{len(text)} Zeichen empfangen"
+        ) from exc
 
     findings: list[SolidFinding] = []
     for item in data.get("solid_findings", []):

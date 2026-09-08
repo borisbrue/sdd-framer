@@ -304,10 +304,14 @@ class TestParseLlmResponse:
         assert score == "violation"
         assert summary == "One issue"
 
-    def test_invalid_json_returns_defaults(self):
-        findings, score, summary = _parse_llm_response("NOT JSON")
-        assert findings == []
-        assert score == "compliant"
+    def test_invalid_json_raises_instead_of_faking_compliance(self):
+        """Vorher: [], "compliant" – eine unauswertbare Antwort sah aus wie
+        eine bestandene Pruefung. Jetzt fliegt sie in den Checker-Fehler-Pfad
+        (CON-0045 INV-04)."""
+        from sdd_cli.solid import SolidResponseError
+
+        with pytest.raises(SolidResponseError, match="nicht als JSON parsebar"):
+            _parse_llm_response("NOT JSON")
 
     def test_unknown_principle_skipped(self):
         payload = json.dumps({
