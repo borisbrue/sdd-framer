@@ -24,6 +24,7 @@ class EvalContainerConfig:
     start_command: list[str]  # Befehl zum Starten der App im Container
     app_port: int          # Port der App im Container (z.B. 8080)
     host_port: int         # Freigegebener Port auf dem Host
+    host: str              # Adresse, unter der der Port erreichbar ist
     health_path: str       # Pfad für Health-Check (z.B. "/health")
     health_timeout: int    # Sekunden bis Timeout (z.B. 30)
     env: dict[str, str]    # Zusätzliche Env-Vars für den Container
@@ -44,6 +45,10 @@ def load_eval_container_config(cfg: Any) -> EvalContainerConfig:
         start_command=container_cfg.get("start_command", ["tail", "-f", "/dev/null"]),
         app_port=container_cfg.get("app_port", 8080),
         host_port=container_cfg.get("host_port", 18080),
+        # 127.0.0.1 statt "localhost": der Port wird per -p auf IPv4
+        # veroeffentlicht. Wo localhost nur nach ::1 aufloest (rootless Podman
+        # mit netavark ist ein Fall davon), war der Health-Check unerreichbar.
+        host=container_cfg.get("host", "127.0.0.1"),
         health_path=container_cfg.get("health_path", "/health"),
         health_timeout=container_cfg.get("health_timeout_secs", 30),
         env=container_cfg.get("env", {}),
@@ -65,7 +70,7 @@ class EvalContainer:
 
     def __enter__(self) -> tuple[str, str]:
         self._start()
-        base_url = f"http://localhost:{self._ecfg.host_port}"
+        base_url = f"http://{self._ecfg.host}:{self._ecfg.host_port}"
         return base_url, _EVAL_CONTAINER_NAME
 
     def __exit__(self, *_: Any) -> None:
@@ -141,29 +146,48 @@ class EvalContainer:
 
         self._wait_healthy()
 
+    def _health_urls(self) -> list[str]:
+        """Zu pruefende Health-URLs, konfigurierter Host zuerst.
+
+        Beide Adressfamilien werden probiert: eine feste Wahl schlaegt fehl,
+        sobald der Host die andere bedient. Auf Systemen, auf denen beide
+        funktionieren, aendert sich nichts — die erste Antwort gewinnt.
+        """
+        ecfg = self._ecfg
+        hosts = [ecfg.host]
+        for fallback in ("127.0.0.1", "[::1]"):
+            if fallback not in hosts:
+                hosts.append(fallback)
+        return [f"http://{h}:{ecfg.host_port}{ecfg.health_path}" for h in hosts]
+
     def _wait_healthy(self) -> None:
         import urllib.request
-        import urllib.error
 
         ecfg = self._ecfg
-        url = f"http://localhost:{ecfg.host_port}{ecfg.health_path}"
+        urls = self._health_urls()
         deadline = time.monotonic() + ecfg.health_timeout
 
-        print(f"  ▶ Warte auf Health-Check: {url}", flush=True)
+        print(f"  ▶ Warte auf Health-Check: {' oder '.join(urls)}", flush=True)
         while time.monotonic() < deadline:
-            try:
-                with urllib.request.urlopen(url, timeout=2) as resp:
-                    if resp.status == 200:
-                        print("  ✓ Container ist bereit.", flush=True)
-                        return
-            except Exception:
-                pass
+            for url in urls:
+                try:
+                    with urllib.request.urlopen(url, timeout=2) as resp:
+                        if resp.status == 200:
+                            print(f"  ✓ Container ist bereit ({url}).", flush=True)
+                            return
+                except Exception:
+                    continue
             time.sleep(1)
 
+        # Logs holen, bevor der Container weg ist. Vorher stand self._stop()
+        # davor, und der f-String wurde erst danach ausgewertet — die
+        # Fehlermeldung enthielt deshalb zuverlaessig "no such container"
+        # statt der Diagnose, fuer die sie gedacht war.
+        logs = self._fetch_logs()
         self._stop()
         raise RuntimeError(
             f"Container hat Health-Check nicht bestanden innerhalb {ecfg.health_timeout}s "
-            f"({url}). Logs:\n{self._fetch_logs()}"
+            f"({', '.join(urls)}). Logs:\n{logs}"
         )
 
     def _stop(self) -> None:

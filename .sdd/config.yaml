@@ -67,6 +67,7 @@ evaluator:
     start_command: ["sdd", "hub", "--port", "8080", "--no-tunnel"]
     app_port: 8080
     host_port: 18080
+    host: 127.0.0.1
     health_path: /health
     health_timeout_secs: 30
     env:
