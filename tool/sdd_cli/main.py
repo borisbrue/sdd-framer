@@ -1666,6 +1666,37 @@ def spec_solid(artifact_id: str, output_json: bool, principle: str | None) -> No
         sys.exit(1)
 
 
+def _mark_regression_ok(cfg: "SddConfig", spec_id: str) -> bool:
+    """Markiert die Gate-Phase regression-ok, aber nur mit stehendem Vorgaenger.
+
+    `sdd spec regression` war der einzige Phasenuebergang der CLI ohne
+    can_start_phase-Pruefung. Auf einer frischen Spec genuegte der Aufruf, um
+    pipeline_phase auf regression-ok zu setzen — und da `sdd spec approve` nur
+    seinen direkten Vorgaenger prueft, war die Kette danach bis execute-unlocked
+    durchlaufbar. Die Phasen 1 bis 6 liessen sich so vollstaendig ueberspringen.
+
+    Der Check selbst laeuft unabhaengig davon durch: er ist als Konfliktanalyse
+    auch ohne Phasenstand nuetzlich. Nur die Markierung entfaellt, und das
+    sichtbar — ein harter Abbruch waere hier die schlechtere Wahl, weil er den
+    Analysenutzen mit vernichtet.
+    """
+    from .gate import ExecutionGate
+
+    g = ExecutionGate(cfg.root)
+    allowed = g.can_start_phase(spec_id, "regression-ok")
+    if not allowed.allowed:
+        console.print(
+            f"[yellow]⚠[/] Gate-Phase [bold]regression-ok[/] nicht markiert: {allowed.reason}"
+        )
+        console.print(
+            "  [dim]Der Regressions-Check selbst ist durchgelaufen; nur der "
+            "Phasenuebergang setzt die vorherigen Phasen voraus.[/]"
+        )
+        return False
+    g.mark_phase_complete(spec_id, "regression-ok")
+    return True
+
+
 @spec_group.command("regression", help="Prüft eine Spec auf Konflikte mit bestehenden Specs.")
 @click.argument("spec_id")
 @click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
@@ -1698,9 +1729,7 @@ def spec_regression(spec_id: str, output_json: bool) -> None:
         ))
         if any(f.severity == "error" for f in result.findings):
             sys.exit(1)
-        from .gate import ExecutionGate
-        g = ExecutionGate(cfg.root)
-        g.mark_phase_complete(spec_id, "regression-ok")
+        _mark_regression_ok(cfg, spec_id)
         return
 
     rule_findings = [f for f in result.findings if f.source == "rule"]
@@ -1740,10 +1769,8 @@ def spec_regression(spec_id: str, output_json: bool) -> None:
         console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
         console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
 
-    from .gate import ExecutionGate
-    g = ExecutionGate(cfg.root)
-    g.mark_phase_complete(spec_id, "regression-ok")
-    console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
+    if _mark_regression_ok(cfg, spec_id):
+        console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
