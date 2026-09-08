@@ -41,6 +41,13 @@ validation:
   allowed_statuses_for_implementation:
   - approved
   - implemented
+compliance:
+  # Schalter der Compliance-Kette (finalize/spec approve). Default jeweils true.
+  fr_coverage_check: true       # jede FR braucht einen zugeordneten Test
+  task_completion_check: true   # alle Tasks der Spec muessen abgeschlossen sein
+  type_aware_test_check: true   # typabhaengige Testebenen (webui/api)
+  route_registration_check: true # neue Routen sind registriert
+  post_commit_hook: true        # pre-commit-Gate aktiv
 adr:
   output_dir: docs/adr
 traceability:
