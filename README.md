@@ -151,10 +151,13 @@ sdd init --name "Mein Projekt" --provider claude
 sdd new spec "User Login"
 
 # 4. Contract zur Spec hinzufügen
+#    Legt zusätzlich einen Test-Stub an – Level passend zum Contract-Typ
+#    (api → contract, data → unit, behavior → acceptance, performance → performance).
 sdd new contract --spec SPEC-0001 --format openapi --title "Login API"
 
-# 5. Test zum Contract hinzufügen
-sdd new test --spec SPEC-0001 --contract CON-0001 --level contract --title "OpenAPI Konformität"
+# 5. Optional: weitere Tests zum Contract, wenn ein Stub nicht reicht
+#    (der aus Schritt 4 existiert bereits – nicht doppelt anlegen)
+sdd new test --spec SPEC-0001 --contract CON-0001 --level acceptance --title "Login-Ablauf"
 
 # 6. Referenzen in der Spec eintragen (contracts, tests im Frontmatter)
 $EDITOR .sdd/specs/SPEC-0001-*.md
@@ -213,6 +216,10 @@ Formate: `openapi`, `asyncapi`, `graphql`, `grpc`, `json-schema`, `avro`, `proto
 ```bash
 sdd new test --spec SPEC-XXXX --contract CON-XXXX --level <level> --title "<Titel>"
 ```
+
+> `sdd new contract` legt bereits einen Test-Stub mit passendem Level an.
+> Dieser Befehl ist für **zusätzliche** Tests gedacht – wer ihn direkt nach
+> `sdd new contract` aufruft, erhält zwei Test-Dokumente für denselben Contract.
 
 Level: `contract`, `unit`, `integration`, `acceptance`, `performance`
 

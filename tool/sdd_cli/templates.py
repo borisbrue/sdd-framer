@@ -41,6 +41,33 @@ CONTRACT_TEMPLATES = {
 }
 
 
+# Contract-Typ (Unterverzeichnis) -> passendes Test-Level.
+#
+# Der Test-Stub, den `sdd new contract` mitanlegt, stand fest auf "contract" —
+# auch fuer Daten- und Verhaltens-Contracts, fuer die unit bzw. acceptance
+# richtig ist. Er landete damit auch im falschen Verzeichnis.
+CONTRACT_TEST_LEVEL = {
+    "api":         "contract",
+    "data":        "unit",
+    "behavior":    "acceptance",
+    "performance": "performance",
+}
+
+# Contract-Format -> Unterverzeichnis. Vorher lag diese Zuordnung als lokales
+# dict in main.new_contract und war fuer andere Aufrufer nicht erreichbar.
+CONTRACT_SUBDIR = {
+    "openapi": "api", "asyncapi": "api", "graphql": "api", "grpc": "api",
+    "json-schema": "data", "avro": "data", "protobuf": "data",
+    "gherkin": "behavior", "markdown": "behavior",
+    "slo-yaml": "performance",
+}
+
+
+def test_level_for_contract_format(fmt: str) -> str:
+    """Test-Level fuer ein Contract-Format. Faellt auf 'contract' zurueck."""
+    return CONTRACT_TEST_LEVEL.get(CONTRACT_SUBDIR.get(fmt, ""), "contract")
+
+
 def slugify(text: str) -> str:
     """Konvertiert einen Titel in einen Dateinamen-sicheren Slug."""
     s = text.lower().strip()
