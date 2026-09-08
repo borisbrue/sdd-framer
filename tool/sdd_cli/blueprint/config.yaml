@@ -114,6 +114,9 @@ pattern_suggestions:
   max_suggestions: 4
   source: refactoring-guru
 llm:
+  # Zeitlimit fuer die Testcode-Generierung in `sdd start` (Sekunden).
+  # Bei umfangreichen Test-Dokumenten und claude-cli kann 300 knapp sein.
+  test_generation_timeout: 300
   # Keyfreier Betrieb: alle Komponenten laufen über die Claude-Code-CLI
   # (`claude --print`) statt über die Anthropic-API. Kein ANTHROPIC_API_KEY nötig.
   # Für API-Betrieb: provider auf `anthropic` setzen und model/api_key ergänzen.

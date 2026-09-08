@@ -15,7 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -335,12 +335,33 @@ def _build_review_prompt(
 # ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
+class StubOutcome:
+    """Ergebnis der LLM-Generierung fuer genau einen Test-Stub."""
+    path: Path
+    tst_id: str
+    generated: bool
+    reason: str = ""   # gefuellt, wenn generated False ist
+
+
+@dataclass
 class StartResult:
     spec_id: str
     spec_path: Path
     stubs_created: list[Path]
     stubs_skipped: list[Path]
     tst_ids: list[str]
+    # Ohne diese Aufschluesselung war nicht erkennbar, welche Datei tatsaechlich
+    # generiert wurde und welche als Platzhalter mit `raise NotImplementedError`
+    # liegenblieb — beide standen unter "Test-Stubs angelegt".
+    stub_outcomes: list[StubOutcome] = field(default_factory=list)
+
+    @property
+    def stubs_generated(self) -> list[Path]:
+        return [o.path for o in self.stub_outcomes if o.generated]
+
+    @property
+    def stubs_placeholder(self) -> list[StubOutcome]:
+        return [o for o in self.stub_outcomes if not o.generated]
 
 
 def start_spec(config: SddConfig, spec_id: str) -> StartResult:
@@ -372,6 +393,7 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
     tst_ids: list[str] = spec_doc.frontmatter.get("tests") or []
     stubs_created: list[Path] = []
     stubs_skipped: list[Path] = []
+    stub_outcomes: list[StubOutcome] = []
 
     for tst_id in tst_ids:
         tst_doc = _find_tst_doc(config, tst_id)
@@ -384,9 +406,11 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
             stub_path.parent.mkdir(parents=True, exist_ok=True)
             stub_path.write_text(_render_stub(tst_id, tst_doc, spec_id), encoding="utf-8")
             stubs_created.append(stub_path)
-            _implement_test_stub(
+            ok, reason = _implement_test_stub(
                 config, tst_id, tst_doc, stub_path, spec_body=spec_doc.body or ""
             )
+            stub_outcomes.append(StubOutcome(
+                path=stub_path, tst_id=tst_id, generated=ok, reason=reason))
 
     return StartResult(
         spec_id=spec_id,
@@ -394,6 +418,7 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
         stubs_created=stubs_created,
         stubs_skipped=stubs_skipped,
         tst_ids=list(tst_ids),
+        stub_outcomes=stub_outcomes,
     )
 
 
@@ -511,14 +536,19 @@ def _implement_test_stub(
     tst_doc: "Document | None",
     stub_path: Path,
     spec_body: str = "",
-) -> bool:
-    """Generates pytest code via LLM and writes to stub_path. Returns True on success."""
+) -> tuple[bool, str]:
+    """Generiert pytest-Code via LLM. Gibt (erfolg, grund) zurueck.
+
+    `grund` ist bei Misserfolg gefuellt und wandert bis in die CLI-Ausgabe.
+    Vorher gab die Funktion nur bool zurueck, und der Aufrufer verwarf ihn —
+    ein fehlgeschlagener Lauf war von einem erfolgreichen nicht zu unterscheiden.
+    """
     if tst_doc is None:
-        return False
+        return False, f"Kein Test-Dokument zu {tst_id} gefunden"
     try:
         from .llm.factory import get_completion_provider
-    except ImportError:
-        return False
+    except ImportError as exc:
+        return False, f"LLM-Provider nicht ladbar: {exc}"
 
     title = tst_doc.frontmatter.get("title", "")
     level = tst_doc.frontmatter.get("level", "unit")
@@ -540,9 +570,14 @@ def _implement_test_stub(
         "You are an expert Python test engineer for Spec-Driven Development. "
         "Output ONLY valid Python code — no markdown fences, no prose, no explanations."
     )
+    # Der Wert stand hart im Code. Mit dem claude-cli-Provider ist er bei
+    # umfangreichen Test-Dokumenten knapp — genau dort schlug die Generierung
+    # im gemeldeten Fall fehl.
+    timeout = int((config.raw.get("llm") or {}).get("test_generation_timeout", 300))
     try:
         provider = get_completion_provider(config, "completion")
-        result = provider.complete(prompt, max_tokens=4096, system_prompt=system_prompt, timeout=300)
+        result = provider.complete(prompt, max_tokens=4096,
+                                   system_prompt=system_prompt, timeout=timeout)
         code = result.text.strip()
         if code.startswith("```"):
             lines = code.splitlines()
@@ -550,10 +585,16 @@ def _implement_test_stub(
             code = "\n".join(lines[1:end])
         if "import pytest" in code and "def test_" in code:
             stub_path.write_text(code, encoding="utf-8")
-            return True
-    except Exception:
-        pass
-    return False
+            return True, ""
+        # Antwort kam an, taugt aber nicht. Vorher kommentarlos False.
+        return False, (
+            f"LLM-Antwort enthaelt keinen pytest-Code "
+            f"({len(code)} Zeichen, erwartet 'import pytest' und 'def test_')"
+        )
+    except Exception as exc:
+        # Vorher `except Exception: pass` — das verbarg genau die Information,
+        # die man zur Diagnose braucht (Timeout, Providerfehler, Netzwerk).
+        return False, f"{type(exc).__name__}: {exc}"
 
 
 def _render_stub(tst_id: str, tst_doc: "Document | None", spec_id: str) -> str:

@@ -2279,9 +2279,20 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
             )
 
     if result.stubs_created:
+        # Generiert und Platzhalter getrennt ausweisen: ein Platzhalter mit
+        # `raise NotImplementedError` wird nie gruen, egal wie gut der Code ist.
+        # Vorher standen beide unter "Test-Stubs angelegt".
         console.print("[bold]Test-Stubs angelegt:[/]")
+        outcomes = {o.path: o for o in result.stub_outcomes}
         for p in result.stubs_created:
-            console.print(f"  [green]+[/] {p.relative_to(cfg.root)}")
+            outcome = outcomes.get(p)
+            rel = p.relative_to(cfg.root)
+            if outcome is None or outcome.generated:
+                console.print(f"  [green]+[/] {rel}")
+            else:
+                console.print(f"  [yellow]![/] {rel}  [yellow]Platzhalter – "
+                              f"Generierung fehlgeschlagen[/]")
+                console.print(f"      [dim]{outcome.reason[:160]}[/]")
     if result.stubs_skipped:
         console.print("[bold]Übersprungen (bereits vorhanden):[/]")
         for p in result.stubs_skipped:
@@ -2309,9 +2320,30 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
         sys.exit(0 if report.final_status in ("merged", "labeled") else 1)
 
     console.print()
-    console.print("[bold]Jetzt Code implementieren bis alle Tests grün sind.[/]")
-    console.print(f"  Interaktiv:  [cyan]/sdd-implement {result.spec_id}[/] in Claude Code")
-    console.print(f"  Autonom:     [cyan]sdd orchestrate --spec {result.spec_id}[/]")
+    if result.stubs_placeholder:
+        n = len(result.stubs_placeholder)
+        console.print(
+            f"\n[yellow]⚠[/] {n} von {len(result.stubs_created)} Test-Datei(en) "
+            f"blieben Platzhalter.\n"
+            f"  Ein [cyan]raise NotImplementedError[/] wird nie grün – erst neu "
+            f"generieren, sonst läuft die Implementierung ins Leere.\n"
+            f"  Erneut versuchen: Datei löschen und [cyan]sdd start {result.spec_id}[/], "
+            f"oder [cyan]llm.test_generation_timeout[/] in .sdd/config.yaml erhöhen."
+        )
+    if result.stubs_placeholder:
+        # Die Aufforderung zu implementieren waere hier irrefuehrend, und
+        # `sdd orchestrate` gegen Platzhalter laeuft entweder in eine
+        # Retry-Schleife oder meldet die Spec als fertig, ohne dass etwas
+        # geprueft wurde. Erst die Testdateien reparieren.
+        console.print(
+            f"[bold]Erst die Platzhalter ersetzen, dann implementieren.[/]\n"
+            f"  [dim]Danach: [/][cyan]/sdd-implement {result.spec_id}[/][dim] oder [/]"
+            f"[cyan]sdd orchestrate --spec {result.spec_id}[/]"
+        )
+    else:
+        console.print("[bold]Jetzt Code implementieren bis alle Tests grün sind.[/]")
+        console.print(f"  Interaktiv:  [cyan]/sdd-implement {result.spec_id}[/] in Claude Code")
+        console.print(f"  Autonom:     [cyan]sdd orchestrate --spec {result.spec_id}[/]")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
