@@ -175,6 +175,38 @@ sdd trace
 
 ## SDD CLI — Alle Befehle
 
+> ### Migration: umbenannte und entfernte Befehle
+>
+> SPEC-0044 hat die CLI auf das Schema `sdd <noun> <verb>` vereinheitlicht. Die alten
+> Namen sind als Stubs erhalten und verweisen beim Aufruf auf ihren Nachfolger.
+>
+> | Alt | Neu |
+> |---|---|
+> | `sdd evaluate` | `sdd holdout run` |
+> | `sdd generate-holdouts` | `sdd holdout generate` |
+> | `sdd solid-check` | `sdd spec solid` |
+> | `sdd regression-check` | `sdd spec regression` |
+> | `sdd review-contract` | `sdd review contract` |
+> | `sdd review-pending` | `sdd review pending` |
+> | `sdd test-run` | `sdd test run` |
+> | `sdd test-results` | `sdd test results` |
+> | `sdd mark-false-positive` | `sdd autonomy false-positive` |
+> | `sdd level` | `sdd autonomy level` |
+> | `sdd set-level` | `sdd autonomy set-level` |
+> | `sdd contract review` | `sdd contract analyze` |
+>
+> **Ersatzlos entfallen:**
+>
+> | Entfernt | Grund |
+> |---|---|
+> | `sdd dev` (start/exec/close/pr/build/push/up/down) | Container-Lifecycle wird von `sdd start`, `sdd finalize` und `sdd orchestrate` intern verwaltet |
+> | `sdd pattern`, `sdd pattern-suggest` | Pattern-Entscheidungen stehen in der Spec unter „Architektur & Design Patterns" |
+> | `sdd status-check` | läuft automatisch im pre-commit-Hook (`sdd install-hooks`) |
+> | `sdd new agents-md` | `sdd init` legt die `AGENTS.md` an |
+> | `sdd new github-workflow` | Vorlage unter `.sdd/templates/github-actions/` |
+> | `sdd implement` | ausschließlich als Skill `/sdd-implement` |
+
+
 ### `sdd init` — Projekt initialisieren
 
 ```bash
@@ -247,9 +279,19 @@ sdd init --name "<Titel>"     # legt AGENTS.md mit an, falls sie fehlt
 
 #### GitHub-Workflow
 
+Kein eigener Befehl — `sdd new github-workflow` wurde mit SPEC-0044 entfernt.
+Die Vorlage liegt nach `sdd init` unter `.sdd/templates/github-actions/sdd-orchestrate.yml`
+und wird bei Bedarf von Hand kopiert:
+
 ```bash
-sdd new github-workflow
+mkdir -p .github/workflows
+cp .sdd/templates/github-actions/sdd-orchestrate.yml .github/workflows/
 ```
+
+> Der Workflow startet `sdd orchestrate` bei jedem Push auf `main` mit geänderten
+> Spec-Dateien und benötigt dafür einen `ANTHROPIC_API_KEY` als GitHub-Secret.
+> SPEC-0044 FR-06 sieht vor, dass `sdd init` ihn nach Rückfrage selbst anlegt —
+> das ist noch nicht umgesetzt.
 
 ---
 
@@ -311,10 +353,10 @@ Vollautomatische Pipeline: Spec → Code → Tests → PR → Evaluation → Ret
 
 ---
 
-### `sdd evaluate` — Holdout-Evaluation
+### `sdd holdout run` — Holdout-Evaluation
 
 ```bash
-sdd evaluate --base-url <url> [--hol HOL-XXXX ...] [--save] [--json]
+sdd holdout run --base-url <url> [--hol HOL-XXXX ...] [--save] [--json]
 ```
 
 Führt KI-gestützte Holdout-Szenarien gegen einen laufenden Service aus.
@@ -349,50 +391,30 @@ Markiert tatsächlichen Token-Verbrauch als Kalibrierungs-Datenpunkt.
 
 ---
 
-### `sdd solid-check` — SOLID-Analyse
+### `sdd spec solid` — SOLID-Analyse
 
 ```bash
-sdd solid-check <SPEC-XXXX|CON-XXXX> [--json]
+sdd spec solid <SPEC-XXXX|CON-XXXX> [--json]
 ```
 
 KI-gestützte Prüfung der fünf SOLID-Prinzipien für eine Spec oder einen Contract.
 
 ---
 
-### `sdd pattern-suggest` — Design-Pattern-Vorschläge
+### `sdd review contract` — Contract reviewen
 
 ```bash
-sdd pattern-suggest <SPEC-XXXX|CON-XXXX>
-```
-
-Schlägt passende Design Patterns (Refactoring Guru) für ein Artefakt vor.
-
----
-
-### `sdd pattern` — Pattern-Register
-
-```bash
-sdd pattern accept <SPEC-XXXX> <pattern-name> --reason "<Begründung>" [--url <url>]
-sdd pattern reject <SPEC-XXXX> <pattern-name> --reason "<Begründung>" [--url <url>]
-sdd pattern list [SPEC-XXXX]
-```
-
----
-
-### `sdd review-contract` — Contract reviewen
-
-```bash
-sdd review-contract <CON-XXXX>
+sdd review contract <CON-XXXX>
 ```
 
 LLM-Review eines Contracts: Vollständigkeit, Testvorschlag.
 
 ---
 
-### `sdd review-pending` — Alle pendenden Contracts reviewen
+### `sdd review pending` — Alle pendenden Contracts reviewen
 
 ```bash
-sdd review-pending [--auto]
+sdd review pending [--auto]
 ```
 
 Listet und reviewed alle Contracts im Status `review` ohne zugehörigen Test.
@@ -409,10 +431,10 @@ sdd conflict acknowledge <SPEC-XXXX> <CF-ID> --reason "<Begründung>"
 
 ---
 
-### `sdd mark-false-positive` — False Positive markieren
+### `sdd autonomy false-positive` — False Positive markieren
 
 ```bash
-sdd mark-false-positive <SPEC-XXXX>
+sdd autonomy false-positive <SPEC-XXXX>
 ```
 
 ---
@@ -447,21 +469,6 @@ sdd obsidian watch  [--vault <pfad>] [--interval <sekunden>]
 ```
 
 Exportiert alle SDD-Artefakte als Obsidian-kompatible Markdown-Dateien und importiert Änderungen zurück.
-
----
-
-### `sdd dev` — Isolierte Docker-Entwicklungsumgebung
-
-```bash
-sdd dev start <SPEC-XXXX>           # Container + Git-Branch starten
-sdd dev exec  <SPEC-XXXX> <cmd...>  # Befehl im Container ausführen
-sdd dev close <SPEC-XXXX> [--delete-branch]  # Container stoppen
-sdd dev pr    <SPEC-XXXX>           # Lokalen PR erstellen
-sdd dev build                        # Docker-Image bauen
-sdd dev push                         # Image in Registry pushen
-sdd dev up    <SPEC-XXXX>            # Compose-Stack starten
-sdd dev down  <SPEC-XXXX>            # Compose-Stack stoppen
-```
 
 ---
 
@@ -864,7 +871,7 @@ vscode-extension/      # VS Code Extension (TypeScript)
 
 ### Podman in VS Code Flatpak (SteamOS / Linux mit Flatpak)
 
-VS Code aus dem Flatpak-Store läuft in einem isolierten Namespace und kann Host-Binaries nicht direkt aufrufen. Wenn `sdd finalize` oder `sdd dev` fehlschlägt mit:
+VS Code aus dem Flatpak-Store läuft in einem isolierten Namespace und kann Host-Binaries nicht direkt aufrufen. Wenn `sdd start` oder `sdd finalize` fehlschlägt mit:
 
 ```
 FileNotFoundError: [Errno 2] No such file or directory: 'podman'
@@ -896,10 +903,11 @@ podman --version   # muss die Host-Version ausgeben
 podman info        # muss ohne Fehler durchlaufen
 ```
 
-Anschließend das Container-Image einmalig bauen:
+Anschließend den Container starten — `sdd start` baut das Image beim ersten Lauf
+selbst, ein eigener Build-Befehl ist nicht nötig:
 
 ```bash
-sdd dev build
+sdd start SPEC-0001
 ```
 
 **Hintergrund:** Das Wrapper-Script leitet alle `podman`-Aufrufe per `flatpak-spawn --host` an die Host-Installation weiter. Alle Code-seitigen Fixes (kein `--userns=keep-id`, korrekte pip-Flags, Fallback wenn `gh` fehlt) sind bereits im Repo und greifen automatisch.
@@ -920,7 +928,7 @@ sdd finalize <SPEC-XXXX> --no-commit
 ## CI-Integration
 
 ```yaml
-# .github/workflows/sdd.yml (generiert von `sdd new github-workflow`)
+# .github/workflows/sdd.yml
 - name: SDD Validate
   run: sdd validate --strict
 ```

@@ -61,5 +61,22 @@ class TestNoDeadEndAnymore:
         )
 
     def test_readme_no_longer_advertises_the_removed_command(self):
+        """Nur ausfuehrbare Beispiele pruefen.
+
+        Die Migrationsnotiz (SPEC-0044 US-03) muss den alten Namen nennen, damit
+        bestehende Workflows auffindbar bleiben — sie darf ihn nur nicht als
+        gangbaren Weg zeigen.
+        """
         readme = (_ROOT / "README.md").read_text(encoding="utf-8")
-        assert "sdd new agents-md" not in readme
+        in_bash = False
+        beworben = []
+        for nr, zeile in enumerate(readme.splitlines(), start=1):
+            if zeile.startswith("```bash"):
+                in_bash = True
+                continue
+            if zeile.startswith("```"):
+                in_bash = False
+                continue
+            if in_bash and zeile.strip().startswith("sdd new agents-md"):
+                beworben.append(nr)
+        assert not beworben, f"README zeigt den entfernten Befehl in Zeile {beworben}"
