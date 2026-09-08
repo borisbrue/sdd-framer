@@ -21,7 +21,9 @@ from .templates import (
     render,
     slugify,
     copy_skeleton,
+    CONTRACT_SUBDIR,
     CONTRACT_TEMPLATES,
+    test_level_for_contract_format,
 )
 from .validate import validate
 from .traceability import write_matrix
@@ -329,14 +331,9 @@ def new_contract(spec_id: str, fmt: str, title: str) -> None:
     cid = next_id(cfg, "contract")
     slug = slugify(title or fmt)
 
-    # Zielverzeichnis nach Typ
-    subdir_map = {
-        "openapi": "api", "asyncapi": "api", "graphql": "api", "grpc": "api",
-        "json-schema": "data", "avro": "data", "protobuf": "data",
-        "gherkin": "behavior", "markdown": "behavior",
-        "slo-yaml": "performance",
-    }
-    subdir = subdir_map[fmt]
+    # Zielverzeichnis nach Typ (Zuordnung liegt in templates.py, weil auch der
+    # Test-Stub und der Test-Generator sie brauchen).
+    subdir = CONTRACT_SUBDIR[fmt]
     target = cfg.contracts_dir / subdir / f"{cid}-{slug}.md"
     target.parent.mkdir(parents=True, exist_ok=True)
 
@@ -364,9 +361,11 @@ def new_contract(spec_id: str, fmt: str, title: str) -> None:
     if skeleton:
         console.print(f"  Artifact-Skeleton: [dim]{artifact_rel}[/]")
 
-    # Test-Stub automatisch mitanlegen
+    # Test-Stub automatisch mitanlegen. Das Level folgt dem Contract-Typ:
+    # ein Datenmodell wird per unit geprueft, ein Verhaltens-Contract per
+    # acceptance. Fest "contract" legte den Stub sonst ins falsche Verzeichnis.
     tid = next_id(cfg, "test")
-    test_level = "contract"
+    test_level = test_level_for_contract_format(fmt)
     test_target = cfg.tests_dir / test_level / f"{tid}-{slug}.md"
     test_target.parent.mkdir(parents=True, exist_ok=True)
     tmpl_test, _ = load_template(cfg, "test")
@@ -374,6 +373,9 @@ def new_contract(spec_id: str, fmt: str, title: str) -> None:
         "id": tid, "title": title or f"{fmt} contract test",
         "spec": spec_id, "contract": cid,
     })
+    # Die Vorlage traegt level: contract – auf das tatsaechliche Level ziehen,
+    # sonst widerspricht das Frontmatter dem Ablageort.
+    test_text = test_text.replace("level: contract", f"level: {test_level}", 1)
     test_target.write_text(test_text, encoding="utf-8")
 
     # tests: [] im Contract-File auf die neue ID patchen
