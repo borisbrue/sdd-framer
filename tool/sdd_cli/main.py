@@ -512,9 +512,17 @@ def new_agents_md(subdir: str, force: bool) -> None:
     sys.exit(1)
 
 
-@new.command("github-workflow", help="[Entfernt] In sdd init integriert.")
+@new.command("github-workflow", help="[Entfernt] Vorlage unter .sdd/templates/github-actions/.")
 def new_github_workflow() -> None:
-    console.print("[yellow]⚠[/] 'sdd new github-workflow' wurde entfernt → in [cyan]sdd init[/] integriert.")
+    # Der Hinweis lautete "in sdd init integriert" — das ist nie geschehen und
+    # wurde mit SPEC-0044 v0.2.0 zurueckgenommen (FR-06). Der Workflow braucht
+    # einen ANTHROPIC_API_KEY als Secret, was dem keyfreien Default widerspricht.
+    console.print(
+        "[yellow]⚠[/] 'sdd new github-workflow' wurde entfernt. Die Vorlage liegt unter\n"
+        "  [cyan].sdd/templates/github-actions/sdd-orchestrate.yml[/] und wird bei Bedarf kopiert:\n"
+        "  [dim]mkdir -p .github/workflows && "
+        "cp .sdd/templates/github-actions/sdd-orchestrate.yml .github/workflows/[/]"
+    )
     sys.exit(1)
 
 
