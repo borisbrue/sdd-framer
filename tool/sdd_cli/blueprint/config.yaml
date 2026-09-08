@@ -151,7 +151,9 @@ task_routing:
   max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
 
 docker:
-  runtime: docker
+  # Ohne Angabe wird die installierte Runtime erkannt (docker bevorzugt,
+  # sonst podman). Zum Festnageln die Zeile einkommentieren:
+  # runtime: docker        # docker | podman
   image: sdd-dev:latest
   dockerfile: .sdd/Dockerfile
   registry:

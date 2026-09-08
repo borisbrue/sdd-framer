@@ -2271,8 +2271,9 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
             console.print(
                 f"[yellow]![/] Container-Runtime nicht verfügbar – "
                 f"Container wird nicht gestartet.\n"
-                f"  Starte die Runtime und führe [cyan]sdd dev start {spec_id}[/] manuell aus.\n"
-                f"  Oder nutze [cyan]sdd start {spec_id} --no-container[/]."
+                f"  {mgr.missing_runtime_hint()}\n"
+                f"  Oder ohne Container arbeiten: "
+                f"[cyan]sdd start {spec_id} --no-container[/]."
             )
         else:
             console.print()
@@ -2283,7 +2284,7 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
             mgr.start(spec_id)
             console.print(
                 f"[green]✓[/] Container bereit – Tests ausführen mit:\n"
-                f"  [cyan]sdd dev exec {spec_id} pytest tests/ -x --tb=short[/]"
+                f"  [cyan]sdd finalize {spec_id}[/] führt die Tests im Container aus."
             )
 
     if result.stubs_created:

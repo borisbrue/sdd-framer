@@ -33,13 +33,15 @@ class EvalContainerConfig:
 
 def load_eval_container_config(cfg: Any) -> EvalContainerConfig:
     """Lädt die Eval-Container-Konfiguration aus config.yaml."""
+    from .dev_container import resolve_runtime as _resolve_runtime
+
     raw = cfg.raw
     docker = raw.get("docker", {})
     evaluator = raw.get("evaluator", {})
     container_cfg = evaluator.get("container", {})
 
     return EvalContainerConfig(
-        runtime=docker.get("runtime", "docker"),
+        runtime=_resolve_runtime(raw),
         image=docker.get("image", "sdd-dev:latest"),
         dockerfile=docker.get("dockerfile", ".sdd/Dockerfile"),
         start_command=container_cfg.get("start_command", ["tail", "-f", "/dev/null"]),

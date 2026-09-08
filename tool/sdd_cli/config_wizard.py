@@ -108,7 +108,10 @@ class ConfigWizard:
             return data
 
         print("\n── Docker ──────────────────────────────────────────────")
-        runtime = _choice("Runtime", RUNTIMES, default=docker.get("runtime", "docker"))
+        from .dev_container import resolve_runtime
+        # Im Wizard liegt nur der docker-Teilbaum vor.
+        runtime = _choice("Runtime", RUNTIMES,
+                          default=resolve_runtime({"docker": docker}))
         image = _prompt("Image-Name", default=docker.get("image", "sdd-dev:latest"))
         dockerfile = _prompt("Dockerfile-Pfad", default=docker.get("dockerfile", ".sdd/Dockerfile"))
         max_par = _prompt_int("Maximale parallele Container", default=docker.get("max_parallel_containers", 2), min_val=1)

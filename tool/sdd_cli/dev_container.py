@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import abc
 import datetime
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -174,8 +175,33 @@ _RUNTIME_MAP: dict[str, type[ContainerRuntime]] = {
 }
 
 
+def detect_runtime() -> str:
+    """Ermittelt die installierte Container-Runtime.
+
+    docker hat Vorrang, weil es der bisherige Default war — auf Systemen, auf
+    denen beides liegt, aendert sich damit nichts. Ist keine von beiden im PATH,
+    bleibt es bei "docker": der Fehler gehoert dann in den Aufruf, nicht in die
+    Erkennung.
+    """
+    for name in ("docker", "podman"):
+        if shutil.which(name):
+            return name
+    return "docker"
+
+
+def resolve_runtime(cfg_raw: dict) -> str:
+    """Runtime-Name aus der Konfiguration, sonst erkannt.
+
+    Ein explizit gesetztes docker.runtime sticht die Erkennung immer. Ohne
+    Angabe wurde bisher fest "docker" angenommen — eine Behauptung ueber die
+    Umgebung, die sich pruefen laesst.
+    """
+    configured = (cfg_raw.get("docker") or {}).get("runtime")
+    return str(configured).strip() if configured else detect_runtime()
+
+
 def get_runtime(cfg: SddConfig) -> ContainerRuntime:
-    runtime_name = cfg.raw.get("docker", {}).get("runtime", "docker")
+    runtime_name = resolve_runtime(cfg.raw)
     cls = _RUNTIME_MAP.get(runtime_name)
     if cls is None:
         print(
@@ -368,8 +394,26 @@ class DevContainerManager:
         return result.returncode == 0
 
     def runtime_available(self) -> bool:
-        result = subprocess.run([self._runtime.cli(), "info"], capture_output=True)
+        """False statt Absturz, wenn die Runtime fehlt.
+
+        subprocess.run wirft FileNotFoundError, wenn das Binary nicht existiert —
+        die Funktion konnte deshalb nie False liefern, sie brach ab.
+        """
+        try:
+            result = subprocess.run([self._runtime.cli(), "info"], capture_output=True)
+        except (FileNotFoundError, OSError):
+            return False
         return result.returncode == 0
+
+    def missing_runtime_hint(self) -> str:
+        """Nennt eine installierte Alternative, falls es eine gibt."""
+        konfiguriert = self._runtime.cli()
+        vorhanden = [n for n in ("docker", "podman")
+                     if n != konfiguriert and shutil.which(n)]
+        if vorhanden:
+            return (f"'{konfiguriert}' ist nicht verfügbar, '{vorhanden[0]}' schon — "
+                    f"trage das unter docker.runtime in .sdd/config.yaml ein.")
+        return f"Weder docker noch podman ist verfügbar."
 
     # ── SPEC-0022 commands ────────────────────────────────────────────────────
 
@@ -397,7 +441,7 @@ class DevContainerManager:
         if not compose_file:
             print(
                 "✗ Kein compose_file konfiguriert (docker.compose_file). "
-                "Nutze 'sdd dev start' für einzelne Container.",
+                "Container werden von sdd start und sdd finalize verwaltet.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -470,7 +514,7 @@ class DevContainerManager:
         cname = container_name(spec_id)
         if self._runtime.inspect_status(cname) != "running":
             print(
-                f"✗ Container {cname} läuft nicht. Führe 'sdd dev start {spec_id}' aus.",
+                f"✗ Container {cname} läuft nicht. Führe 'sdd start {spec_id}' aus.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -499,14 +543,14 @@ class DevContainerManager:
         if test_result == "skipped":
             print(
                 f"✗ Kein Test-Ergebnis für {spec_id} – führe "
-                f"'sdd dev exec {spec_id} pytest' aus.",
+                f"'sdd finalize {spec_id}' aus.",
                 file=sys.stderr,
             )
             sys.exit(1)
 
         if test_result == "failed":
             print(
-                f"✗ Tests nicht grün – führe 'sdd dev exec {spec_id} pytest' aus.",
+                f"✗ Tests nicht grün – prüfe den Lauf aus 'sdd finalize {spec_id}'.",
                 file=sys.stderr,
             )
             sys.exit(1)

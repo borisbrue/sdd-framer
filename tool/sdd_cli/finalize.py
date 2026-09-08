@@ -52,7 +52,11 @@ def _image_exists(cli: str, image: str) -> bool:
 
 
 def _runtime_available(cli: str) -> bool:
-    result = subprocess.run([cli, "info"], capture_output=True)
+    """False statt Absturz, wenn die Runtime fehlt (vgl. DevContainerManager)."""
+    try:
+        result = subprocess.run([cli, "info"], capture_output=True)
+    except (FileNotFoundError, OSError):
+        return False
     return result.returncode == 0
 
 
