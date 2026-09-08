@@ -353,7 +353,7 @@ def _check_agents_md(config: SddConfig, report: Report) -> None:
         report.add(
             "warning", config.root / "AGENTS.md",
             "AGENTS.md fehlt im Projekt-Root.",
-            instruction="Run `sdd new agents-md` to generate an AGENTS.md skeleton.",
+            instruction="Run `sdd init` – der Befehl ist idempotent und legt eine fehlende AGENTS.md nach, ohne Bestehendes zu ueberschreiben.",
         )
         return
     content = agents_md.read_text(encoding="utf-8")
@@ -423,8 +423,12 @@ def _check_multi_agents_md(config: SddConfig, report: Report) -> None:
                 "warning", agents_md,
                 f"Unterverzeichnis '{subdir.name}/' enthält Quellcode aber kein AGENTS.md.",
                 instruction=(
-                    f"Run `sdd new agents-md --subdir {subdir.name}` to generate "
-                    f"an AGENTS.md for this component."
+                    # `sdd init` legt nur die AGENTS.md im Projekt-Root an; fuer
+                    # Unterverzeichnisse gibt es kein Kommando. Der frueher hier
+                    # genannte `sdd new agents-md --subdir` ist entfernt und
+                    # endet mit exit 1.
+                    f"Kopiere .sdd/templates/agents-md/default.md nach "
+                    f"{subdir.name}/AGENTS.md und fuelle die Sektionen aus."
                 ),
             )
 
