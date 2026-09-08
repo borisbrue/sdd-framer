@@ -40,6 +40,8 @@ validation:
   allowed_statuses_for_implementation:
   - approved
   - implemented
+adr:
+  output_dir: docs/adr
 traceability:
   output_format: markdown
   output_path: docs/traceability.md

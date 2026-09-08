@@ -320,6 +320,50 @@ def new_spec(title: str, owner: str, spec_type: str) -> None:
         )
 
 
+@new.command("adr", help="Legt einen Architecture Decision Record an (ADR-XXXX).")
+@click.argument("title")
+@click.option("--spec", "spec_ids", multiple=True,
+              help="Zugehoerige Spec-ID, mehrfach angebbar (z.B. --spec SPEC-0001).")
+@click.option("--supersedes", default="",
+              help="ADR-ID, die dieser Record ersetzt (z.B. ADR-0001).")
+def new_adr(title: str, spec_ids: tuple, supersedes: str) -> None:
+    """Der Befehl fehlte, obwohl Vorlage, ID-Praefix und README ihn vorsahen."""
+    from datetime import date
+
+    cfg = _ensure_project()
+    aid = next_id(cfg, "adr")
+    slug = slugify(title)
+
+    # Ablageort wie bei traceability konfigurierbar, Default docs/adr.
+    target = cfg.adr_dir / f"{aid}-{slug}.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    tmpl, _ = load_template(cfg, "adr")
+    text = render(tmpl, {
+        "id": aid,
+        "title": title,
+        "status": "proposed",
+        "related_specs": list(spec_ids),
+        "supersedes": supersedes,
+    })
+    # Die Vorlage haelt Platzhalter im Frontmatter, die render() nicht trifft.
+    # json.dumps statt Python-repr: liefert YAML-Flow mit Doppelquotes, so wie
+    # der Kommentar in der Vorlage es zeigt.
+    import json as _json
+    text = text.replace('related_specs: []',
+                        f'related_specs: {_json.dumps(list(spec_ids))}', 1)
+    if supersedes:
+        text = text.replace('supersedes: ""', f'supersedes: "{supersedes}"', 1)
+    text = text.replace("date: YYYY-MM-DD", f"date: {date.today().isoformat()}", 1)
+    target.write_text(text, encoding="utf-8")
+
+    console.print(f"[green]✓[/] ADR angelegt: [bold]{target}[/]  ([cyan]{aid}[/])")
+    console.print(
+        "  [yellow]→[/] Status ist [bold]proposed[/]. Nach der Entscheidung auf "
+        "[cyan]accepted[/] oder [cyan]rejected[/] setzen."
+    )
+
+
 @new.command("contract", help="Legt einen neuen Contract an, verknüpft mit einer Spec.")
 @click.option("--spec", "spec_id", required=True, help="Zugehörige Spec-ID, z.B. SPEC-0001.")
 @click.option("--format", "fmt", required=True,
