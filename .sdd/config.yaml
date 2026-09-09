@@ -152,6 +152,10 @@ pattern_suggestions:
   max_suggestions: 4
   source: refactoring-guru
 docker:
+  # Abzweigpunkt fuer den Entwicklungsbranch von `sdd start`.
+  # Ohne Angabe wird vom aktuellen HEAD abgezweigt — noetig, wenn
+  # eine Spec auf einer noch nicht gemergten Vorgaengerin aufbaut.
+  # base_branch: main
   runtime: podman
   image: sdd-dev:latest
   dockerfile: .sdd/Dockerfile

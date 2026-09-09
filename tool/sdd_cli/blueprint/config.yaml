@@ -154,6 +154,10 @@ task_routing:
   max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
 
 docker:
+  # Abzweigpunkt fuer den Entwicklungsbranch von `sdd start`.
+  # Ohne Angabe wird vom aktuellen HEAD abgezweigt — noetig, wenn
+  # eine Spec auf einer noch nicht gemergten Vorgaengerin aufbaut.
+  # base_branch: main
   # Ohne Angabe wird die installierte Runtime erkannt (docker bevorzugt,
   # sonst podman). Zum Festnageln die Zeile einkommentieren:
   # runtime: docker        # docker | podman
