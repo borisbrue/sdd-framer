@@ -291,6 +291,25 @@ def init_project(
         config_dst.write_text(text, encoding="utf-8")
         created.append(config_dst)
 
+    # Dockerfile + entrypoint.sh nach .sdd/ kopieren.
+    #
+    # config.yaml verweist mit `dockerfile: .sdd/Dockerfile` auf eine Datei, die
+    # das Blueprint nie auslieferte. Der Fehler fiel erst beim ersten
+    # Container-Schritt auf: `sdd start` ruft mgr.build(), und das bricht mit
+    # "Dockerfile nicht gefunden" ab. Dieselbe Klasse wie #16 (AGENTS.md) und
+    # #55 (GitHub-Workflow) — die Konfiguration nannte eine Datei, die `sdd init`
+    # nicht anlegte.
+    #
+    # Der entrypoint gehoert mit dazu: ohne ihn scheitert das COPY im Dockerfile.
+    for name in ("Dockerfile", "entrypoint.sh"):
+        src_file = src_root / "container" / name
+        dst_file = target / ".sdd" / name
+        if src_file.exists() and (not dst_file.exists() or force):
+            shutil.copy(src_file, dst_file)
+            if name.endswith(".sh"):
+                dst_file.chmod(0o755)
+            created.append(dst_file)
+
     # AGENTS.md im Projekt-Root anlegen.
     #
     # Die Vorlage lag im Blueprint, wurde aber nur nach .sdd/templates/ kopiert
