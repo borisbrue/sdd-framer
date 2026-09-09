@@ -189,7 +189,11 @@ class SpecFinalizer:
         passed_count, total_count = _parse_pytest_counts(test_output)
         save_test_result(self._cfg, spec_id, passed=passed_count, total=total_count)
 
-        if not compose_file:
+        # Der Container bleibt stehen, wenn die Tests rot sind: bei einem
+        # Fehlschlag will man hineinschauen koennen. Vorher wurde er hier
+        # entfernt, bevor finalize ueberhaupt scheitern konnte — und der
+        # Hinweis "starte ihn mit sdd start" fuehrte ins Leere.
+        if not compose_file and tests_passed:
             self._mgr.close(spec_id)
 
         pr_url: str | None = None

@@ -2290,7 +2290,13 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
             console.print(f"[red]✗[/] {exc}")
         sys.exit(1)
 
-    console.print(f"[green]✓[/] [cyan]{result.spec_id}[/] → [bold]in-progress[/]")
+    if result.status_changed:
+        console.print(f"[green]✓[/] [cyan]{result.spec_id}[/] → [bold]in-progress[/]")
+    else:
+        console.print(
+            f"[cyan]•[/] [cyan]{result.spec_id}[/] ist bereits [bold]in-progress[/] – "
+            f"Status unverändert, Container wird geprüft."
+        )
     console.print()
 
     if not result.tst_ids:

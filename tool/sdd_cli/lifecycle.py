@@ -350,6 +350,10 @@ class StartResult:
     stubs_created: list[Path]
     stubs_skipped: list[Path]
     tst_ids: list[str]
+    # False, wenn die Spec schon in-progress war. Der Aufrufer soll trotzdem
+    # weitermachen: der Container fehlt womoeglich, und genau dafuer ruft man
+    # `sdd start` erneut auf.
+    status_changed: bool = True
     # Ohne diese Aufschluesselung war nicht erkennbar, welche Datei tatsaechlich
     # generiert wurde und welche als Platzhalter mit `raise NotImplementedError`
     # liegenblieb — beide standen unter "Test-Stubs angelegt".
@@ -374,21 +378,25 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
         raise ValueError(f"Spec nicht gefunden: {spec_id}")
 
     current_status = spec_doc.frontmatter.get("status", "")
-    if current_status == "in-progress":
-        raise ValueError(f"[INFO] {spec_id} ist bereits in-progress.")
-    if current_status != "approved":
+    # in-progress ist kein Fehler: `sdd finalize` entfernt den Container, bevor
+    # es scheitern kann, und verwies danach auf `sdd start` — das aber
+    # kommentarlos zurueckkehrte, weil der Status schon stand. Der einzige
+    # Ausweg war, den Container von Hand nachzubauen.
+    bereits_gestartet = current_status == "in-progress"
+    if not bereits_gestartet and current_status != "approved":
         raise ValueError(
             f"{spec_id} hat Status '{current_status}' – erst Execution Gate durchlaufen "
             f"(sdd spec approve {spec_id})."
         )
 
-    now = datetime.now(timezone.utc)
-    spec_doc.frontmatter["status"] = "in-progress"
-    spec_doc.frontmatter["started_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    spec_doc.frontmatter["updated"] = now.strftime("%Y-%m-%d")
-    spec_doc.write()
+    if not bereits_gestartet:
+        now = datetime.now(timezone.utc)
+        spec_doc.frontmatter["status"] = "in-progress"
+        spec_doc.frontmatter["started_at"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        spec_doc.frontmatter["updated"] = now.strftime("%Y-%m-%d")
+        spec_doc.write()
 
-    write_audit_log(config, spec_id, "approved", "in-progress", "sdd-start")
+        write_audit_log(config, spec_id, "approved", "in-progress", "sdd-start")
 
     tst_ids: list[str] = spec_doc.frontmatter.get("tests") or []
     stubs_created: list[Path] = []
@@ -419,6 +427,7 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
         stubs_skipped=stubs_skipped,
         tst_ids=list(tst_ids),
         stub_outcomes=stub_outcomes,
+        status_changed=not bereits_gestartet,
     )
 
 
