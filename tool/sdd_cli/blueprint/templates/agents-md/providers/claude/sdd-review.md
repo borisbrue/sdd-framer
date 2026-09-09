@@ -20,7 +20,7 @@ und gehe direkt zu Schritt 5c.
 
 ## Schritt 2: SOLID-Analyse ausführen
 ```bash
-sdd solid-check $ID
+sdd spec solid $ID
 ```
 Zeige das Ergebnis übersichtlich:
 
@@ -38,34 +38,31 @@ Zeige das Ergebnis übersichtlich:
 Bei SOLID-Verletzungen: erkläre konsequenz für Implementierung und Maintainability.
 
 ## Schritt 3: Pattern-Vorschläge
+
+Die Vorschläge entstehen als Teil von `sdd review spec` (Schritt 2) — einen
+eigenen Befehl dafür gibt es seit SPEC-0044 nicht mehr.
+
 ```bash
-sdd pattern-suggest $ID
+sdd review spec $ID
 ```
+
 Zeige jeden Vorschlag mit:
 - Pattern-Name + Kategorie (Behavioral / Structural / Creational)
 - Warum hier passend (konkret auf das Artefakt bezogen)
 - Alternative (was stattdessen möglich wäre + Ablehnungsgrund)
 - Refactoring-Guru-Link
 
-Frage für jeden Vorschlag: "Annehmen? (ja/nein/überspringen)"
-
-Bei "ja":
-```bash
-sdd pattern accept $ID <PatternName> --reason "<Begründung>"
-```
-
-Bei "nein": frage nach Ablehnungsgrund, dann:
-```bash
-sdd pattern reject $ID <PatternName> --reason "<Grund>"
-```
+Besprich jeden Vorschlag mit dem Nutzer und halte die Entscheidung im
+Contract-Text fest — einen Befehl, der sie maschinell speichert, gibt es
+derzeit nicht.
 
 ## Schritt 4: Regression-Check
 
-[WARN] Falls `sdd regression-check` nicht verfügbar ist: Schritt überspringen und
-`[WARN] sdd regression-check nicht verfügbar` ausgeben.
+[WARN] Falls `sdd spec regression` nicht verfügbar ist: Schritt überspringen und
+`[WARN] sdd spec regression nicht verfügbar` ausgeben.
 
 ```bash
-sdd regression-check $ID
+sdd spec regression $ID
 ```
 
 Zeige Stufe-1- und Stufe-2-Befunde **getrennt** mit Präfix `[rule]` bzw. `[llm]`:
@@ -169,7 +166,7 @@ geändert wird.
 **Führe IMMER — unabhängig davon ob Test-Anpassungen nötig waren — den Regression-Check
 auf der übergeordneten Spec durch** (SPEC-ID aus `spec:`-Frontmatter des Tests):
 ```bash
-sdd regression-check <SPEC-ID>
+sdd spec regression <SPEC-ID>
 ```
 Zeige das Ergebnis wie in Schritt 4 beschrieben. Bei `error`-Severity: stoppen und Konflikt
 melden. Bei `warning`/`info` oder 0 Befunden: Gate-Phase `regression-ok` wird automatisch
@@ -209,8 +206,8 @@ Sind bereits Contracts verknüpft (alle `approved`): direkt zu Schritt 7c.
 ### 7b: Contract-Reviews automatisch durchführen
 
 Führe für jeden soeben erstellten Contract **ohne Rückfrage** durch:
-1. `sdd solid-check CON-XXXX`
-2. `sdd regression-check CON-XXXX`
+1. `sdd spec solid CON-XXXX`
+2. `sdd spec regression CON-XXXX`
 3. Inhaltlichen Review (Prüffragen aus Schritt 5b) + Fixes direkt einarbeiten
 4. `status: approved` setzen
 
