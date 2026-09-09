@@ -65,6 +65,12 @@ Der ausfuehrbare Testcode liegt in allen drei Faellen unter `tests/`;
 > 3 lieferten damit Testdateien, die pytest zwar ueber den Pfad einsammelt, aus
 > denen aber keine andere Testdatei importieren kann. Der Begriff ist auf den
 > Unterstrich gezogen; Rangfolge und Verzeichnisse bleiben unveraendert.
+>
+> Ausserdem fehlte `asyncapi` in der Format-Tabelle. Das Format ist seit #40
+> ein eigenes Artefakt-Skeleton, im Rueckfall landete es aber unter
+> `tests/contract/` statt bei den uebrigen API-Contracts — und der Generator
+> erzeugte einen einzigen Rumpf statt einen je Nachricht (#66). Die Zeile
+> haelt fest, was fuer die anderen API-Formate ohnehin galt.
 
 ## Generierungsstrategie pro Format (Rueckfall, siehe Punkt 3 oben)
 
@@ -72,6 +78,7 @@ Der ausfuehrbare Testcode liegt in allen drei Faellen unter `tests/`;
 |-----------------|-----------------|-------------|
 | `gherkin`       | pytest-bdd      | `tests/behavior/test_{con_id_lower}.py` |
 | `openapi`       | pytest + httpx  | `tests/api/test_{con_id_lower}.py` |
+| `asyncapi`      | pytest + assertions | `tests/api/test_{con_id_lower}.py` |
 | `json-schema`   | pytest + jsonschema | `tests/data/test_{con_id_lower}.py` |
 | `slo-yaml`      | pytest + assertions | `tests/performance/test_{con_id_lower}.py` |
 | `markdown`      | pytest (manuell) | `tests/behavior/test_{con_id_lower}.py` (Skeleton) |
