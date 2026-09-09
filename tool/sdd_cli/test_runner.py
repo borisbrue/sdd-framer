@@ -90,25 +90,39 @@ def _resolve_artifact(config: SddConfig, tst_id: str) -> tuple[str, TestStatus, 
     return (artifact, "passed", "")  # status wird nach Ausführung überschrieben
 
 
-_RUNNER_CACHE: dict[str, list[str]] = {}
+_RUNNER_CACHE: dict[tuple[str, str], list[str]] = {}
 
 
-def _resolve_runner(runner: str) -> list[str]:
+def _ist_uv_projekt(project_root: Path) -> bool:
+    """uv.lock ist das eindeutige Signal; pyproject.toml allein reicht nicht."""
+    return (project_root / "uv.lock").exists()
+
+
+def _resolve_runner(runner: str, project_root: Path | None = None) -> list[str]:
     """Bestimmt das aufrufbare Runner-Kommando. Wirft RuntimeError, wenn keins passt.
 
     `sys.executable -m pytest` nutzt die Umgebung des aufrufenden Prozesses. Das ist
     im sdd-Repo selbst richtig, in einem fremden Projekt aber der Interpreter, der
-    `sdd` ausfuehrt — und der hat pytest in der Regel nicht. Fruehere Fassungen
-    riefen entweder blank `pytest` (nicht im PATH ohne aktiviertes venv) oder
-    `sys.executable -m pytest` (kein Modul pytest) auf; beides landete als
-    *fehlgeschlagener Test* im Report statt als Infrastrukturproblem.
+    `sdd` ausfuehrt — und der hat pytest in der Regel nicht. Blankes `pytest` liegt
+    ohne aktiviertes venv nicht im PATH, was bei uv-Projekten der Normalfall ist.
 
-    Reihenfolge: konfiguriertes Kommando, sonst der eigene Interpreter, sonst ein
-    pytest im PATH. Das Ergebnis wird gecacht, sonst kostet jeder Testlauf einen
-    zusaetzlichen --version-Aufruf.
+    In einem uv-Projekt lief das Pre-Commit-Gate deshalb nie: beide Kandidaten
+    scheiterten, der Lauf meldete "Kein lauffaehiger Test-Runner gefunden" und der
+    Commit ging durch. `uv run pytest` wird darum zuerst probiert, wenn eine
+    uv.lock danebenliegt und uv im PATH ist — das ist die Umgebung, die das
+    Projekt selbst beschreibt.
+
+    Ohne --no-sync: seit dem venv-Schutz beim Container-Start (#74) schreibt uv
+    nicht mehr in den bind-gemounteten Workspace.
+
+    Reihenfolge: konfiguriertes Kommando, sonst uv im uv-Projekt, sonst der eigene
+    Interpreter, sonst ein pytest im PATH. Das Ergebnis wird je Projekt gecacht,
+    sonst kostet jeder Testlauf einen zusaetzlichen --version-Aufruf.
     """
-    if runner in _RUNNER_CACHE:
-        return _RUNNER_CACHE[runner]
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    key = (runner, str(root))
+    if key in _RUNNER_CACHE:
+        return _RUNNER_CACHE[key]
 
     candidates: list[list[str]] = []
     if runner != "pytest":
@@ -118,17 +132,20 @@ def _resolve_runner(runner: str) -> list[str]:
         if parts and shutil.which(parts[0]):
             candidates.append(parts)
     else:
+        if _ist_uv_projekt(root) and shutil.which("uv"):
+            candidates.append(["uv", "run", "pytest"])
         candidates.append([sys.executable, "-m", "pytest"])
         if shutil.which("pytest"):
             candidates.append(["pytest"])
 
     for cand in candidates:
         try:
-            probe = subprocess.run([*cand, "--version"], capture_output=True, timeout=30)
+            probe = subprocess.run([*cand, "--version"], capture_output=True,
+                                   timeout=60, cwd=str(root))
         except (OSError, subprocess.SubprocessError):
             continue
         if probe.returncode == 0:
-            _RUNNER_CACHE[runner] = cand
+            _RUNNER_CACHE[key] = cand
             return cand
 
     raise RuntimeError(
@@ -146,7 +163,7 @@ def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[Te
     if not abs_path.exists():
         return ("missing", 0.0, f"Artefakt-Datei nicht gefunden: {artifact_path}")
 
-    cmd = [*_resolve_runner(runner), str(abs_path), "--tb=short", "-q"]
+    cmd = [*_resolve_runner(runner, config.root), str(abs_path), "--tb=short", "-q"]
     cmd += config.runner_extra_args()
     start = datetime.now(timezone.utc).timestamp()
     try:
