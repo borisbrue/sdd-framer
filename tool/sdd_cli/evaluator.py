@@ -317,7 +317,8 @@ def run_evaluation(
               flush=True)
 
     # Strukturierte Holdouts: deterministisch
-    docker_runtime = config.raw.get("docker", {}).get("runtime", "docker")
+    from .dev_container import resolve_runtime
+    docker_runtime = resolve_runtime(config.raw)
 
     struct_report = run_structured_evaluation(
         config, base_url,
