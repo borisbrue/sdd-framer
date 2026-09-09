@@ -38,10 +38,30 @@ class ComplianceChecker(Protocol):
 
 # ── FR-Extraktion ─────────────────────────────────────────────────────────────
 
-_FR_SECTION_RE = re.compile(
-    r"##\s+\d+\.\s+Funktionale Anforderungen\b(.*?)(?=\n##\s|\Z)",
-    re.DOTALL | re.IGNORECASE,
+# Die Ueberschrift erwartete fest h2 mit Nummer. SPEC-0028 schreibt
+# `### Funktionale Anforderungen` — der Abschnitt wurde gar nicht gefunden, die
+# Spec galt als anforderungsfrei und passierte die Kette ungeprueft.
+_FR_HEADING_RE = re.compile(
+    r"^(#{2,3})\s+(?:\d+\.\s+)?Funktionale Anforderungen\b.*$",
+    re.IGNORECASE | re.MULTILINE,
 )
+
+
+def _fr_section(body: str) -> str:
+    """Inhalt des FR-Abschnitts, oder "" wenn es keinen gibt.
+
+    Das Abschnittsende haengt von der Ebene der Ueberschrift ab: eine h2-Sektion
+    endet erst bei der naechsten h1/h2, nicht schon bei einer h3-Unterueberschrift.
+    SPEC-0009 gliedert ihre FRs unter `### Export` — mit einem festen Lookahead
+    auf `#{2,3}` waere der Abschnitt dort leer abgeschnitten worden.
+    """
+    heading = _FR_HEADING_RE.search(body)
+    if heading is None:
+        return ""
+    level = len(heading.group(1))
+    rest = body[heading.end():]
+    ende = re.search(rf"^#{{1,{level}}}\s", rest, re.MULTILINE)
+    return rest[: ende.start()] if ende else rest
 # Eine FR gilt als deklariert, wenn ihre ID am Zeilenanfang steht — nach
 # optionalem Listenmarker und optionaler Fettung. Im Bestand kommen fuenf
 # Schreibweisen vor, alle mit der ID am Zeilenanfang:
@@ -57,7 +77,9 @@ _FR_SECTION_RE = re.compile(
 # obwohl die Spec nur 23 Anforderungen hatte. Jeder Verweis auf eine fremde
 # Spec wurde so zum Fehler — obwohl genau solche Verweise das sind, was der
 # Regression-Check einfordert.
-_FR_ID_RE = re.compile(r"^[ \t]*(?:[-*+][ \t]*)?(?:\*\*)?(FR-\d+)\b", re.MULTILINE)
+_FR_ID_RE = re.compile(
+    r"^[ \t]*(?:[-*+][ \t]*)?(?:\[[ xX]\][ \t]*)?(?:\*\*)?(FR-\d+)\b", re.MULTILINE
+)
 
 
 def _extract_fr_ids(body: str) -> list[str]:
@@ -66,10 +88,10 @@ def _extract_fr_ids(body: str) -> list[str]:
     Querverweise auf FRs anderer Specs zaehlen nicht mit: sie stehen im
     Fliesstext, nicht am Zeilenanfang.
     """
-    match = _FR_SECTION_RE.search(body)
-    if not match:
+    abschnitt = _fr_section(body)
+    if not abschnitt:
         return []
-    ids = _FR_ID_RE.findall(match.group(1))
+    ids = _FR_ID_RE.findall(abschnitt)
     return list(dict.fromkeys(ids))  # dedupliziert, reihenfolgestabil
 
 
