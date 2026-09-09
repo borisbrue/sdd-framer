@@ -250,6 +250,29 @@ def validate_docker_config(docker_cfg: dict) -> None:
 
 # ── Git helpers ───────────────────────────────────────────────────────────────
 
+def resolve_base_branch(cfg_raw: dict) -> str | None:
+    """Abzweigpunkt fuer den Entwicklungsbranch.
+
+    None bedeutet: vom aktuellen HEAD. Vorher stand hier fest `main`. Bei einer
+    Kette aufeinander aufbauender Specs entstand der Entwicklungszweig damit
+    ohne die Arbeit der noch nicht gemergten Vorgaenger-Spec.
+
+    Der feste Wert hatte eine zweite Folge: `sdd start` schreibt vorher den
+    Spec-Status und das audit.log. Wer nicht auf main stand, bekam beim Wechsel
+    auf mains Baum
+
+        Bitte committen oder stashen Sie Ihre Änderungen, bevor Sie Branches
+        wechseln.
+
+    — an Aenderungen, die `sdd start` selbst erzeugt hatte. Von HEAD abzuzweigen
+    nimmt sie mit, statt sie zu gefaehrden.
+
+    docker.base_branch setzt den alten Wert wieder, wo er richtig ist.
+    """
+    wert = (cfg_raw.get("docker") or {}).get("base_branch")
+    return str(wert).strip() if wert else None
+
+
 def _branch_exists(branch: str) -> bool:
     result = _git(["rev-parse", "--verify", branch], capture=True, check=False)
     return result.returncode == 0
@@ -513,7 +536,10 @@ class DevContainerManager:
         branch_created = False
         try:
             if not _branch_exists(bname):
-                _git(["checkout", "-b", bname, "main"])
+                base = resolve_base_branch(self.cfg.raw)
+                # Ohne base: von HEAD. `git checkout -b` nimmt uncommittete
+                # Aenderungen mit, der Wechsel auf einen fremden Baum nicht.
+                _git(["checkout", "-b", bname] + ([base] if base else []))
                 branch_created = True
 
             image = self._docker_image()
@@ -530,9 +556,18 @@ class DevContainerManager:
             print(f"✓ Container {cname} gestartet | Branch {bname} | Image {image}")
         except subprocess.CalledProcessError as exc:
             if branch_created:
-                _git(["checkout", "main"], check=False)
+                # Zurueck auf den Ausgangspunkt, nicht pauschal auf main.
+                _git(["checkout", "-"], check=False)
                 _git(["branch", "-D", bname], check=False)
             print(f"✗ Runtime-Fehler – Rollback abgeschlossen: {exc}", file=sys.stderr)
+            if not branch_created and resolve_base_branch(self.cfg.raw):
+                # Der haeufigste Grund, wenn ein fester Abzweigpunkt gesetzt ist:
+                # `sdd start` schreibt vorher Spec-Status und audit.log.
+                print(
+                    "  Uncommittete Aenderungen? Committe sie, oder entferne "
+                    "docker.base_branch, damit von HEAD abgezweigt wird.",
+                    file=sys.stderr,
+                )
             sys.exit(1)
 
     def exec_cmd(self, spec_id: str, cmd: list[str]) -> None:

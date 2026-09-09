@@ -62,7 +62,8 @@ def test_tc01_normal_start(cfg):
         volume=f"{cfg.root}:/workspace",
         env={"SPEC_ID": "SPEC-0021", "GIT_BRANCH": "dev/SPEC-0021"},
     )
-    mock_git.assert_any_call(["checkout", "-b", "dev/SPEC-0021", "main"])
+    # CON-0065 G-01 v0.3.0: aus dem aktuellen HEAD, nicht fest aus main.
+    mock_git.assert_any_call(["checkout", "-b", "dev/SPEC-0021"])
 
 
 # ── TC-02: Idempotenz – Container läuft bereits ───────────────────────────────
