@@ -31,6 +31,11 @@ class EvalContainerConfig:
     workspace: str         # Workspace-Pfad im Container
 
 
+def _venv_guard(workspace: str) -> list[str]:
+    from .dev_container import venv_guard_args
+    return venv_guard_args(workspace)
+
+
 def load_eval_container_config(cfg: Any) -> EvalContainerConfig:
     """Lädt die Eval-Container-Konfiguration aus config.yaml."""
     from .dev_container import resolve_runtime as _resolve_runtime
@@ -132,6 +137,9 @@ class EvalContainer:
             [ecfg.runtime, "run", "-d",
              "--name", _EVAL_CONTAINER_NAME,
              "-v", workspace_volume,
+             # Schuetzt das Host-venv vor dem Container, siehe
+             # dev_container.venv_guard_args.
+             *_venv_guard(ecfg.workspace),
              "-p", port_mapping]
             + env_args
             + [ecfg.image]
