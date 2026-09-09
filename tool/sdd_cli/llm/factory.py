@@ -110,7 +110,7 @@ def get_completion_provider(
 
     if provider == "claude-cli":
         from .providers.claude_cli import ClaudeCliCompletionProvider
-        return ClaudeCliCompletionProvider()
+        return ClaudeCliCompletionProvider(timeout=config.llm_timeout())
 
     if provider == "huggingface":
         llm = config.raw.get("llm") or {}
