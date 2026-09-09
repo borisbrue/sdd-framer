@@ -42,11 +42,30 @@ _FR_SECTION_RE = re.compile(
     r"##\s+\d+\.\s+Funktionale Anforderungen\b(.*?)(?=\n##\s|\Z)",
     re.DOTALL | re.IGNORECASE,
 )
-_FR_ID_RE = re.compile(r"\bFR-\d+\b")
+# Eine FR gilt als deklariert, wenn ihre ID am Zeilenanfang steht — nach
+# optionalem Listenmarker und optionaler Fettung. Im Bestand kommen fuenf
+# Schreibweisen vor, alle mit der ID am Zeilenanfang:
+#
+#     - **FR-01:**    **FR-01**    - **FR-01**    - **FR-01:    - FR-01:
+#
+# Vorher stand hier \bFR-\d+\b ueber den ganzen Abschnitt. Damit zaehlte jede
+# Nennung als eigene Anforderung, auch ein Querverweis im Fliesstext:
+#
+#     `NotificationContext` … aus SPEC-0016 (FR-18–FR-20) als In-App-Kanal
+#
+# `sdd spec approve` brach daran mit "FR-24 hat keinen zugeordneten Test" ab,
+# obwohl die Spec nur 23 Anforderungen hatte. Jeder Verweis auf eine fremde
+# Spec wurde so zum Fehler — obwohl genau solche Verweise das sind, was der
+# Regression-Check einfordert.
+_FR_ID_RE = re.compile(r"^[ \t]*(?:[-*+][ \t]*)?(?:\*\*)?(FR-\d+)\b", re.MULTILINE)
 
 
 def _extract_fr_ids(body: str) -> list[str]:
-    """Extrahiert FR-IDs ausschließlich aus dem Abschnitt 'Funktionale Anforderungen'."""
+    """Extrahiert deklarierte FR-IDs aus dem Abschnitt 'Funktionale Anforderungen'.
+
+    Querverweise auf FRs anderer Specs zaehlen nicht mit: sie stehen im
+    Fliesstext, nicht am Zeilenanfang.
+    """
     match = _FR_SECTION_RE.search(body)
     if not match:
         return []
