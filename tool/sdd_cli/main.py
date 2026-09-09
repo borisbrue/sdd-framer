@@ -1675,7 +1675,14 @@ def spec_solid(artifact_id: str, output_json: bool, principle: str | None) -> No
         sys.exit(1)
 
 
-def _mark_regression_ok(cfg: "SddConfig", spec_id: str) -> bool:
+def _mark_regression_ok(
+    cfg: "SddConfig",
+    spec_id: str,
+    *,
+    llm_skipped: bool = False,
+    skip_reason: str = "",
+    allow_skipped_llm: bool = False,
+) -> bool:
     """Markiert die Gate-Phase regression-ok, aber nur mit stehendem Vorgaenger.
 
     `sdd spec regression` war der einzige Phasenuebergang der CLI ohne
@@ -1690,6 +1697,24 @@ def _mark_regression_ok(cfg: "SddConfig", spec_id: str) -> bool:
     Analysenutzen mit vernichtet.
     """
     from .gate import ExecutionGate
+
+    if llm_skipped and not allow_skipped_llm:
+        # Stufe 2 lief gar nicht. Die Phase trotzdem zu markieren macht einen
+        # Timeout zur Umgehung des Gates: derselbe Check hatte beim ersten Lauf
+        # zwei ERROR-Befunde: regression-ok ist Vorbedingung fuer spec-approved
+        # und damit fuer execute-unlocked.
+        console.print(
+            f"[yellow]⚠[/] Gate-Phase [bold]regression-ok[/] nicht markiert: "
+            f"LLM-Stufe uebersprungen ({skip_reason})"
+        )
+        console.print(
+            "  [dim]Stufe 1 ist durchgelaufen, Stufe 2 nicht — das Ergebnis ist "
+            "unvollstaendig.[/]\n"
+            f"  [dim]Erneut versuchen: [/][cyan]sdd spec regression {spec_id}[/]\n"
+            "  [dim]Bewusst ohne Stufe 2 fortfahren: [/]"
+            f"[cyan]sdd spec regression {spec_id} --allow-skipped-llm[/]"
+        )
+        return False
 
     g = ExecutionGate(cfg.root)
     allowed = g.can_start_phase(spec_id, "regression-ok")
@@ -1709,7 +1734,9 @@ def _mark_regression_ok(cfg: "SddConfig", spec_id: str) -> bool:
 @spec_group.command("regression", help="Prüft eine Spec auf Konflikte mit bestehenden Specs.")
 @click.argument("spec_id")
 @click.option("--json", "output_json", is_flag=True, help="Maschinenlesbare JSON-Ausgabe.")
-def spec_regression(spec_id: str, output_json: bool) -> None:
+@click.option("--allow-skipped-llm", is_flag=True,
+              help="Markiert regression-ok auch, wenn die LLM-Stufe uebersprungen wurde.")
+def spec_regression(spec_id: str, output_json: bool, allow_skipped_llm: bool) -> None:
     import json as _json
     from .regression_check import RegressionCheckChain
 
@@ -1738,7 +1765,12 @@ def spec_regression(spec_id: str, output_json: bool) -> None:
         ))
         if any(f.severity == "error" for f in result.findings):
             sys.exit(1)
-        _mark_regression_ok(cfg, spec_id)
+        _mark_regression_ok(
+            cfg, spec_id,
+            llm_skipped=result.llm_skipped,
+            skip_reason=result.llm_skip_reason or "",
+            allow_skipped_llm=allow_skipped_llm,
+        )
         return
 
     rule_findings = [f for f in result.findings if f.source == "rule"]
@@ -1778,7 +1810,12 @@ def spec_regression(spec_id: str, output_json: bool) -> None:
         console.print(f"  [cyan]sdd conflict list {spec_id}[/]                        – zeigt alle IDs")
         console.print(f"  [cyan]sdd conflict acknowledge {spec_id} <CF-ID> --reason \"...\"[/]")
 
-    if _mark_regression_ok(cfg, spec_id):
+    if _mark_regression_ok(
+        cfg, spec_id,
+        llm_skipped=result.llm_skipped,
+        skip_reason=result.llm_skip_reason or "",
+        allow_skipped_llm=allow_skipped_llm,
+    ):
         console.print("\n[green]✓[/] Gate-Phase [bold]regression-ok[/] markiert")
 
 
