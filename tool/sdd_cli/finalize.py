@@ -11,6 +11,7 @@ Ablauf: git commit → Container-Check → Tests im Container → Container entf
 from __future__ import annotations
 
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -280,11 +281,43 @@ class SpecFinalizer:
             # liefert und die Spec trotzdem Vollzug meldet.
             return None, None, guard
 
+        push_fehler = self._push_branch(branch)
+        if push_fehler:
+            # Ohne Remote-Branch kann gh pr create nicht greifen ("No commits
+            # between main and <branch>"). Der Lauf faellt dann auf die lokale
+            # PR-Datei zurueck — mit dem Grund, statt nur mit dem Ergebnis.
+            print(push_fehler, file=sys.stderr)
+
         strategy = GhFallbackPRStrategy()
         pr_url = strategy.create(spec_id, self._cfg, branch=branch)
         pr_path = None if pr_url else self._cfg.root / ".sdd" / "prs" / f"PR-{spec_id}.md"
         self._mark_implemented(spec_id)
         return pr_url, pr_path, None
+
+    def _push_branch(self, branch: str) -> str | None:
+        """Schiebt den finalisierten Branch aufs Remote. Gibt den Fehler zurueck.
+
+        `gh pr create` verlangt einen Branch, den es auf origin gibt. finalize
+        legte ihn nur lokal an, weshalb der Aufruf zuverlaessig scheiterte:
+
+            No commits between main and feat/SPEC-0002,
+            Head ref must be a branch (createPullRequest)
+
+        Der PR landete als lokale Datei, und der Zweck des Kommandos — Spec zu
+        PR ohne Handgriffe — war verfehlt. Ohne Remote (kein origin, kein
+        Netz) bleibt der lokale Rueckfall unveraendert bestehen; der Push ist
+        kein Abbruchgrund.
+        """
+        if not _git(["remote", "get-url", "origin"], cwd=self._cfg.root).returncode == 0:
+            return "  ⚠ Kein 'origin' konfiguriert – Branch wird nicht gepusht."
+
+        result = _git(["push", "-u", "origin", branch], cwd=self._cfg.root)
+        if result.returncode == 0:
+            print(f"  ✓ Branch '{branch}' nach origin gepusht.")
+            return None
+        grund = (result.stderr or result.stdout or "").strip().splitlines()
+        return (f"  ⚠ Push von '{branch}' fehlgeschlagen – PR wird lokal abgelegt."
+                + ("\n    " + "\n    ".join(grund[-3:]) if grund else ""))
 
     def _branch_missing_commit(self, branch: str, commit_hash: str | None) -> str | None:
         """Prueft, ob der PR-Head den Finalize-Commit enthaelt."""
