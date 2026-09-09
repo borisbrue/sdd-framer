@@ -7,7 +7,7 @@ spec: SPEC-0015
 contract: CON-0048
 status: implemented
 framework: pytest
-artifact: ".sdd/tests/contract/test_con-0048.py"
+artifact: "tests/contract/test_con_0048.py"
 tags: []
 ---
 

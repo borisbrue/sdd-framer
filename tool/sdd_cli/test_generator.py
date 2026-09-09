@@ -36,6 +36,18 @@ def _slug(text: str) -> str:
     return _SLUGIFY_RE.sub("_", text.lower()).strip("_")[:50]
 
 
+def _zeigt_nach_sdd(pfad: str) -> bool:
+    """Liegt der Pfad unterhalb von .sdd/?
+
+    CON-0028: "Der ausfuehrbare Testcode liegt in allen drei Faellen unter
+    tests/; .sdd/ haelt ausschliesslich die SDD-Dokumente." Der Generator nahm
+    bisher jeden Pfad, den ein TST-Dokument nannte. Vier Dokumente zeigten nach
+    .sdd/tests/ — 27 Tests lagen dort und liefen nie mit (#94).
+    """
+    teile = Path(pfad).parts
+    return bool(teile) and teile[0] == ".sdd"
+
+
 def _extract_scenarios(feature_text: str) -> list[str]:
     """Extract scenario titles from a .feature file."""
     titles = []
@@ -251,7 +263,7 @@ class TestGenerator:
         doc = self._find_test_doc(con_id) or {}
 
         artifact = str(doc.get("artifact") or "").strip().strip('"')
-        if artifact and _PLACEHOLDER_SEGMENT not in artifact:
+        if artifact and _PLACEHOLDER_SEGMENT not in artifact and not _zeigt_nach_sdd(artifact):
             return self.repo_root / artifact
 
         if doc.get("level"):
