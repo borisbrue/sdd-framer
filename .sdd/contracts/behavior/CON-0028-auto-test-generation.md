@@ -5,7 +5,7 @@ title: "Auto Test Generation – Verhalten"
 type: behavior
 format: gherkin
 spec: SPEC-0014
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: "contracts/behavior/auto-test-generation.feature"
 tests: ["TST-0040"]
@@ -59,6 +59,13 @@ Der Pfad wird in dieser Rangfolge bestimmt:
 Der ausfuehrbare Testcode liegt in allen drei Faellen unter `tests/`;
 `.sdd/` haelt ausschliesslich die SDD-Dokumente.
 
+> **v0.2.0 (2026-09-09):** `{con_id_lower}` war als Kleinschreibung *mit
+> Bindestrich* definiert (`con-0025`). Daraus entstand `test_con-0025.py` — ein
+> Dateiname, der als Python-Modul nicht importierbar ist. Die Rueckfaelle 2 und
+> 3 lieferten damit Testdateien, die pytest zwar ueber den Pfad einsammelt, aus
+> denen aber keine andere Testdatei importieren kann. Der Begriff ist auf den
+> Unterstrich gezogen; Rangfolge und Verzeichnisse bleiben unveraendert.
+
 ## Generierungsstrategie pro Format (Rueckfall, siehe Punkt 3 oben)
 
 | Contract-Format | Test-Framework  | Output-Pfad |
@@ -75,4 +82,4 @@ Der ausfuehrbare Testcode liegt in allen drei Faellen unter `tests/`;
 |-----------------|------------|
 | Skeleton        | Generierte Testdatei mit leeren `pass`-Funktionen als Startpunkt |
 | Re-Run          | Erneuter Aufruf von `sdd test generate` nach Änderung eines Contracts |
-| CON-ID-lower    | Contract-ID in Kleinbuchstaben mit Bindestrich, z.B. `con-0025` |
+| CON-ID-lower    | Contract-ID in Kleinbuchstaben, Bindestrich zu Unterstrich, z.B. `con_0025` — der Dateiname muss ein gueltiger Python-Modulname sein |
