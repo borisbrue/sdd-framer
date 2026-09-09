@@ -25,6 +25,29 @@ if TYPE_CHECKING:
 
 # ── Naming conventions ────────────────────────────────────────────────────────
 
+# Pfad des venv im Container. Muss ausserhalb des bind-gemounteten Workspace
+# liegen, sonst schreibt uv in das Verzeichnis des Hosts.
+CONTAINER_VENV = "/opt/sdd-venv"
+
+
+def venv_guard_args(workspace: str = "/workspace") -> list[str]:
+    """Schuetzt das Host-venv vor dem Container.
+
+    {root}:/workspace ist ein Bind-Mount. Legt im Container irgendein Befehl ein
+    venv an — `uv run` tut das ungefragt —, landet es unter /workspace/.venv und
+    damit im Arbeitsverzeichnis des Hosts. Danach zeigt .venv/bin/python auf ein
+    Python, das es nur im Container gibt; auf dem Host laeuft nichts mehr.
+
+    Zwei Massnahmen, weil eine allein nicht reicht:
+
+    - UV_PROJECT_ENVIRONMENT lenkt uv aus dem Mount heraus. Greift nicht bei
+      `python -m venv .venv`.
+    - Ein anonymes Volume auf {workspace}/.venv ueberdeckt den Bind-Mount an
+      genau dieser Stelle. Was dort entsteht, bleibt im Container.
+    """
+    return ["-v", f"{workspace}/.venv", "-e", f"UV_PROJECT_ENVIRONMENT={CONTAINER_VENV}"]
+
+
 def container_name(spec_id: str) -> str:
     return f"sdd-dev-{spec_id.lower().replace('_', '-')}"
 
@@ -128,6 +151,7 @@ class ContainerRuntime(abc.ABC):
         env: dict[str, str],
     ) -> None:
         args = ["run", "-d", "--name", name, "-v", volume]
+        args += venv_guard_args(volume.split(":", 1)[-1])
         for k, v in env.items():
             args += ["-e", f"{k}={v}"]
         args += [image, "tail", "-f", "/dev/null"]
@@ -163,6 +187,7 @@ class PodmanRuntime(ContainerRuntime):
         env: dict[str, str],
     ) -> None:
         args = ["run", "-d", "--name", name, "-v", volume]
+        args += venv_guard_args(volume.split(":", 1)[-1])
         for k, v in env.items():
             args += ["-e", f"{k}={v}"]
         args += [image, "tail", "-f", "/dev/null"]
