@@ -177,6 +177,42 @@ class LLMSemanticCheckHandler(RegressionCheckHandler):
         self._continue(target, context_specs, result)
 
 
+_CONFLICT_ID_RE = re.compile(r"^CF-\d+-R(\d+)$")
+
+
+def _conflict_identity(conflict: dict) -> tuple[str, str, str]:
+    """Identitaet eines Regressions-Befunds: welches Abschnittspaar widerspricht sich.
+
+    Die Beschreibung taugt nicht als Schluessel — der LLM-Pfad formuliert sie bei
+    jedem Lauf neu. Das Abschnittspaar ist die eigentliche Aussage.
+    """
+    return (
+        str(conflict.get("type", "")),
+        str(conflict.get("new_contract", "")),
+        str(conflict.get("conflicting_contract", "")),
+    )
+
+
+def _conflict_identity_of_finding(finding: "CheckFinding") -> tuple[str, str, str]:
+    return (finding.type, finding.own_section, f"{finding.spec_id}:{finding.section}")
+
+
+def _next_conflict_id(conflicts: list[dict], spec_num: str) -> str:
+    """Naechste freie R-Nummer.
+
+    Vorher zaehlte jeder Lauf ab R001 neu, waehrend aufgeloeste Befunde stehen
+    blieben. Nach drei Laeufen stand CF-XXXX-R001 zweimal im Bericht — mit
+    verschiedenem Inhalt. `sdd conflict resolve` traf die erste Fundstelle, die
+    zweite blieb offen und war ueber die CLI nicht mehr erreichbar.
+    """
+    hoechste = 0
+    for c in conflicts:
+        m = _CONFLICT_ID_RE.match(str(c.get("id", "")))
+        if m:
+            hoechste = max(hoechste, int(m.group(1)))
+    return f"CF-{spec_num}-R{hoechste + 1:03d}"
+
+
 class RegressionCheckChain:
     """Verwaltet die Chain of Responsibility für Regression Checks."""
 
@@ -231,16 +267,37 @@ class RegressionCheckChain:
         else:
             data = {"spec_id": spec_id, "new_contracts": [], "conflicts": [], "impact_summary": {}}
 
-        data["conflicts"] = [
-            c for c in data.get("conflicts", [])
-            if c.get("source") != "regression" or c.get("status") != "open"
-        ]
-
         _sev_map = {"error": "high", "warning": "medium", "info": "low"}
         spec_num = spec_id.replace("SPEC-", "")
-        for i, f in enumerate(findings, start=1):
-            data["conflicts"].append({
-                "id": f"CF-{spec_num}-R{i:03d}",
+
+        bestand: list[dict] = list(data.get("conflicts", []))
+        neu_identitaeten = {_conflict_identity_of_finding(f) for f in findings}
+
+        # Offene Regressions-Befunde, die dieser Lauf nicht mehr meldet, sind
+        # erledigt. Aufgeloeste bleiben stehen — sie tragen ihre Begruendung.
+        bestand = [
+            c for c in bestand
+            if c.get("source") != "regression"
+            or c.get("status") != "open"
+            or _conflict_identity(c) in neu_identitaeten
+        ]
+
+        nach_identitaet = {
+            _conflict_identity(c): c for c in bestand if c.get("source") == "regression"
+        }
+
+        for f in findings:
+            ident = _conflict_identity_of_finding(f)
+            vorhanden = nach_identitaet.get(ident)
+            if vorhanden is not None:
+                # Denselben Widerspruch erneut gefunden: Beschreibung
+                # aktualisieren, ID und Aufloesung behalten. Vorher entstand ein
+                # zweiter Eintrag mit derselben ID.
+                vorhanden["detail"] = f.description
+                vorhanden["severity"] = _sev_map.get(f.severity, "medium")
+                continue
+            eintrag = {
+                "id": _next_conflict_id(bestand, spec_num),
                 "type": f.type,
                 "severity": _sev_map.get(f.severity, "medium"),
                 "new_contract": f.own_section,
@@ -249,7 +306,11 @@ class RegressionCheckChain:
                 "source": "regression",
                 "status": "open",
                 "resolution": None,
-            })
+            }
+            bestand.append(eintrag)
+            nach_identitaet[ident] = eintrag
+
+        data["conflicts"] = bestand
 
         data["generated_at"] = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         report_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
