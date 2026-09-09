@@ -89,6 +89,18 @@ class SddConfig:
     def validation_rule(self, name: str, default=True):
         return self.raw.get("validation", {}).get(name, default)
 
+    def llm_timeout(self) -> int:
+        """Zeitlimit fuer einen einzelnen LLM-Aufruf in Sekunden.
+
+        Gegenstueck zu test_runner.timeout_per_spec. Der Regression-Check
+        brauchte fuer reale Specs mehrere Minuten; der frueher fest verdrahtete
+        Wert von 120s war systematisch zu knapp.
+        """
+        try:
+            return max(1, int((self.raw.get("llm") or {}).get("timeout_seconds", 600)))
+        except (TypeError, ValueError):
+            return 600
+
     def runner_command(self) -> str:
         return self.raw.get("test_runner", {}).get("command", "pytest")
 

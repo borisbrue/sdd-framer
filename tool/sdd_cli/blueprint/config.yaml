@@ -121,6 +121,9 @@ pattern_suggestions:
   max_suggestions: 4
   source: refactoring-guru
 llm:
+  # Zeitlimit fuer einen einzelnen LLM-Aufruf (Sekunden).
+  # Der Regression-Check braucht fuer groessere Specs mehrere Minuten.
+  timeout_seconds: 600
   # Zeitlimit fuer die Testcode-Generierung in `sdd start` (Sekunden).
   # Bei umfangreichen Test-Dokumenten und claude-cli kann 300 knapp sein.
   test_generation_timeout: 300

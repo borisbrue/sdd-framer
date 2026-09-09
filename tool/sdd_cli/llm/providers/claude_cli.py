@@ -11,7 +11,10 @@ from collections.abc import Callable
 
 from ..base import CompletionResult
 
-_DEFAULT_COMPLETION_TIMEOUT = 120
+# 600 statt 120: der Regression-Check brauchte fuer reale Specs mehrere Minuten
+# und lief systematisch in den alten Wert. Solange ein Skip die Gate-Phase noch
+# markierte, fiel das nicht auf; seit #71 bleibt das Gate dort stehen.
+_DEFAULT_COMPLETION_TIMEOUT = 600
 
 # Flatpak-Sandboxes und andere eingeschränkte Umgebungen fehlt ~/.local/bin im PATH.
 _EXTRA_SEARCH_PATH = os.pathsep.join([
@@ -30,9 +33,13 @@ class ClaudeCliCompletionProvider:
 
     max_tokens: ignoriert (CLI kennt kein --max-tokens Flag).
     system_prompt: als Präfix <system>\\n...\\n</system>\\n\\n eingefügt.
-    timeout: an subprocess.run weitergereicht; None → 120s Default.
+    timeout: an subprocess.run weitergereicht. Reihenfolge: Argument, sonst der
+    beim Erzeugen gesetzte Wert (aus llm.timeout_seconds), sonst 600s.
     usage: immer None (CLI liefert keine Token-Counts).
     """
+
+    def __init__(self, timeout: int | None = None) -> None:
+        self._timeout = timeout
 
     def complete(
         self,
@@ -53,7 +60,11 @@ class ClaudeCliCompletionProvider:
         else:
             full_prompt = prompt
 
-        effective_timeout = timeout if timeout is not None else _DEFAULT_COMPLETION_TIMEOUT
+        effective_timeout = (
+            timeout
+            if timeout is not None
+            else (self._timeout or _DEFAULT_COMPLETION_TIMEOUT)
+        )
         try:
             proc = subprocess.run(
                 [claude, "--print", "--output-format", "json", "-p", full_prompt],
