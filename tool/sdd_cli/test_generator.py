@@ -32,8 +32,34 @@ _FORMAT_DIR = {
 }
 
 
-def _slug(text: str) -> str:
-    return _SLUGIFY_RE.sub("_", text.lower()).strip("_")[:50]
+# Umlaute und ss wurden von _SLUGIFY_RE verworfen: "Oberfläche" ergab
+# "oberfl_che". Transliteration erhaelt den Namen, statt ihn zu zerloechern.
+_TRANSLITERATION = str.maketrans({
+    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+    "Ä": "ae", "Ö": "oe", "Ü": "ue",
+    "á": "a", "à": "a", "â": "a", "é": "e", "è": "e", "ê": "e",
+    "í": "i", "ì": "i", "î": "i", "ó": "o", "ò": "o", "ô": "o",
+    "ú": "u", "ù": "u", "û": "u", "ç": "c", "ñ": "n",
+})
+
+
+def _slug(text: str, fallback: str = "root") -> str:
+    """Bezeichnerfreundlicher Name. Nie leer.
+
+    Fuer den Pfad "/" entstand vorher ein leerer Namensteil und damit
+    `def test_tc01_():` — syntaktisch gueltig, aber ohne Aussage.
+    """
+    slug = _SLUGIFY_RE.sub("_", text.lower().translate(_TRANSLITERATION)).strip("_")[:50]
+    return slug or fallback
+
+
+def _module_name(con_id: str) -> str:
+    """CON-0014 -> con_0014.
+
+    Der Rueckfall bildete `test_con-0014.py` — ein Modulname mit Bindestrich
+    ist nicht importierbar.
+    """
+    return con_id.lower().replace("-", "_")
 
 
 def _extract_scenarios(feature_text: str) -> list[str]:
@@ -255,10 +281,12 @@ class TestGenerator:
             return self.repo_root / artifact
 
         if doc.get("level"):
-            return self.repo_root / "tests" / str(doc["level"]).strip() / f"test_{con_id.lower()}.py"
+            return (self.repo_root / "tests" / str(doc["level"]).strip()
+                / f"test_{_module_name(con_id)}.py")
 
         fmt = str(contract.get("format") or "").strip()
-        return self.repo_root / "tests" / _FORMAT_DIR.get(fmt, "contract") / f"test_{con_id.lower()}.py"
+        return (self.repo_root / "tests" / _FORMAT_DIR.get(fmt, "contract")
+                / f"test_{_module_name(con_id)}.py")
 
     # ── File writing with manual-addition preservation ────────────────────────
 
