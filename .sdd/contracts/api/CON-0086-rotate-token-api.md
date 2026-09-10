@@ -4,7 +4,7 @@ title: "rotate-token API"
 type: api
 format: openapi
 spec: SPEC-0025
-version: 0.1.0
+version: 0.2.0
 status: draft
 tests: [TST-0096]
 ---
@@ -18,13 +18,19 @@ tests: [TST-0096]
 POST /api/auth/rotate-token verifiziert den alten Token, generiert einen neuen
 und invalidiert den alten sofort in der In-Memory-Blacklist.
 
+> **0.2.0 (2026-09-10):** INV-03 nannte `config.yaml` als Ziel. Die Datei ist
+> versioniert; der Token ist die Bearer-Credential fuer `POST /api/remote/run`.
+> Jede Rotation schrieb den neuen Wert genau dorthin zurueck, wo der alte das
+> Problem war (#103). Ziel ist jetzt die gitignorte lokale Ergaenzung, die
+> `load_config` ueber config.yaml legt. Atomaritaet und alle Garantien bleiben.
+
 ## Invarianten
 
 | ID | Invariante |
 |---|---|
 | INV-01 | Threading-Lock verhindert doppelte Rotation bei parallelen Requests |
 | INV-02 | Alter Token wird IMMER blacklistet wenn ein neuer erfolgreich geschrieben wurde |
-| INV-03 | config.yaml wird atomar via tempfile + os.replace geschrieben |
+| INV-03 | Der Token wird nach `.sdd/config.local.yaml` geschrieben (gitignored, Rechte 0600), atomar via tempfile + os.replace. `.sdd/config.yaml` bleibt unberuehrt. |
 
 ## Garantien
 

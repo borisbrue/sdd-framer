@@ -36,7 +36,7 @@ class TestTST0096:
     # CON-0086 G-01: Returns 401 without Authorization header
     def test_missing_auth_returns_401(self) -> None:
         with patch("routes.auth.sdd_context", _mock_ctx()):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post("/auth/rotate-token")
         assert response.status_code == 401
@@ -44,7 +44,7 @@ class TestTST0096:
     # CON-0086 G-01: Returns 401 with wrong token
     def test_wrong_token_returns_401(self) -> None:
         with patch("routes.auth.sdd_context", _mock_ctx(current_token="correct-token")):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post(
                     "/auth/rotate-token",
@@ -56,7 +56,7 @@ class TestTST0096:
     def test_blacklisted_token_returns_401(self) -> None:
         token = "old-token-already-rotated"
         with patch("routes.auth.sdd_context", _mock_ctx(current_token=token, blacklisted=True)):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post(
                     "/auth/rotate-token",
@@ -68,7 +68,7 @@ class TestTST0096:
     def test_new_token_is_64_hex_chars(self) -> None:
         token = "a1b2c3" * 10 + "d4e5"
         with patch("routes.auth.sdd_context", _mock_ctx(current_token=token)):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post(
                     "/auth/rotate-token",
@@ -84,7 +84,7 @@ class TestTST0096:
         token = "b2c3d4" * 10 + "e5f6"
         ctx = _mock_ctx(current_token=token)
         with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 client.post(
                     "/auth/rotate-token",
@@ -96,7 +96,7 @@ class TestTST0096:
     def test_response_body_contains_token_field(self) -> None:
         token = "c3d4e5" * 10 + "f6a7"
         with patch("routes.auth.sdd_context", _mock_ctx(current_token=token)):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post(
                     "/auth/rotate-token",

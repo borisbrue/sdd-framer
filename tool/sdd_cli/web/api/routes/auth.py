@@ -5,19 +5,17 @@ CON-0086: POST /api/auth/rotate-token — Bearer-Auth, generiert neuen Token, in
 """
 from __future__ import annotations
 
-import copy
 import hashlib
 import os
 import secrets
-import tempfile
 import threading
 
-import yaml
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pathlib import Path
 
 import sdd_context
+from sdd_cli.config import set_local
 
 router = APIRouter()
 
@@ -29,21 +27,15 @@ def _get_current_token(config) -> str:
     return config.raw.get("pwa", {}).get("auth", {}).get("token", "")
 
 
-def _write_config_atomic(config_path, raw: dict) -> None:
-    """Schreibt config.yaml atomar via temporäre Datei + rename (CON-0086 INV-03)."""
-    content = yaml.dump(raw, allow_unicode=True, default_flow_style=False, sort_keys=False)
-    dir_ = config_path.parent
-    fd, tmp_path = tempfile.mkstemp(dir=str(dir_), suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(content)
-        os.replace(tmp_path, str(config_path))
-    except Exception:
-        try:
-            os.unlink(tmp_path)
-        except OSError:
-            pass
-        raise
+def _store_token(config, token: str) -> None:
+    """Schreibt den Token nach .sdd/config.local.yaml (gitignored, 0600).
+
+    Vorher landete er in der versionierten config.yaml, und eine Rotation
+    schrieb den neuen Wert genau dorthin zurueck, wo der alte das Problem war
+    (#103). set_local schreibt atomar via tempfile + os.replace (CON-0086 INV-03)
+    und laesst config.yaml unberuehrt — damit auch project.name (CON-0088).
+    """
+    set_local(config.root, "pwa.auth.token", token)
 
 
 @router.get("/server-info")
@@ -89,10 +81,7 @@ async def generate_token():
         if _get_current_token(config):
             raise HTTPException(status_code=409, detail="token_already_exists")
         new_token = secrets.token_hex(32)
-        raw = copy.deepcopy(config.raw)
-        raw.setdefault("pwa", {}).setdefault("auth", {})["token"] = new_token
-        config_path = config.root / ".sdd" / "config.yaml"
-        _write_config_atomic(config_path, raw)
+        _store_token(config, new_token)
         sdd_context.reload_config()
     return {"ok": True}
 
@@ -101,7 +90,7 @@ async def generate_token():
 async def rotate_token(request: Request):
     """CON-0086: Token-Rotation.
 
-    Verifiziert den alten Token, generiert einen neuen, schreibt ihn in config.yaml
+    Verifiziert den alten Token, generiert einen neuen, schreibt ihn in config.local.yaml
     und trägt den alten in die In-Memory-Blacklist ein.
     """
     auth_header = request.headers.get("Authorization", "")
@@ -124,11 +113,7 @@ async def rotate_token(request: Request):
         # CON-0086 G-02: neuer Token = secrets.token_hex(32) → 64 Hex-Zeichen
         new_token = secrets.token_hex(32)
 
-        raw = copy.deepcopy(config.raw)
-        raw.setdefault("pwa", {}).setdefault("auth", {})["token"] = new_token
-
-        config_path = config.root / ".sdd" / "config.yaml"
-        _write_config_atomic(config_path, raw)
+        _store_token(config, new_token)
 
         # Alten Token sofort invalidieren (CON-0086 G-03)
         sdd_context.blacklist_token(old_token)
