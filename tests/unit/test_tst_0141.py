@@ -1,10 +1,10 @@
 # TST-0141 | SPEC-0035 | CON-0122
 # Fallback-Logik: Single-Context-Mode bei Nicht-Claude-Provider
 
+from pathlib import Path
+
 from tool.sdd_cli.config import SddConfig
 from tool.sdd_cli.sub_agent import is_claude_provider
-
-from pathlib import Path
 
 
 def _config(provider: str) -> SddConfig:

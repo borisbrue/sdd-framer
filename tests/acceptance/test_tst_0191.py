@@ -1,4 +1,8 @@
-"""TST-0191 – sdd evaluate --smoke Selbsttest (Acceptance)
+"""TST-0191 – sdd holdout run --smoke Selbsttest (Acceptance)
+
+Bis #112 liefen die Tests ueber den Altnamen `sdd evaluate --smoke`: dessen
+Entfernt-Stub reicht --smoke weiter an denselben Selbsttest. Geprueft wurde
+also das Richtige, aufgerufen aber ein Befehl, den es offiziell nicht mehr gibt.
 Spec: SPEC-0042 · Contract: CON-0163
 """
 import time
@@ -24,7 +28,7 @@ def mock_cfg(tmp_path):
 def test_smoke_exits_zero(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
     assert result.exit_code == 0, f"Exit {result.exit_code}: {result.output}"
 
 
@@ -33,21 +37,21 @@ def test_smoke_exits_zero(mock_cfg):
 def test_smoke_reports_tier_sort_ok(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
     assert "Tier-Sortierung" in result.output, result.output
 
 
 def test_smoke_reports_failfast_critical_normal_ok(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
     assert "critical" in result.output.lower(), result.output
 
 
 def test_smoke_reports_failfast_normal_edgecase_ok(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
     assert "normal" in result.output.lower() or "edge" in result.output.lower(), result.output
 
 
@@ -57,7 +61,7 @@ def test_smoke_runs_under_two_seconds(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
         t0 = time.monotonic()
-        runner.invoke(cli, ["evaluate", "--smoke"])
+        runner.invoke(cli, ["holdout", "run", "--smoke"])
         elapsed = time.monotonic() - t0
     assert elapsed < 2.0, f"--smoke dauerte {elapsed:.2f}s (Limit: 2.0s)"
 
@@ -66,13 +70,16 @@ def test_smoke_runs_under_two_seconds(mock_cfg):
 
 def test_smoke_makes_no_http_calls(mock_cfg):
     """--smoke darf keine HTTP-Verbindung aufbauen."""
-    import sdd_cli.holdout_runner as runner_mod
     from unittest.mock import patch as _patch
+
+    import sdd_cli.holdout_runner as runner_mod
 
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg), \
          _patch.object(runner_mod, "ActionExecutor") as mock_executor_cls:
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
 
-    mock_executor_cls.assert_not_called(), \
-        "ActionExecutor wurde instanziiert – HTTP-Aufruf in --smoke nicht erlaubt"
+    assert result.exit_code == 0, result.output
+    # Vorher stand hier `assert_not_called(), "…"` — ein Tupel; die Meldung
+    # wurde nie ausgegeben.
+    mock_executor_cls.assert_not_called()

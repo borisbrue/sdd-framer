@@ -8,10 +8,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import subprocess
-import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Literal
+from typing import Literal
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class AutopilotConfig:
     automated_gate_approval: bool = False
 
     @classmethod
-    def from_dict(cls, d: dict) -> "AutopilotConfig":
+    def from_dict(cls, d: dict) -> AutopilotConfig:
         return cls(
             max_fix_iterations=int(d.get("max_fix_iterations", 3)),
             review_model=str(d.get("review_model", "claude-sonnet-4-6")),
@@ -42,7 +42,7 @@ class AutopilotConfig:
         )
 
     @classmethod
-    def from_sdd_config(cls, config) -> "AutopilotConfig":
+    def from_sdd_config(cls, config) -> AutopilotConfig:
         return cls.from_dict(config.raw.get("autopilot", {}))
 
 
@@ -257,13 +257,12 @@ class AutopilotStateMachine:
         current_tests: set[str] | None,
         current_findings: set[str] | None,
     ) -> bool:
-        if current_tests is not None and self._prev_failed_tests:
-            if current_tests < self._prev_failed_tests:
-                return False  # mindestens ein Test jetzt grün
-        if current_findings is not None and self._prev_review_findings:
-            if len(current_findings) < len(self._prev_review_findings):
-                return False  # mindestens ein Finding behoben
-        return True
+        if (current_tests is not None and self._prev_failed_tests
+                and current_tests < self._prev_failed_tests):
+            return False  # mindestens ein Test jetzt grün
+        # False, wenn mindestens ein Finding behoben ist
+        return not (current_findings is not None and self._prev_review_findings
+                    and len(current_findings) < len(self._prev_review_findings))
 
     def _log_token_history(self, phase: str, gate_result: str) -> None:
         try:

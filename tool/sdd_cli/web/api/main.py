@@ -14,7 +14,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 # sdd_cli aus dem tool/-Verzeichnis importierbar machen
@@ -22,8 +22,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 sys.path.insert(0, str(Path(__file__).parent))
 
+import routes.devlog as _devlog
 import sdd_context
-from routes.hub import router as hub_router, hub_health_loop
+from routes.agent_flow import router as agent_flow_router  # SPEC-0032
 from routes.ai import router as ai_router
 from routes.analyze import router as analyze_router
 from routes.analyze_async import router as analyze_async_router
@@ -32,20 +33,20 @@ from routes.chat import router as chat_router
 from routes.commands import router as commands_router
 from routes.contracts import router as contracts_router
 from routes.copilot import router as copilot_router
+from routes.dag_monitor import router as dag_monitor_router  # SPEC-0037
+from routes.devlog import router as devlog_router
 from routes.gate import router as gate_router
+from routes.holdouts import router as holdouts_router  # SPEC-0043
+from routes.hub import hub_health_loop
+from routes.hub import router as hub_router
+from routes.interactive import router as interactive_router
 from routes.logs import router as logs_router
 from routes.orchestrate import router as orchestrate_router
+from routes.patterns import router as patterns_router  # SPEC-0049
 from routes.pipeline import router as pipeline_router
 from routes.remote import router as remote_router
-from routes.agent_flow import router as agent_flow_router  # SPEC-0032
-from routes.dag_monitor import router as dag_monitor_router  # SPEC-0037
-from routes.interactive import router as interactive_router
 from routes.specs import router as specs_router
 from routes.tests import router as tests_router
-from routes.devlog import router as devlog_router
-from routes.holdouts import router as holdouts_router  # SPEC-0043
-from routes.patterns import router as patterns_router  # SPEC-0049
-import routes.devlog as _devlog
 
 # SPEC-0025: CORS-Origins aus Umgebungsvariable (gesetzt via --allowed-origins)
 _raw_origins = os.environ.get("SDD_ALLOWED_ORIGINS", "")

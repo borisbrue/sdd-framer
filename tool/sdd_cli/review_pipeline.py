@@ -9,8 +9,8 @@ import abc
 import subprocess
 from pathlib import Path
 
+from .task_lifecycle import MAX_RETRIES, TaskLifecycle
 from .task_model import Task
-from .task_lifecycle import TaskLifecycle, MAX_RETRIES
 
 
 class ReviewResult:
@@ -23,7 +23,7 @@ class ReviewResult:
 
 
 class ReviewHandler(abc.ABC):
-    def __init__(self, next_handler: "ReviewHandler | None" = None) -> None:
+    def __init__(self, next_handler: ReviewHandler | None = None) -> None:
         self._next = next_handler
 
     @abc.abstractmethod
@@ -53,7 +53,7 @@ class SyntaxCheckHandler(ReviewHandler):
 
 
 class UnitTestHandler(ReviewHandler):
-    def __init__(self, next_handler: "ReviewHandler | None" = None, test_args: list[str] | None = None) -> None:
+    def __init__(self, next_handler: ReviewHandler | None = None, test_args: list[str] | None = None) -> None:
         super().__init__(next_handler)
         self._test_args = test_args or ["pytest", "-x", "--tb=short", "-q"]
 
@@ -76,7 +76,7 @@ class UnitTestHandler(ReviewHandler):
 class ClaudeReviewHandler(ReviewHandler):
     def __init__(
         self,
-        next_handler: "ReviewHandler | None" = None,
+        next_handler: ReviewHandler | None = None,
         provider=None,
     ) -> None:
         super().__init__(next_handler)
@@ -112,7 +112,7 @@ class ReviewPipeline:
         self._chain = syntax
         self._work_dir = work_dir
 
-    def run(self, task: Task, commit_fn: "callable[[Task], str] | None" = None) -> bool:
+    def run(self, task: Task, commit_fn: callable[[Task], str] | None = None) -> bool:
         lc = TaskLifecycle(task)
         lc.submit_for_review()
 

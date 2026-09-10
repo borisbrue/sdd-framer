@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, field_validator
 
 sys.path.insert(0, str(Path(__file__).parents[1]))

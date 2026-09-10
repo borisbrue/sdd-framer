@@ -3,10 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from sdd_cli.init import init_project, REQUIRED_DIRS
-
+from sdd_cli.init import REQUIRED_DIRS, init_project
 
 # ─── init_project ─────────────────────────────────────────────────────────────
 
@@ -64,7 +61,7 @@ class TestInitProject:
 
     def test_templates_copied_when_src_exists(self, tmp_path):
         init_project(tmp_path, "TestProject")
-        templates_dir = tmp_path / ".sdd" / "templates"
+        tmp_path / ".sdd" / "templates"
         # Templates dir should exist (either via copy or because src exists)
         # We can only assert the config and dirs exist since blueprint root
         # may or may not have templates in test env

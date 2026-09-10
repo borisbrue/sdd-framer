@@ -1,23 +1,17 @@
 """Unit-Tests für analyze_async.py – Async API Endpunkte (SPEC-0016, CON-0049/0052)."""
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 import sys
-
-import pytest
+from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
-from fastapi.testclient import TestClient
-from fastapi import FastAPI
-
-from routes.analyze_async import router
-from job_store import JobStore, get_job_store
 from analysis_repository import AnalysisRepository, PersistedAnalysis
-import sdd_context
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from job_store import JobStore
+from routes.analyze_async import router
 
 # ─── App-Fixture ──────────────────────────────────────────────────────────────
 

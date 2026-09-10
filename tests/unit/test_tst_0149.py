@@ -6,7 +6,7 @@ from typing import Literal
 
 import pytest
 
-from sdd_cli.local_agent import DagScheduler, DagSchedulerError, SubAgentProxy
+from sdd_cli.local_agent import DagScheduler
 from sdd_cli.sub_agent import SubAgentResult
 from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 

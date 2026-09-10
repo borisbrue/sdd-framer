@@ -4,7 +4,6 @@ Deckt TST-0048 bis TST-0054 ab.
 """
 from __future__ import annotations
 
-import json
 import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -12,20 +11,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from sdd_cli.lifecycle import (
+    apply_transitions,
+    check_transitions,
     compute_content_hash,
     load_hashes,
-    save_hashes,
     rebuild_hashes,
-    write_audit_log,
-    check_transitions,
-    apply_transitions,
-    pending_contracts,
     review_contract,
-    _parse_review_output,
-    StatusChange,
+    save_hashes,
+    write_audit_log,
 )
-from sdd_cli.validate import validate, _check_lifecycle_rules, Report
-
+from sdd_cli.validate import Report, _check_lifecycle_rules
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fixtures
@@ -74,8 +69,9 @@ def sdd_project(tmp_path: Path):
 
 @pytest.fixture()
 def cfg(sdd_project):
-    from sdd_cli.config import load_config
     import os
+
+    from sdd_cli.config import load_config
     os.chdir(sdd_project)
     return load_config()
 
@@ -236,7 +232,7 @@ class TestAuditLog:
         """TC-01: Audit-Eintrag hat korrektes Format."""
         write_audit_log(cfg, "SPEC-0001", "approved", "review", "content-change-detected")
         log = (sdd_project / ".sdd" / "audit.log").read_text(encoding="utf-8")
-        lines = [l for l in log.splitlines() if l]
+        lines = [zeile for zeile in log.splitlines() if zeile]
         assert len(lines) == 1
         assert self.AUDIT_RE.match(lines[0]), f"Format ungültig: {lines[0]!r}"
 
@@ -332,7 +328,7 @@ class TestReviewContract:
             "sdd_cli.llm.factory.get_completion_provider",
             return_value=self._mock_provider(self._LLM_REVISION),
         ):
-            result = review_contract(cfg, "CON-9902")
+            review_contract(cfg, "CON-9902")
 
         assert "## LLM Review Notes" in contract_path.read_text(encoding="utf-8")
 
@@ -379,9 +375,8 @@ class TestReviewContract:
         with patch(
             "sdd_cli.llm.factory.get_completion_provider",
             return_value=failing_provider,
-        ):
-            with pytest.raises(RuntimeError):
-                review_contract(cfg, "CON-9904")
+        ), pytest.raises(RuntimeError):
+            review_contract(cfg, "CON-9904")
 
         tst_files = list((sdd_project / ".sdd" / "tests").rglob("TST-99*.md"))
         assert not tst_files
@@ -398,8 +393,9 @@ class TestValidateLifecycleRules:
         specs_data: list[dict],
         tests_data: list[dict] | None = None,
     ) -> Report:
-        from sdd_cli.frontmatter import Document
         from pathlib import Path
+
+        from sdd_cli.frontmatter import Document
 
         def _doc(fm: dict, base: str = "/tmp") -> Document:
             return Document(path=Path(f"{base}/{fm['id']}.md"), frontmatter=fm, body="")

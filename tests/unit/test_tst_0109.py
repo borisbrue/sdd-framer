@@ -7,13 +7,10 @@ from __future__ import annotations
 import time
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from routes.chat import router as chat_router
 from routes.remote import router as remote_router
-
 
 # ── Shared fakes ──────────────────────────────────────────────────────────────
 
@@ -109,7 +106,7 @@ class TestTST0109:
                 with client.websocket_connect("/ws/chat") as ws:
                     ws.send_json({"auth": "tok"})
                     ws.send_json({"text": "hello"})
-                    frame = ws.receive_json()   # first frame = delta
+                    ws.receive_json()   # first frame = delta
                 elapsed = time.monotonic() - t0
                 times.append(elapsed)
 
@@ -138,7 +135,7 @@ class TestTST0109:
                 )
                 # First data: line appears after the first SSE event
                 first_line = next(
-                    (l for l in response.text.splitlines() if l.startswith("data:")),
+                    (zeile for zeile in response.text.splitlines() if zeile.startswith("data:")),
                     None,
                 )
                 elapsed = time.monotonic() - t0

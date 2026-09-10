@@ -5,9 +5,9 @@ Kompatibel mit LM Studio, Ollama und jedem anderen OpenAI-kompatiblen Server.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 
 from ..base import CompletionResult, UsageMetadata
 
@@ -137,8 +137,8 @@ class OpenAICompatCodeGenProvider:
             full = (workspace / rel_path).resolve()
             try:
                 full.relative_to(workspace_resolved)
-            except ValueError:
-                raise ValueError(f"Unsicherer Pfad (Workspace-Escape): {rel_path!r}")
+            except ValueError as exc:
+                raise ValueError(f"Unsicherer Pfad (Workspace-Escape): {rel_path!r}") from exc
             if any(rel_path.startswith(p) for p in _PROTECTED_PREFIXES):
                 raise ValueError(
                     f"SDD-Artefakt darf nicht überschrieben werden: {rel_path!r}"

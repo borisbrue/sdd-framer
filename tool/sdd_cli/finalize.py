@@ -159,11 +159,11 @@ class SpecFinalizer:
                     cwd=root,
                     timeout=timeout,
                 )
-            except FileNotFoundError:
+            except FileNotFoundError as exc:
                 raise RuntimeError(
                     f"✗ Test-Runner '{test_cmd}' nicht gefunden. "
                     f"Setze 'test_runner.command' in .sdd/config.yaml oder nutze --skip-container."
-                )
+                ) from exc
         else:
             # Container muss bereits laufen
             runtime = get_runtime(self._cfg)
@@ -312,7 +312,7 @@ class SpecFinalizer:
         Netz) bleibt der lokale Rueckfall unveraendert bestehen; der Push ist
         kein Abbruchgrund.
         """
-        if not _git(["remote", "get-url", "origin"], cwd=self._cfg.root).returncode == 0:
+        if _git(["remote", "get-url", "origin"], cwd=self._cfg.root).returncode != 0:
             return "  ⚠ Kein 'origin' konfiguriert – Branch wird nicht gepusht."
 
         result = _git(["push", "-u", "origin", branch], cwd=self._cfg.root)

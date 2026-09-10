@@ -4,7 +4,6 @@ Spec: SPEC-0007 · Contracts: CON-0020, CON-0021
 """
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch

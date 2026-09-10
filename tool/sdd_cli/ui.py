@@ -9,8 +9,8 @@ import subprocess
 import sys
 import threading
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 
 def _web_root() -> Path:
@@ -205,8 +205,8 @@ def start_hub(port: int = 8000, open_browser: bool = True) -> None:
     print(f"▶ SDD Hub gestartet → http://localhost:{port}/")
     if has_certs and https_port:
         print(f"  HTTPS (LAN/Smartphone) → https://localhost:{https_port}/")
-    print(f"  Projektserver registrieren sich automatisch über die Extension.")
-    print(f"  Stoppen mit Ctrl+C\n")
+    print("  Projektserver registrieren sich automatisch über die Extension.")
+    print("  Stoppen mit Ctrl+C\n")
 
     if open_browser:
         import time
@@ -292,7 +292,7 @@ def start_pwa(port: int = 0, open_browser: bool = True) -> None:
             print(f"  HTTPS → https://localhost:{https_port}/")
     elif _lan_ip and not _lan_ip.startswith("127."):
         print(f"  Im LAN: http://{_lan_ip}:{port}/")
-    print(f"  Stoppen mit Ctrl+C\n")
+    print("  Stoppen mit Ctrl+C\n")
 
     if open_browser:
         import time
@@ -344,7 +344,7 @@ def start_server(
             _lan_ip = _s.getsockname()[0]
         if not _lan_ip.startswith("127."):
             _origins = [
-                f"http://localhost:5173", f"http://localhost:8000",
+                "http://localhost:5173", "http://localhost:8000",
                 f"http://localhost:{port}", f"https://localhost:{port + 1}",
                 # PWA-Dev (Vite) und PWA-Server (sdd pwa start) – beide Varianten erlauben
                 *[f"http://{_lan_ip}:{p}" for p in (5173, 5174, 8080, 8081, 8082, 8083)],
@@ -401,14 +401,15 @@ def start_server(
         )
         procs.append(api)
         _ext = f"http://localhost:{port}"
-        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, "http", _ext)
+        def on_ready():
+            return _hub_register(port, project_name, root_resolved, hub_port, "http", _ext)
         threading.Thread(target=_stream, args=(api, "api", on_ready), daemon=True).start()
 
         url = "http://localhost:5173"
-        print(f"▶ Watch-Modus gestartet")
+        print("▶ Watch-Modus gestartet")
         print(f"  Frontend (HMR) → {url}")
-        print(f"  API-Backend    → http://localhost:8000")
-        print(f"  Stoppen mit Ctrl+C\n")
+        print("  API-Backend    → http://localhost:8000")
+        print("  Stoppen mit Ctrl+C\n")
     else:
         dist = ui_dir / "dist"
         if not dist.exists():
@@ -438,7 +439,8 @@ def start_server(
             env=env,
         )
         procs.append(api)
-        on_ready = lambda: _hub_register(port, project_name, root_resolved, hub_port, "http", _ext_url)
+        def on_ready():
+            return _hub_register(port, project_name, root_resolved, hub_port, "http", _ext_url)
         threading.Thread(target=_stream, args=(api, "api", on_ready), daemon=True).start()
 
         if has_certs:
@@ -463,7 +465,7 @@ def start_server(
                 print(f"  HTTPS (LAN/Smartphone) → https://{_lan_ip}:{https_port}")
             else:
                 print(f"  HTTPS → https://localhost:{https_port}")
-        print(f"  Stoppen mit Ctrl+C\n")
+        print("  Stoppen mit Ctrl+C\n")
 
     if open_browser:
         import time

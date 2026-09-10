@@ -1,14 +1,14 @@
 """Projektverwaltung für SDD – liest/schreibt .sdd/projects/*.yaml."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-import re
+
 import yaml
 
 from .config import SddConfig
-
 
 VALID_AUTONOMY_LEVELS = {1, 2, 3, 3.5, 4}
 

@@ -17,7 +17,6 @@ import re
 import subprocess
 from pathlib import Path
 
-
 _TRIGGER_PATTERNS = [
     re.compile(r"(^|/)main\.py$"),
     re.compile(r"/routes/[^/]+\.py$"),

@@ -2,14 +2,12 @@
 # Spec: SPEC-0036 | Level: contract | Contract: CON-0129
 
 import sqlite3
-import tempfile
 from pathlib import Path
 
 import pytest
 
 from sdd_cli.config import SddConfig
 from sdd_cli.estimation import (
-    TokenHistoryRow,
     init_token_usage_table,
     persist_token_usage,
     token_history,

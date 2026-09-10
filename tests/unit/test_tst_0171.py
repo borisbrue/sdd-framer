@@ -7,8 +7,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 import jsonschema
+import pytest
 
 _SCHEMA_PATH = (
     Path(__file__).resolve().parents[2]

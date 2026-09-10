@@ -29,6 +29,7 @@ def _hf_path(repo_root: Path, hf_id: str) -> Path:
 
 def _read_hf(path: Path) -> dict:
     import re
+
     import yaml
     text = path.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n?", text, re.DOTALL)
@@ -130,7 +131,6 @@ def list_hotfixes(repo_root: Path, status_filter: str | None = None) -> list[dic
     result = []
     for p in sorted(d.glob("HF-*.md")):
         data = _read_hf(p)
-        if data.get("id"):
-            if status_filter is None or data.get("status") == status_filter:
-                result.append(data)
+        if data.get("id") and (status_filter is None or data.get("status") == status_filter):
+            result.append(data)
     return result

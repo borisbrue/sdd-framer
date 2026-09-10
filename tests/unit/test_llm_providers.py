@@ -5,15 +5,14 @@ import json
 import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
-from sdd_cli.llm.base import CompletionResult, UsageMetadata
+from sdd_cli.llm.base import CompletionResult
 from sdd_cli.llm.factory import get_code_gen_provider, get_completion_provider
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -230,7 +229,7 @@ class TestOpenAICompatCompletionProvider:
         mock_openai, _ = self._make_mock_openai_module('{"result": "ok"}')
 
         with patch.dict("sys.modules", {"openai": mock_openai}):
-            result = provider.complete("test prompt", max_tokens=256)
+            provider.complete("test prompt", max_tokens=256)
 
         mock_client = mock_openai.OpenAI.return_value
         call_kwargs = mock_client.chat.completions.create.call_args[1]

@@ -3,9 +3,7 @@ import json
 import os
 import re
 import subprocess
-import textwrap
 from pathlib import Path
-import pytest
 
 
 def _run(args: list[str], cwd: Path, env: dict | None = None) -> subprocess.CompletedProcess:

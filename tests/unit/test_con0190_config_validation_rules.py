@@ -1,7 +1,5 @@
 # TST-0219 – CON-0190: Config-Validierungsregeln
-import os
-import pytest
-from sdd_cli.config_validator import ConfigValidator, ConfigIssue
+from sdd_cli.config_validator import ConfigIssue, ConfigValidator
 
 
 def _issues(raw: dict) -> list[ConfigIssue]:

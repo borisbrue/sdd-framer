@@ -3,12 +3,11 @@
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import pytest
 
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
-from tool.sdd_cli.task_lifecycle import TaskLifecycle
-from tool.sdd_cli.llm_pool import LlmPoolRegistry, LlmEntry, LlmType, CostTier
 from tool.sdd_cli.dist_orchestrator import DistributionOrchestrator, DistributionReport
+from tool.sdd_cli.llm_pool import CostTier, LlmEntry, LlmPoolRegistry, LlmType
+from tool.sdd_cli.task_lifecycle import TaskLifecycle
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task(title="T", status=TaskStatus.PENDING) -> Task:
@@ -78,10 +77,22 @@ class TestTST0120:
         assert "implemented" not in content_before
 
     def test_branch_name_format(self, tmp_path):
+        """Vorher wurde ensure_branch selbst gepatcht und dann aufgerufen — der
+        Test pruefte den eigenen Rueckgabewert (#112). Jetzt laeuft der echte
+        Code, nur git ist gemockt."""
+        from subprocess import CompletedProcess
+
         orch = _orchestrator(tmp_path)
-        with patch.object(orch, 'ensure_branch', return_value="spec/SPEC-0026") as mock_branch:
+        aufrufe = []
+
+        def git(args, *, cwd, capture=True):
+            aufrufe.append(args)
+            return CompletedProcess(args, 0, stdout="", stderr="")
+
+        with patch("tool.sdd_cli.dist_orchestrator._git", side_effect=git):
             branch = orch.ensure_branch("SPEC-0026")
         assert branch == "spec/SPEC-0026"
+        assert ["checkout", "-b", "spec/SPEC-0026"] in aufrufe
 
     def test_full_dry_run_report(self, tmp_path):
         orch = _orchestrator(tmp_path, dry_run=True)

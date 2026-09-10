@@ -89,10 +89,9 @@ class HuggingFaceCheck(ConfigCheck):
                 if not token:
                     issues.append(ConfigIssue("error", f"{prefix}.hf_token",
                         f"hf_token (oder $HF_TOKEN) ist Pflicht für huggingface hf_mode={mode}."))
-            if mode == "dedicated":
-                if not block.get("endpoint_url"):
-                    issues.append(ConfigIssue("error", f"{prefix}.endpoint_url",
-                        f"{prefix}.endpoint_url ist Pflicht für hf_mode=dedicated."))
+            if mode == "dedicated" and not block.get("endpoint_url"):
+                issues.append(ConfigIssue("error", f"{prefix}.endpoint_url",
+                    f"{prefix}.endpoint_url ist Pflicht für hf_mode=dedicated."))
 
 
 class AnthropicCheck(ConfigCheck):

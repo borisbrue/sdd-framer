@@ -5,15 +5,15 @@ from __future__ import annotations
 
 import json
 from contextlib import contextmanager
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from starlette.websockets import WebSocketDisconnect
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from routes.logs import router
+from starlette.websockets import WebSocketDisconnect
 
 from sdd_cli.log_streamer import LogEventBus
-from routes.logs import router
 
 
 def _make_app(bus: LogEventBus) -> FastAPI:

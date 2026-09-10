@@ -7,13 +7,10 @@ HTTP-Statuscodes und Invarianten.
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool" / "sdd_cli" / "web" / "api"))
@@ -22,6 +19,7 @@ sys.path.insert(0, str(REPO_ROOT / "tool"))
 os.environ.setdefault("SDD_PROJECT_ROOT", str(REPO_ROOT))
 
 import sdd_context
+
 sdd_context.init(REPO_ROOT)
 
 from fastapi.testclient import TestClient
@@ -82,7 +80,7 @@ def test_tc04_conflict_patch_422_without_reason():
         instance = MockDetector.return_value
         instance.acknowledge.side_effect = ValueError("reason erforderlich")
         res = client.patch(
-            f"/api/gate/SPEC-0014/conflicts/CF-0014-001",
+            "/api/gate/SPEC-0014/conflicts/CF-0014-001",
             json={"action": "acknowledge"},
         )
 
@@ -97,7 +95,7 @@ def test_tc05_conflict_patch_resolve_success():
         instance = MockDetector.return_value
         instance.resolve.return_value = None
         res = client.patch(
-            f"/api/gate/SPEC-0014/conflicts/CF-0014-001",
+            "/api/gate/SPEC-0014/conflicts/CF-0014-001",
             json={"action": "resolve", "resolve_strategy": "extend"},
         )
 

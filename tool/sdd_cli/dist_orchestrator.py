@@ -7,17 +7,16 @@ Mediator Pattern: Keine Komponente kennt eine andere direkt.
 """
 from __future__ import annotations
 
-import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import SddConfig
-from .task_model import Task, TaskStatus
-from .task_lifecycle import TaskLifecycle
 from .llm_pool import LlmPoolRegistry, LlmSelector, LlmUnavailableError
 from .review_pipeline import ReviewPipeline
+from .task_lifecycle import TaskLifecycle
+from .task_model import Task, TaskStatus
 
 if TYPE_CHECKING:
     pass
@@ -121,7 +120,7 @@ class DistributionOrchestrator:
         body = "\n".join(body_lines)
         result = _gh(
             ["pr", "create",
-             "--title", f"feat(SPEC-0026): LLM Task Distribution Engine",
+             "--title", "feat(SPEC-0026): LLM Task Distribution Engine",
              "--body", body,
              "--base", "main"],
             cwd=self._root,

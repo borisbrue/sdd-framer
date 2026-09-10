@@ -1,9 +1,6 @@
 # TST-0179 – TypeAwareTestChecker + RouteRegistrationChecker — Tag-basierte Pflichtprüfung
 # Spec: SPEC-0041 | Contract: CON-0154
-import textwrap
 from pathlib import Path
-
-import pytest
 
 from sdd_cli.compliance import RouteRegistrationChecker, TypeAwareTestChecker
 from sdd_cli.frontmatter import Document

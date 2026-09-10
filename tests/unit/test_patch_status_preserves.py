@@ -77,7 +77,7 @@ class TestNurDieStatuszeileAendertSich:
         patch_status(p, "active")
         nach = p.read_text(encoding="utf-8").splitlines()
         assert len(vor) == len(nach)
-        unterschiede = [i for i, (a, b) in enumerate(zip(vor, nach)) if a != b]
+        unterschiede = [i for i, (a, b) in enumerate(zip(vor, nach, strict=True)) if a != b]
         assert len(unterschiede) == 1, f"geaendert: {unterschiede}"
 
 

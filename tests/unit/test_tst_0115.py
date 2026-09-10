@@ -3,6 +3,7 @@
 
 import json
 from pathlib import Path
+
 import pytest
 
 try:
@@ -11,7 +12,7 @@ try:
 except ImportError:
     HAS_JSONSCHEMA = False
 
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 SCHEMA_PATH = Path(__file__).parents[2] / "contracts" / "data" / "task.schema.json"
 

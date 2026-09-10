@@ -1,14 +1,10 @@
 # TST-0118 – Container-Lifecycle (Unit)
 # Spec: SPEC-0026 | Contract: CON-0099
 
-import re
-import subprocess
-from pathlib import Path
-from unittest.mock import MagicMock, patch, call
 import pytest
 
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
 from tool.sdd_cli.task_lifecycle import TaskLifecycle
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 
 
 def _task(title="T") -> Task:

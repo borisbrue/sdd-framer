@@ -3,10 +3,8 @@ from __future__ import annotations
 
 import ast
 import re
-import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 
 @dataclass
@@ -223,9 +221,9 @@ def _hat_pytest_import(baum: ast.Module) -> bool:
         if isinstance(knoten, ast.Import):
             if any(a.name.split(".")[0] == "pytest" for a in knoten.names):
                 return True
-        elif isinstance(knoten, ast.ImportFrom):
-            if (knoten.module or "").split(".")[0] == "pytest":
-                return True
+        elif (isinstance(knoten, ast.ImportFrom)
+              and (knoten.module or "").split(".")[0] == "pytest"):
+            return True
     return False
 
 
@@ -246,9 +244,7 @@ def _mit_pytest_import(text: str) -> str:
 
     nach = 0
     for knoten in baum.body:
-        if isinstance(knoten, (ast.Import, ast.ImportFrom)):
-            nach = knoten.end_lineno or knoten.lineno
-        elif (
+        if isinstance(knoten, (ast.Import, ast.ImportFrom)) or (
             nach == 0
             and isinstance(knoten, ast.Expr)
             and isinstance(knoten.value, ast.Constant)
@@ -273,7 +269,9 @@ class TestGenerator:
         contracts_dir = self.repo_root / ".sdd" / "contracts"
         if not contracts_dir.exists():
             return None
-        import yaml, re as _re
+        import re as _re
+
+        import yaml
         for md in sorted(contracts_dir.rglob("*.md")):
             try:
                 content = md.read_text(encoding="utf-8")

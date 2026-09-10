@@ -3,14 +3,14 @@
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import pytest
 
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
-from tool.sdd_cli.task_lifecycle import TaskLifecycle, MAX_RETRIES
 from tool.sdd_cli.review_pipeline import (
-    ReviewPipeline, ReviewResult, SyntaxCheckHandler,
-    UnitTestHandler, ClaudeReviewHandler
+    ReviewPipeline,
+    ReviewResult,
+    SyntaxCheckHandler,
 )
+from tool.sdd_cli.task_lifecycle import MAX_RETRIES, TaskLifecycle
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task() -> Task:

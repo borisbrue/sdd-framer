@@ -7,12 +7,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Iterator
 
 import yaml
 
 from .config import SddConfig
-from .frontmatter import parse, parse_safe
+from .frontmatter import parse_safe
 
 # Muster für gültige Artefakt-IDs
 _ID_PATTERN = re.compile(r"\b(SPEC|CON|TST|ADR)-(\d{4})\b")
@@ -225,7 +224,7 @@ def export(cfg: SddConfig, vault_override: str | None = None, dry_run: bool = Fa
         # Überschreiben-Logik: nur wenn Projekt neuer ist (Vergleich über updated:-Feld)
         if target.exists():
             existing_doc = parse_safe(target)
-            vault_updated = str((existing_doc.frontmatter.get("updated", "") if existing_doc else ""))
+            vault_updated = str(existing_doc.frontmatter.get("updated", "") if existing_doc else "")
             if vault_updated and proj_updated and vault_updated >= proj_updated:
                 result.skipped.append(str(target))
                 continue
@@ -347,8 +346,8 @@ def import_vault(cfg: SddConfig, vault_override: str | None = None) -> ImportRes
         # Sicherheitsprüfung: kein Pfad-Traversal
         try:
             vault_file.resolve().relative_to(vault.resolve())
-        except ValueError:
-            raise ValueError(f"Path-Traversal erkannt: {vault_file} liegt außerhalb {vault}")
+        except ValueError as exc:
+            raise ValueError(f"Path-Traversal erkannt: {vault_file} liegt außerhalb {vault}") from exc
 
         if vault_file.name == "index.md":
             continue
@@ -446,7 +445,7 @@ def watch(cfg: SddConfig, vault_override: str | None = None,
         if changed:
             result = import_vault(cfg, vault_override)
             if result.conflicts:
-                for c in result.conflicts:
+                for _c in result.conflicts:
                     pass  # Conflicts werden in conflicts.yaml gespeichert
 
         time.sleep(effective_interval)

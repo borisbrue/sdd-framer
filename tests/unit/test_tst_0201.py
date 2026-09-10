@@ -1,8 +1,8 @@
 """TST-0201 – sdd vision init – Wizard und Idempotenz-Guard (Unit)
 Spec: SPEC-0046 · Contract: CON-0175
 """
+
 import pytest
-from pathlib import Path
 
 
 class TestVisionInitWizard:
@@ -61,7 +61,7 @@ class TestVisionInitWizard:
 
     def test_idempotency_guard_raises_when_file_exists(self, tmp_path):
         """INV-02: Existiert vision.md bereits → Fehler, Datei unverändert."""
-        from tool.sdd_cli.vision.init import VisionInitWizard, VisionAlreadyExistsError
+        from tool.sdd_cli.vision.init import VisionAlreadyExistsError, VisionInitWizard
 
         sdd_dir = tmp_path / ".sdd"
         sdd_dir.mkdir()
@@ -76,7 +76,7 @@ class TestVisionInitWizard:
 
     def test_idempotency_guard_error_mentions_path(self, tmp_path):
         """INV-02: Fehlermeldung enthält Pfad zu vision.md."""
-        from tool.sdd_cli.vision.init import VisionInitWizard, VisionAlreadyExistsError
+        from tool.sdd_cli.vision.init import VisionAlreadyExistsError, VisionInitWizard
 
         sdd_dir = tmp_path / ".sdd"
         sdd_dir.mkdir()

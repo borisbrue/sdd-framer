@@ -14,8 +14,6 @@ import ast
 import textwrap
 from pathlib import Path
 
-import pytest
-
 ASYNCAPI_3 = textwrap.dedent("""\
     asyncapi: 3.0.0
     info:
@@ -79,6 +77,7 @@ NUR_MESSAGES = textwrap.dedent("""\
 
 def _op(text: str) -> list[str]:
     import yaml
+
     from sdd_cli.test_generator import _asyncapi_operationen
     return _asyncapi_operationen(yaml.safe_load(text))
 

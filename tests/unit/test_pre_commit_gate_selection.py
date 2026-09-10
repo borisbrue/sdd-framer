@@ -19,12 +19,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.pre_commit_hook import PreCommitHook
+
 # TestResult aliasen: pytest wuerde die Dataclass sonst als Testklasse sammeln.
 from sdd_cli.test_runner import RunReport
 from sdd_cli.test_runner import TestResult as Result
 
 
-def _report(spec_id: str, *tests: TestResult) -> RunReport:
+def _report(spec_id: str, *tests: Result) -> RunReport:
     return RunReport(spec_id=spec_id, runner="pytest", started_at="", duration_s=0.0,
                      exit_code=0, tests=list(tests))
 
@@ -159,8 +160,9 @@ class TestRunnerResolution:
                 assert test_runner._resolve_runner("pytest") == ["pytest"]
 
     def test_raises_when_no_runner_works(self):
-        from sdd_cli import test_runner
         import pytest as _pytest
+
+        from sdd_cli import test_runner
 
         def fake_run(cmd, **kw):
             class R:

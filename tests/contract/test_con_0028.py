@@ -9,9 +9,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
@@ -107,7 +105,7 @@ def test_tc02_all_scenarios_have_test_functions(tmp_path):
     gen.generate("SPEC-0014", contracts=["CON-XXXX"])
 
     content = (tmp_path / "tests" / "behavior" / "test_con_xxxx.py").read_text(encoding="utf-8")
-    test_funcs = [l for l in content.splitlines() if l.startswith("def test_")]
+    test_funcs = [zeile for zeile in content.splitlines() if zeile.startswith("def test_")]
     assert len(test_funcs) >= 3
 
 

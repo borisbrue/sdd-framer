@@ -1,8 +1,8 @@
 """TST-0202 – sdd vision show und sdd vision edit (Unit)
 Spec: SPEC-0046 · Contract: CON-0176
 """
-import subprocess
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 
@@ -25,7 +25,7 @@ class TestVisionShow:
 
     def test_show_raises_when_vision_missing(self, tmp_path):
         """INV-01: Fehlermeldung + Exception wenn vision.md fehlt."""
-        from tool.sdd_cli.vision.show import VisionReader, VisionNotFoundError
+        from tool.sdd_cli.vision.show import VisionNotFoundError, VisionReader
 
         sdd_dir = tmp_path / ".sdd"
         sdd_dir.mkdir()

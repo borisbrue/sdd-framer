@@ -4,11 +4,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
-
-import pytest
 
 _FEATURE_PATH = (
     Path(__file__).resolve().parents[2]

@@ -34,8 +34,9 @@ def test_returns_spec_data_for_approved_spec(sdd_project: Path) -> None:
     specs_dir = sdd_project / ".sdd" / "specs"
     _write_spec(specs_dir, "SPEC-0001", "approved", ["CON-0001", "CON-0002"])
 
-    from sdd_cli.config import SddConfig
     import yaml
+
+    from sdd_cli.config import SddConfig
     cfg = SddConfig(root=sdd_project, raw=yaml.safe_load((sdd_project / ".sdd" / "config.yaml").read_text()))
 
     result = load_and_validate_spec("SPEC-0001", cfg)
@@ -48,8 +49,9 @@ def test_returns_spec_data_for_in_progress_spec(sdd_project: Path) -> None:
     specs_dir = sdd_project / ".sdd" / "specs"
     _write_spec(specs_dir, "SPEC-0002", "in-progress", ["CON-0001"])
 
-    from sdd_cli.config import SddConfig
     import yaml
+
+    from sdd_cli.config import SddConfig
     cfg = SddConfig(root=sdd_project, raw=yaml.safe_load((sdd_project / ".sdd" / "config.yaml").read_text()))
 
     result = load_and_validate_spec("SPEC-0002", cfg)
@@ -60,8 +62,9 @@ def test_raises_for_draft_status(sdd_project: Path) -> None:
     specs_dir = sdd_project / ".sdd" / "specs"
     _write_spec(specs_dir, "SPEC-0003", "draft", ["CON-0001"])
 
-    from sdd_cli.config import SddConfig
     import yaml
+
+    from sdd_cli.config import SddConfig
     cfg = SddConfig(root=sdd_project, raw=yaml.safe_load((sdd_project / ".sdd" / "config.yaml").read_text()))
 
     with pytest.raises(ValueError, match="approved oder in-progress"):
@@ -69,8 +72,9 @@ def test_raises_for_draft_status(sdd_project: Path) -> None:
 
 
 def test_raises_for_missing_spec(sdd_project: Path) -> None:
-    from sdd_cli.config import SddConfig
     import yaml
+
+    from sdd_cli.config import SddConfig
     cfg = SddConfig(root=sdd_project, raw=yaml.safe_load((sdd_project / ".sdd" / "config.yaml").read_text()))
 
     with pytest.raises(FileNotFoundError, match="SPEC-9999 nicht gefunden"):
@@ -81,8 +85,9 @@ def test_raises_for_empty_contracts(sdd_project: Path) -> None:
     specs_dir = sdd_project / ".sdd" / "specs"
     _write_spec(specs_dir, "SPEC-0004", "approved", [])
 
-    from sdd_cli.config import SddConfig
     import yaml
+
+    from sdd_cli.config import SddConfig
     cfg = SddConfig(root=sdd_project, raw=yaml.safe_load((sdd_project / ".sdd" / "config.yaml").read_text()))
 
     with pytest.raises(ValueError, match="Keine Contracts gefunden"):

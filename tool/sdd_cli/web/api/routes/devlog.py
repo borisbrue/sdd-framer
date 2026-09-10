@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from collections import deque
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse

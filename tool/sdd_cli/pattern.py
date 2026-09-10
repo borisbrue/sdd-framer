@@ -84,7 +84,7 @@ class PatternSuggester:
         self,
         provider: object,
         max_suggestions: int = 4,
-        registry: "PatternRegistry | None" = None,
+        registry: PatternRegistry | None = None,
     ) -> None:
         self._provider = provider
         self._max = max(1, min(4, max_suggestions))
@@ -120,7 +120,7 @@ class PatternSuggester:
         )
 
 
-def create_suggester(config: "SddConfig") -> PatternSuggester | None:
+def create_suggester(config: SddConfig) -> PatternSuggester | None:
     """Gibt PatternSuggester zurück, oder None wenn deaktiviert."""
     if not config.pattern_suggestions_enabled():
         return None

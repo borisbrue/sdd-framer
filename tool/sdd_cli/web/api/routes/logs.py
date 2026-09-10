@@ -5,9 +5,8 @@ import asyncio
 import json
 import re
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
 import sdd_context
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 

@@ -1,13 +1,12 @@
 # TST-0124 – Docker-Container-Konfiguration (Unit)
 # Spec: SPEC-0027 | Contract: CON-0105
 
-import pytest
-import yaml
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
+import yaml
+
+from tool.sdd_cli.config_manager import _validate_business_rules
 from tool.sdd_cli.config_wizard import ConfigWizard
-from tool.sdd_cli.config_manager import ConfigValidationError, _validate_business_rules
 
 
 def _make_config(tmp_path: Path, data: dict) -> Path:

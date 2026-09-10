@@ -11,16 +11,17 @@ import logging
 import os
 import shutil
 import subprocess
+from collections.abc import Callable
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 
 from .sub_agent import OrchestratorReport, SubAgentResult
 from .task_model import Task
 
 if TYPE_CHECKING:
-    from .dag_event import DagEventBus
     from .dag_command import CommandQueue, SchedulerState
+    from .dag_event import DagEventBus
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class LocalAgentConfig:
     health_check: bool = True
 
     @classmethod
-    def from_dict(cls, d: dict) -> "LocalAgentConfig":
+    def from_dict(cls, d: dict) -> LocalAgentConfig:
         api_key_raw = str(d.get("api_key", "local-key"))
         if api_key_raw.startswith("${") and api_key_raw.endswith("}"):
             env_var = api_key_raw[2:-1]
@@ -60,7 +61,7 @@ class LocalAgentConfig:
         )
 
     @classmethod
-    def from_sdd_config(cls, config) -> "LocalAgentConfig | None":
+    def from_sdd_config(cls, config) -> LocalAgentConfig | None:
         raw = config.raw.get("local_agent")
         if raw is None:
             return None
@@ -185,8 +186,8 @@ class DagScheduler:
         self,
         max_parallel_local: int,
         max_parallel_cloud: int,
-        event_bus: "DagEventBus | None" = None,
-        command_queue: "CommandQueue | None" = None,
+        event_bus: DagEventBus | None = None,
+        command_queue: CommandQueue | None = None,
     ) -> None:
         self.max_parallel_local = max_parallel_local
         self.max_parallel_cloud = max_parallel_cloud
@@ -243,7 +244,7 @@ class DagScheduler:
             self._publish(_run_id, t.id, "pending")
 
         # Build SchedulerState for CommandQueue (SPEC-0037 FR-04)
-        sched_state: "SchedulerState | None" = None
+        sched_state: SchedulerState | None = None
         if self._command_queue is not None:
             from .dag_command import SchedulerState
             sched_state = SchedulerState(deps_by_task=deps_by_id)

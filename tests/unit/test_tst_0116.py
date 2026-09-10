@@ -2,13 +2,13 @@
 # Spec: SPEC-0026 | Contract: CON-0097
 
 import json
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
 import pytest
 
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
 from tool.sdd_cli.decompose import TaskDecomposer
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 
 
 def _make_provider(response: str):

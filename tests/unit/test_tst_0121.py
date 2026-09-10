@@ -1,14 +1,14 @@
 # TST-0121 – Config-Wizard-Flow (Unit)
 # Spec: SPEC-0027 | Contract: CON-0102
 
-import pytest
-import yaml
 from pathlib import Path
 from unittest.mock import patch
 
-from tool.sdd_cli.config_wizard import ConfigWizard, WizardAbortError
-from tool.sdd_cli.config_manager import ConfigValidationError
+import pytest
+import yaml
 
+from tool.sdd_cli.config_manager import ConfigValidationError
+from tool.sdd_cli.config_wizard import ConfigWizard
 
 PLACEHOLDER = "<PROJECT_DESCRIPTION>"
 
@@ -33,7 +33,7 @@ class TestTST0121:
     def test_full_wizard_writes_valid_config(self, tmp_path):
         p = _make_config(tmp_path, _base_data())
         wizard = ConfigWizard(p)
-        result = wizard.run(
+        wizard.run(
             non_interactive=True,
             project_description="Test project",
         )

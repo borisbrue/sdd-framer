@@ -1,10 +1,9 @@
 """TST-0204 – sdd vision challenge – LLM- und Code-Challenge (Unit)
 Spec: SPEC-0046 · Contract: CON-0178
 """
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
+from unittest.mock import AsyncMock, patch
 
+import pytest
 
 SKELETON_WITH_FEATURE = """\
 # Projekt – Produktvision
@@ -110,6 +109,7 @@ class TestLLMChallengeStrategy:
     async def test_llm_challenge_is_async(self, tmp_path):
         """INV-02: challenge() ist eine Coroutine (async)."""
         import inspect
+
         from tool.sdd_cli.vision.challenge import LLMChallengeStrategy
 
         vision_file = tmp_path / "vision.md"
@@ -122,6 +122,7 @@ class TestCodeChallengeStrategy:
     def test_code_challenge_is_synchronous(self, tmp_path):
         """INV-03: challenge() ist keine Coroutine (synchron)."""
         import inspect
+
         from tool.sdd_cli.vision.challenge import CodeChallengeStrategy
 
         vision_file = tmp_path / "vision.md"

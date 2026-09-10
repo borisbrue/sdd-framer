@@ -1,7 +1,6 @@
 # TST-0147 – ContextSizeRoutingStrategy: Routing nach Token-Größe (CON-0125)
 # Spec: SPEC-0036 | Level: unit | Contract: CON-0125
 
-import pytest
 
 from sdd_cli.routing import ContextSizeRoutingStrategy, TaskContext
 

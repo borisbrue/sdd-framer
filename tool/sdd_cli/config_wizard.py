@@ -5,8 +5,6 @@ Strategy Pattern: Jede Section ist ein eigener Schritt mit Validierung + Default
 """
 from __future__ import annotations
 
-import shutil
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -14,8 +12,11 @@ from typing import Any
 import yaml
 
 from .config_manager import (
-    ConfigManager, ConfigValidationError,
-    PLACEHOLDER_DESCRIPTION, STRATEGIES, RUNTIMES,
+    PLACEHOLDER_DESCRIPTION,
+    RUNTIMES,
+    STRATEGIES,
+    ConfigManager,
+    ConfigValidationError,
     _validate_business_rules,
 )
 
@@ -162,7 +163,7 @@ def _prompt_int(label: str, default: int = 1, min_val: int = 1) -> int:
         try:
             val = int(raw)
         except ValueError:
-            print(f"  Bitte eine ganze Zahl eingeben.")
+            print("  Bitte eine ganze Zahl eingeben.")
             continue
         if val < min_val:
             print(f"  Muss mindestens {min_val} sein.")

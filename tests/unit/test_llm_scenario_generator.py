@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from sdd_cli.generate_holdouts import generate_holdout_scenarios
-from sdd_cli.llm.base import CompletionResult, UsageMetadata
+from sdd_cli.llm.base import CompletionResult
 
 
 def _make_provider(response: str) -> MagicMock:

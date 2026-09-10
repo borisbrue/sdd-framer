@@ -1,7 +1,7 @@
 """TaskRoutingConfig – Konfigurationsschema für task_routing (CON-0174)."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass

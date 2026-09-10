@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import shlex
 import shutil
+import subprocess
 import sys
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -188,7 +188,7 @@ def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[Te
         return ("skipped", duration, f"Keine Tests gesammelt in {artifact_path}.")
     output = (result.stdout + result.stderr).strip()
     # Kurze Fehlermeldung: letzte 20 non-leer Zeilen
-    lines = [l for l in output.splitlines() if l.strip()]
+    lines = [zeile for zeile in output.splitlines() if zeile.strip()]
     short = "\n".join(lines[-20:])
     return ("failed", duration, short)
 
@@ -215,10 +215,10 @@ def _compute_contract_coverage(config: SddConfig, spec_id: str, results: list[Te
         for base in config.all_test_dirs:
             for md in base.rglob("*.md"):
                 doc = parse_safe(md)
-                if doc and doc.frontmatter.get("id") in passed_tst_ids:
-                    if doc.frontmatter.get("contract") == con_id:
-                        covered = True
-                        break
+                if (doc and doc.frontmatter.get("id") in passed_tst_ids
+                        and doc.frontmatter.get("contract") == con_id):
+                    covered = True
+                    break
             if covered:
                 break
         coverage[con_id] = covered

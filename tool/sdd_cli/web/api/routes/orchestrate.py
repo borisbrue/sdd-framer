@@ -84,9 +84,9 @@ def _build_report(state: RunState, final_status: str) -> dict:
 
 # ─── Background worker ───────────────────────────────────────────────────────
 
-def _run_pipeline_bg(run_id: str, body: "OrchestrateRequest") -> None:
-    from sdd_cli.orchestrator import run_pipeline, persist_pipeline_report
+def _run_pipeline_bg(run_id: str, body: OrchestrateRequest) -> None:
     from sdd_cli.frontmatter import parse_safe, patch_status
+    from sdd_cli.orchestrator import persist_pipeline_report, run_pipeline
 
     state = _runs.get(run_id)
     if not state:

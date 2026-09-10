@@ -16,14 +16,13 @@ from __future__ import annotations
 import json
 import subprocess
 from collections.abc import Callable
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from .config import SddConfig
 from .frontmatter import parse_safe
-
 
 DEFAULT_MAX_RETRIES = 3
 BRANCH_PREFIX = "sdd"
@@ -130,14 +129,14 @@ def _build_code_gen_prompt(spec_content: str, agents_md: str,
 # ─── LLM + subprocess helpers ────────────────────────────────────────────────
 
 def _call_code_gen_agent(
-    config: "SddConfig",
+    config: SddConfig,
     spec_id: str,
     spec_content: str,
     agents_md: str,
     contracts: list[tuple[str, str]],
     error_context: str,
     timeout: int = 600,
-    on_proc: "Callable[[subprocess.Popen], None] | None" = None,
+    on_proc: Callable[[subprocess.Popen], None] | None = None,
 ) -> tuple[list[dict[str, Any]], str]:
     """Führt Code-Generierung via konfiguriertem Provider aus.
     Returns (files_list, explanation)."""
@@ -269,8 +268,8 @@ def run_pipeline(
     def _step(msg: str) -> None:
         if on_step:
             on_step(msg)
+    from .autonomy import auto_merge_allowed, record_pr_result
     from .evaluator import run_evaluation  # avoid circular at module level
-    from .autonomy import auto_merge_allowed, record_pr_result, init_db
 
     orch_cfg = config.raw.get("orchestrator", {})
     auto_merge_enabled = orch_cfg.get("auto_merge", False)

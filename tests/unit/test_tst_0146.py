@@ -5,12 +5,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool"))
 
 from sdd_cli.decompose import detect_circular_dependencies
-from sdd_cli.task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
+from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task(title: str, deps: list[str] | None = None, pg: str | None = None) -> Task:

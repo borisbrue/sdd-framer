@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import sys
-import tempfile
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool"))
 
@@ -22,8 +19,8 @@ class TestTST0144:
 
     def test_tasks_response_schema_with_run(self, tmp_path):
         """GET /tasks mit Run gibt vollständige Task-Dicts zurück (G-01)."""
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
         from sdd_cli.task_store import TaskStore
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
 
         store = TaskStore(tmp_path)
         task = Task(
@@ -50,8 +47,8 @@ class TestTST0144:
 
     def test_task_inv01_estimated_tokens_positive(self, tmp_path):
         """INV-01: estimated_tokens > 0."""
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
         from sdd_cli.task_store import TaskStore
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
 
         store = TaskStore(tmp_path)
         task = Task(
@@ -69,8 +66,8 @@ class TestTST0144:
 
     def test_task_inv05_latest_run_returned(self, tmp_path):
         """INV-05: immer neuester Run (höchste run_id)."""
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
         from sdd_cli.task_store import TaskStore
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
 
         store = TaskStore(tmp_path)
         def _t(title):
@@ -87,7 +84,7 @@ class TestTST0144:
 
     def test_task_dict_schema_completeness(self, tmp_path):
         """G-01: Task-Dict enthält alle geforderten Felder aus CON-0123."""
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 
         t = Task(
             spec_id="SPEC-0034", title="T", description="D",
@@ -108,8 +105,9 @@ class TestTST0144:
     def test_task_event_bus_publish_subscribe(self):
         """CON-0123 INV-08: task_update-Event enthält run_id und timestamp."""
         import asyncio
+
         from sdd_cli.task_event_bus import TaskEventBus
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 
         bus = TaskEventBus()
         task = Task(

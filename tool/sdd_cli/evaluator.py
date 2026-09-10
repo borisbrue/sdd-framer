@@ -13,15 +13,17 @@ Ablauf pro Szenario:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .config import SddConfig
 from .frontmatter import parse_safe
 from .llm.base import CompletionProvider
 
+if TYPE_CHECKING:
+    import httpx  # nur fuer die Annotation `http: httpx.Client` (F821)
 
 PASS_THRESHOLD = 2
 
@@ -226,7 +228,7 @@ def _run_scenario_once(
     title: str,
     body: str,
     base_url: str,
-    http: "httpx.Client",
+    http: httpx.Client,
     provider: CompletionProvider,
 ) -> ScenarioRun:
     # Schritt 1: LLM plant HTTP-Request
@@ -468,9 +470,9 @@ def _run_legacy_evaluation(
                 # Uneinheitliche Laeufe deuten fast immer auf fehlenden
                 # Zustands-Reset hin, nicht auf Flakiness der Implementierung.
                 print(
-                    f"    ⚠ Laeufe gehen unterschiedlich aus. Der Legacy-Pfad setzt "
-                    f"den Zustand zwischen Laeufen nicht zurueck — Lauf 1 kann "
-                    f"Lauf 2 beeinflussen.",
+                    "    ⚠ Laeufe gehen unterschiedlich aus. Der Legacy-Pfad setzt "
+                    "den Zustand zwischen Laeufen nicht zurueck — Lauf 1 kann "
+                    "Lauf 2 beeinflussen.",
                     flush=True,
                 )
             report.scenarios.append(result)

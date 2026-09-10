@@ -1,7 +1,6 @@
 # TST-0126 – /sdd-config Claude-Code-Skill (Unit)
 # Spec: SPEC-0027 | Contract: CON-0107
 
-import pytest
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]

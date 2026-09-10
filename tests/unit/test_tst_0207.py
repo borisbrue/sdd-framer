@@ -3,7 +3,6 @@ Spec: SPEC-0047 · Contract: CON-0181
 """
 import pytest
 
-
 FULL_VISION = """\
 # Projekt – Produktvision
 

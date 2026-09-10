@@ -7,6 +7,7 @@ import yaml
 
 from .models import ProjectEntry
 
+
 def _default_registry_path() -> Path:
     return Path.home() / ".config" / "sdd" / "hub-registry.yaml"
 

@@ -1,19 +1,12 @@
 # TST-0180 – sdd finalize blockiert bei fehlendem FR-Test
 # Spec: SPEC-0041 | Contract: CON-0153
-import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 from sdd_cli.compliance import (
-    ComplianceIssue,
-    FrCoverageChecker,
     run_compliance_chain,
 )
 from sdd_cli.frontmatter import Document
-from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
-
+from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 BODY_WITH_FR = """\
 ## 4. Funktionale Anforderungen

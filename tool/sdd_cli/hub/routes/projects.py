@@ -9,7 +9,6 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from ..commands import StartProjectCommand, StopProjectCommand
-from ..models import ProjectEntry
 from ..registry import ProjectNotFoundError
 
 router = APIRouter()

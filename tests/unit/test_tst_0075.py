@@ -1,14 +1,12 @@
 # TST-0075 – sdd dev pr Validierungsgatter (CON-0066)
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from sdd_cli.dev_container import DevContainerManager, save_test_result
 from sdd_cli.config import SddConfig
+from sdd_cli.dev_container import DevContainerManager, save_test_result
 
 
 @pytest.fixture

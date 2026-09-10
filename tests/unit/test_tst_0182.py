@@ -1,11 +1,8 @@
 # TST-0182 – Pre-Commit-Hook gibt Exit 1 bei rotem Spec-Test
 # Spec: SPEC-0041 | Contract: CON-0155
 import json
-import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from sdd_cli.pre_commit_hook import PreCommitHook, find_affected_spec_ids
 

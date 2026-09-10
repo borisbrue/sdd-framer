@@ -7,10 +7,10 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from sdd_cli import test_runner as _test_runner
 from sdd_cli.frontmatter import parse_safe
 from sdd_cli.ids import next_id
 from sdd_cli.templates import load_template, render, slugify
-from sdd_cli import test_runner as _test_runner
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from sdd_context import get_config
@@ -131,7 +131,7 @@ def trigger_test_run(spec_id: str) -> dict[str, Any]:
     try:
         report = _test_runner.run(cfg, spec_id)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
     return report.to_json()

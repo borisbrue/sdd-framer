@@ -13,7 +13,7 @@ from pydantic import BaseModel, field_validator
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from analysis_repository import AnalysisRepository, PersistedAnalysis
 from analyzer import analyze
-from job_store import JobStore, MAX_CONCURRENT_JOBS_PER_DOC, get_job_store
+from job_store import MAX_CONCURRENT_JOBS_PER_DOC, JobStore, get_job_store
 from sdd_context import get_config
 
 FIX_HINT_PROMPT = """\
@@ -256,7 +256,7 @@ def request_fix_hint(doc_id: str, body: FixHintRequest) -> FixHintResponse:
     try:
         completion = provider.complete(prompt)
     except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail={"error": "provider_error", "message": str(exc)})
+        raise HTTPException(status_code=502, detail={"error": "provider_error", "message": str(exc)}) from exc
 
     inner = completion.text
     fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", inner, re.DOTALL)
@@ -267,8 +267,8 @@ def request_fix_hint(doc_id: str, body: FixHintRequest) -> FixHintResponse:
         raise HTTPException(status_code=502, detail="LLM hat kein valides JSON zurückgegeben.")
     try:
         parsed = json.loads(inner[start:end])
-    except (json.JSONDecodeError, ValueError):
-        raise HTTPException(status_code=502, detail="LLM hat kein valides JSON zurückgegeben.")
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="LLM hat kein valides JSON zurückgegeben.") from exc
 
     fix = parsed.get("suggested_fix", "")
     if not fix:

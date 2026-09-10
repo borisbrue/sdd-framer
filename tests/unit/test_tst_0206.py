@@ -1,9 +1,7 @@
 """TST-0206 – sdd vision stats Ausgabe und Fehlerverhalten (Unit)
 Spec: SPEC-0047 · Contract: CON-0180
 """
-import pytest
 from click.testing import CliRunner
-
 
 FULL_VISION = """\
 # Projekt – Produktvision
@@ -146,7 +144,7 @@ class TestVisionStatsCommand:
 
         assert result.exit_code == 0
         lines = result.output.splitlines()
-        llm_line = next((l for l in lines if "LLM Challenges" in l), "")
-        code_line = next((l for l in lines if "Code Challenges" in l), "")
+        llm_line = next((zeile for zeile in lines if "LLM Challenges" in zeile), "")
+        code_line = next((zeile for zeile in lines if "Code Challenges" in zeile), "")
         assert "2" in llm_line
         assert "1" in code_line

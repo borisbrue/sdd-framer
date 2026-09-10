@@ -211,7 +211,7 @@ class SolidAnalyzer:
 # Factory
 # ─────────────────────────────────────────────────────────────────────────────
 
-def create_analyzer(config: "SddConfig", principle_filter: str | None = None) -> SolidAnalyzer:
+def create_analyzer(config: SddConfig, principle_filter: str | None = None) -> SolidAnalyzer:
     """Erstellt den konfigurierten SolidAnalyzer aus der Projektkonfiguration."""
     if not config.solid_gate_enabled():
         return SolidAnalyzer([NullSolidChecker()])
@@ -231,7 +231,7 @@ def create_analyzer(config: "SddConfig", principle_filter: str | None = None) ->
 # Artifact Discovery
 # ─────────────────────────────────────────────────────────────────────────────
 
-def find_artifact(config: "SddConfig", artifact_id: str) -> tuple[str, str] | None:
+def find_artifact(config: SddConfig, artifact_id: str) -> tuple[str, str] | None:
     """Sucht Spec oder Contract nach ID. Gibt (text, artifact_type) oder None zurück."""
     from .frontmatter import parse_safe
 

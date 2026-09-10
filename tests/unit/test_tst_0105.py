@@ -9,10 +9,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
-
 from routes.chat import router
-
+from starlette.websockets import WebSocketDisconnect
 
 # ── Fake Anthropic async client ───────────────────────────────────────────────
 

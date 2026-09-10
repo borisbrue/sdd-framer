@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-
-import pytest
-
 from typing import Literal
 
 from sdd_cli.hub.events import StatusEventBus

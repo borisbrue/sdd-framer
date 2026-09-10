@@ -3,9 +3,6 @@ Spec: SPEC-0048 · Contract: CON-0183
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from sdd_cli.pattern import PatternRegistry
 
 

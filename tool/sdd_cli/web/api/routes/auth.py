@@ -6,15 +6,14 @@ CON-0086: POST /api/auth/rotate-token — Bearer-Auth, generiert neuen Token, in
 from __future__ import annotations
 
 import hashlib
-import os
 import secrets
 import threading
-
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse
 from pathlib import Path
 
 import sdd_context
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
+
 from sdd_cli.config import set_local
 
 router = APIRouter()

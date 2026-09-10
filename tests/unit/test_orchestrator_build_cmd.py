@@ -10,8 +10,6 @@ import inspect
 from types import SimpleNamespace
 from unittest.mock import patch
 
-import pytest
-
 
 def _lauf(tmp_path, *, build_cmd=None, config_cmd=""):
     from sdd_cli import orchestrator

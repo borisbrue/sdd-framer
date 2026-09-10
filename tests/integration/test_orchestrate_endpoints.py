@@ -19,11 +19,12 @@ sys.path.insert(0, str(REPO_ROOT / "tool"))
 os.environ.setdefault("SDD_PROJECT_ROOT", str(REPO_ROOT))
 
 import sdd_context
+
 sdd_context.init(REPO_ROOT)
 
+import routes.orchestrate as orch
 from fastapi.testclient import TestClient
 from main import app
-import routes.orchestrate as orch
 
 client = TestClient(app)
 

@@ -3,7 +3,6 @@ Spec: SPEC-0044 · Contract: CON-0165
 Prüft dass pattern/dev-Gruppen entfernt und obsidian/pwa erhalten sind.
 """
 import subprocess
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

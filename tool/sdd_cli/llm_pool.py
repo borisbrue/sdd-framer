@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .task_model import Task, Complexity, ContextSize
+from .task_model import Complexity, ContextSize, Task
 
 
 class CostTier(str, Enum):

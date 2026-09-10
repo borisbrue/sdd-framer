@@ -11,8 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
-from flow_session import FlowSession, FlowSessionStore, get_new_spec_steps
-
+from flow_session import FlowSessionStore, get_new_spec_steps
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -23,10 +22,10 @@ def store() -> FlowSessionStore:
 
 def _client(store: FlowSessionStore):
     """Minimal TestClient with patched store."""
+    import routes.agent_flow as af
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
     from routes.agent_flow import router
-    import routes.agent_flow as af
 
     original = af.get_flow_session_store
     af.get_flow_session_store = lambda: store

@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import subprocess
-from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from sdd_cli.dev_container import (
     ContainerRuntime,
     DevContainerManager,
-    DockerRuntime,
-    LocalGitStrategy,
     branch_name,
     container_name,
 )

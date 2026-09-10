@@ -6,14 +6,13 @@ Builder Pattern: ConfigManager liest/schreibt atomar – kein Teilzustand.
 from __future__ import annotations
 
 import json
+import os
 import re
 import tempfile
-import os
 from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 _ARRAY_INDEX = re.compile(r"^(.+)\[(\d+)\]$")
 _ENV_VAR_NAME = re.compile(r"^[A-Z][A-Z0-9_]+$")

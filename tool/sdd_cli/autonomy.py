@@ -18,10 +18,8 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from .config import SddConfig
-
 
 VALID_LEVELS = {1, 2, 3, 3.5, 4}
 
@@ -43,8 +41,8 @@ class LevelStats:
     pass_rate: float
     override_rate: float
     auto_merge_blocked: bool
-    upgrade_proposal: Optional[float]
-    downgrade_proposal: Optional[float]
+    upgrade_proposal: float | None
+    downgrade_proposal: float | None
     consecutive_below_threshold: int
 
 
@@ -202,10 +200,7 @@ def compute_level_stats(
             (project_id,),
         ).fetchone()[0]
 
-    if rows:
-        pass_rate = sum(r[1] for r in rows) / len(rows)
-    else:
-        pass_rate = 0.0
+    pass_rate = sum(r[1] for r in rows) / len(rows) if rows else 0.0
 
     override_rate = (fp_count / total_prs) if total_prs else 0.0
 
@@ -258,7 +253,7 @@ def _check_upgrade(
     override_rate: float,
     total_prs: int,
     recent_rows: list,
-) -> Optional[float]:
+) -> float | None:
     levels = sorted(LEVEL_CRITERIA.keys())
     if current_level not in levels:
         return None

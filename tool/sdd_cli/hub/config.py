@@ -10,7 +10,7 @@ class HubConfig(BaseModel):
     port: int = 4711
 
     @classmethod
-    def load(cls, path: Path | None = None) -> "HubConfig":
+    def load(cls, path: Path | None = None) -> HubConfig:
         cfg_path = path or Path.home() / ".config" / "sdd" / "hub.yaml"
         if cfg_path.exists():
             data = yaml.safe_load(cfg_path.read_text()) or {}

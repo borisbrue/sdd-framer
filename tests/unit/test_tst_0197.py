@@ -1,10 +1,10 @@
 """TST-0197 – Task-Routing-Entscheidung: complexity_score → executor (Unit)
 Spec: SPEC-0045 · Contract: CON-0171
 """
-import pytest
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Minimal stubs — werden durch echte Implementierung ersetzt

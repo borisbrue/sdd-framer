@@ -8,13 +8,12 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import AsyncGenerator
 
 import anthropic
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
 import sdd_context
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 

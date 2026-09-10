@@ -76,9 +76,9 @@ def _resolve(raw: dict, component: str, default_block: str) -> dict:
 
 
 def get_completion_provider(
-    config: "SddConfig",
+    config: SddConfig,
     component: Literal["evaluator", "analyzer", "ai_routes", "completion", "local_llm"] = "completion",
-) -> "CompletionProvider":
+) -> CompletionProvider:
     """Gibt den CompletionProvider für die angegebene Komponente zurück.
 
     Unbekannter component-Wert → ValueError (kein stiller Fallback).
@@ -166,7 +166,7 @@ def get_completion_provider(
     )
 
 
-def get_code_gen_provider(config: "SddConfig") -> "CodeGenProvider":
+def get_code_gen_provider(config: SddConfig) -> CodeGenProvider:
     """Gibt den CodeGenProvider zurück (genutzt vom Orchestrator)."""
     cfg = _resolve(config.raw, "orchestrator", "code_gen")
     provider = cfg["provider"] or "claude-cli"

@@ -1,12 +1,10 @@
 """Hub API Contract-Tests – GET /projects, POST start/stop, SSE stream."""
 from __future__ import annotations
 
-import asyncio
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from sdd_cli.hub.app import create_app

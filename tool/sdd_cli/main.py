@@ -1,9 +1,9 @@
 """Click-basierte Befehle der sdd-CLI."""
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 from typing import Any
 
 import click
@@ -11,29 +11,29 @@ from rich.console import Console
 from rich.table import Table
 
 from . import __version__
-from .config import load_config, find_project_root
-from .frontmatter import parse, parse_safe
+from . import test_runner as _test_runner
+from .autonomy import LEVEL_CRITERIA, compute_level_stats, level_label
+from .config import SddConfig, find_project_root, load_config
+from .evaluator import persist_report, run_evaluation
+from .frontmatter import parse_safe
 from .ids import next_id
 from .init import init_project
-from .upgrade import upgrade_project
+from .maintenance import run_maintenance_sweep
+from .orchestrator import persist_pipeline_report, run_pipeline
+from .projects import load_project, set_autonomy_level
 from .templates import (
+    CONTRACT_SUBDIR,
+    CONTRACT_TEMPLATES,
+    copy_skeleton,
     load_template,
     render,
     slugify,
-    copy_skeleton,
-    CONTRACT_SUBDIR,
-    CONTRACT_TEMPLATES,
     test_level_for_contract_format,
 )
-from .validate import validate
 from .traceability import write_matrix
-from .evaluator import run_evaluation, persist_report
-from .orchestrator import run_pipeline, persist_pipeline_report
-from .projects import list_projects, load_project, set_autonomy_level, VALID_AUTONOMY_LEVELS
-from .autonomy import compute_level_stats, level_label, LEVEL_CRITERIA
-from .maintenance import run_maintenance_sweep
 from .ui import start_server
-from . import test_runner as _test_runner
+from .upgrade import upgrade_project
+from .validate import validate
 
 console = Console()
 
@@ -158,7 +158,7 @@ def _check_gh_available() -> None:
                    ".claude/settings.local.json – persönlich, nicht committed (SPEC-0051).")
 def init(target: str, project_title: str, force: bool,
          provider: str, force_skills: bool, autonomous: bool) -> None:
-    from .init import get_skill_provider, SKILL_PROVIDERS
+    from .init import get_skill_provider
     try:
         prov = get_skill_provider(provider)
     except ValueError as exc:
@@ -199,8 +199,8 @@ def init(target: str, project_title: str, force: bool,
         )
 
     config_path = Path(target).resolve() / ".sdd" / "config.yaml"
-    from .config_wizard import ConfigWizard
     from .config_manager import ConfigManager
+    from .config_wizard import ConfigWizard
     cfg_data = ConfigManager(config_path).load()
     if ConfigWizard.needs_setup(cfg_data):
         console.print(
@@ -232,7 +232,7 @@ def init(target: str, project_title: str, force: bool,
     console.print("  3. [cyan]sdd new test --spec SPEC-0001 --contract CON-0001 --level contract[/]")
     console.print("  4. [cyan]sdd validate[/]")
     if n_skills:
-        console.print(f"  5. [cyan]/sdd[/]  (in Claude Code – Projektübersicht)")
+        console.print("  5. [cyan]/sdd[/]  (in Claude Code – Projektübersicht)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ def upgrade(target: str, verbose: bool) -> None:
     if n_created == 0 and n_updated == 0:
         console.print("[green]✓[/] Projekt ist bereits auf dem neuesten Stand.")
     else:
-        console.print(f"\n[green]✓[/] Upgrade abgeschlossen.")
+        console.print("\n[green]✓[/] Upgrade abgeschlossen.")
         console.print("\nHinweis: Spec/Contract/Test-Dateien wurden [bold]nicht[/] verändert.")
         console.print("Prüfe die aktualisierte config.yaml auf neue Sektionen:")
         console.print(f"  [cyan]{config_file}[/]")
@@ -284,7 +284,7 @@ def new() -> None:
     pass
 
 
-def _ensure_project() -> "object":
+def _ensure_project() -> object:
     try:
         return load_config()
     except FileNotFoundError as e:
@@ -496,7 +496,7 @@ def new_holdout(contract_id: str, spec_id: str, title: str, priority: str, hol_t
 
     console.print(f"[green]✓[/] Holdout-Szenario angelegt: [bold]{target}[/]  ([cyan]{hid}[/])")
     console.print(
-        f"  [yellow]→[/] Datei ist in [bold].sdd/holdout/[/] – für den Code-Agenten nicht sichtbar."
+        "  [yellow]→[/] Datei ist in [bold].sdd/holdout/[/] – für den Code-Agenten nicht sichtbar."
     )
     console.print(
         "  [yellow]→[/] [bold]status: ready[/] – das Szenario wird evaluiert. "
@@ -609,7 +609,7 @@ def evaluate_cmd(ctx: click.Context, smoke: bool) -> None:
 
 
 def _run_evaluate(
-    cfg: "SddConfig",
+    cfg: SddConfig,
     base_url: str,
     ids_filter: list[str] | None,
     spec_id: str | None,
@@ -695,8 +695,8 @@ def _run_evaluate(
 
 def _run_smoke_test() -> None:
     """Deterministischer Selbsttest für Tier-Sortierung und Fail-Fast (kein HTTP, kein LLM)."""
+    from .evaluator import ScenarioResult, ScenarioRun
     from .holdout_runner import PRIORITY_ORDER
-    from .evaluator import EvaluationReport, ScenarioResult, ScenarioRun
 
     checks: list[tuple[str, bool, str]] = []
 
@@ -767,14 +767,13 @@ def holdout_group() -> None:
 @click.argument("spec_id")
 def holdout_generate(spec_id: str) -> None:
     from .generate_holdouts import (
+        generate_holdout_scenarios,
         load_and_validate_spec,
         resolve_contract_files,
-        get_existing_hol_ids_for_spec,
         write_hol_file,
-        generate_holdout_scenarios,
     )
-    from .llm import get_completion_provider
     from .ids import next_id
+    from .llm import get_completion_provider
 
     cfg = _ensure_project()
 
@@ -1210,6 +1209,7 @@ def _find_free_port(start: int = 8100, exclude: set[int] | None = None) -> int:
 def _hub_run_servers(app, http_port: int, certs_dir: Path | None = None) -> None:
     """Startet HTTP (immer) und HTTPS (port+1, wenn Certs vorhanden) via asyncio."""
     import asyncio
+
     import uvicorn
 
     global_certs = certs_dir or Path.home() / ".local/share/sdd/certs"
@@ -1241,6 +1241,7 @@ def _hub_run_servers(app, http_port: int, certs_dir: Path | None = None) -> None
 def hub_start(port: int, no_browser: bool) -> None:
     import threading
     import webbrowser
+
     from .hub.app import create_app
     from .hub.config import HubConfig
 
@@ -1288,8 +1289,9 @@ def hub_run(port: int) -> None:
 def hub_register(name: str, project_path: str, cmd: tuple, port: int, force: bool) -> None:
     import re
     from pathlib import Path
+
     from .hub.models import ProjectEntry
-    from .hub.registry import ProjectRegistry, DuplicateProjectError
+    from .hub.registry import DuplicateProjectError, ProjectRegistry
 
     project_id = re.sub(r"[^a-z0-9-]", "-", name.lower()).strip("-")
     entry = ProjectEntry(
@@ -1311,7 +1313,7 @@ def hub_register(name: str, project_path: str, cmd: tuple, port: int, force: boo
 @hub.command("unregister", help="Entfernt ein Projekt aus der Hub-Registry.")
 @click.argument("project_id")
 def hub_unregister(project_id: str) -> None:
-    from .hub.registry import ProjectRegistry, ProjectNotFoundError
+    from .hub.registry import ProjectNotFoundError, ProjectRegistry
 
     reg = ProjectRegistry()
     try:
@@ -1327,10 +1329,12 @@ def hub_unregister(project_id: str) -> None:
 @click.option("--force", is_flag=True, help="Bestehenden Eintrag überschreiben.")
 def hub_add(path: str, force: bool) -> None:
     import re
-    import yaml
     from pathlib import Path
+
+    import yaml
+
     from .hub.models import ProjectEntry
-    from .hub.registry import ProjectRegistry, DuplicateProjectError
+    from .hub.registry import DuplicateProjectError, ProjectRegistry
 
     project_path = Path(path).expanduser().resolve()
     sdd_config_path = project_path / ".sdd" / "config.yaml"
@@ -1371,8 +1375,9 @@ def hub_add(path: str, force: bool) -> None:
 
 @hub.command("status", help="Zeigt den Status aller registrierten Projekte.")
 def hub_status() -> None:
-    from .hub.registry import ProjectRegistry
     from rich.table import Table
+
+    from .hub.registry import ProjectRegistry
 
     reg = ProjectRegistry()
     entries = reg.get_all()
@@ -1393,9 +1398,10 @@ def hub_status() -> None:
 
 @hub.command("install", help="Installiert systemd-User-Service und Avahi-mDNS-Eintrag.")
 def hub_install() -> None:
-    import shutil
     from pathlib import Path
+
     from jinja2 import Template
+
     from .hub.config import HubConfig
 
     cfg = HubConfig.load()
@@ -1459,7 +1465,7 @@ def pwa_start(port: int, no_browser: bool) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd test-run / sdd test-results
 # ─────────────────────────────────────────────────────────────────────────────
-def _print_run_report(report: "_test_runner.RunReport") -> None:
+def _print_run_report(report: _test_runner.RunReport) -> None:
     table = Table(title=f"Test-Run · {report.spec_id} · {report.started_at[:19]}")
     table.add_column("TST-ID", style="cyan")
     table.add_column("Artefakt")
@@ -1561,8 +1567,8 @@ def spec_review(spec_id: str) -> None:
                    "wird nicht geprueft.")
 def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None:
     cfg = _ensure_project()
-    from .gate import ExecutionGate
     from .frontmatter import patch_status
+    from .gate import ExecutionGate
     g = ExecutionGate(cfg.root)
     allowed = g.can_start_phase(spec_id, "spec-approved")
     if not allowed.allowed:
@@ -1663,7 +1669,8 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
 )
 def spec_solid(artifact_id: str, output_json: bool, principle: str | None) -> None:
     import json as _json
-    from .solid import create_analyzer, find_artifact, PRINCIPLE_LABELS
+
+    from .solid import create_analyzer, find_artifact
 
     cfg = _ensure_project()
     artifact = find_artifact(cfg, artifact_id)
@@ -1694,7 +1701,7 @@ def spec_solid(artifact_id: str, output_json: bool, principle: str | None) -> No
 
 
 def _mark_regression_ok(
-    cfg: "SddConfig",
+    cfg: SddConfig,
     spec_id: str,
     *,
     llm_skipped: bool = False,
@@ -1756,6 +1763,7 @@ def _mark_regression_ok(
               help="Markiert regression-ok auch, wenn die LLM-Stufe uebersprungen wurde.")
 def spec_regression(spec_id: str, output_json: bool, allow_skipped_llm: bool) -> None:
     import json as _json
+
     from .regression_check import RegressionCheckChain
 
     cfg = _ensure_project()
@@ -1873,8 +1881,8 @@ def contract_propose(spec_id: str, contract_ids: tuple) -> None:
 @click.argument("contract_ids", nargs=-1, required=True)
 def contract_analyze(spec_id: str, contract_ids: tuple) -> None:
     cfg = _ensure_project()
-    from .gate import ExecutionGate
     from .conflict_detector import ConflictDetector
+    from .gate import ExecutionGate
     g = ExecutionGate(cfg.root)
     allowed = g.can_start_phase(spec_id, "contracts-review")
     if not allowed.allowed:
@@ -1994,7 +2002,7 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
             spec_id, "tests-generated",
             files_generated=[f["path"] for f in result.generated_files],
         )
-        console.print(f"[green]✓[/] Phase [bold]tests-generated[/] abgeschlossen.")
+        console.print("[green]✓[/] Phase [bold]tests-generated[/] abgeschlossen.")
     else:
         g.mark_phase_complete(spec_id, "tests-generated", result="failed",
                               syntax_errors=result.syntax_errors)
@@ -2014,10 +2022,7 @@ def test_run(spec_id: str | None, run_all: bool, output_json: bool) -> None:
         sys.exit(2)
 
     try:
-        if run_all:
-            reports = _test_runner.run_all(cfg)
-        else:
-            reports = [_test_runner.run(cfg, spec_id)]
+        reports = _test_runner.run_all(cfg) if run_all else [_test_runner.run(cfg, spec_id)]
     except ValueError as e:
         console.print(f"[red]✗[/] {e}")
         sys.exit(2)
@@ -2076,8 +2081,9 @@ def conflict_group() -> None:
 @click.option("--json", "output_json", is_flag=True)
 def conflict_list(spec_id: str, status: str | None, output_json: bool) -> None:
     cfg = _ensure_project()
-    from .conflict_detector import ConflictDetector
     import json as _json
+
+    from .conflict_detector import ConflictDetector
     d = ConflictDetector(cfg.root)
     conflicts = d.list_conflicts(spec_id, status_filter=status)
     if output_json:
@@ -2154,7 +2160,7 @@ def obsidian_group() -> None:
               help="Zeigt geplante Aktionen, schreibt keine Dateien.")
 def obsidian_export(vault_path: str | None, dry_run: bool) -> None:
     cfg = _ensure_project()
-    from .obsidian import export as _export, obsidian_config
+    from .obsidian import export as _export
 
     try:
         result = _export(cfg, vault_override=vault_path, dry_run=dry_run)
@@ -2220,7 +2226,8 @@ def obsidian_import(vault_path: str | None) -> None:
               help="Polling-Intervall in Sekunden (überschreibt watch_interval_secs).")
 def obsidian_watch(vault_path: str | None, interval: int | None) -> None:
     cfg = _ensure_project()
-    from .obsidian import watch as _watch, obsidian_config
+    from .obsidian import obsidian_config
+    from .obsidian import watch as _watch
 
     try:
         ocfg = obsidian_config(cfg, vault_path)
@@ -2255,9 +2262,10 @@ def status_check_cmd(fix: bool) -> None:
     sys.exit(1)
 
 
-def _print_in_progress_section(cfg: "object") -> None:
+def _print_in_progress_section(cfg: object) -> None:
     """Zeigt in-progress Specs mit started_at und 24h-Warnung (SPEC-0019 FR-08/FR-09)."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
+
     from .lifecycle import get_in_progress_specs
 
     in_progress = get_in_progress_specs(cfg)
@@ -2365,7 +2373,7 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
         else:
             console.print()
             if not mgr.image_exists():
-                console.print(f"[dim]▶ Baue Container-Image (einmalig) …[/]")
+                console.print("[dim]▶ Baue Container-Image (einmalig) …[/]")
                 mgr.build()
             console.print(f"[dim]▶ Starte Container für {spec_id} …[/]")
             mgr.start(spec_id)
@@ -2397,7 +2405,7 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
     if auto:
         console.print()
         console.print(f"[dim]▶ --auto: starte orchestrate für [cyan]{result.spec_id}[/] …[/]")
-        from .orchestrator import run_pipeline, persist_pipeline_report
+        from .orchestrator import persist_pipeline_report, run_pipeline
         try:
             report = run_pipeline(
                 cfg, result.spec_id,
@@ -2531,8 +2539,9 @@ def estimate_cmd(
     model_override: str | None,
     output_json: bool,
 ) -> None:
-    from .estimation import estimate, EstimateResult
     import json as _json
+
+    from .estimation import EstimateResult, estimate
 
     cfg = _ensure_project()
 
@@ -2581,7 +2590,7 @@ def estimate_cmd(
     _print_estimate_single(result)
 
 
-def _print_estimate_single(result: "object") -> None:
+def _print_estimate_single(result: object) -> None:
     from rich.panel import Panel
 
     conf_color = {"LOW": "red", "MEDIUM": "yellow", "HIGH": "green"}.get(
@@ -2625,7 +2634,7 @@ def _print_estimate_single(result: "object") -> None:
         ))
 
 
-def _print_estimate_table(results: list, cfg: "object") -> None:
+def _print_estimate_table(results: list, cfg: object) -> None:
     from rich.panel import Panel
 
     table = Table(title="Token-Kostenschätzung – Alle Specs")
@@ -2676,7 +2685,7 @@ def _print_estimate_table(results: list, cfg: "object") -> None:
 @click.option("--export", "export_csv", default=None,
               help="Exportiert alle Datenpunkte als CSV (Pfad zur Ausgabedatei).")
 def token_history_cmd(spec_id: str | None, export_csv: str | None) -> None:
-    from .estimation import token_history, export_token_history_csv
+    from .estimation import export_token_history_csv, token_history
 
     cfg = _ensure_project()
 
@@ -3043,8 +3052,9 @@ def review_pattern_list(artifact_id: str | None) -> None:
 @click.option("--auto", is_flag=True)
 def review_pending_group_cmd(auto: bool) -> None:
     cfg = _ensure_project()
-    from .lifecycle import pending_contracts, review_contract
     from datetime import date
+
+    from .lifecycle import pending_contracts, review_contract
 
     pending = pending_contracts(cfg)
     if not pending:
@@ -3163,7 +3173,8 @@ def hotfix_list(status: str | None) -> None:
 
 def _run_solid_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     """Sub-Phase 2b/5b: SOLID-Analyse. Gibt Findings aus, blockiert ggf. bei block-Modus."""
-    from .solid import create_analyzer, find_artifact as _find
+    from .solid import create_analyzer
+    from .solid import find_artifact as _find
 
     artifact = _find(cfg, artifact_id)
     if artifact is None:
@@ -3199,8 +3210,8 @@ def _run_solid_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
 
 def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     """Sub-Phase 2c/5c: Pattern-Vorschläge ausgeben (kein Block)."""
-    from .solid import find_artifact as _find
     from .pattern import create_suggester
+    from .solid import find_artifact as _find
 
     suggester = create_suggester(cfg)
     if suggester is None:
@@ -3235,6 +3246,7 @@ def guard_group() -> None:
 @guard_group.command("check", help="Liest PreToolUse-Hook-JSON von stdin, gibt permissionDecision (deny) aus.")
 def guard_check_cmd() -> None:
     import json as _json
+
     from .guard import decide
 
     raw = sys.stdin.read()
@@ -3370,7 +3382,7 @@ def decompose(spec_id: str, yes: bool) -> None:
         tasks = decomposer.decompose(spec_id, cfg)
     except ValueError as exc:
         console.print(f"[red]✗ {exc}[/]")
-        raise SystemExit(1)
+        raise SystemExit(1) from None
 
     console.print(f"\n[bold]Tasks ({len(tasks)}):[/]")
     for i, t in enumerate(tasks, 1):
@@ -3383,7 +3395,7 @@ def decompose(spec_id: str, yes: bool) -> None:
         if t.test_file:
             console.print(f"      [dim]Test: {t.test_file}[/]")
         elif t.type.value == "code":
-            console.print(f"      [yellow]⚠ kein test_file definiert[/]")
+            console.print("      [yellow]⚠ kein test_file definiert[/]")
 
     if not yes:
         click.confirm("\nTask-Liste bestätigen?", abort=True)
@@ -3398,8 +3410,8 @@ def decompose(spec_id: str, yes: bool) -> None:
 def distribute(spec_id: str, dry_run: bool) -> None:
     cfg = _ensure_project()
     from .decompose import TaskDecomposer
-    from .llm_pool import LlmPoolRegistry, LlmEntry, LlmType, CostTier
     from .dist_orchestrator import DistributionOrchestrator
+    from .llm_pool import CostTier, LlmEntry, LlmPoolRegistry, LlmType
 
     tasks = TaskDecomposer().load(spec_id, cfg)
     if not tasks:
@@ -3418,7 +3430,7 @@ def distribute(spec_id: str, dry_run: bool) -> None:
         ))
 
     if not registry.entries:
-        from .llm_pool import LlmEntry, LlmType, CostTier
+        from .llm_pool import CostTier, LlmEntry, LlmType
         registry.register(LlmEntry(
             id="claude-code-cli",
             type=LlmType.LOCAL,
@@ -3431,7 +3443,7 @@ def distribute(spec_id: str, dry_run: bool) -> None:
     console.print(f"[cyan]▶ Starte Distribution für {spec_id} ({len(tasks)} Tasks) …[/]")
     report = orch.run(spec_id, tasks)
 
-    console.print(f"\n[bold]Report:[/]")
+    console.print("\n[bold]Report:[/]")
     console.print(f"  Branch:    {report.branch}")
     console.print(f"  Committed: {len(report.committed)}")
     console.print(f"  Blocked:   {len(report.blocked)}")
@@ -3584,6 +3596,7 @@ def config_show_cmd(section: str | None) -> None:
 def config_validate_cmd(output_json: bool) -> None:
     import json as _json
     from pathlib import Path as _Path
+
     from .config_validator import ConfigValidator
 
     root = find_project_root()
@@ -3628,7 +3641,7 @@ def config_validate_cmd(output_json: bool) -> None:
 def config_test_llm_cmd(llm_id: str | None) -> None:
     cfg = _ensure_project()
     from .config_manager import ConfigManager
-    from .llm_probe import probe_llm, LlmProbeError
+    from .llm_probe import LlmProbeError, probe_llm
     mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
     data = mgr.load()
     providers = data.get("llm_pool", {}).get("providers") or []
@@ -3661,6 +3674,7 @@ def config_test_llm_cmd(llm_id: str | None) -> None:
 @click.argument("task_id")
 def task_route_cmd(spec_id: str, task_id: str) -> None:
     import json as _json
+
     from .task_routing.config import load_task_routing_config
     from .task_routing.task_exec import decide_routing
 
@@ -3700,6 +3714,7 @@ def task_exec_cmd(
     error_context: str,
 ) -> None:
     import json as _json
+
     from .task_routing.config import load_task_routing_config
     from .task_routing.task_exec import ImplOnlyExecutor
 
@@ -3777,7 +3792,7 @@ def vision_group() -> None:
 @vision_group.command("init", help="Erstellt .sdd/vision.md interaktiv.")
 @click.pass_context
 def vision_init(ctx: click.Context) -> None:
-    from .vision.init import VisionInitWizard, VisionAlreadyExistsError
+    from .vision.init import VisionAlreadyExistsError, VisionInitWizard
 
     root = find_project_root()
     sdd_dir = root / ".sdd"
@@ -3803,7 +3818,7 @@ def vision_init(ctx: click.Context) -> None:
 
 @vision_group.command("show", help="Gibt das Vision-Dokument aus.")
 def vision_show() -> None:
-    from .vision.show import VisionReader, VisionNotFoundError
+    from .vision.show import VisionNotFoundError, VisionReader
 
     root = find_project_root()
     try:
@@ -3873,7 +3888,8 @@ def vision_add_task(title: str) -> None:
 @click.option("--both", "mode", flag_value="both", default=True, help="LLM + Code (Standard).")
 def vision_challenge(feature_index: int, mode: str) -> None:
     import asyncio
-    from .vision.challenge import LLMChallengeStrategy, CodeChallengeStrategy
+
+    from .vision.challenge import CodeChallengeStrategy, LLMChallengeStrategy
     from .vision.document import VisionNotFoundError
 
     root = find_project_root()
@@ -3899,9 +3915,10 @@ def vision_challenge(feature_index: int, mode: str) -> None:
 
 @vision_group.command("stats", help="Zeigt Statistiken zur aktuellen Vision.")
 def vision_stats() -> None:
+    from pathlib import Path
+
     from .vision.document import VisionDocument, VisionNotFoundError
     from .vision.stats import VisionStats
-    from pathlib import Path
 
     root = find_project_root() or Path.cwd()
     vision_file = root / ".sdd" / "vision.md"

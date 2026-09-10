@@ -3,7 +3,6 @@ Spec: SPEC-0046 · Contract: CON-0177
 """
 import pytest
 
-
 SKELETON = """\
 # Projekt – Produktvision
 

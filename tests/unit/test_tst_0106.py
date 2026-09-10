@@ -7,10 +7,8 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from routes.remote import router
 
 ALLOWLIST = {"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"}
@@ -70,7 +68,7 @@ class TestTST0106:
     # CON-0075 G-09: Command-Allowlist enthält genau die spezifizierten Commands
     def test_allowlist_contains_specified_commands(self) -> None:
         expected = {"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"}
-        assert ALLOWLIST == expected
+        assert expected == ALLOWLIST
 
     # CON-0075 G-09: Unbekannte Commands sind nicht in der Allowlist
     def test_unknown_commands_not_in_allowlist(self) -> None:

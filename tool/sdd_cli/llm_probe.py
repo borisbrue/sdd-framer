@@ -35,9 +35,8 @@ class OllamaProbe:
 class AnthropicProbe:
     def probe(self, provider: dict) -> float:
         import os
-        import urllib.request
         import urllib.error
-        import json as _json
+        import urllib.request
 
         key_env = provider.get("api_key_env", "")
         api_key = os.environ.get(key_env, "")
@@ -69,8 +68,8 @@ class AnthropicProbe:
 class OpenAICompatProbe:
     def probe(self, provider: dict) -> float:
         import os
-        import urllib.request
         import urllib.error
+        import urllib.request
 
         key_env = provider.get("api_key_env", "")
         api_key = os.environ.get(key_env, "") if key_env else ""

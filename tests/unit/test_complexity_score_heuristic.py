@@ -1,8 +1,6 @@
 """tests for compute_complexity_score heuristic (FR-01, SPEC-0045)."""
 from dataclasses import dataclass, field
 
-import pytest
-
 
 @dataclass
 class DecomposeTask:

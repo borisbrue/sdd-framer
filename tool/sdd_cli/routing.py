@@ -5,8 +5,9 @@ ContextSizeRoutingStrategy zählt Tokens via tiktoken und vergleicht mit context
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Protocol
+from typing import Literal, Protocol
 
 
 @dataclass

@@ -32,7 +32,7 @@ class VisionStats:
             raise ValueError("code_challenge_count must not exceed feature_count")
 
     @classmethod
-    def from_document(cls, doc: VisionDocument) -> "VisionStats":
+    def from_document(cls, doc: VisionDocument) -> VisionStats:
         features = doc.features or []
         tasks = doc.tasks or []
         task_done = sum(1 for t in tasks if t.done)

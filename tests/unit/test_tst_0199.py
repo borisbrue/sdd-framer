@@ -1,12 +1,11 @@
 """TST-0199 – Claude Review-Gate, Retry-Loop und Eskalation (Unit)
 Spec: SPEC-0045 · Contract: CON-0173
 """
-import asyncio
 from dataclasses import dataclass, field
 from typing import Literal
 from unittest.mock import AsyncMock, MagicMock, patch
-import pytest
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Stubs

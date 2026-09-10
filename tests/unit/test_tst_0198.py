@@ -4,9 +4,9 @@ Spec: SPEC-0045 · Contract: CON-0172
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, call
-import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Stubs
@@ -58,15 +58,14 @@ class TestAsyncTDDLoop:
         with patch(
             "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor._write_file",
             side_effect=mock_write,
+        ), patch(
+            "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
+            return_value=mock_completion_provider,
         ):
-            with patch(
-                "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
-                return_value=mock_completion_provider,
-            ):
-                from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
-                executor = LocalLLMExecutor()
-                task = TaskContext(id="TSK-001", description="Implement foo()")
-                await executor.execute(task, workspace=tmp_workspace, iteration=1)
+            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
+            executor = LocalLLMExecutor()
+            task = TaskContext(id="TSK-001", description="Implement foo()")
+            await executor.execute(task, workspace=tmp_workspace, iteration=1)
 
         test_idx = next(i for i, n in enumerate(write_order) if n.startswith("test_"))
         impl_idx = next(i for i, n in enumerate(write_order) if not n.startswith("test_"))
@@ -78,16 +77,15 @@ class TestAsyncTDDLoop:
         with patch(
             "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
             return_value=mock_completion_provider,
+        ), patch(
+            "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor._run_pytest",
+            new_callable=AsyncMock,
+            return_value=(0, "1 passed"),
         ):
-            with patch(
-                "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor._run_pytest",
-                new_callable=AsyncMock,
-                return_value=(0, "1 passed"),
-            ):
-                from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
-                executor = LocalLLMExecutor()
-                task = TaskContext(id="TSK-042", description="Implement bar()")
-                await executor.execute(task, workspace=tmp_workspace, iteration=1)
+            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
+            executor = LocalLLMExecutor()
+            task = TaskContext(id="TSK-042", description="Implement bar()")
+            await executor.execute(task, workspace=tmp_workspace, iteration=1)
 
         expected = tmp_workspace / "tests" / "unit" / "test_TSK-042.py"
         assert expected.exists(), f"Testdatei erwartet unter {expected}"
@@ -98,16 +96,15 @@ class TestAsyncTDDLoop:
         with patch(
             "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
             return_value=mock_completion_provider,
-        ):
-            with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
-                mock_proc.return_value = MagicMock(
-                    returncode=0,
-                    communicate=AsyncMock(return_value=(b"1 passed", b"")),
-                )
-                from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
-                executor = LocalLLMExecutor()
-                task = TaskContext(id="TSK-003", description="Implement baz()")
-                await executor.execute(task, workspace=tmp_workspace, iteration=1)
+        ), patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_proc:
+            mock_proc.return_value = MagicMock(
+                returncode=0,
+                communicate=AsyncMock(return_value=(b"1 passed", b"")),
+            )
+            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
+            executor = LocalLLMExecutor()
+            task = TaskContext(id="TSK-003", description="Implement baz()")
+            await executor.execute(task, workspace=tmp_workspace, iteration=1)
 
         mock_proc.assert_called_once()
         args = mock_proc.call_args[0]
@@ -152,7 +149,7 @@ class TestAsyncTDDLoop:
             "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor.execute",
             side_effect=fake_execute,
         ):
-            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor, run_concurrent
+            from tool.sdd_cli.task_routing.local_llm import run_concurrent
             tasks = [TaskContext(id=f"TSK-{i:03d}", description="x") for i in range(6)]
             await run_concurrent(tasks, max_concurrent=2, workspace=Path("/tmp"))
 

@@ -1,11 +1,10 @@
 # TST-0215 – Guardrail-Modul – Kommando-Semantik
 # Spec: SPEC-0051 · Contract: CON-0189
-import os
 import stat
 import subprocess
 from pathlib import Path
 
-from sdd_cli.guard import evaluate_command, decide
+from sdd_cli.guard import decide, evaluate_command
 
 _HOOK = Path(__file__).resolve().parents[2] / ".claude" / "hooks" / "autonomous-guardrail.sh"
 

@@ -9,14 +9,13 @@ from __future__ import annotations
 import asyncio
 import json
 import threading
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
+import sdd_context
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from pywebpush import WebPushException, webpush
-
-import sdd_context
 
 router = APIRouter()
 

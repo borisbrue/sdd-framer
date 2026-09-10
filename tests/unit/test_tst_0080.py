@@ -5,9 +5,6 @@ from __future__ import annotations
 
 import json
 import threading
-import time
-
-import pytest
 
 from sdd_cli.log_streamer import LogEventBus
 

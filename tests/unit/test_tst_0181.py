@@ -1,13 +1,8 @@
 # TST-0181 – sdd spec approve blockiert bei fehlendem FR-Test
 # Spec: SPEC-0041 | Contract: CON-0153
-import json
 from pathlib import Path
-from unittest.mock import patch
 
-import pytest
-
-from sdd_cli.compliance import FrCoverageSpecification, FrCoverageResult
-
+from sdd_cli.compliance import FrCoverageSpecification
 
 BODY_WITH_FR = """\
 ## 4. Funktionale Anforderungen
@@ -22,7 +17,7 @@ class TestSpecApproveCompliance:
 
     def test_uncovered_fr_produces_uncovered_list(self, tmp_path: Path) -> None:
         from sdd_cli.frontmatter import Document
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
         spec = Document(
             path=tmp_path / "SPEC-TEST.md",
@@ -49,7 +44,7 @@ class TestSpecApproveCompliance:
 
     def test_all_frs_covered_passes(self, tmp_path: Path) -> None:
         from sdd_cli.frontmatter import Document
-        from sdd_cli.task_model import Task, TaskType, Complexity, ContextSize, TaskStatus
+        from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
         spec = Document(
             path=tmp_path / "SPEC-TEST.md",

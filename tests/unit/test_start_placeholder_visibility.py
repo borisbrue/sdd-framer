@@ -17,6 +17,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.config import SddConfig
+
 # Lazy in den Tests: sonst scheitert schon das Einsammeln des Moduls
 # gegen einen Stand ohne StubOutcome, und der RED-Nachweis waere
 # nur ein ImportError statt eines Verhaltensbelegs.

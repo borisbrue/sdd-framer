@@ -1,9 +1,10 @@
 # TST-0123 – Config-Commands set/get/show/validate (Unit)
 # Spec: SPEC-0027 | Contract: CON-0104
 
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
 
 from tool.sdd_cli.config_manager import ConfigManager, ConfigValidationError
 

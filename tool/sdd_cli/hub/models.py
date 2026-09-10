@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
