@@ -172,4 +172,16 @@ docker:
     max_lines: 500
 pwa:
   auth:
-    token: 145df2f201b58e75bfc92e790af5ae8b8dac4ed3d0e31e7a88188291c3ab3e10
+    # Leer lassen. Der Token ist die Bearer-Credential fuer /api/remote/run und
+    # den Chat-WebSocket — ein fester Wert im Blueprint waere fuer jedes
+    # erzeugte Projekt derselbe und stuende in dessen Historie.
+    #
+    # Erzeugt wird er beim ersten Koppeln: POST /api/auth/generate-token
+    # (im Web-UI der Knopf im Server-Info-Panel) legt secrets.token_hex(32) an,
+    # solange keiner konfiguriert ist. Ein vorbelegter Wert liess diesen Aufruf
+    # dauerhaft mit 409 token_already_exists scheitern und blockierte damit
+    # genau den Bootstrap, fuer den er gedacht ist.
+    #
+    # "Kein Token konfiguriert" ist ein vorgesehener Zustand: CON-0085 G-04
+    # beschreibt ihn, und alle Bearer-Pruefungen weisen ohne Token ab.
+    token: ""
