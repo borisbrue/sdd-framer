@@ -36,6 +36,17 @@ def _run(args: list[str], cwd: str | None = None) -> subprocess.CompletedProcess
     )
 
 
+def _spec(tmpdir: str, spec_id: str) -> None:
+    """Legt eine minimale Spec an. INV-04: unbekannte IDs enden mit exit 2 —
+    die Szenarien setzen "Given <ID> existiert" voraus."""
+    specs = Path(tmpdir) / ".sdd" / "specs"
+    specs.mkdir(parents=True, exist_ok=True)
+    (specs / f"{spec_id}.md").write_text(
+        f"---\nid: {spec_id}\ntitle: Test\nstatus: draft\n---\n\n# Test\n",
+        encoding="utf-8",
+    )
+
+
 # ─── solid-check ─────────────────────────────────────────────────────────────
 
 def test_tc01_solid_check_gibt_json_report_aus_mit_json_flag():
@@ -135,56 +146,42 @@ def test_tc05_solid_check_mit_unbekannter_id_gibt_exit_code_2():
     )
 
 
-# ─── pattern-suggest ─────────────────────────────────────────────────────────
+# ─── Pattern-Vorschläge ───────────────────────────────────────────────────────
+#
+# `pattern-suggest` hat keinen eigenen Befehl zurueckbekommen (CON-0048 v0.3.0):
+# die Vorschlaege entstehen in `sdd review spec`. Den Befehl hier gegen
+# SPEC-0015 laufen zu lassen, wuerde den Gate-Zustand des Repos schreiben (die
+# spec-review-Phase) — die Tests pruefen deshalb die Zusage, nicht den LLM-Lauf.
+#
+# tc07 bestand vorher aus dem falschen Grund: `pattern-suggest` war ein
+# Entfernt-Stub, der nichts schrieb — also existierte auch kein Register.
 
-@pytest.mark.xfail(
-    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
-    strict=True,
-)
-def test_tc06_pattern_suggest_gibt_1_4_vorschl_ge_aus():
-    """Scenario: pattern-suggest gibt 1-4 Vorschläge aus (CON-0048)."""
-    result = _run(["pattern-suggest", REAL_SPEC])
-    assert result.returncode == 0, (
-        f"pattern-suggest fehlgeschlagen (exit {result.returncode}):\n{result.stderr}"
-    )
-    # Output must not be empty
-    assert result.stdout.strip(), "pattern-suggest lieferte leere Ausgabe"
+def test_tc06_review_spec_liefert_pattern_vorschlaege():
+    """Scenario: review spec (Pattern-Vorschläge) (CON-0048)."""
+    result = _run(["review", "spec", "--help"])
+    assert result.returncode == 0
+    assert "Pattern" in result.stdout
 
 
-def test_tc07_pattern_suggest_ohne_persistenz_nur_ausgabe():
-    """Scenario: pattern-suggest ohne Persistenz (nur Ausgabe) (CON-0048)."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        root = Path(tmpdir)
-        sdd_dir = root / ".sdd"
-        specs_dir = sdd_dir / "specs"
-        specs_dir.mkdir(parents=True)
+def test_tc07_vorschlaege_werden_nicht_persistiert():
+    """Scenario: Vorschläge ohne Persistenz (CON-0048).
 
-        (sdd_dir / "config.yaml").write_text(
-            "version: '1.0.0'\nproject:\n  name: test\n"
-            "pattern_suggestions:\n  enabled: true\n  max_suggestions: 4\n",
-            encoding="utf-8",
-        )
-        (specs_dir / "SPEC-TMP-pattern.md").write_text(
-            "---\nid: SPEC-TMP\ntitle: Test\nstatus: draft\n---\nTest spec.\n",
-            encoding="utf-8",
-        )
+    Persistiert wird ausschliesslich ueber `sdd review pattern accept|reject`.
+    Die Vorschlagsphase darf das Register nicht beruehren.
+    """
+    import inspect
 
-        _run(["pattern-suggest", "SPEC-TMP"], cwd=tmpdir)
+    from sdd_cli import main
 
-        patterns_dir = sdd_dir / "patterns"
-        pattern_file = patterns_dir / "SPEC-TMP-patterns.json"
-        assert not pattern_file.exists(), (
-            "pattern-suggest darf KEINE Datei persistieren; "
-            f"{pattern_file} existiert aber."
-        )
+    quelle = inspect.getsource(main._run_pattern_phase)
+    assert "PatternRegistry" not in quelle
+    assert ".accept(" not in quelle and ".reject(" not in quelle
 
+
+# ─── review pattern accept ────────────────────────────────────────────────────
 
 # ─── pattern accept ───────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(
-    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
-    strict=True,
-)
 def test_tc08_pattern_accept_persistiert_annahme_im_register():
     """Scenario: pattern-accept persistiert Annahme im Register (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -192,9 +189,10 @@ def test_tc08_pattern_accept_persistiert_annahme_im_register():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-REG")
 
         result = _run(
-            ["pattern", "accept", "SPEC-REG", "Strategy",
+            ["review", "pattern", "accept", "SPEC-REG", "Strategy",
              "--reason", "Unabhängige Algorithmen.", "--url",
              "https://refactoring.guru/design-patterns/strategy"],
             cwd=tmpdir,
@@ -220,19 +218,17 @@ def test_tc09_pattern_accept_ohne_reason_schl_gt_fehl():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-REG")
 
-        result = _run(["pattern", "accept", "SPEC-REG", "Strategy"], cwd=tmpdir)
-        assert result.returncode != 0, (
-            "pattern accept ohne --reason muss mit Exit-Code != 0 beenden"
-        )
+        result = _run(["review", "pattern", "accept", "SPEC-REG", "Strategy"], cwd=tmpdir)
+        # Vorher gruen aus dem falschen Grund: der Entfernt-Stub endete
+        # ebenfalls != 0. CON-0048 verlangt exit 1 und diese Meldung.
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "--reason ist erforderlich" in result.stdout
 
 
 # ─── pattern reject ───────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(
-    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
-    strict=True,
-)
 def test_tc10_pattern_reject_persistiert_ablehnung_mit_begr_ndun():
     """Scenario: pattern-reject persistiert Ablehnung mit Begründung (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -240,9 +236,10 @@ def test_tc10_pattern_reject_persistiert_ablehnung_mit_begr_ndun():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-REG")
 
         result = _run(
-            ["pattern", "reject", "SPEC-REG", "TemplateMethod",
+            ["review", "pattern", "reject", "SPEC-REG", "TemplateMethod",
              "--reason", "Keine gemeinsame Basis."],
             cwd=tmpdir,
         )
@@ -266,19 +263,17 @@ def test_tc11_pattern_reject_ohne_reason_schl_gt_fehl():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-REG")
 
-        result = _run(["pattern", "reject", "SPEC-REG", "TemplateMethod"], cwd=tmpdir)
-        assert result.returncode != 0, (
-            "pattern reject ohne --reason muss mit Exit-Code != 0 beenden"
-        )
+        result = _run(["review", "pattern", "reject", "SPEC-REG", "TemplateMethod"], cwd=tmpdir)
+        # Vorher gruen aus dem falschen Grund: der Entfernt-Stub endete
+        # ebenfalls != 0. CON-0048 verlangt exit 1 und diese Meldung.
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "--reason ist erforderlich" in result.stdout
 
 
 # ─── pattern list ─────────────────────────────────────────────────────────────
 
-@pytest.mark.xfail(
-    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
-    strict=True,
-)
 def test_tc12_pattern_list_zeigt_tabelle_mit_entscheidungen():
     """Scenario: pattern-list zeigt Tabelle mit Entscheidungen (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -286,24 +281,21 @@ def test_tc12_pattern_list_zeigt_tabelle_mit_entscheidungen():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-LST")
 
         # Create an entry first
         _run(
-            ["pattern", "accept", "SPEC-LST", "Observer", "--reason", "Event-Driven."],
+            ["review", "pattern", "accept", "SPEC-LST", "Observer", "--reason", "Event-Driven."],
             cwd=tmpdir,
         )
 
-        result = _run(["pattern", "list", "SPEC-LST"], cwd=tmpdir)
+        result = _run(["review", "pattern", "list", "SPEC-LST"], cwd=tmpdir)
         assert result.returncode == 0, f"pattern list fehlgeschlagen: {result.stderr}"
         output = result.stdout
         assert "Observer" in output, f"Observer muss in der Ausgabe erscheinen:\n{output}"
         assert "accepted" in output, f"Status 'accepted' muss erscheinen:\n{output}"
 
 
-@pytest.mark.xfail(
-    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
-    strict=True,
-)
 def test_tc13_pattern_list_ohne_register_gibt_leere_tabelle_kein():
     """Scenario: pattern-list ohne Register gibt leere Tabelle (kein Fehler) (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -311,9 +303,25 @@ def test_tc13_pattern_list_ohne_register_gibt_leere_tabelle_kein():
         (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
             "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
         )
+        _spec(tmpdir, "SPEC-EMPTY")
 
-        result = _run(["pattern", "list", "SPEC-EMPTY"], cwd=tmpdir)
+        result = _run(["review", "pattern", "list", "SPEC-EMPTY"], cwd=tmpdir)
         assert result.returncode == 0, (
             f"pattern list ohne Register darf kein Fehler sein (exit {result.returncode}):\n"
             f"{result.stderr}"
         )
+
+
+def test_tc14_review_pattern_mit_unbekannter_id_gibt_exit_code_2():
+    """INV-04: unbekannte ID → exit 2, kein Register angelegt."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        (Path(tmpdir) / ".sdd").mkdir()
+        (Path(tmpdir) / ".sdd" / "config.yaml").write_text(
+            "version: '1.0.0'\nproject:\n  name: test\n", encoding="utf-8"
+        )
+        result = _run(
+            ["review", "pattern", "accept", "SPEC-GIBTSNICHT", "Strategy", "--reason", "x"],
+            cwd=tmpdir,
+        )
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert not (Path(tmpdir) / ".sdd" / "patterns").exists()

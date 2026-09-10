@@ -28,9 +28,9 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 > Führe das vollständige Review für $ARGUMENTS autonom durch:
 >
 > 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse und Pattern-Vorschläge ausgeben;
->    beides beratend, keine Blockade. Warnings loggen. (Einen Befehl, um eine
->    Pattern-Entscheidung festzuhalten, gibt es derzeit nicht — die Vorschläge
->    fliessen in die Bewertung der Contracts unter Punkt 3 ein.)
+>    beides beratend, keine Blockade. Warnings loggen. Sinnvolle Vorschläge mit
+>    `sdd review pattern accept $ARGUMENTS <Name> --reason "…"` festhalten,
+>    die übrigen mit `sdd review pattern reject`.
 > 2. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
 > 3. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche

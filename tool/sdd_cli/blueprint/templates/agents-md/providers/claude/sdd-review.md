@@ -52,9 +52,21 @@ Zeige jeden Vorschlag mit:
 - Alternative (was stattdessen möglich wäre + Ablehnungsgrund)
 - Refactoring-Guru-Link
 
-Besprich jeden Vorschlag mit dem Nutzer und halte die Entscheidung im
-Contract-Text fest — einen Befehl, der sie maschinell speichert, gibt es
-derzeit nicht.
+Frage für jeden Vorschlag: "Annehmen? (ja/nein/überspringen)"
+
+Bei "ja":
+```bash
+sdd review pattern accept $ID <PatternName> --reason "<Begründung>" --url "<RefactoringGuruURL>"
+```
+
+Bei "nein": frage nach Ablehnungsgrund, dann:
+```bash
+sdd review pattern reject $ID <PatternName> --reason "<Grund>"
+```
+
+Bei "überspringen": keine Aktion, weder Register noch Katalog werden verändert.
+
+Festgehaltene Entscheidungen: `sdd review pattern list $ID`.
 
 ## Schritt 4: Regression-Check
 

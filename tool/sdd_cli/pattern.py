@@ -223,7 +223,10 @@ class PatternRegistry:
         results: list[dict] = []
         if not self._dir.exists():
             return results
-        for f in sorted(self._dir.glob("SPEC-*-patterns.json")):
+        # Nicht nur SPEC-*: Vorschlaege entstehen auch in `sdd review contract`,
+        # und deren Entscheidungen liegen unter CON-*-patterns.json. Der alte
+        # Glob liess sie in der Gesamtliste stillschweigend weg (#90).
+        for f in sorted(self._dir.glob("*-patterns.json")):
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
                 sid = data.get("spec_id", "")

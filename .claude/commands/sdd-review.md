@@ -64,31 +64,25 @@ ohne Rückfrage.
 
 ## Schritt 3: Pattern-Entscheidungen persistieren
 
-`sdd pattern accept/reject` existiert seit SPEC-0044 ebenfalls nicht mehr als CLI-Befehl
-(CON-0165). Laut Migrationshinweis im Changelog werden Entscheidungen direkt über die
-Python-API der Registry persistiert — kein Shell-Out auf einen nicht existierenden Befehl.
+Die Pattern-Befehle sind mit SPEC-0044 entfallen; seit #90 heisst der Weg
+`sdd review pattern`. Vorher stand hier ein `python3 -c`-Einzeiler direkt auf
+`PatternRegistry` — an der CLI vorbei.
 
-Frage für jeden Vorschlag aus Schritt 2: "Annehmen? (ja/nein/überspringen)"
+Frage für jeden Vorschlag: "Annehmen? (ja/nein/überspringen)"
 
 Bei "ja":
 ```bash
-python3 -c "
-from pathlib import Path
-from sdd_cli.pattern import PatternRegistry
-PatternRegistry(Path('.')).accept('$ID', '<PatternName>', '<Begründung>', url='<RefactoringGuruURL>')
-"
+sdd review pattern accept $ID <PatternName> --reason "<Begründung>" --url "<RefactoringGuruURL>"
 ```
 
 Bei "nein": frage nach Ablehnungsgrund, dann:
 ```bash
-python3 -c "
-from pathlib import Path
-from sdd_cli.pattern import PatternRegistry
-PatternRegistry(Path('.')).reject('$ID', '<PatternName>', '<Grund>')
-"
+sdd review pattern reject $ID <PatternName> --reason "<Grund>"
 ```
 
-Bei "überspringen": keine Aktion, weder Registry noch Katalog werden verändert.
+Bei "überspringen": keine Aktion, weder Register noch Katalog werden verändert.
+
+Festgehaltene Entscheidungen: `sdd review pattern list $ID`.
 
 ## Schritt 4: Regression-Check
 

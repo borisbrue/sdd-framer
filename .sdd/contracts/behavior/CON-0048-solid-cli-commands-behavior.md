@@ -5,7 +5,7 @@ title: "SOLID CLI Commands Behavior"
 type: behavior
 format: gherkin
 spec: SPEC-0015
-version: 0.2.0
+version: 0.3.0
 status: review
 artifact: ".sdd/contracts/behavior/solid-cli-commands-behavior.feature"
 tests: ["TST-0004"]
@@ -34,6 +34,13 @@ Exit-Codes, Ausgabeformate und Seiteneffekte (Datei-Persistenz).
 > offen (#90). Bis dahin bleiben INV-02, INV-03 und die zugehoerigen Szenarien
 > unangetastet und ihre Tests auf `xfail` — sie beschreiben einen Zustand, der
 > derzeit nicht erreichbar ist, und werden gruen, sobald er es wieder ist.
+>
+> **v0.3.0 (2026-09-10):** #90 ist entschieden — der Befehl kehrt zurueck, unter
+> der Review-Gruppe: `sdd review pattern accept|reject|list`. Gleiche Argumente
+> und Garantien wie die alten `pattern-*`-Befehle. `pattern-suggest` bekommt
+> keinen eigenen Befehl zurueck: die Vorschlaege entstehen in `sdd review spec`
+> bzw. `sdd review contract`, und dort bleiben sie. Die Szenarien sind
+> entsprechend umgeschrieben, die `xfail`-Markierungen entfallen.
 
 ## Garantien
 
@@ -43,8 +50,8 @@ CLI-Integrationstest (subprocess + assertions) abgedeckt sein.
 ## Invarianten
 
 - **INV-01:** `sdd spec solid <ID>` gibt Exit-Code 0 wenn `overall_solid_score` ∈ {compliant, warn}; Exit-Code 1 wenn `solid_gate.mode: block` und mindestens eine violation; Exit-Code 0 bei `mode: warn` unabhängig von Violations.
-- **INV-02:** `sdd pattern-accept` und `sdd pattern-reject` schreiben immer in `.sdd/patterns/<SPEC-ID>-patterns.json` (Datei wird erstellt wenn nicht vorhanden).
-- **INV-03:** `sdd pattern-list` gibt 0 aus wenn keine Patterns registriert sind (kein Fehler).
+- **INV-02:** `sdd review pattern accept` und `sdd review pattern reject` schreiben immer in `.sdd/patterns/<SPEC-ID>-patterns.json` (Datei wird erstellt wenn nicht vorhanden).
+- **INV-03:** `sdd review pattern list` gibt 0 aus wenn keine Patterns registriert sind (kein Fehler).
 - **INV-04:** Alle Befehle geben Exit-Code 2 zurück wenn die angegebene ID nicht gefunden wird.
 - **INV-05:** `sdd spec solid <ID> --json` gibt valides JSON gemäß CON-0046 aus (nur SOLID-Report, keine Pattern-Vorschläge).
 
@@ -53,10 +60,10 @@ CLI-Integrationstest (subprocess + assertions) abgedeckt sein.
 | Begriff | Definition |
 |---------|------------|
 | `spec solid` | Analysiert ein SPEC- oder Contract-Artefakt auf SOLID-Verletzungen |
-| `pattern-suggest` | Generiert Pattern-Vorschläge für ein Artefakt (ohne Persistenz) |
-| `pattern-accept` | Persistiert eine Pattern-Annahme im Register |
-| `pattern-reject` | Persistiert eine Pattern-Ablehnung mit Begründung im Register |
-| `pattern-list` | Liest und zeigt das Pattern-Register tabellarisch an |
+| `review spec` | Generiert Pattern-Vorschläge für ein Artefakt (ohne Persistenz) |
+| `review pattern accept` | Persistiert eine Pattern-Annahme im Register |
+| `review pattern reject` | Persistiert eine Pattern-Ablehnung mit Begründung im Register |
+| `review pattern list` | Liest und zeigt das Pattern-Register tabellarisch an |
 
 ## Gherkin-Szenarien
 
@@ -98,61 +105,61 @@ Feature: SOLID CLI Commands Behavior
     Then ist der Exit-Code 2
     And der Output enthält "nicht gefunden"
 
-  # ── sdd pattern-suggest ──────────────────────────────────────────────────────
+  # ── sdd review spec ──────────────────────────────────────────────────────
 
-  Scenario: pattern-suggest gibt 1-4 Vorschläge aus
+  Scenario: review spec (Pattern-Vorschläge) gibt 1-4 Vorschläge aus
     Given SPEC-0015 existiert
     And pattern_suggestions.enabled ist true
-    When "sdd pattern-suggest SPEC-0015" ausgeführt wird
+    When "sdd review spec SPEC-0015" ausgeführt wird
     Then ist der Exit-Code 0
     And der Output enthält mindestens 1 und höchstens 4 Pattern-Vorschläge
     And jeder Vorschlag enthält eine URL die mit "https://refactoring.guru/" beginnt
 
-  Scenario: pattern-suggest ohne Persistenz (nur Ausgabe)
+  Scenario: review spec (Pattern-Vorschläge) ohne Persistenz (nur Ausgabe)
     Given SPEC-0015 existiert
-    When "sdd pattern-suggest SPEC-0015" ausgeführt wird
+    When "sdd review spec SPEC-0015" ausgeführt wird
     Then existiert KEINE Datei ".sdd/patterns/SPEC-0015-patterns.json"
 
-  # ── sdd pattern-accept ───────────────────────────────────────────────────────
+  # ── sdd review pattern accept ───────────────────────────────────────────────────────
 
-  Scenario: pattern-accept persistiert Annahme im Register
+  Scenario: review pattern accept persistiert Annahme im Register
     Given SPEC-0015 existiert
-    When "sdd pattern-accept SPEC-0015 Strategy --reason 'Unabhängige Algorithmen'" ausgeführt wird
+    When "sdd review pattern accept SPEC-0015 Strategy --reason 'Unabhängige Algorithmen'" ausgeführt wird
     Then ist der Exit-Code 0
     And existiert ".sdd/patterns/SPEC-0015-patterns.json"
     And die Datei enthält pattern_name "Strategy" mit status "accepted"
     And acceptance_reason ist "Unabhängige Algorithmen"
 
-  Scenario: pattern-accept ohne --reason schlägt fehl
-    When "sdd pattern-accept SPEC-0015 Strategy" ausgeführt wird
+  Scenario: review pattern accept ohne --reason schlägt fehl
+    When "sdd review pattern accept SPEC-0015 Strategy" ausgeführt wird
     Then ist der Exit-Code 1
     And der Output enthält "--reason ist erforderlich"
 
-  # ── sdd pattern-reject ───────────────────────────────────────────────────────
+  # ── sdd review pattern reject ───────────────────────────────────────────────────────
 
-  Scenario: pattern-reject persistiert Ablehnung mit Begründung
+  Scenario: review pattern reject persistiert Ablehnung mit Begründung
     Given SPEC-0015 existiert
-    When "sdd pattern-reject SPEC-0015 TemplateMethod --reason 'Keine gemeinsame Basis'" ausgeführt wird
+    When "sdd review pattern reject SPEC-0015 TemplateMethod --reason 'Keine gemeinsame Basis'" ausgeführt wird
     Then ist der Exit-Code 0
     And die Datei ".sdd/patterns/SPEC-0015-patterns.json" enthält pattern_name "TemplateMethod" mit status "rejected"
     And rejection_reason ist "Keine gemeinsame Basis"
 
-  Scenario: pattern-reject ohne --reason schlägt fehl
-    When "sdd pattern-reject SPEC-0015 TemplateMethod" ausgeführt wird
+  Scenario: review pattern reject ohne --reason schlägt fehl
+    When "sdd review pattern reject SPEC-0015 TemplateMethod" ausgeführt wird
     Then ist der Exit-Code 1
     And der Output enthält "--reason ist erforderlich"
 
-  # ── sdd pattern-list ─────────────────────────────────────────────────────────
+  # ── sdd review pattern list ─────────────────────────────────────────────────────────
 
-  Scenario: pattern-list zeigt Tabelle mit Entscheidungen
+  Scenario: review pattern list zeigt Tabelle mit Entscheidungen
     Given ".sdd/patterns/SPEC-0015-patterns.json" enthält 2 Einträge
-    When "sdd pattern-list SPEC-0015" ausgeführt wird
+    When "sdd review pattern list SPEC-0015" ausgeführt wird
     Then ist der Exit-Code 0
     And der Output enthält eine Tabelle mit Spalten pattern_name, status, reason
 
-  Scenario: pattern-list ohne Register gibt leere Tabelle (kein Fehler)
+  Scenario: review pattern list ohne Register gibt leere Tabelle (kein Fehler)
     Given ".sdd/patterns/SPEC-0015-patterns.json" existiert nicht
-    When "sdd pattern-list SPEC-0015" ausgeführt wird
+    When "sdd review pattern list SPEC-0015" ausgeführt wird
     Then ist der Exit-Code 0
     And der Output enthält "Keine Pattern-Entscheidungen"
 ```
