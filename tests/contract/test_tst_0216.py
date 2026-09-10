@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "web" / "api"))
+sys.path.insert(0, str(REPO_ROOT / "tool" / "sdd_cli" / "web" / "api"))
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 os.environ.setdefault("SDD_PROJECT_ROOT", str(REPO_ROOT))
 

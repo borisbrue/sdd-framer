@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "web" / "api"))
+sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from fastapi.testclient import TestClient
 from fastapi import FastAPI

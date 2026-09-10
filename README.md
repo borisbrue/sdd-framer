@@ -25,7 +25,7 @@ Python-Paket `sdd-cli` — der Kern des Systems. Alle anderen Komponenten delegi
 
 ### 2. Web API + Web UI (`web/`)
 
-FastAPI-Backend (`web/api/`) mit eingebetteter React-SPA (`web/ui/`).
+FastAPI-Backend (`tool/sdd_cli/web/api/`) mit eingebetteter React-SPA (`web/ui/`).
 
 - Alle CLI-Befehle per HTTP aufrufbar
 - WebSocket-Live-Logs für Pipeline-Runs

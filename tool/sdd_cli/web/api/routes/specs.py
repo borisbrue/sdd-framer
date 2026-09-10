@@ -46,6 +46,10 @@ def _spec_dict(md: Path, cfg_root: Path, *, with_body: bool = False) -> dict[str
         "owner": fm.get("owner", ""),
         "contracts": fm.get("contracts") or [],
         "tests": fm.get("tests") or [],
+        # Ging in 744b756 verloren (Sammel-Commit "changed nvim config"). Das UI
+        # deklariert das Feld weiter (web/ui/src/api.ts: `adrs: string[]`); nur
+        # die Root-Kopie der API lieferte es noch (#107).
+        "adrs": fm.get("adrs") or [],
         "depends_on": fm.get("depends_on") or [],
         "tags": fm.get("tags") or [],
         "version": fm.get("version", ""),

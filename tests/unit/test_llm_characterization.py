@@ -19,7 +19,7 @@ import pytest
 # sdd_cli muss im Pfad liegen
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 # web/api muss im Pfad liegen (für analyzer, usage_store, sdd_context)
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "web" / "api"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from sdd_cli.llm.base import CompletionResult, UsageMetadata
 
