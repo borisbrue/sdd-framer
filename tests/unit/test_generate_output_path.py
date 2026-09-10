@@ -62,7 +62,7 @@ class TestDeclaredArtifactWins:
 
         Generator(repo_root=tmp_path).generate("SPEC-0001", ["CON-0001"])
 
-        assert not (tmp_path / ".sdd" / "tests" / "contract" / "test_con-0001.py").exists()
+        assert not (tmp_path / ".sdd" / "tests" / "contract" / "test_con_0001.py").exists()
 
     def test_result_reports_the_declared_path(self, tmp_path):
         _contract(tmp_path, "CON-0001")
@@ -81,7 +81,7 @@ class TestLevelFallback:
 
         Generator(repo_root=tmp_path).generate("SPEC-0001", ["CON-0001"])
 
-        assert (tmp_path / "tests" / "acceptance" / "test_con-0001.py").exists()
+        assert (tmp_path / "tests" / "acceptance" / "test_con_0001.py").exists()
 
     def test_placeholder_artifact_falls_back_to_level(self, tmp_path):
         """`sdd new test` schreibt tests/<level>/ als Platzhalter – kein Pfad."""
@@ -90,7 +90,7 @@ class TestLevelFallback:
 
         Generator(repo_root=tmp_path).generate("SPEC-0001", ["CON-0001"])
 
-        assert (tmp_path / "tests" / "unit" / "test_con-0001.py").exists()
+        assert (tmp_path / "tests" / "unit" / "test_con_0001.py").exists()
 
 
 class TestFormatTableFallback:
@@ -99,12 +99,12 @@ class TestFormatTableFallback:
     def test_gherkin_goes_to_behavior(self, tmp_path):
         _contract(tmp_path, "CON-0001", fmt="gherkin", typ="behavior")
         Generator(repo_root=tmp_path).generate("SPEC-0001", ["CON-0001"])
-        assert (tmp_path / "tests" / "behavior" / "test_con-0001.py").exists()
+        assert (tmp_path / "tests" / "behavior" / "test_con_0001.py").exists()
 
     def test_openapi_goes_to_api(self, tmp_path):
         _contract(tmp_path, "CON-0001", fmt="openapi", typ="api")
         Generator(repo_root=tmp_path).generate("SPEC-0001", ["CON-0001"])
-        assert (tmp_path / "tests" / "api" / "test_con-0001.py").exists()
+        assert (tmp_path / "tests" / "api" / "test_con_0001.py").exists()
 
     def test_nothing_lands_under_sdd(self, tmp_path):
         """.sdd/ haelt die SDD-Dokumente, nicht den ausfuehrbaren Testcode."""
