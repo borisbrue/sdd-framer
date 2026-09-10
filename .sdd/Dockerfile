@@ -13,7 +13,11 @@ WORKDIR /workspace
 
 # Install project dependencies from the volume-mounted workspace at runtime.
 # The entrypoint installs deps and then runs the given command.
-COPY entrypoint.sh /entrypoint.sh
+# Build-Kontext ist die Projektwurzel (`build -f .sdd/Dockerfile .`), der
+# Pfad muss also relativ dazu stehen. Vorher suchte das COPY nach
+# ./entrypoint.sh im Wurzelverzeichnis — die Datei liegt unter .sdd/,
+# und der Build brach hier ab (#73).
+COPY .sdd/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
