@@ -11,6 +11,7 @@ Ablauf: git commit → Container-Check → Build (optional, #111) → Tests im C
 """
 from __future__ import annotations
 
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -52,6 +53,47 @@ def _befehl_ausfuehren(befehl, *, cwd: Path, timeout: int, shell: bool = False) 
     except subprocess.TimeoutExpired:
         return False, f"Zeitlimit von {timeout}s ueberschritten"
     return r.returncode == 0, (r.stdout + r.stderr).strip()
+
+
+_PYTEST_STANDARD = ["tests/", "-x", "--tb=short"]
+
+
+def _ist_pytest(teile: list[str]) -> bool:
+    """`pytest`, `.venv/bin/pytest`, `uv run pytest`, `python -m pytest`."""
+    if not teile:
+        return False
+    if Path(teile[-1]).name == "pytest":
+        return True
+    return "-m" in teile[:-1] and teile[teile.index("-m") + 1] == "pytest"
+
+
+def testaufruf(test_cfg: dict, root: Path) -> list[str]:
+    """Der Testaufruf der Finalisierung — einer fuer Container- und Compose-Weg.
+
+    Vorher rechneten beide Wege verschieden (#117): der Container haengte fest
+    `tests/ -x --tb=short` an jedes Kommando (npm-Projekte liefen als
+    `npm tests/ -x`), der Compose-Weg gab ein mehrwortiges Kommando wie
+    `uv run pytest` als einen Programmnamen weiter (FileNotFoundError).
+
+    Die pytest-Standardargumente gelten fuer jedes pytest-artige Kommando — auch
+    fuer das `command: pytest` des Blueprints, sonst saemmelte ein nacktes pytest
+    ab der Projektwurzel. `npm` bekommt `test`, alles andere laeuft wie
+    konfiguriert. `extra_args` kommt in jedem Fall dazu.
+    """
+    extra = [str(a) for a in (test_cfg.get("extra_args") or [])]
+    eigenes = str(test_cfg.get("command") or "").strip()
+    if eigenes:
+        teile = shlex.split(eigenes)
+    elif (root / "package.json").exists():
+        teile = ["npm"]
+    else:
+        teile = ["pytest"]
+
+    if _ist_pytest(teile):
+        return teile + _PYTEST_STANDARD + extra
+    if teile == ["npm"]:
+        return teile + ["test"] + extra
+    return teile + extra
 
 
 def _git(args: list[str], *, cwd: Path, capture: bool = True) -> subprocess.CompletedProcess:
@@ -149,9 +191,8 @@ class SpecFinalizer:
         docker_cfg = self._cfg.raw.get("docker", {})
         compose_file = docker_cfg.get("compose_file", "")
         test_cfg = self._cfg.raw.get("test_runner", {})
-        custom_cmd = test_cfg.get("command")
-        extra_args = test_cfg.get("extra_args", [])
         timeout = test_cfg.get("timeout_per_spec", 120)
+        argv = testaufruf(test_cfg, root)
 
         # Build-Kommando: Argument (--build-cmd) vor orchestrator.build_command.
         # SPEC-0026 hatte den Build-Schritt aus dem Orchestrator entfernt, ohne ihn
@@ -163,17 +204,6 @@ class SpecFinalizer:
         build_passed: bool | None = None
         build_output = ""
 
-        # Auto-detect project type when no command is configured
-        if custom_cmd:
-            test_cmd = custom_cmd
-            test_args = extra_args
-        elif (root / "package.json").exists():
-            test_cmd = "npm"
-            test_args = ["test"] + extra_args
-        else:
-            test_cmd = "pytest"
-            test_args = ["tests/", "-x", "--tb=short"] + extra_args
-
         if compose_file:
             # Container-Stack muss bereits laufen
             if build_cmd:
@@ -184,7 +214,7 @@ class SpecFinalizer:
                         spec_id, effective_branch, commit_hash, build_output)
             try:
                 test_result = subprocess.run(
-                    [test_cmd] + test_args,
+                    argv,
                     capture_output=True,
                     text=True,
                     cwd=root,
@@ -192,7 +222,7 @@ class SpecFinalizer:
                 )
             except FileNotFoundError as exc:
                 raise RuntimeError(
-                    f"✗ Test-Runner '{test_cmd}' nicht gefunden. "
+                    f"✗ Test-Runner '{argv[0]}' nicht gefunden. "
                     f"Setze 'test_runner.command' in .sdd/config.yaml oder nutze --skip-container."
                 ) from exc
         else:
@@ -215,7 +245,7 @@ class SpecFinalizer:
                     return self._build_fehlgeschlagen(
                         spec_id, effective_branch, commit_hash, build_output)
 
-            inner_cmd = f"cd /workspace && {test_cmd} tests/ -x --tb=short " + " ".join(extra_args)
+            inner_cmd = "cd /workspace && " + shlex.join(argv)
             test_result = subprocess.run(
                 [runtime.cli(), "exec", cname, "bash", "-c", inner_cmd],
                 capture_output=True,

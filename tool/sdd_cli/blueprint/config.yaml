@@ -91,6 +91,9 @@ obsidian:
   watch_interval_secs: 5
   auto_wiki_links: true
 test_runner:
+  # Fuer pytest-artige Kommandos (pytest, uv run pytest, python -m pytest)
+  # haengt die Finalisierung `tests/ -x --tb=short` an, fuer npm `test`;
+  # alles andere laeuft wie hier eingetragen. extra_args kommt immer dazu.
   command: pytest
   extra_args: []
   timeout_per_spec: 120
