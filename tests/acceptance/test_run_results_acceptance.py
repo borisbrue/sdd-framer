@@ -7,8 +7,7 @@ from pathlib import Path
 import pytest
 
 from sdd_cli.config import SddConfig
-from sdd_cli.test_runner import RunReport, TestResult, _persist, latest_report, run
-
+from sdd_cli.test_runner import RunReport, _persist, latest_report, run
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -58,7 +57,7 @@ class TestTriggerTestRun:
         _write_tst(project, "TST-0099", "tests/unit/test_trivial.py")
         _write_spec(project, "SPEC-0099", tests=["TST-0099"], contracts=["CON-0017"])
 
-        report = run(project, "SPEC-0099")
+        run(project, "SPEC-0099")
 
         assert project.test_runs_dir.exists()
         saved = list(project.test_runs_dir.glob("SPEC-0099-*.json"))

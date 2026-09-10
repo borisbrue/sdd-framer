@@ -11,7 +11,6 @@ from click.testing import CliRunner
 from sdd_cli.main import cli
 from sdd_cli.projects import create_project
 
-
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 REAL_TEMPLATES = Path(__file__).parents[2] / ".sdd" / "templates"

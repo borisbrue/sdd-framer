@@ -5,8 +5,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from sdd_cli.dev_container import ContainerRuntime, DevContainerManager, branch_name, container_name, save_test_result
 from sdd_cli.config import SddConfig
+from sdd_cli.dev_container import (
+    ContainerRuntime,
+    DevContainerManager,
+    save_test_result,
+)
 
 
 @pytest.fixture

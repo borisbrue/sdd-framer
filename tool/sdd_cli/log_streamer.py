@@ -10,7 +10,8 @@ import collections
 import datetime
 import json
 import threading
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .dev_container import ContainerRuntime

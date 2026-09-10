@@ -4,7 +4,6 @@
 
 import json
 import re
-import pytest
 
 VALID_TYPES = {"orchestrate_done", "build_done", "build_failed", "spec_implemented"}
 SPEC_ID_PATTERN = re.compile(r"^SPEC-\d{4}$")

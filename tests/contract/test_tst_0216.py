@@ -29,7 +29,7 @@ class TestTST0216:
     def test_item_shape(self) -> None:
         data = client.get("/api/patterns").json()
         for item in data:
-            assert _KEYS <= set(item.keys())
+            assert set(item.keys()) >= _KEYS
             assert isinstance(item["specs"], list)
             assert isinstance(item["code_locations"], list)
             for s in item["specs"]:

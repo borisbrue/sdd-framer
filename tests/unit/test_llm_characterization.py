@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from sdd_cli.llm.base import CompletionResult, UsageMetadata
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -277,8 +275,8 @@ class TestAnalyzerCallClaude:
 
     def test_runtime_error_from_provider_raises_http_exception(self):
         """RuntimeError vom Provider → HTTPException."""
-        from fastapi import HTTPException
         from analyzer import _call_claude
+        from fastapi import HTTPException
 
         provider = MagicMock()
         provider.complete.side_effect = RuntimeError("claude CLI nicht gefunden")
@@ -290,8 +288,8 @@ class TestAnalyzerCallClaude:
 
     def test_invalid_json_from_provider_raises_http_exception(self):
         """Ungültiges JSON vom Provider → HTTPException 502."""
-        from fastapi import HTTPException
         from analyzer import _call_claude
+        from fastapi import HTTPException
 
         provider = _make_provider("this is not json")
 
@@ -324,7 +322,7 @@ class TestAiRoutesCall:
 
         with patch("routes.ai.get_config"), \
              patch("sdd_cli.llm.factory.get_completion_provider", return_value=provider), \
-             patch("usage_store.record_usage", return_value=usage_entry) as mock_record:
+             patch("usage_store.record_usage", return_value=usage_entry):
             import routes.ai as ai_module
             ai_module._provider = provider
             text, entry = ai_module._call("generate-spec", "Write a spec about X")

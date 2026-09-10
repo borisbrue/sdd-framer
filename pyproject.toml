@@ -46,15 +46,26 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
+# E501: Zeilenlaenge regelt der Formatierer, nicht der Linter.
+# SIM105: `try/except/pass` -> `contextlib.suppress` ist reine Schreibweise. Das
+#   eigentliche Risiko an diesen Stellen ist das breite `except Exception`, und
+#   `suppress(Exception)` wuerde es nur umbenennen. Wie teuer ein verschlucktes
+#   Exception sein kann, zeigte routes/pipeline.py (#112).
+ignore = ["E501", "SIM105"]
 
 [tool.ruff.lint.per-file-ignores]
 "tool/sdd_cli/web/api/main.py" = ["E402"]
 "tool/sdd_cli/web/api/routes/ai.py" = ["E402"]
 "tool/sdd_cli/web/api/routes/copilot.py" = ["E402"]
-"tests/integration/test_analyze_endpoint.py" = ["E402"]
-"tests/integration/test_orchestrate_endpoints.py" = ["E402"]
-"tests/unit/test_execute_flow.py" = ["E402"]
+# Die Routen-Module laufen mit dem API-Verzeichnis als Arbeitsverzeichnis und
+# ergaenzen sys.path, bevor sie sdd_context und sdd_cli importieren.
+"tool/sdd_cli/web/api/routes/interactive.py" = ["E402"]
+"tool/sdd_cli/web/api/routes/pipeline.py" = ["E402"]
+# Tests richten sys.path und Umgebung ein, bevor sie die API importieren (E402).
+# SIM117: verschachtelte `with` mit mehreren patch()-Kontexten sind in Tests
+# lesbarer als eine zusammengefasste Zeile; ruff kann sie dort nur ueber
+# ueberlange Zeilen aufloesen und laesst sie deshalb stehen.
+"tests/**/*.py" = ["E402", "SIM117"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["sdd_cli"]
@@ -67,6 +78,9 @@ build-backend = "setuptools.build_meta"
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
+    # Der Waechter tests/unit/test_ruff_sauber.py braucht ruff im Projekt-venv;
+    # vorher kam es nur zufaellig aus /usr/bin (#112).
+    "ruff>=0.16",
 ]
 
 [tool.setuptools]

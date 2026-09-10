@@ -5,12 +5,10 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 
-from sdd_cli.pipeline_jobs import JobManager, JobStatus
+from sdd_cli.pipeline_jobs import JobManager
 
 
 def _make_cfg(tmp_path: Path):

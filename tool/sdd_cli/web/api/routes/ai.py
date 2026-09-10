@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import asyncio
 import json as json_lib
-import re
 import logging
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -71,7 +71,7 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
         )
     except RuntimeError as exc:
         log.error("AI-Call Fehler (%s): %s", operation, exc)
-        raise HTTPException(status_code=503, detail=str(exc))
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     log.info("AI-Call abgeschlossen: operation=%s tokens_out=%s",
              operation, result.usage.output_tokens if result.usage else "?")
 
@@ -376,7 +376,7 @@ async def fill_contract(body: FillContractRequest) -> AiResponse:
                 contract_doc = doc
                 break
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     if not contract_doc:
         raise HTTPException(status_code=404, detail=f"{body.contract_id} nicht gefunden.")
 
@@ -431,7 +431,7 @@ async def fill_test(body: FillTestRequest) -> AiResponse:
             if test_doc:
                 break
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     if not test_doc:
         raise HTTPException(status_code=404, detail=f"{body.test_id} nicht gefunden.")
 
@@ -482,7 +482,7 @@ async def implement_test(body: ImplementTestRequest) -> AiResponse:
             if tst_doc:
                 break
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     if not tst_doc:
         raise HTTPException(status_code=404, detail=f"{body.test_id} nicht gefunden.")
 

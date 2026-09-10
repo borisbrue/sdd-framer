@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-
 from typing import Literal
 
 from sdd_cli.dag_event import DagEvent, DagEventBus

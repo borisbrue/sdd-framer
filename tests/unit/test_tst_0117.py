@@ -2,10 +2,16 @@
 # Spec: SPEC-0026 | Contract: CON-0098
 
 import pytest
-from tool.sdd_cli.task_model import Task, TaskType, Complexity, ContextSize
+
 from tool.sdd_cli.llm_pool import (
-    LlmEntry, LlmType, CostTier, LlmPoolRegistry, LlmSelector, LlmUnavailableError
+    CostTier,
+    LlmEntry,
+    LlmPoolRegistry,
+    LlmSelector,
+    LlmType,
+    LlmUnavailableError,
 )
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
 
 
 def _task(complexity=Complexity.LOW, context_size=ContextSize.S, tokens=1000) -> Task:

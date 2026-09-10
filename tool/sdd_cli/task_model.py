@@ -95,7 +95,7 @@ class Task:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> "Task":
+    def from_dict(cls, d: dict) -> Task:
         return cls(
             id=d["id"],
             spec_id=d["spec_id"],

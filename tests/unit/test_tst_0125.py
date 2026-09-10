@@ -1,8 +1,7 @@
 # TST-0125 – SDD Config Schema (Unit)
 # Spec: SPEC-0027 | Contract: CON-0106
 
-import pytest
-from tool.sdd_cli.config_manager import validate_schema, _validate_business_rules
+from tool.sdd_cli.config_manager import _validate_business_rules, validate_schema
 
 
 def _valid_config() -> dict:

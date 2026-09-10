@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-import sys
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
 
@@ -42,8 +42,9 @@ def _find_sdd() -> str:
             return str(c)
     return "sdd"
 from sdd_context import get_config, get_log_event_bus, get_log_streamer
-from sdd_cli.frontmatter import parse_safe
+
 from sdd_cli.dev_container import container_name, get_runtime
+from sdd_cli.frontmatter import parse_safe
 
 router = APIRouter()
 
@@ -218,9 +219,7 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     _gate_substeps = []
     _gate_next_action: dict[str, Any] | None = None
     for phase_key, phase_label, phase_ep in _gate_phases:
-        if _gp(phase_key):
-            sub_status = _DONE
-        elif past_approved:
+        if _gp(phase_key) or past_approved:
             sub_status = _DONE
         elif _gate_next_action is None:
             sub_status = _ACTIVE
@@ -255,9 +254,7 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     stages.append(_stage("contracts", "Contracts", con_status, detail=con_detail, count=contracts_total))
 
     # 3. Holdout-Szenarien
-    if is_done or eval_passed:
-        hol_status = _DONE
-    elif holdout_count > 0:
+    if is_done or eval_passed or holdout_count > 0:
         hol_status = _DONE
     elif past_approved:
         hol_status = _ACTIVE
@@ -278,13 +275,9 @@ def _compute_pipeline(spec_id: str) -> dict[str, Any]:
     ))
 
     # 4. Implementierung
-    if is_done:
+    if is_done or is_eval_fail:
         impl_status = _DONE
-    elif is_eval_fail:
-        impl_status = _DONE
-    elif is_progress:
-        impl_status = _ACTIVE
-    elif past_approved:
+    elif is_progress or past_approved:
         impl_status = _ACTIVE
     else:
         impl_status = _PENDING

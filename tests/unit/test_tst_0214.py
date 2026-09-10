@@ -4,7 +4,7 @@ import json
 import stat
 from pathlib import Path
 
-from sdd_cli.init import merge_claude_settings, copy_guardrail_hook, write_autonomous_local
+from sdd_cli.init import copy_guardrail_hook, merge_claude_settings, write_autonomous_local
 
 
 def _make_blueprint(tmp: Path) -> Path:

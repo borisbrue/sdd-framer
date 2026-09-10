@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .config import SddConfig
-from .frontmatter import parse_safe
 
 if TYPE_CHECKING:
     from .log_streamer import LogStreamer
@@ -461,7 +460,7 @@ class DevContainerManager:
         if vorhanden:
             return (f"'{konfiguriert}' ist nicht verfügbar, '{vorhanden[0]}' schon — "
                     f"trage das unter docker.runtime in .sdd/config.yaml ein.")
-        return f"Weder docker noch podman ist verfügbar."
+        return "Weder docker noch podman ist verfügbar."
 
     # ── SPEC-0022 commands ────────────────────────────────────────────────────
 

@@ -7,10 +7,10 @@ SOLID:
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
-from collections.abc import Callable
 
 
 @dataclass

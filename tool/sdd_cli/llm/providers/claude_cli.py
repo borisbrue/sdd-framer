@@ -5,9 +5,9 @@ import json
 import os
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 
 from ..base import CompletionResult
 
@@ -120,10 +120,10 @@ class ClaudeCliCodeGenProvider:
             on_proc(proc)
         try:
             stdout, _ = proc.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             proc.kill()
             proc.wait()
-            raise RuntimeError(f"claude CLI Timeout nach {timeout}s")
+            raise RuntimeError(f"claude CLI Timeout nach {timeout}s") from exc
 
         if proc.returncode != 0:
             raise RuntimeError(f"claude CLI Fehler (exit {proc.returncode})")

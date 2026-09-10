@@ -2,7 +2,6 @@
 # Spec: SPEC-0036 | Level: contract | Contract: CON-0128
 
 import json
-import os
 from pathlib import Path
 
 import jsonschema

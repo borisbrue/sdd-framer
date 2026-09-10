@@ -7,10 +7,8 @@ import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from routes.auth import router
 
 
@@ -42,13 +40,12 @@ class TestTST0098:
     def test_rotate_token_matches_schema_format(self) -> None:
         old = "0" * 64
         ctx = _mock_ctx(token=old)
-        with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._store_token"):
-                client = TestClient(_make_app())
-                response = client.post(
-                    "/auth/rotate-token",
-                    headers={"Authorization": f"Bearer {old}"},
-                )
+        with patch("routes.auth.sdd_context", ctx), patch("routes.auth._store_token"):
+            client = TestClient(_make_app())
+            response = client.post(
+                "/auth/rotate-token",
+                headers={"Authorization": f"Bearer {old}"},
+            )
         new_token = response.json()["token"]
         assert HEX64.match(new_token), f"Token '{new_token}' not 64 hex chars"
 
@@ -100,20 +97,19 @@ class TestTST0098:
         ctx.is_blacklisted.side_effect = lambda t: t in blacklist
         ctx.blacklist_token.side_effect = blacklist.add
 
-        with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._store_token"):
-                client = TestClient(_make_app())
-                r1 = client.post(
-                    "/auth/rotate-token",
-                    headers={"Authorization": f"Bearer {old1}"},
-                )
-                assert r1.status_code == 200
-                r2 = client.post(
-                    "/auth/rotate-token",
-                    headers={"Authorization": f"Bearer {old1}"},
-                )
-                # second call with old1 should fail (blacklisted)
-                assert r2.status_code == 401
+        with patch("routes.auth.sdd_context", ctx), patch("routes.auth._store_token"):
+            client = TestClient(_make_app())
+            r1 = client.post(
+                "/auth/rotate-token",
+                headers={"Authorization": f"Bearer {old1}"},
+            )
+            assert r1.status_code == 200
+            r2 = client.post(
+                "/auth/rotate-token",
+                headers={"Authorization": f"Bearer {old1}"},
+            )
+            # second call with old1 should fail (blacklisted)
+            assert r2.status_code == 401
 
     # CON-0088: server-info tokenHash does not expose raw token (privacy)
     def test_server_info_hides_raw_token(self) -> None:

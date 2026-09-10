@@ -18,8 +18,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parents[4]))
-from sdd_cli.dag_event import get_event_bus
 from sdd_cli.dag_command import build_command, get_command_queue
+from sdd_cli.dag_event import get_event_bus
 
 router = APIRouter()
 
@@ -133,12 +133,12 @@ def send_command(run_id: str, body: CommandRequest) -> dict[str, Any]:
     try:
         cmd = build_command(run_id=run_id, task_id=body.task_id, command_type=body.command_type)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
     q = get_command_queue()
     try:
         q.enqueue_sync(cmd)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     return {"queued": True, "run_id": run_id, "command_type": body.command_type, "task_id": body.task_id}

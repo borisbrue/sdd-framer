@@ -1,21 +1,11 @@
 from __future__ import annotations
 
 import copy
-
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-
-_CLAUDE_AVAILABLE: bool | None = None
-
-
-def _check_claude() -> bool:
-    global _CLAUDE_AVAILABLE
-    if _CLAUDE_AVAILABLE is None:
-        _CLAUDE_AVAILABLE = shutil.which("claude") is not None
-    return _CLAUDE_AVAILABLE
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -27,6 +17,15 @@ from sdd_cli.validate import validate
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from sdd_context import get_config, reload_config
+
+_CLAUDE_AVAILABLE: bool | None = None
+
+
+def _check_claude() -> bool:
+    global _CLAUDE_AVAILABLE
+    if _CLAUDE_AVAILABLE is None:
+        _CLAUDE_AVAILABLE = shutil.which("claude") is not None
+    return _CLAUDE_AVAILABLE
 
 router = APIRouter()
 
@@ -131,7 +130,6 @@ class ConfigPatch(BaseModel):
 
 @router.get("/config", summary="config.yaml lesen")
 def get_config_content() -> dict[str, Any]:
-    import yaml
     cfg = get_config()
     config_file = cfg.root / ".sdd" / "config.yaml"
     raw = config_file.read_text(encoding="utf-8") if config_file.exists() else ""
@@ -150,7 +148,7 @@ def save_config_raw(body: ConfigRaw) -> dict[str, Any]:
     try:
         yaml.safe_load(body.yaml)
     except yaml.YAMLError as e:
-        raise HTTPException(status_code=422, detail=f"Ungültiges YAML: {e}")
+        raise HTTPException(status_code=422, detail=f"Ungültiges YAML: {e}") from e
     cfg = get_config()
     config_file = cfg.root / ".sdd" / "config.yaml"
     config_file.write_text(body.yaml, encoding="utf-8")

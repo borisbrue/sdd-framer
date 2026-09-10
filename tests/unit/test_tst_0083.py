@@ -7,8 +7,6 @@ import json
 import time
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from sdd_cli.dev_container import DevContainerManager, DockerRuntime
 from sdd_cli.log_streamer import LogEventBus, LogStreamer
 

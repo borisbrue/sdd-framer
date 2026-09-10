@@ -1,10 +1,6 @@
 """TST-0154: AutopilotStateMachine — Transitionen, Iterationszähler, Fortschritts-Check."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock
-
-import pytest
-
 from sdd_cli.autopilot import AutopilotConfig, AutopilotStateMachine
 
 
@@ -164,7 +160,7 @@ def test_automated_gate_approval_calls_sdd_spec_approve():
 
     cfg = AutopilotConfig(automated_gate_approval=True, notify_on_escalation=False)
     machine = AutopilotStateMachine("SPEC-X", cfg, _sdd_runner=runner)
-    report = machine.run()
+    machine.run()
     approve_calls = [c for c in calls if c[0] == "spec" and "approve" in c]
     assert len(approve_calls) == 1
 

@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import jsonschema
 import pytest
 import yaml
-import jsonschema
 
 _OPENAPI_PATH = (
     Path(__file__).resolve().parents[2]

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -12,11 +11,9 @@ from sdd_cli.test_runner import (
     RunReport,
     TestResult,
     _persist,
-    _resolve_artifact,
     latest_report,
     run,
 )
-
 
 # ─── Fixtures ────────────────────────────────────────────────────────────────
 

@@ -9,8 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool"))
 
-from sdd_cli.task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
 from sdd_cli.task_lifecycle import TaskLifecycle, TaskTestRequiredError
+from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task_in_review(**kwargs) -> Task:
@@ -100,7 +100,7 @@ class TestTST0145:
             parallel_group="g1", test_ids=["TST-0145"],
         )
         store.save("SPEC-0034", "run-test", [task])
-        run_id, loaded = store.load("SPEC-0034", "run-test"), "run-test"
+        _run_id, _loaded = store.load("SPEC-0034", "run-test"), "run-test"
         assert len(store.load("SPEC-0034", "run-test")) == 1
         loaded_task = store.load("SPEC-0034", "run-test")[0]
         assert loaded_task.title == "Persist-Test"
@@ -109,6 +109,7 @@ class TestTST0145:
     def test_sse_bus_run_started_event(self):
         """FR-02: SSE-Stream sendet run_started-Event (CON-0123 INV-08)."""
         import asyncio
+
         from sdd_cli.task_event_bus import TaskEventBus
 
         bus = TaskEventBus()

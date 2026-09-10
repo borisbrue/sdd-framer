@@ -14,7 +14,6 @@ import json
 import textwrap
 from pathlib import Path
 
-import pytest
 from click.testing import CliRunner
 
 SPEC = textwrap.dedent("""\
@@ -102,8 +101,8 @@ class TestCliTraegtDieMessungEin:
 # ── Projektgeruest ───────────────────────────────────────────────────────────
 
 def _projekt(tmp_path: Path) -> Path:
-    from sdd_cli.init import init_project
     from sdd_cli.gate import ExecutionGate
+    from sdd_cli.init import init_project
 
     init_project(tmp_path, title="Testprojekt")
     (tmp_path / ".sdd" / "specs" / "SPEC-0002-steuerung.md").write_text(

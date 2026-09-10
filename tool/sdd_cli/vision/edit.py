@@ -14,7 +14,7 @@ class VisionEditor:
     def open(self) -> None:
         if not self._vision_file.exists():
             raise VisionNotFoundError(
-                f"vision.md nicht gefunden. Nutze 'sdd vision init' um eine Vision zu erstellen."
+                "vision.md nicht gefunden. Nutze 'sdd vision init' um eine Vision zu erstellen."
             )
         editor = os.environ.get("EDITOR")
         if editor:

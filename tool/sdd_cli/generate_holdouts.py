@@ -100,8 +100,9 @@ def write_hol_file(
               optional 'setup' (list), 'test' (dict), optional 'teardown' (list),
               'evaluation_hint'.
     """
-    import yaml as _yaml
     from datetime import date
+
+    import yaml as _yaml
 
     holdout_dir = cfg.holdout_dir
     holdout_dir.mkdir(parents=True, exist_ok=True)

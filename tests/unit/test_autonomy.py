@@ -3,24 +3,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from sdd_cli.autonomy import (
     LEVEL_CRITERIA,
     VALID_LEVELS,
-    LevelStats,
-    init_db,
-    record_evaluation,
-    record_pr_result,
-    record_false_positive,
-    record_resume_event,
-    compute_level_stats,
-    auto_merge_allowed,
-    level_label,
     _level_float,
+    auto_merge_allowed,
+    compute_level_stats,
+    init_db,
+    level_label,
+    record_evaluation,
+    record_false_positive,
+    record_pr_result,
+    record_resume_event,
 )
 from sdd_cli.config import SddConfig
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

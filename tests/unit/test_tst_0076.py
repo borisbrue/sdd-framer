@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from sdd_cli.dev_container import DevContainerManager, LocalGitStrategy, save_test_result
 from sdd_cli.config import SddConfig
+from sdd_cli.dev_container import LocalGitStrategy, save_test_result
 
 
 @pytest.fixture

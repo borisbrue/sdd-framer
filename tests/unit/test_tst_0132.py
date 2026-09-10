@@ -25,7 +25,7 @@ class TestTST0132:
         text = _skill_text()
         assert "sdd decompose" in text, "sdd decompose nicht dokumentiert"
         decompose_pos = text.find("sdd decompose")
-        before_decompose = text[:decompose_pos]
+        text[:decompose_pos]
         after_decompose = text[decompose_pos:]
         assert "sdd distribute" not in after_decompose or (
             "kein" in after_decompose[:after_decompose.find("sdd distribute") + 20]

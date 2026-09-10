@@ -5,20 +5,14 @@ Spec: SPEC-0015 · Contract: CON-0045
 """
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
-
 # sys.path-Zeile entfernt: parents[4] zeigte von .sdd/tests/contract/ aus
 # ueber das Repo hinaus und war wirkungslos. tests/conftest.py richtet den
 # Pfad ein (#94).
-
 from sdd_cli.solid import (
     NullSolidChecker,
     SolidAnalyzer,
     SolidFinding,
     _compute_score,
-    _checker_error_finding,
 )
 
 

@@ -17,8 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-import sdd_context
 
+import sdd_context
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -35,9 +35,10 @@ _extra_path = ":".join([
 os.environ["PATH"] = _extra_path + ":" + os.environ.get("PATH", "")
 
 from sdd_context import get_config
-from sdd_cli.frontmatter import parse_safe, Document
-from sdd_cli.pipeline_jobs import JobManager
+
 from sdd_cli.dev_container import container_name, get_runtime
+from sdd_cli.frontmatter import Document, parse_safe
+from sdd_cli.pipeline_jobs import JobManager
 
 router = APIRouter(tags=["interactive"])
 
@@ -212,7 +213,8 @@ Spec (Anforderungen):
     try:
         provider = _get_provider(cfg)
         result = provider.complete(prompt, max_tokens=2048, timeout=90)
-        import json as _json, re as _re
+        import json as _json
+        import re as _re
         try:
             proposals = _json.loads(result.text)
         except Exception:
@@ -294,7 +296,10 @@ Contracts:
     try:
         provider = _get_provider(cfg)
         result = provider.complete(prompt, max_tokens=2048, timeout=90)
-        import json as _json, re as _re, yaml as _yaml
+        import json as _json
+        import re as _re
+
+        import yaml as _yaml
         try:
             scenarios = _json.loads(result.text)
         except Exception:

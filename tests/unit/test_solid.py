@@ -7,25 +7,26 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from sdd_cli.config import SddConfig
 from sdd_cli.solid import (
+    BatchLlmSolidChecker,
+    DipChecker,
+    IspChecker,
+    LlmSolidChecker,
+    LspChecker,
+    NullSolidChecker,
+    OcpChecker,
+    SolidAnalyzer,
     SolidFinding,
     SolidReport,
-    NullSolidChecker,
-    LlmSolidChecker,
-    BatchLlmSolidChecker,
-    SolidAnalyzer,
-    SrpChecker, OcpChecker, LspChecker, IspChecker, DipChecker,
-    _parse_llm_response,
-    _extract_json,
-    _compute_score,
-    _build_summary,
-    _checker_error_finding,
+    SrpChecker,
     _build_batch_prompt,
     _build_single_principle_prompt,
-    PRINCIPLE_LABELS,
+    _build_summary,
+    _compute_score,
+    _extract_json,
+    _parse_llm_response,
 )
-from sdd_cli.config import SddConfig
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

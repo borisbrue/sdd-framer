@@ -16,7 +16,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.config import SddConfig
-from sdd_cli.evaluator import EvaluationReport, ScenarioResult, ScenarioRun
+from sdd_cli.evaluator import ScenarioRun
 
 
 class _Doc:

@@ -15,7 +15,6 @@ import pytest
 # sys.path-Zeile entfernt: parents[4] zeigte von .sdd/tests/contract/ aus
 # ueber das Repo hinaus und war wirkungslos. tests/conftest.py richtet den
 # Pfad ein (#94).
-
 from sdd_cli.pattern import PatternRegistry
 
 SPEC_SCHEMA = {

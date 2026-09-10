@@ -2,23 +2,19 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-
 from sdd_cli.pattern import (
+    REFACTORING_GURU_BASE,
+    PatternRegistry,
+    PatternSuggester,
     PatternSuggestion,
     PatternSuggestionResult,
-    PatternSuggester,
-    PatternRegistry,
-    _parse_pattern_response,
-    _extract_json,
     _build_pattern_prompt,
+    _extract_json,
     _find_pattern,
-    REFACTORING_GURU_BASE,
+    _parse_pattern_response,
 )
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

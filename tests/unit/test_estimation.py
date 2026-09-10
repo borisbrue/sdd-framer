@@ -5,26 +5,20 @@ import math
 import sqlite3
 from pathlib import Path
 
-import pytest
-
 from sdd_cli.config import SddConfig
 from sdd_cli.estimation import (
-    SpecFeatures,
-    HistoricalPoint,
-    Neighbor,
-    init_token_usage_table,
-    persist_token_usage,
-    extract_features,
-    _normalize,
-    _euclidean,
-    _calc_usd,
-    _confidence,
-    _load_historical,
-    _knn,
     PRIORITY_WEIGHTS,
     TOKEN_USAGE_TABLE,
+    SpecFeatures,
+    _calc_usd,
+    _confidence,
+    _euclidean,
+    _load_historical,
+    _normalize,
+    extract_features,
+    init_token_usage_table,
+    persist_token_usage,
 )
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

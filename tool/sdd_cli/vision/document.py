@@ -63,13 +63,13 @@ class VisionDocument:
         self._found_headings: set[str] = set()
 
     @classmethod
-    def from_file(cls, path: Path) -> "VisionDocument":
+    def from_file(cls, path: Path) -> VisionDocument:
         if not path.exists():
             raise VisionNotFoundError(f"vision.md nicht gefunden: {path}")
         return cls._parse(path, path.read_text())
 
     @classmethod
-    def _parse(cls, path: Path, content: str) -> "VisionDocument":
+    def _parse(cls, path: Path, content: str) -> VisionDocument:
         doc = cls(path=path)
         lines = content.splitlines()
 

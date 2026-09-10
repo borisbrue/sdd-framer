@@ -252,8 +252,8 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
 
     if spec_id:
         try:
-            from .regression_check import RegressionCheckChain
             from .gate import ExecutionGate
+            from .regression_check import RegressionCheckChain
             chain = RegressionCheckChain(config.root)
             rc_result = chain.run(spec_id, provider=None)
             if not any(f.severity == "error" for f in rc_result.findings):
@@ -466,7 +466,7 @@ def get_in_progress_specs(config: SddConfig) -> list[Document]:
     return result
 
 
-def _find_tst_doc(config: SddConfig, tst_id: str) -> "Document | None":
+def _find_tst_doc(config: SddConfig, tst_id: str) -> Document | None:
     for base in config.all_test_dirs:
         for md in base.rglob("*.md"):
             doc = parse_safe(md)
@@ -475,7 +475,7 @@ def _find_tst_doc(config: SddConfig, tst_id: str) -> "Document | None":
     return None
 
 
-def _derive_stub_path(config: SddConfig, tst_id: str, tst_doc: "Document | None") -> "Path | None":
+def _derive_stub_path(config: SddConfig, tst_id: str, tst_doc: Document | None) -> Path | None:
     if tst_doc is not None:
         artifact = tst_doc.frontmatter.get("artifact", "")
         # Skip template placeholders like "tests/<level>/<name>.test.<ext>"
@@ -518,7 +518,7 @@ def _build_implement_test_prompt(
     artifact_rel: str,
     spec_body: str,
     class_name: str,
-    stub_path: "Path",
+    stub_path: Path,
 ) -> str:
     artifact_section = ""
     if artifact_content:
@@ -550,7 +550,7 @@ def _build_implement_test_prompt(
 def _implement_test_stub(
     config: SddConfig,
     tst_id: str,
-    tst_doc: "Document | None",
+    tst_doc: Document | None,
     stub_path: Path,
     spec_body: str = "",
 ) -> tuple[bool, str]:
@@ -614,7 +614,7 @@ def _implement_test_stub(
         return False, f"{type(exc).__name__}: {exc}"
 
 
-def _render_stub(tst_id: str, tst_doc: "Document | None", spec_id: str) -> str:
+def _render_stub(tst_id: str, tst_doc: Document | None, spec_id: str) -> str:
     title = ""
     contract = ""
     level = "unit"

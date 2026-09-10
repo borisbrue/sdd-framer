@@ -2,8 +2,9 @@
 # Spec: SPEC-0026 | Contract: CON-0095
 
 import pytest
-from tool.sdd_cli.task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
-from tool.sdd_cli.task_lifecycle import TaskLifecycle, InvalidTransitionError, MAX_RETRIES
+
+from tool.sdd_cli.task_lifecycle import MAX_RETRIES, InvalidTransitionError, TaskLifecycle
+from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task() -> Task:

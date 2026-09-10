@@ -4,10 +4,7 @@ Spec: SPEC-0042 · Contract: CON-0163
 import textwrap
 from pathlib import Path
 
-import pytest
-
 from sdd_cli.holdout_runner import PRIORITY_ORDER, run_structured_evaluation
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -85,7 +82,7 @@ def test_missing_priority_defaults_to_normal(tmp_path, monkeypatch):
     """)
     (tmp_path / "hol-miss.md").write_text(content)
 
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock
     mock_cfg = MagicMock()
     mock_cfg.holdout_dir = tmp_path
 

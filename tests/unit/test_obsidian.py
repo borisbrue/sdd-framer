@@ -13,19 +13,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.config import SddConfig
 from sdd_cli.obsidian import (
-    ObsidianConfig,
-    ExportResult,
-    ImportResult,
+    CONFLICTS_FILE,
+    WARNINGS_LOG,
     export,
     ids_to_wiki_links,
     import_vault,
     obsidian_config,
     wiki_links_to_ids,
-    CONFLICTS_FILE,
-    WARNINGS_LOG,
-    EXPORT_STAMP_FILE,
 )
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -141,7 +136,7 @@ class TestConflictDetection:
         (root / ".sdd").mkdir(parents=True, exist_ok=True)
         (root / ".sdd" / "config.yaml").write_text("", encoding="utf-8")
 
-        today = str(date.today())
+        str(date.today())
         yesterday = str(date.today() - timedelta(days=1))
 
         # Spec im Projekt erstellen

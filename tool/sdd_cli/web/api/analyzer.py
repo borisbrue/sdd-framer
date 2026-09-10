@@ -135,7 +135,7 @@ def _build_prompt(template: str, content: str, answered: list[AnsweredQuestion])
 
 # Provider call
 
-def _try_parse_json(text: str) -> "dict[str, Any] | None":
+def _try_parse_json(text: str) -> dict[str, Any] | None:
     """Versucht JSON zu parsen; repariert abgeschnittene Responses."""
     # 1. Normaler Parse bis zum letzten }
     end = text.rfind("}") + 1
@@ -181,7 +181,7 @@ def _try_parse_json(text: str) -> "dict[str, Any] | None":
         return None
 
 
-def _call_claude(prompt: str, provider: "CompletionProvider") -> tuple[dict[str, Any], dict[str, Any]]:
+def _call_claude(prompt: str, provider: CompletionProvider) -> tuple[dict[str, Any], dict[str, Any]]:
     """Ruft den LLM-Provider auf und gibt (result_dict, usage_dict) zurück."""
     try:
         completion = provider.complete(prompt)
@@ -192,16 +192,16 @@ def _call_claude(prompt: str, provider: "CompletionProvider") -> tuple[dict[str,
                 "error": "provider_not_found",
                 "message": msg,
                 "install_url": CLAUDE_INSTALL_URL,
-            })
+            }) from exc
         if "Timeout" in msg or "timeout" in msg.lower():
             raise HTTPException(status_code=504, detail={
                 "error": "provider_timeout",
                 "message": msg,
-            })
+            }) from exc
         raise HTTPException(status_code=502, detail={
             "error": "provider_error",
             "message": msg,
-        })
+        }) from exc
 
     inner_text = completion.text
     usage: dict[str, Any]
@@ -280,7 +280,7 @@ def analyze(
     templates_dir: Path,
     session_id: str | None = None,
     answered_questions: list[dict] | None = None,
-    config: "SddConfig | None" = None,
+    config: SddConfig | None = None,
 ) -> AnalysisResult:
     """Analysiert ein Dokument via LLM-Provider und gibt Nachfragen zurück."""
     if doc_type not in ("spec", "contract"):

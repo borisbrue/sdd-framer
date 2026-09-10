@@ -4,12 +4,12 @@
 from __future__ import annotations
 
 import subprocess
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from sdd_cli.dev_container import DockerRuntime, PodmanRuntime, get_runtime, validate_docker_config
 from sdd_cli.config import SddConfig
+from sdd_cli.dev_container import DockerRuntime, PodmanRuntime, get_runtime, validate_docker_config
 
 
 def _mock_run(returncode: int = 0, stdout: str = "") -> MagicMock:
@@ -80,7 +80,7 @@ class TestTST0079:
             )
         args = mock.call_args[0][0]
         assert "--userns=keep-id" not in args
-        assert "podman" == args[0]
+        assert args[0] == "podman"
 
     # TC-06: DockerRuntime.run_container enthält kein --userns=keep-id
     def test_docker_run_container_no_userns(self) -> None:

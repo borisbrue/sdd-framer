@@ -1,15 +1,18 @@
 # TST-0122 – LLM-Pool-Konfiguration und Provider-Test (Unit)
 # Spec: SPEC-0027 | Contract: CON-0103
 
-import pytest
-import yaml
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+import yaml
+
 from tool.sdd_cli.config_manager import (
-    ConfigManager, ConfigValidationError, _validate_business_rules,
+    ConfigManager,
+    ConfigValidationError,
+    _validate_business_rules,
 )
-from tool.sdd_cli.llm_probe import probe_llm, LlmProbeError, OllamaProbe
+from tool.sdd_cli.llm_probe import LlmProbeError, OllamaProbe, probe_llm
 
 
 def _make_config(tmp_path: Path, data: dict) -> Path:
@@ -62,7 +65,7 @@ class TestTST0122:
             mgr.set("llm_pool.providers[0].api_key_env", "sk-ant-abc123")
 
     def test_probe_returns_latency_when_reachable(self):
-        with patch.object(OllamaProbe, "probe", return_value=42.0) as mock_probe:
+        with patch.object(OllamaProbe, "probe", return_value=42.0):
             latency = probe_llm(_local_provider())
         assert latency == 42.0
 

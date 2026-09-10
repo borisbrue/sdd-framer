@@ -56,7 +56,7 @@ class ImplOnlyExecutor:
                 "Alle importierten Module existieren bereits — nichts zu implementieren."
             )
 
-        for module, impl_file in write_targets:
+        for _module, impl_file in write_targets:
             prompt = self._build_prompt(
                 task, test_content, impl_file,
                 context_files=context_files,
@@ -352,7 +352,7 @@ def _extract_api_signatures(test_content: str) -> str:
 
         # Instanzattribute-Zugriffe: instance.field
         attrs: set[str] = set()
-        for am in re.finditer(rf"\bstats\.([a-z_]+)\b", test_content):
+        for am in re.finditer(r"\bstats\.([a-z_]+)\b", test_content):
             attrs.add(am.group(1))
         if attrs:
             lines.append(f"{cls_name} hat Attribute: {', '.join(sorted(attrs))}")

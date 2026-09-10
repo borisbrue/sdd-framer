@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-from typing import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 
 
 class TaskEventBus:

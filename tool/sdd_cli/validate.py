@@ -7,9 +7,9 @@ Prüft drei Ebenen:
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
-import json
 
 from jsonschema import Draft202012Validator
 
@@ -109,7 +109,7 @@ def validate(config: SddConfig) -> Report:
             report.add(
                 "error", d.path,
                 f"Doppelte Test-ID: {tid} existiert auch in {test_index[tid].path}",
-                instruction=f"Vergib eine eindeutige ID für einen der beiden Tests.",
+                instruction="Vergib eine eindeutige ID für einen der beiden Tests.",
             )
         else:
             test_index[tid] = d
@@ -515,7 +515,7 @@ def _check_lifecycle_rules(
                 )
 
 
-def _check_fr_compliance(report: Report, specs: list, config: "SddConfig") -> None:
+def _check_fr_compliance(report: Report, specs: list, config: SddConfig) -> None:
     """FR-07: Compliance-Kette für approved/in-progress Specs (SPEC-0041)."""
     from .compliance import run_compliance_chain
     from .decompose import TaskDecomposer

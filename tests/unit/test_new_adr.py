@@ -41,8 +41,8 @@ class TestCommandExists:
 
     def test_adr_is_a_known_id_kind(self):
         """ids.search_dirs() warf fuer 'adr' ein ValueError."""
-        from sdd_cli.ids import KINDS, search_dirs
         from sdd_cli.config import SddConfig
+        from sdd_cli.ids import KINDS, search_dirs
         assert "adr" in KINDS
         cfg = SddConfig(root=Path("/tmp"), raw={})
         assert search_dirs(cfg, "adr") == [Path("/tmp/docs/adr")]

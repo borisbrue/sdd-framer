@@ -4,8 +4,6 @@ from __future__ import annotations
 import asyncio
 import json
 
-import httpx
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 

@@ -3,28 +3,27 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
+from sdd_cli.config import SddConfig
 from sdd_cli.orchestrator import (
-    PipelineAttempt,
-    PipelineReport,
-    persist_pipeline_report,
-    _load_spec,
-    _load_agents_md,
-    _load_contracts,
-    _build_code_gen_prompt,
-    _write_files,
-    _gh_available,
-    _create_pr,
-    _label_pr,
     BRANCH_PREFIX,
     LABEL_APPROVED,
     LABEL_FAILED,
+    PipelineAttempt,
+    PipelineReport,
+    _build_code_gen_prompt,
+    _create_pr,
+    _gh_available,
+    _label_pr,
+    _load_agents_md,
+    _load_contracts,
+    _load_spec,
+    _write_files,
+    persist_pipeline_report,
 )
-from sdd_cli.config import SddConfig
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

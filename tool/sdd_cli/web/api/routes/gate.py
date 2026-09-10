@@ -16,10 +16,11 @@ from pydantic import BaseModel
 sys.path.insert(0, str(Path(__file__).parents[3] / "tool"))
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
-from sdd_cli.gate import ExecutionGate
-from sdd_cli.conflict_detector import ConflictDetector
-from sdd_cli.test_generator import TestGenerator
 from sdd_context import get_config
+
+from sdd_cli.conflict_detector import ConflictDetector
+from sdd_cli.gate import ExecutionGate
+from sdd_cli.test_generator import TestGenerator
 
 router = APIRouter()
 
@@ -228,8 +229,8 @@ def update_conflict(spec_id: str, cf_id: str, body: ConflictUpdateRequest) -> di
         else:
             raise HTTPException(status_code=422, detail=f"Unbekannte Aktion: {action!r}")
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     return {"id": cf_id, "action": action, "updated": True}

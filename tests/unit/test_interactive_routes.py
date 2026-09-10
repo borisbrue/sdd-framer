@@ -24,8 +24,8 @@ sys.path.insert(0, str(REPO_ROOT / "tool" / "sdd_cli" / "web" / "api"))
 
 # Import route functions directly (no FastAPI TestClient needed)
 import routes.interactive as _mod
-from sdd_cli.pipeline_jobs import JobManager
 
+from sdd_cli.pipeline_jobs import JobManager
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 

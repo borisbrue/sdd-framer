@@ -1,16 +1,13 @@
 """Unit-Tests für job_store.py – In-Memory Job-Verwaltung (SPEC-0016, CON-0051)."""
 from __future__ import annotations
 
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import sys
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
-from job_store import AnalysisJob, JobStore, JOB_TTL_HOURS, JOB_TIMEOUT_SECONDS
-
+from job_store import JOB_TIMEOUT_SECONDS, JOB_TTL_HOURS, AnalysisJob, JobStore
 
 # ─── AnalysisJob ──────────────────────────────────────────────────────────────
 
@@ -135,7 +132,7 @@ class TestJobStore:
 
     def test_active_count_queued_and_running(self):
         store = JobStore()
-        j1 = store.create("SPEC-0001")
+        store.create("SPEC-0001")
         j2 = store.create("SPEC-0001")
         store.update_running(j2.job_id)
         assert store.active_count("SPEC-0001") == 2

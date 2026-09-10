@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime
 
 from .events import StatusEventBus
-from .models import ProjectEntry, StatusEvent
+from .models import StatusEvent
 from .registry import ProjectRegistry
 
 

@@ -6,8 +6,9 @@ Decorator Pattern: track_tokens umhüllt jeden Sub-Agenten-Aufruf mit Token-Trac
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from .config import SddConfig
 from .task_model import Task

@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +44,7 @@ class ContractCache:
         # Parse YAML frontmatter
         try:
             import re
+
             import yaml
             m = re.match(r"^---\n(.*?)\n---\n?(.*)", content, re.DOTALL)
             if m:

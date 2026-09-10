@@ -9,8 +9,8 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from sdd_cli.main import cli
 from sdd_cli.generate_holdouts import write_hol_file
+from sdd_cli.main import cli
 
 
 @pytest.fixture()

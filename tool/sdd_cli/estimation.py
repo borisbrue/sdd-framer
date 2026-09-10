@@ -12,11 +12,9 @@ import csv
 import math
 import re
 import sqlite3
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from .config import SddConfig
 from .frontmatter import parse_safe
@@ -216,13 +214,13 @@ def _normalize(vectors: list[list[float]]) -> tuple[list[list[float]], list[floa
     dim = len(vectors[0])
     mins = [min(v[i] for v in vectors) for i in range(dim)]
     maxs = [max(v[i] for v in vectors) for i in range(dim)]
-    ranges = [mx - mn if mx != mn else 1.0 for mn, mx in zip(mins, maxs)]
+    ranges = [mx - mn if mx != mn else 1.0 for mn, mx in zip(mins, maxs, strict=True)]
     normed = [[(v[i] - mins[i]) / ranges[i] for i in range(dim)] for v in vectors]
     return normed, mins, ranges
 
 
 def _euclidean(a: list[float], b: list[float]) -> float:
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)))
 
 
 @dataclass
@@ -394,9 +392,9 @@ def estimate(
         # Gewichteter Durchschnitt (1/distance; identisch → weight=1.0)
         weights = [1.0 / (n.distance + 1e-9) for n in neighbors]
         total_w = sum(weights)
-        est_input = int(sum(w * n.input_tokens for w, n in zip(weights, neighbors)) / total_w)
-        est_output = int(sum(w * n.output_tokens for w, n in zip(weights, neighbors)) / total_w)
-        est_cache_r = int(sum(w * n.input_tokens * 0.1 for w, n in zip(weights, neighbors)) / total_w)
+        est_input = int(sum(w * n.input_tokens for w, n in zip(weights, neighbors, strict=True)) / total_w)
+        est_output = int(sum(w * n.output_tokens for w, n in zip(weights, neighbors, strict=True)) / total_w)
+        est_cache_r = int(sum(w * n.input_tokens * 0.1 for w, n in zip(weights, neighbors, strict=True)) / total_w)
         est_cache_w = 0
     else:
         # Fallback: grobe Heuristik auf Basis body_chars
@@ -478,6 +476,13 @@ def token_history(
                 rows = conn.execute(
                     f"SELECT * FROM {TOKEN_USAGE_TABLE} ORDER BY id"
                 ).fetchall()
+        # r ist ein sqlite3.Row, kein dict: `"x" in r` prueft dort die WERTE,
+        # nicht die Spaltennamen, und .get() gibt es nicht. ruff (SIM118) haelt
+        # `in r.keys()` fuer ein dict-Muster; sein Fix hatte hier jede
+        # Aufgaben-Zuordnung still auf None gesetzt (#112). Die Spaltenmenge
+        # einmal zu bestimmen ist korrekt und braucht keine Unterdrueckung — die
+        # das Projekt ohnehin verbietet (Taste-Invariante in sdd validate).
+        spalten = set(rows[0].keys()) if rows else set()
         return [
             TokenHistoryRow(
                 id=r["id"],
@@ -490,9 +495,9 @@ def token_history(
                 cache_read_tokens=r["cache_read_tokens"],
                 cache_write_tokens=r["cache_write_tokens"],
                 duration_ms=r["duration_ms"],
-                task_id=r["task_id"] if "task_id" in r.keys() else None,
-                task_label=r["task_label"] if "task_label" in r.keys() else None,
-                agent_type=r["agent_type"] if "agent_type" in r.keys() else None,
+                task_id=r["task_id"] if "task_id" in spalten else None,
+                task_label=r["task_label"] if "task_label" in spalten else None,
+                agent_type=r["agent_type"] if "agent_type" in spalten else None,
             )
             for r in rows
         ]

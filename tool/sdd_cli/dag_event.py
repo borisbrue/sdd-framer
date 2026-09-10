@@ -6,8 +6,9 @@ run_id-Isolation: jeder Run hat seine eigene asyncio.Queue.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 from datetime import datetime, timezone
-from typing import AsyncIterator, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 

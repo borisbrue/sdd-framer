@@ -4,7 +4,7 @@ Chain of Responsibility: LocalLLMResult → ClaudeReviewer → Retry | Escalatio
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from ..llm import get_code_gen_provider

@@ -8,8 +8,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 
-from sdd_cli.pipeline_jobs import JobManager
 from sdd_cli.config import SddConfig
+from sdd_cli.pipeline_jobs import JobManager
 
 
 def _cfg(tmp_path: Path) -> SddConfig:

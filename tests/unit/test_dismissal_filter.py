@@ -7,15 +7,12 @@ answered_questions sowie das update_dismiss-Verhalten des Repositories.
 """
 from __future__ import annotations
 
-from pathlib import Path
 import sys
-
-import pytest
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from analysis_repository import AnalysisRepository, PersistedAnalysis
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

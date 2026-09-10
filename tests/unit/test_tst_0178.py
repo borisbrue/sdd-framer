@@ -2,9 +2,7 @@
 # Spec: SPEC-0041 | Contract: CON-0152
 from pathlib import Path
 
-import pytest
-
-from sdd_cli.compliance import FrCoverageResult, FrCoverageSpecification
+from sdd_cli.compliance import FrCoverageSpecification
 from sdd_cli.frontmatter import Document
 from sdd_cli.task_model import (
     Complexity,

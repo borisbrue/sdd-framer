@@ -17,10 +17,14 @@ import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
+if TYPE_CHECKING:
+    # Zur Laufzeit importiert die Funktion selbst (zirkulaer auf Modulebene);
+    # die Annotation in der Signatur sah diesen Import nicht (F821).
+    from .evaluator import EvaluationReport
 
 # ── YAML-Block-Extraktion ────────────────────────────────────────────────────
 
@@ -495,7 +499,7 @@ def run_structured_evaluation(
     runtime_cli: str = "docker",
     container_name: str | None = None,
     tier_filter: str | None = None,
-) -> "EvaluationReport":
+) -> EvaluationReport:
     """Führt alle strukturierten aktiven Holdouts deterministisch aus.
 
     Reihenfolge: critical → normal → edge-case.
@@ -503,9 +507,10 @@ def run_structured_evaluation(
     Bei normal-Fehler werden edge-case übersprungen.
     tier_filter: wenn gesetzt, werden nur Holdouts dieser Priorität ausgeführt (kein Fail-Fast).
     """
-    from .evaluator import EvaluationReport, ScenarioResult, ScenarioRun
-    from .frontmatter import parse_safe
     from datetime import datetime, timezone
+
+    from .evaluator import EvaluationReport
+    from .frontmatter import parse_safe
 
     holdout_dir = config.holdout_dir
     docs = []

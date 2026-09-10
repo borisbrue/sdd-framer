@@ -12,7 +12,7 @@ class VisionReader:
     def show(self) -> None:
         if not self._vision_file.exists():
             raise VisionNotFoundError(
-                f"vision.md nicht gefunden. Nutze 'sdd vision init' um eine Vision zu erstellen."
+                "vision.md nicht gefunden. Nutze 'sdd vision init' um eine Vision zu erstellen."
             )
         print(self._vision_file.read_text(), end="")
 

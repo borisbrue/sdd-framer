@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 from sdd_cli.config import SddConfig
 from sdd_cli.llm.factory import get_completion_provider
-from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
 from sdd_cli.llm.providers.anthropic import AnthropicCompletionProvider
+from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
 
 
 def _cfg(raw: dict) -> SddConfig:

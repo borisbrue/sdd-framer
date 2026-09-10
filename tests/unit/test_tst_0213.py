@@ -1,7 +1,7 @@
 # TST-0213 – Sichtbare LLM-Fehler in pattern/solid statt stiller Degradierung
 # Spec: SPEC-0050 · Contract: CON-0187
 from sdd_cli.pattern import PatternSuggester
-from sdd_cli.solid import SolidAnalyzer, BatchLlmSolidChecker
+from sdd_cli.solid import BatchLlmSolidChecker, SolidAnalyzer
 
 
 class _RaisingProvider:

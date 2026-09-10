@@ -1,5 +1,4 @@
 """TaskExecutor Protocol/ABC – interface tests (SPEC-0045 Strategy Pattern)."""
-import pytest
 
 
 class TestTaskExecutorInterface:

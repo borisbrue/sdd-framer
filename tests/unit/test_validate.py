@@ -5,18 +5,15 @@ import json
 import shutil
 from pathlib import Path
 
-import pytest
-
 from sdd_cli.config import SddConfig
 from sdd_cli.validate import (
+    AGENTS_MD_REQUIRED_SECTIONS,
     Issue,
     Report,
-    validate,
     _check_agents_md,
     _check_lifecycle_rules,
-    AGENTS_MD_REQUIRED_SECTIONS,
+    validate,
 )
-
 
 # ─── Schemas & Fixtures ───────────────────────────────────────────────────────
 

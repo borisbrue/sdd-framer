@@ -3,11 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from sdd_cli.traceability import build_matrix, write_matrix
 from sdd_cli.config import SddConfig
-
+from sdd_cli.traceability import build_matrix, write_matrix
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

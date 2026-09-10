@@ -4,8 +4,6 @@ from __future__ import annotations
 from datetime import date, timedelta
 from pathlib import Path
 
-import pytest
-
 from sdd_cli.config import SddConfig
 from sdd_cli.maintenance import (
     MaintenanceIssue,
@@ -13,7 +11,6 @@ from sdd_cli.maintenance import (
     _parse_date,
     run_maintenance_sweep,
 )
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .config import SddConfig
 from .frontmatter import parse_safe
-from .task_model import Task, TaskStatus, TaskType, Complexity, ContextSize
+from .task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 _SYSTEM_PROMPT = """\
 Du bist ein Software-Architekt. Deine Aufgabe: Zerlege ein Spec in atomare, \

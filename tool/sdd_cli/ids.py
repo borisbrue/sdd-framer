@@ -1,12 +1,11 @@
 """Vergabe und Erkennung von eindeutigen IDs (SPEC, CON, TST, ADR)."""
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from .config import SddConfig
 from .frontmatter import parse_safe
-
 
 KINDS = {
     "spec":     "spec_prefix",
@@ -45,9 +44,9 @@ def existing_ids(config: SddConfig, kind: str) -> set[str]:
             continue
         for md in base.rglob("*.md"):
             doc = parse_safe(md)
-            if doc and isinstance(doc.frontmatter.get("id"), str):
-                if pattern.match(doc.frontmatter["id"]):
-                    found.add(doc.frontmatter["id"])
+            if (doc and isinstance(doc.frontmatter.get("id"), str)
+                    and pattern.match(doc.frontmatter["id"])):
+                found.add(doc.frontmatter["id"])
     return found
 
 

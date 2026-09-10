@@ -9,7 +9,6 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, runtime_checkable
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Protocol
 # ─────────────────────────────────────────────────────────────────────────────
@@ -20,7 +19,7 @@ class SchedulerCommand(Protocol):
     task_id: str
     command_type: str
 
-    def apply(self, scheduler_state: "SchedulerState") -> None: ...
+    def apply(self, scheduler_state: SchedulerState) -> None: ...
 
 
 # ─────────────────────────────────────────────────────────────────────────────

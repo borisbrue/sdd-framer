@@ -1,9 +1,6 @@
 """Integration-Test: sdd-implement Routing-Pipeline (SPEC-0045)."""
 from dataclasses import dataclass, field
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import AsyncMock, patch
 
 
 @dataclass
@@ -21,8 +18,8 @@ class TaskStub:
 class TestSddImplementRouting:
     def test_trivial_task_routed_to_local(self):
         from tool.sdd_cli.task_routing.config import TaskRoutingConfig
-        from tool.sdd_cli.task_routing.router import decide_executor
         from tool.sdd_cli.task_routing.heuristic import compute_complexity_score
+        from tool.sdd_cli.task_routing.router import decide_executor
 
         task = TaskStub(id="TSK-001", affected_files=["one.py"], estimated_lines=20)
         score = compute_complexity_score(task)

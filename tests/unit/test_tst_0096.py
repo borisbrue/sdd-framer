@@ -7,10 +7,8 @@ import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from routes.auth import router
 
 
@@ -83,13 +81,12 @@ class TestTST0096:
     def test_old_token_blacklisted_after_rotation(self) -> None:
         token = "b2c3d4" * 10 + "e5f6"
         ctx = _mock_ctx(current_token=token)
-        with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._store_token"):
-                client = TestClient(_make_app())
-                client.post(
-                    "/auth/rotate-token",
-                    headers={"Authorization": f"Bearer {token}"},
-                )
+        with patch("routes.auth.sdd_context", ctx), patch("routes.auth._store_token"):
+            client = TestClient(_make_app())
+            client.post(
+                "/auth/rotate-token",
+                headers={"Authorization": f"Bearer {token}"},
+            )
         ctx.blacklist_token.assert_called_once_with(token)
 
     # CON-0086 G-06: response body is {token: newToken}

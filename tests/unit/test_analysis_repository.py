@@ -2,15 +2,12 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sys
-
-import pytest
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from analysis_repository import AnalysisRepository, PersistedAnalysis, _safe_dir_name
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 

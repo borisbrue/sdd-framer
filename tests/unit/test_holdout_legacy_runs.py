@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.config import SddConfig
+
 # ScenarioResult/ScenarioRun gibt es in beiden Staenden; die neuen Symbole
 # werden lazy geholt, damit die Verhaltenstests auch gegen einen Stand ohne sie
 # laufen und der RED-Nachweis nicht auf einen Collection-Error zusammenfaellt.

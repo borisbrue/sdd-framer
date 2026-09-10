@@ -3,14 +3,12 @@
 # Spec: SPEC-0025
 from __future__ import annotations
 
-import statistics
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
 from routes.auth import router
 
 

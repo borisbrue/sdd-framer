@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.gate import PHASE_ORDER, ExecutionGate
 
-
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _write(path: Path, text: str) -> None:

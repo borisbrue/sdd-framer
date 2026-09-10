@@ -1,13 +1,12 @@
 """Rendert Templates aus .sdd/templates/ in neue Dokumente."""
 from __future__ import annotations
 
-from datetime import date
-from pathlib import Path
 import re
 import shutil
+from datetime import date
+from pathlib import Path
 
 from .config import SddConfig
-
 
 # Welches Template ist Standard für welche Art?
 TEMPLATE_MAP = {

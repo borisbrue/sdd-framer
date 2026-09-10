@@ -7,19 +7,17 @@ Prüft: SSE-Event-Parsing, Reconnect-Backoff, Status-Mapping,
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 
-from sdd_cli.holdout_status_fetcher import HoldoutStatusFetcher, HoldoutStatusEvent
-
+from sdd_cli.holdout_status_fetcher import HoldoutStatusFetcher
 
 # ─── TC-01: SSE-Event mit status=running wird korrekt geparst ────────────────
 

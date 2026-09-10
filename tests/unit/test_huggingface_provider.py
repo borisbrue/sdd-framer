@@ -9,9 +9,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
-from sdd_cli.llm.base import CompletionResult, UsageMetadata
+from sdd_cli.llm.base import CompletionResult
 from sdd_cli.llm.factory import get_code_gen_provider, get_completion_provider
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,7 +48,7 @@ class TestHuggingFaceCompletionProviderServerless:
         provider, mock_hf_hub = self._make_provider()
         mock_client = mock_hf_hub.InferenceClient.return_value
 
-        result = provider.complete("was ist Python?", max_tokens=256)
+        provider.complete("was ist Python?", max_tokens=256)
 
         mock_client.text_generation.assert_called_once()
         call_args, call_kwargs = mock_client.text_generation.call_args
@@ -60,7 +59,6 @@ class TestHuggingFaceCompletionProviderServerless:
     def test_complete_returns_completion_result(self):
         """complete() gibt CompletionResult mit usage zurück."""
         provider, _ = self._make_provider()
-        mock_client = _  # get fresh mock
         provider._client.text_generation.return_value = "generated answer"
 
         result = provider.complete("frage")
@@ -78,8 +76,8 @@ class TestHuggingFaceCompletionProviderServerless:
 
         result = provider.complete("vier fünf")
 
-        assert result.usage.input_tokens == len("vier fünf".split())
-        assert result.usage.output_tokens == len("eins zwei drei".split())
+        assert result.usage.input_tokens == len(["vier", "fünf"])
+        assert result.usage.output_tokens == len(["eins", "zwei", "drei"])
         assert result.usage.estimated is True
 
     def test_system_prompt_prepended_as_xml(self):

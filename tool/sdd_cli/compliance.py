@@ -13,7 +13,6 @@ from typing import Protocol
 from .frontmatter import Document
 from .task_model import Task
 
-
 # ── Datenmodelle ──────────────────────────────────────────────────────────────
 
 @dataclass

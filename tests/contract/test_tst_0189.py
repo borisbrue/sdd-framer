@@ -10,7 +10,6 @@ from click.testing import CliRunner
 
 from sdd_cli.main import cli
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture()

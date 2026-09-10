@@ -40,7 +40,7 @@ class RegressionResult:
 
 
 class RegressionCheckHandler(abc.ABC):
-    def __init__(self, next_handler: "RegressionCheckHandler | None" = None) -> None:
+    def __init__(self, next_handler: RegressionCheckHandler | None = None) -> None:
         self._next = next_handler
 
     @abc.abstractmethod
@@ -139,7 +139,7 @@ class LLMSemanticCheckHandler(RegressionCheckHandler):
         self,
         provider: Any,
         strategy: SemanticCheckStrategy | None = None,
-        next_handler: "RegressionCheckHandler | None" = None,
+        next_handler: RegressionCheckHandler | None = None,
     ) -> None:
         super().__init__(next_handler)
         self._provider = provider
@@ -193,7 +193,7 @@ def _conflict_identity(conflict: dict) -> tuple[str, str, str]:
     )
 
 
-def _conflict_identity_of_finding(finding: "CheckFinding") -> tuple[str, str, str]:
+def _conflict_identity_of_finding(finding: CheckFinding) -> tuple[str, str, str]:
     return (finding.type, finding.own_section, f"{finding.spec_id}:{finding.section}")
 
 
