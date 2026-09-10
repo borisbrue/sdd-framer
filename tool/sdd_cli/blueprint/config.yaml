@@ -76,6 +76,9 @@ evaluator:
     env:
       APP_ENV: test
 orchestrator:
+  # Shell-Befehl, der in der Finalisierung vor den Tests laeuft (im Dev-Container,
+  # bzw. auf dem Host bei docker.compose_file). Leer: kein Build-Schritt.
+  # --build-cmd bei sdd orchestrate / sdd start --auto ueberschreibt ihn.
   build_command: ''
   auto_merge: false
   auto_merge_strategy: label

@@ -5,7 +5,7 @@ title: "Orchestrator – Lokale Pipeline (Spec → Code → PR → Eval → Retr
 type: behavior
 format: markdown
 spec: SPEC-0004
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: ""
 tests: ["TST-0012"]
@@ -50,12 +50,20 @@ sdd orchestrate --spec SPEC-XXXX
 
 ### G-02: Pipeline-Schritte
 
+> **v0.2.0 (2026-09-10):** Schritt 5 war seit SPEC-0026 (`45b29e6`) nicht mehr
+> umgesetzt: der Build wurde aus der Orchestrator-Schleife entfernt, ohne in der
+> gemeinsamen Finalisierung wieder angebunden zu werden. `--build-cmd` und
+> `orchestrator.build_command` wirkten nicht (#111). Er läuft jetzt dort, wo auch
+> die Tests laufen — damit gilt er für alle Implementierungspfade, nicht nur hier.
+
 ```
 1. Spec + AGENTS.md + Contracts laden
 2. Code-Generierung (Claude): strukturierter JSON-Response
 3. Dateien schreiben (außer .sdd/holdout/)
 4. git: Branch anlegen, Commit erstellen
-5. Build-Kommando ausführen (optional)
+5. Build-Kommando ausführen (optional) — in der Finalisierung (SpecFinalizer),
+   im Dev-Container unmittelbar vor den Tests. Schlägt er fehl, laufen keine
+   Tests, und die Build-Ausgabe wird Fehlerkontext des nächsten Versuchs.
 6. PR erstellen via gh CLI (optional, --no-pr überspringt)
 7. Evaluator laufen lassen (optional, nur wenn --base-url gesetzt)
 8a. Pass-Rate ≥ 90 %: PR labeln ("sdd-auto-merge") oder mergen
