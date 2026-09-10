@@ -43,6 +43,7 @@ _FORMAT_DIR = {
     "gherkin":     "behavior",
     "markdown":    "behavior",
     "openapi":     "api",
+    "asyncapi":    "api",
     "json-schema": "data",
     "slo-yaml":    "performance",
 }
@@ -88,6 +89,48 @@ def _zeigt_nach_sdd(pfad: str) -> bool:
     """
     teile = Path(pfad).parts
     return bool(teile) and teile[0] == ".sdd"
+
+
+def _asyncapi_operationen(doc: dict) -> list[str]:
+    """Bezeichner je Nachricht/Operation eines AsyncAPI-Dokuments.
+
+    Der Generator zaehlte Pfade (OpenAPI) und Szenarien (Gherkin) auf,
+    Nachrichten nicht — `asyncapi` fiel auf den generischen Einzelrumpf zurueck
+    und meldete "(1 Tests)" fuer ein Protokoll mit drei Nachrichtenarten (#66).
+
+    Drei Ebenen, weil AsyncAPI 2 und 3 unterschiedlich aufgebaut sind:
+
+    - 3.x: `operations` ist die Liste der Dinge, die passieren.
+    - 2.x: `channels.<name>.publish|subscribe` — je Richtung eine Operation.
+    - Rueckfall: `components.messages`, wenn keins von beidem da ist.
+    """
+    operationen = doc.get("operations")
+    if isinstance(operationen, dict) and operationen:
+        return list(operationen.keys())
+
+    kanaele = doc.get("channels")
+    if isinstance(kanaele, dict) and kanaele:
+        treffer: list[str] = []
+        for name, kanal in kanaele.items():
+            if not isinstance(kanal, dict):
+                continue
+            richtungen = [r for r in ("publish", "subscribe") if r in kanal]
+            if richtungen:
+                treffer.extend(f"{r} {name}" for r in richtungen)
+            else:
+                # 3.x ohne operations-Block: die Nachrichten des Kanals.
+                nachrichten = kanal.get("messages")
+                if isinstance(nachrichten, dict) and nachrichten:
+                    treffer.extend(f"{name} {m}" for m in nachrichten)
+                else:
+                    treffer.append(name)
+        if treffer:
+            return treffer
+
+    nachrichten = (doc.get("components") or {}).get("messages")
+    if isinstance(nachrichten, dict) and nachrichten:
+        return list(nachrichten.keys())
+    return []
 
 
 def _extract_scenarios(feature_text: str) -> list[str]:
@@ -284,6 +327,41 @@ class TestGenerator:
                     "    import httpx\n"
                     "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 ]
+            return header + "".join(functions) + "\n"
+
+        if fmt == "asyncapi":
+            artifact_text = self._read_artifact(contract)
+            operationen: list[str] = []
+            try:
+                import yaml
+                doc = yaml.safe_load(artifact_text) or {}
+                operationen = _asyncapi_operationen(doc) if isinstance(doc, dict) else []
+            except Exception:
+                pass
+
+            if not operationen:
+                # Ehrlich bleiben statt eine 1 zu melden: wenn sich nichts
+                # aufzaehlen laesst, sagt der Rumpf warum.
+                return (
+                    header
+                    + f"\n\ndef test_tc01_{_slug(con_id)}():\n"
+                    f'    """Event-Contract {con_id} — keine Nachricht aufzaehlbar.\n\n'
+                    f"    Weder operations noch channels noch components.messages im\n"
+                    f"    Artifact. Ergaenze das Dokument oder schreibe die Tests von Hand.\n"
+                    '    """\n'
+                    "    pytest.skip(\"Test noch nicht implementiert\")\n\n"
+                )
+
+            functions = []
+            for i, op in enumerate(operationen, 1):
+                fn = f"test_tc{i:02d}_{_slug(op)}"
+                functions.append(
+                    f"\ndef {fn}():\n"
+                    f'    """Nachricht/Operation {op} ({con_id})."""\n'
+                    "    # TODO: Nachricht senden bzw. empfangen und Payload gegen\n"
+                    "    # das Schema pruefen\n"
+                    "    pytest.skip(\"Test noch nicht implementiert\")\n"
+                )
             return header + "".join(functions) + "\n"
 
         if fmt == "json-schema":
