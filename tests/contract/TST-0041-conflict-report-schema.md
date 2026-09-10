@@ -6,7 +6,7 @@ spec: SPEC-0014
 contract: CON-0029
 status: implemented
 framework: pytest
-artifact: "tests/contract/test_con-0029.py"
+artifact: "tests/contract/test_con_0029.py"
 tags: [schema, json-schema, conflict-report]
 ---
 

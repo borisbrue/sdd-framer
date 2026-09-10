@@ -6,7 +6,7 @@ spec: SPEC-0014
 contract: CON-0030
 status: implemented
 framework: pytest
-artifact: "tests/contract/test_con-0030.py"
+artifact: "tests/contract/test_con_0030.py"
 tags: [schema, json-schema, pipeline, gate]
 ---
 

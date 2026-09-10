@@ -62,4 +62,4 @@ Dieser Test prüft konkret folgende Punkte aus CON-0159:
 ## Hinweise zur Implementierung
 
 Route muss in `tool/sdd_cli/web/api/routes/holdouts.py` registriert werden.
-TestClient aus `web/api/main.py` app-Instanz nutzen (vgl. test_con-0027.py).
+TestClient aus `web/api/main.py` app-Instanz nutzen (vgl. test_con_0027.py).
