@@ -1558,8 +1558,12 @@ def spec_review(spec_id: str) -> None:
 
 @spec_group.command("approve", help="Genehmigt eine Spec (spec-approved + execute-unlocked).")
 @click.argument("spec_id")
-@click.option("--fr-coverage", default="", help="FR-Coverage-Angabe, z.B. '11/11'.")
-@click.option("--scenarios-covered", default="", help="Szenarien-Coverage, z.B. '25/25'.")
+@click.option("--fr-coverage", default="",
+              help="Ueberschreibt die gemessene FR-Abdeckung, z.B. '11/11'. "
+                   "Ohne Angabe wird gemessen.")
+@click.option("--scenarios-covered", default="",
+              help="Szenarien-Abdeckung, z.B. '25/25'. Angabe des Aufrufers, "
+                   "wird nicht geprueft.")
 def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None:
     cfg = _ensure_project()
     from .gate import ExecutionGate
@@ -1617,6 +1621,25 @@ def spec_approve(spec_id: str, fr_coverage: str, scenarios_covered: str) -> None
             if issue.hint:
                 console.print(f"  [dim]{issue.hint}[/]")
         sys.exit(2)
+
+    # Die FR-Abdeckung stand als Freitext im Gate — ein Wert, den der Aufrufer
+    # per Flag mitgab und den nichts pruefte. Ohne Flag blieb er leer, und der
+    # Bericht meldete fuer eine Spec mit 25 vollstaendig zugeordneten FR eine
+    # leere Abdeckung (#67). Die Kette oben hat die Zahl gerade ermittelt; hier
+    # wird sie benutzt statt weggeworfen.
+    from .compliance import FrCoverageSpecification
+    abdeckung = FrCoverageSpecification().is_satisfied_by(spec_doc, tasks)
+    gesamt = len(abdeckung.covered) + len(abdeckung.uncovered)
+    gemessen = f"{len(abdeckung.covered)}/{gesamt}" if gesamt else ""
+
+    if fr_coverage and fr_coverage != gemessen:
+        console.print(
+            f"[yellow]![/] --fr-coverage [bold]{fr_coverage}[/] weicht von der "
+            f"gemessenen Abdeckung [bold]{gemessen or 'keine FR gefunden'}[/] ab. "
+            f"Eingetragen wird die Messung."
+        )
+    if gemessen:
+        fr_coverage = gemessen
 
     g.mark_phase_complete(spec_id, "spec-approved", consistency_check={
         "fr_coverage": fr_coverage,
