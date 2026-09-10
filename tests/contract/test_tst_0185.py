@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "web" / "api"))
+sys.path.insert(0, str(REPO_ROOT / "tool" / "sdd_cli" / "web" / "api"))
 sys.path.insert(0, str(REPO_ROOT / "tool"))
 
 os.environ.setdefault("SDD_PROJECT_ROOT", str(REPO_ROOT))
@@ -28,6 +28,13 @@ from main import app
 
 client = TestClient(app)
 
+# Patch-Ziel ist `routes.holdouts`, nicht `sdd_cli.web.api.routes.holdouts`: die
+# App kommt ueber `from main import app`, also unter den kurzen Modulnamen. Die
+# Datei ist damit ein zweites Modulobjekt, und ein Patch auf den langen Namen
+# erreicht die Endpunkte nicht. Bis #107 verdeckte das eine Weiterleitung in der
+# Root-Kopie der API; tc01–tc04 bestanden dabei sogar ohne greifenden Patch,
+# weil der echte Status 'none' ebenfalls in der erlaubten Menge liegt.
+
 VALID_STATUS = {"running", "passed", "failed", "none"}
 
 
@@ -35,7 +42,7 @@ VALID_STATUS = {"running", "passed", "failed", "none"}
 
 def test_tc01_get_holdout_status_200_schema():
     """GET /api/holdouts/{spec_id} liefert 200 mit spec_id, status, updated_at (CON-0159)."""
-    with patch("sdd_cli.web.api.routes.holdouts.get_holdout_status") as mock_svc:
+    with patch("routes.holdouts.get_holdout_status") as mock_svc:
         mock_svc.return_value = {
             "spec_id": "SPEC-0043",
             "status": "passed",
@@ -58,7 +65,7 @@ def test_tc01_get_holdout_status_200_schema():
 
 def test_tc02_get_holdout_status_404_when_no_run():
     """GET /api/holdouts/SPEC-9999 liefert 404 mit Error-Schema (CON-0159)."""
-    with patch("sdd_cli.web.api.routes.holdouts.get_holdout_status") as mock_svc:
+    with patch("routes.holdouts.get_holdout_status") as mock_svc:
         mock_svc.return_value = None
         response = client.get("/api/holdouts/SPEC-9999")
 
@@ -82,7 +89,7 @@ def test_tc03_get_holdout_status_422_invalid_spec_id():
 
 def test_tc04_sse_stream_content_type():
     """GET /api/holdouts/{spec_id}/stream liefert Content-Type: text/event-stream (CON-0159)."""
-    with patch("sdd_cli.web.api.routes.holdouts.stream_holdout_status") as mock_stream:
+    with patch("routes.holdouts.stream_holdout_status") as mock_stream:
         mock_stream.return_value = iter([])
         response = client.get("/api/holdouts/SPEC-0043/stream")
 
@@ -94,7 +101,7 @@ def test_tc04_sse_stream_content_type():
 
 def test_tc05_failed_status_includes_scenarios():
     """GET bei status=failed liefert scenarios mit name + status (CON-0159 ScenarioResult)."""
-    with patch("sdd_cli.web.api.routes.holdouts.get_holdout_status") as mock_svc:
+    with patch("routes.holdouts.get_holdout_status") as mock_svc:
         mock_svc.return_value = {
             "spec_id": "SPEC-0043",
             "status": "failed",
@@ -121,7 +128,7 @@ def test_tc05_failed_status_includes_scenarios():
 
 def test_tc06_none_status_scenarios_empty():
     """GET bei status=none liefert run_id=null und leere scenarios (CON-0159)."""
-    with patch("sdd_cli.web.api.routes.holdouts.get_holdout_status") as mock_svc:
+    with patch("routes.holdouts.get_holdout_status") as mock_svc:
         mock_svc.return_value = {
             "spec_id": "SPEC-0043",
             "status": "none",
@@ -142,7 +149,7 @@ def test_tc06_none_status_scenarios_empty():
 
 def test_tc07_sse_stream_404_for_unknown_spec():
     """GET /api/holdouts/SPEC-9999/stream liefert 404 (CON-0159)."""
-    with patch("sdd_cli.web.api.routes.holdouts.stream_holdout_status") as mock_stream:
+    with patch("routes.holdouts.stream_holdout_status") as mock_stream:
         mock_stream.side_effect = KeyError("SPEC-9999 nicht gefunden")
         response = client.get("/api/holdouts/SPEC-9999/stream")
 

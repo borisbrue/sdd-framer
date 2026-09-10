@@ -26,7 +26,7 @@ tests: ["TST-0013"]
 
 ## Zweck
 
-Dieser Contract definiert das Verhalten von `web/api/analyzer.py`: wie
+Dieser Contract definiert das Verhalten von `tool/sdd_cli/web/api/analyzer.py`: wie
 `claude` als Subprocess aufgerufen wird, wie Sessions verwaltet werden und
 wie Prompts aufgebaut sind.
 

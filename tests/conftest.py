@@ -4,8 +4,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# web/api Verzeichnis für WebSocket-Route-Tests (TST-0082)
-_WEB_API = Path(__file__).resolve().parents[1] / "web" / "api"
+# Die Web-API, die der Server laedt (ui.py: _web_root() / "api"). Bis #107 zeigte
+# der Pfad auf eine zweite Kopie unter web/api/ im Repo-Root, die nirgends
+# ausgeliefert wurde und in zehn Dateien abwich — die Tests prueften die falsche.
+_WEB_API = Path(__file__).resolve().parents[1] / "tool" / "sdd_cli" / "web" / "api"
 if str(_WEB_API) not in sys.path:
     sys.path.insert(0, str(_WEB_API))
 

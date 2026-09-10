@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "web" / "api"))
+sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from job_store import AnalysisJob, JobStore, JOB_TTL_HOURS, JOB_TIMEOUT_SECONDS
 

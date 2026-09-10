@@ -11,7 +11,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-sys.path.insert(0, str(Path(__file__).parents[2] / "web" / "api"))
+sys.path.insert(0, str(Path(__file__).parents[2] / "tool" / "sdd_cli" / "web" / "api"))
 
 from flow_session import FlowSession, FlowSessionStore
 from routes.agent_flow import router
