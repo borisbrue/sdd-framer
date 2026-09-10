@@ -74,11 +74,11 @@ Sofort?  [ja/nein]
 
 Falls `$ARGUMENTS` eine SPEC-ID enthält (z.B. `--file SPEC-XXXX` oder direkt `SPEC-XXXX`):
 
-[WARN] Falls `sdd regression-check` nicht verfügbar ist: Schritt überspringen und
-`[WARN] sdd regression-check nicht verfügbar` ausgeben.
+[WARN] Falls `sdd spec regression` nicht verfügbar ist: Schritt überspringen und
+`[WARN] sdd spec regression nicht verfügbar` ausgeben.
 
 ```bash
-sdd regression-check SPEC-XXXX
+sdd spec regression SPEC-XXXX
 ```
 
 Zeige Stufe-1- und Stufe-2-Befunde getrennt (`[rule]` / `[llm]`) — identisches Format

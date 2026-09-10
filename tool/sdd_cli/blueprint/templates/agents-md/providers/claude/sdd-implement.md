@@ -27,14 +27,16 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 
 > Führe das vollständige Review für $ARGUMENTS autonom durch:
 >
-> 1. `sdd solid-check $ARGUMENTS` — SOLID-Analyse ausgeben; Warnings loggen, keine Blockade
-> 2. `sdd pattern-suggest $ARGUMENTS` — sinnvolle Patterns automatisch annehmen (`sdd pattern accept`), alle anderen überspringen
-> 3. `sdd regression-check $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
-> 4. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
+> 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse und Pattern-Vorschläge ausgeben;
+>    beides beratend, keine Blockade. Warnings loggen. (Einen Befehl, um eine
+>    Pattern-Entscheidung festzuhalten, gibt es derzeit nicht — die Vorschläge
+>    fliessen in die Bewertung der Contracts unter Punkt 3 ein.)
+> 2. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
+> 3. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
 >    - Setze `status: approved` im Frontmatter wenn inhaltlich ok (Edit-Tool)
 >    - Kein interaktiver Bestätigungsschritt — autonom entscheiden
-> 5. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+> 4. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
 >
 > Kein Warten auf Nutzereingabe. Bei Regression-Konflikt (error): Abbruch.
 
@@ -74,7 +76,7 @@ Falls der Check fehlschlägt, analysiere die Fehlerausgabe:
     A) Claude Code aus einem nativen Terminal starten (empfohlen):
        Konsole/foot/Alacritty öffnen → 'claude' dort starten → podman funktioniert korrekt.
     B) Container-losen Modus aktivieren (Tests laufen direkt auf dem Host):
-       Weiter mit --no-container (kein 'sdd dev exec', kein Container nötig).
+       Weiter mit --no-container (kein Container nötig).
   ```
   → Frage den Nutzer: "Container-los weitermachen? [J/n]"
   - Bei J (oder Enter): setze **CONTAINER_MODE=host** und weiter mit `sdd start $ARGUMENTS --no-container`
@@ -225,7 +227,9 @@ Tasks ohne grünen Test werden NICHT als erledigt markiert.
 Code wird auf dem Host-Filesystem geschrieben (Read/Edit/Write-Tools).
 Tests laufen je nach CONTAINER_MODE:
 - **host**: direkt auf dem Host
-- **container**: via `sdd dev exec $ARGUMENTS <cmd>`
+- **container**: via `$RUNTIME exec sdd-dev-<spec-id-klein> <cmd>`
+  (`$RUNTIME` = `docker.runtime` aus `.sdd/config.yaml`, Containername
+  deterministisch nach CON-0065 INV-01: `SPEC-0021` → `sdd-dev-spec-0021`)
 
 ### Für JEDEN `type=code`-Task (in Abhängigkeitsreihenfolge):
 
@@ -287,7 +291,7 @@ React-Komponenten ohne DOM-Setup sind schwer testbar — die Logik darunter ist 
 Führe `task.test_command` aus:
 
 - Host-Modus: direkt ausführen
-- Container-Modus: `sdd dev exec $ARGUMENTS <test_command>`
+- Container-Modus: `$RUNTIME exec sdd-dev-<spec-id-klein> <test_command>`
 
 **Erwartetes Ergebnis: Test MUSS fehlschlagen** (ImportError, NameError, AssertionError usw.)
 
@@ -320,7 +324,7 @@ Nach jedem grünen Task: Führe die vollständige Test-Suite aus um Regressionen
 
 - Host, Python: `pytest tests/ -x --tb=short`
 - Host, TypeScript: `npm test` (im jeweiligen Package-Verzeichnis)
-- Container: `sdd dev exec $ARGUMENTS pytest tests/ -x --tb=short`
+- Container: `$RUNTIME exec sdd-dev-<spec-id-klein> pytest tests/ -x --tb=short`
 
 Bei Regression: repariere bevor du zum nächsten Task übergehst.
 
@@ -350,15 +354,15 @@ Alle Tasks grün — jetzt werden die Holdout-Szenarien tier-spezifisch geprüft
 
 **CONTAINER_MODE=container:**
 ```bash
-sdd dev exec $ARGUMENTS bash -c \
+$RUNTIME exec sdd-dev-<spec-id-klein> bash -c \
   "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
-   sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
+   sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
 ```
 
 **CONTAINER_MODE=host:**
 ```bash
 pip install -q -e './tool/[evaluate]' > /dev/null && \
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
 ```
 
 | Versuch | Ergebnis | Aktion |
@@ -370,7 +374,7 @@ sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical
 ### 5.5b: Normal-Tier
 
 ```bash
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
 ```
 (Gleiches Container/Host-Muster wie 5.5a.)
 
@@ -383,7 +387,7 @@ sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier normal
 ### 5.5c: Edge-Case-Tier
 
 ```bash
-sdd evaluate --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier edge-case
+sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier edge-case
 ```
 
 | Versuch | Ergebnis | Aktion |

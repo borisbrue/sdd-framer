@@ -2,7 +2,6 @@
   "permissions": {
     "allow": [
       "Bash(sdd *)",
-      "Bash(sdd dev exec *)",
       "Bash(python -m pytest *)",
       "Bash(pytest *)",
       "Bash(.venv/bin/pytest *)",
@@ -19,7 +18,10 @@
       "Bash(uv build *)",
       "Bash(podman inspect *)",
       "Bash(podman ps *)",
-      "Bash(podman exec *)"
+      "Bash(podman exec *)",
+      "Bash(docker inspect *)",
+      "Bash(docker ps *)",
+      "Bash(docker exec *)"
     ]
   },
   "hooks": {

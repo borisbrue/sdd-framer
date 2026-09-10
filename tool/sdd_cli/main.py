@@ -2649,7 +2649,7 @@ def token_history_cmd(spec_id: str | None, export_csv: str | None) -> None:
         msg = f"[yellow]⚠[/] Keine Token-Daten für [bold]{spec_id}[/] gefunden." \
             if spec_id else "[yellow]⚠[/] Keine Token-Daten vorhanden."
         console.print(msg)
-        console.print("  Starte LLM-gestützte Befehle (z.B. [cyan]sdd review-contract[/]), "
+        console.print("  Starte LLM-gestützte Befehle (z.B. [cyan]sdd review contract[/]), "
                       "um Daten zu sammeln.")
         sys.exit(0)
 
@@ -3073,8 +3073,13 @@ def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     result = suggester.suggest(artifact_text, artifact_id, artifact_type)
     _print_pattern_suggestions(result)
     if result.pattern_suggestions:
+        # Verwies auf `sdd pattern accept` — ein Befehl, den SPEC-0044 entfernt
+        # hat. PatternDecisionStore.accept/reject existiert noch, hat aber seither
+        # keinen Aufrufer mehr; eine Entscheidung laesst sich derzeit nicht
+        # maschinell festhalten. Der Hinweis sagt das, statt einen Weg zu nennen,
+        # den es nicht gibt.
         console.print(
-            f"  → Entscheiden mit: [cyan]sdd pattern accept {artifact_id} <PatternName>[/]"
+            "  [dim]Vorschlaege sind beratend — bewerte sie beim Contract-Review.[/]"
         )
 
 
