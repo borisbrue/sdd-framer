@@ -33,15 +33,12 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 > 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse + Pattern-Vorschläge kombiniert ausgeben
 >    (ersetzt die früheren separaten Befehle `solid-check`/`pattern-suggest`, seit SPEC-0044
 >    entfernt). Warnings loggen, keine Blockade.
-> 2. Sinnvolle Pattern-Vorschläge direkt per Python-API annehmen, alle anderen überspringen
->    (`sdd pattern accept/reject` existiert seit SPEC-0044 nicht mehr als CLI-Befehl):
+> 2. Sinnvolle Pattern-Vorschläge annehmen, alle anderen überspringen:
 >    ```bash
->    python3 -c "
->    from pathlib import Path
->    from sdd_cli.pattern import PatternRegistry
->    PatternRegistry(Path('.')).accept('$ARGUMENTS', '<PatternName>', '<Begründung>')
->    "
+>    sdd review pattern accept $ARGUMENTS <PatternName> --reason "<Begründung>"
 >    ```
+>    (Bis #90 stand hier ein `python3 -c`-Einzeiler direkt auf `PatternRegistry`,
+>    weil SPEC-0044 die Pattern-Befehle ohne Nachfolger entfernt hatte.)
 > 3. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
 > 4. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
@@ -87,7 +84,7 @@ Falls der Check fehlschlägt, analysiere die Fehlerausgabe:
     A) Claude Code aus einem nativen Terminal starten (empfohlen):
        Konsole/foot/Alacritty öffnen → 'claude' dort starten → podman funktioniert korrekt.
     B) Container-losen Modus aktivieren (Tests laufen direkt auf dem Host):
-       Weiter mit --no-container (kein 'sdd dev exec', kein Container nötig).
+       Weiter mit --no-container (kein Container nötig).
   ```
   → Frage den Nutzer: "Container-los weitermachen? [J/n]"
   - Bei J (oder Enter): setze **CONTAINER_MODE=host** und weiter mit `sdd start $ARGUMENTS --no-container`

@@ -2946,6 +2946,105 @@ def review_contract_group_cmd(con_id: str | None, spec_id: str | None) -> None:
         console.print(f"  Hinweise: {result.notes[:200]}")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# sdd review pattern — Pattern-Entscheidungen festhalten (#90)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# SPEC-0044 hat `sdd pattern` entfernt, ohne Nachfolger. PatternRegistry und der
+# projektweite Katalog blieben bestehen, hatten aber keinen Aufrufer mehr:
+# `sdd review spec` erzeugte Vorschlaege, deren Entscheidung nirgends landete.
+# Die Skill-Datei half sich mit einem `python3 -c`-Einzeiler direkt auf die
+# Registry — an der CLI vorbei. Der Befehl gehoert neben die Review-Schritte,
+# die die Vorschlaege erzeugen.
+
+@review_group.group("pattern", help="Pattern-Entscheidungen festhalten (accept, reject, list).")
+def review_pattern_group() -> None:
+    pass
+
+
+def _pattern_entscheiden(
+    artifact_id: str, pattern_name: str, reason: str | None, url: str | None, annehmen: bool
+) -> None:
+    cfg = _ensure_project()
+    # Von Hand statt click-`required`: click beendet mit exit 2 und "Missing
+    # option" — CON-0048 verlangt exit 1 und diese Meldung, und exit 2 ist dort
+    # fuer "ID nicht gefunden" reserviert (INV-04).
+    if not (reason or "").strip():
+        console.print(
+            "[red]✗[/] --reason ist erforderlich — eine Entscheidung ohne "
+            "Begruendung ist im Katalog wertlos."
+        )
+        sys.exit(1)
+
+    from .solid import find_artifact
+    if find_artifact(cfg, artifact_id) is None:
+        console.print(f"[red]✗[/] Artefakt nicht gefunden: {artifact_id}")
+        sys.exit(2)
+
+    from .pattern import PatternRegistry
+    registry = PatternRegistry(cfg.root)
+    if annehmen:
+        registry.accept(artifact_id, pattern_name, reason.strip(), url=url)
+        console.print(f"[green]✓[/] [bold]{pattern_name}[/] fuer [cyan]{artifact_id}[/] angenommen.")
+    else:
+        registry.reject(artifact_id, pattern_name, reason.strip(), url=url)
+        console.print(f"[green]✓[/] [bold]{pattern_name}[/] fuer [cyan]{artifact_id}[/] abgelehnt.")
+
+
+@review_pattern_group.command("accept", help="Nimmt einen Pattern-Vorschlag an (schreibt Register + Katalog).")
+@click.argument("artifact_id")
+@click.argument("pattern_name")
+@click.option("--reason", default=None, help="Begruendung (Pflicht).")
+@click.option("--url", default=None, help="Refactoring-Guru-Link zum Pattern.")
+def review_pattern_accept(artifact_id: str, pattern_name: str, reason: str | None, url: str | None) -> None:
+    _pattern_entscheiden(artifact_id, pattern_name, reason, url, annehmen=True)
+
+
+@review_pattern_group.command("reject", help="Lehnt einen Pattern-Vorschlag ab (mit Begruendung).")
+@click.argument("artifact_id")
+@click.argument("pattern_name")
+@click.option("--reason", default=None, help="Ablehnungsgrund (Pflicht).")
+@click.option("--url", default=None, help="Refactoring-Guru-Link zum Pattern.")
+def review_pattern_reject(artifact_id: str, pattern_name: str, reason: str | None, url: str | None) -> None:
+    _pattern_entscheiden(artifact_id, pattern_name, reason, url, annehmen=False)
+
+
+@review_pattern_group.command("list", help="Zeigt festgehaltene Pattern-Entscheidungen.")
+@click.argument("artifact_id", required=False, default=None)
+def review_pattern_list(artifact_id: str | None) -> None:
+    cfg = _ensure_project()
+    if artifact_id:
+        from .solid import find_artifact
+        if find_artifact(cfg, artifact_id) is None:
+            console.print(f"[red]✗[/] Artefakt nicht gefunden: {artifact_id}")
+            sys.exit(2)
+
+    from .pattern import PatternRegistry
+    eintraege = PatternRegistry(cfg.root).list_patterns(artifact_id)
+    if not eintraege:
+        # CON-0048 INV-03: ein leeres Register ist kein Fehler.
+        ziel = f" fuer {artifact_id}" if artifact_id else ""
+        console.print(f"Keine Pattern-Entscheidungen{ziel}.")
+        return
+
+    from rich.table import Table
+    tabelle = Table(title="Pattern-Entscheidungen")
+    tabelle.add_column("Artefakt", style="cyan")
+    tabelle.add_column("Pattern", style="bold")
+    tabelle.add_column("Status")
+    tabelle.add_column("Begruendung")
+    tabelle.add_column("Entschieden", style="dim")
+    for e in eintraege:
+        status = e.get("status", "")
+        farbe = {"accepted": "green", "rejected": "red"}.get(status, "yellow")
+        grund = e.get("acceptance_reason") or e.get("rejection_reason") or ""
+        tabelle.add_row(
+            e.get("spec_id", ""), e.get("pattern_name", ""),
+            f"[{farbe}]{status}[/]", grund, e.get("decided_at", ""),
+        )
+    console.print(tabelle)
+
+
 @review_group.command("pending", help="Listet Contracts im Status review. --auto: reviewed alle.")
 @click.option("--auto", is_flag=True)
 def review_pending_group_cmd(auto: bool) -> None:
@@ -3122,13 +3221,11 @@ def _run_pattern_phase(cfg: Any, artifact_id: str, artifact_type: str) -> None:
     result = suggester.suggest(artifact_text, artifact_id, artifact_type)
     _print_pattern_suggestions(result)
     if result.pattern_suggestions:
-        # Verwies auf `sdd pattern accept` — ein Befehl, den SPEC-0044 entfernt
-        # hat. PatternDecisionStore.accept/reject existiert noch, hat aber seither
-        # keinen Aufrufer mehr; eine Entscheidung laesst sich derzeit nicht
-        # maschinell festhalten. Der Hinweis sagt das, statt einen Weg zu nennen,
-        # den es nicht gibt.
+        # Seit #90 gibt es den Weg wieder. Bis dahin sagte der Hinweis, dass es
+        # keinen gibt — vor #68 nannte er einen entfernten Befehl.
         console.print(
-            "  [dim]Vorschlaege sind beratend — bewerte sie beim Contract-Review.[/]"
+            f"  → Entscheiden mit: [cyan]sdd review pattern accept|reject "
+            f"{artifact_id} <PatternName> --reason \"…\"[/]"
         )
 
 

@@ -21,7 +21,8 @@ def _skill_text() -> str:
 #   sdd regression-check -> sdd spec regression (Schritt 4)
 
 _SOLID_UND_PATTERN = "sdd review spec"
-_PATTERN_PERSISTENZ = "PatternRegistry"
+# Seit #90 ueber die CLI; vorher ein `python3 -c`-Einzeiler auf PatternRegistry.
+_PATTERN_PERSISTENZ = "sdd review pattern accept"
 _REGRESSION = "sdd spec regression"
 
 
@@ -75,7 +76,8 @@ class TestTST0131:
     def test_tc09_keine_entfernten_befehle_als_anweisung(self) -> None:
         """Der Grund fuer TC-01/TC-02, die aus dem falschen Grund gruen waren:
         in einem ```bash-Block darf kein entfernter Befehl mehr stehen."""
-        entfernt = ("sdd solid-check", "sdd pattern-suggest", "sdd regression-check")
+        entfernt = ("sdd solid-check", "sdd pattern-suggest", "sdd regression-check",
+                    "PatternRegistry(")
         in_bash = False
         treffer: list[str] = []
         for nr, zeile in enumerate(_skill_text().splitlines(), start=1):

@@ -38,14 +38,33 @@ def _cli_commands() -> dict[str, object]:
     return dict(cli.commands)
 
 
+# Die repo-eigenen Skills unter .claude/commands/ sind eine zweite Kopie. #68
+# hat nur das Blueprint geprueft; dort blieben `sdd dev exec` und dreimal
+# `sdd regression-check` stehen (#90).
+_REPO_SKILL_DIR = _ROOT / ".claude" / "commands"
+
+
 def _skill_dateien() -> list[Path]:
-    return sorted(p for p in _SKILL_DIR.rglob("*.md") if p.is_file())
+    dateien = [p for p in _SKILL_DIR.rglob("*.md") if p.is_file()]
+    if _REPO_SKILL_DIR.is_dir():
+        dateien += [p for p in _REPO_SKILL_DIR.glob("*.md") if p.is_file()]
+    return sorted(dateien)
+
+
+# Ein Migrationshinweis MUSS den alten Namen nennen, sonst findet niemand den
+# neuen ("`sdd evaluate` existiert seit … nicht mehr — Ersatz ist …"). Dieselbe
+# Ausnahme wie fuer die Entfernt-Meldungen in main.py und die
+# Migrationstabelle der README (#56). Die repo-eigenen Skills enthalten solche
+# Hinweise, die richtige Anweisung steht jeweils daneben.
+_FESTSTELLUNG_RE = re.compile(r"nicht mehr|entfallen|wurde entfernt|entfernt hatte")
 
 
 def _aufrufe(text: str) -> list[tuple[int, str]]:
     """(Zeilennummer, Befehlsname) je sdd-Aufruf."""
     treffer: list[tuple[int, str]] = []
     for nr, zeile in enumerate(text.splitlines(), start=1):
+        if _FESTSTELLUNG_RE.search(zeile):
+            continue
         for m in _AUFRUF_RE.finditer(zeile):
             name = m.group(1)
             if name not in _KEIN_BEFEHL:
