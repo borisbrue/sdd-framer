@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 import stat
+import subprocess
 from dataclasses import dataclass
 from importlib.resources import files as _pkg_files
 from pathlib import Path
@@ -229,6 +230,17 @@ def write_autonomous_local(target: Path) -> None:
         gitignore.write_text(existing + prefix + ".claude/settings.local.json\n", encoding="utf-8")
 
 
+def _git_benutzername(target: Path) -> str | None:
+    """`git config user.name` aus Sicht des Zielverzeichnisses, sonst None."""
+    try:
+        r = subprocess.run(["git", "config", "user.name"], cwd=target,
+                           capture_output=True, text=True, timeout=5)
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return None
+    name = r.stdout.strip()
+    return name or None
+
+
 def ignore_local_config(target: Path) -> bool:
     """Traegt .sdd/config.local.yaml in die .gitignore des Projekts ein.
 
@@ -307,6 +319,11 @@ def init_project(
         text = text.replace("<PROJECT_TITLE>", title)
         # Replace the project name value regardless of what the template contains
         text = re.sub(r'^(  name: ).*$', rf'\g<1>{title}', text, count=1, flags=re.MULTILINE)
+        # Owner aus git statt eines festen Namens im Blueprint (#116). JSON ist
+        # gueltiges YAML — so ueberstehen auch Namen mit ':' oder Apostroph.
+        name = _git_benutzername(target)
+        if name:
+            text = text.replace("  owners: []\n", f"  owners:\n  - {json.dumps(name, ensure_ascii=False)}\n", 1)
         config_dst.write_text(text, encoding="utf-8")
         created.append(config_dst)
 
