@@ -6,7 +6,7 @@ spec: SPEC-0014
 contract: CON-0027
 status: implemented
 framework: pytest
-artifact: "tests/contract/test_con-0027.py"
+artifact: "tests/contract/test_con_0027.py"
 tags: [gate, api, http]
 ---
 

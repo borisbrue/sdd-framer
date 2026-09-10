@@ -361,7 +361,7 @@ Feature: Staged SPEC Execution Gate
   Scenario: Auto-generierte Tests decken Gherkin-Scenarios ab
     Given CON-0025 enthält 3 Gherkin-Scenarios
     When "sdd test generate SPEC-0014" ausgeführt wird
-    Then existiert "tests/behavior/test_con-0025.py"
+    Then existiert "tests/contract/test_con_0025.py"
     And die Datei enthält mindestens 3 Test-Funktionen
     And pytest --collect-only läuft ohne Fehler durch
 

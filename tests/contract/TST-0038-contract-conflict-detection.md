@@ -6,7 +6,7 @@ spec: SPEC-0014
 contract: CON-0026
 status: implemented
 framework: pytest
-artifact: "tests/contract/test_con-0026.py"
+artifact: "tests/contract/test_con_0026.py"
 tags: [conflict, detection, cache]
 ---
 
