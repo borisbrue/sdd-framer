@@ -6,14 +6,15 @@ Spec: SPEC-0015 · Contract: CON-0047
 from __future__ import annotations
 
 import json
-import sys
 import tempfile
 from pathlib import Path
 
 import jsonschema
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parents[4] / "tool"))
+# sys.path-Zeile entfernt: parents[4] zeigte von .sdd/tests/contract/ aus
+# ueber das Repo hinaus und war wirkungslos. tests/conftest.py richtet den
+# Pfad ein (#94).
 
 from sdd_cli.pattern import PatternRegistry
 

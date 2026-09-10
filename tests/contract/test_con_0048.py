@@ -20,12 +20,19 @@ SDD = str(Path(sys.executable).parent / "sdd")
 REAL_SPEC = "SPEC-0015"
 
 
+# Das Repo-Wurzelverzeichnis, nicht der geerbte Prozess-CWD. Die Tests liefen
+# frueher nur unter .sdd/tests/ und damit nie in der Suite mit; im Gesamtlauf
+# hatte ein vorheriger Test das Arbeitsverzeichnis verschoben, und `sdd spec
+# solid SPEC-0015` fand die Spec nicht mehr (#94).
+REPO = Path(__file__).resolve().parents[2]
+
+
 def _run(args: list[str], cwd: str | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         [SDD] + args,
         capture_output=True,
         text=True,
-        cwd=cwd,
+        cwd=cwd or str(REPO),
     )
 
 
@@ -33,7 +40,7 @@ def _run(args: list[str], cwd: str | None = None) -> subprocess.CompletedProcess
 
 def test_tc01_solid_check_gibt_json_report_aus_mit_json_flag():
     """Scenario: solid-check gibt JSON-Report aus mit --json Flag (CON-0048)."""
-    result = _run(["solid-check", "--json", REAL_SPEC])
+    result = _run(["spec", "solid", "--json", REAL_SPEC])
     # Exit 0 or 1 are both valid (warn/block mode); exit 2 means ID not found
     assert result.returncode != 2, f"Spec {REAL_SPEC} nicht gefunden: {result.stderr}"
     try:
@@ -68,7 +75,7 @@ def test_tc02_solid_check_im_warn_modus_gibt_exit_code_0_bei_vio():
             encoding="utf-8",
         )
 
-        result = _run(["solid-check", "--json", "SPEC-TEST"], cwd=tmpdir)
+        result = _run(["spec", "solid", "--json", "SPEC-TEST"], cwd=tmpdir)
         # In warn mode, exit code must be 0 regardless of findings
         assert result.returncode == 0, (
             f"warn-Modus darf nicht mit Exit-Code {result.returncode} beenden.\n"
@@ -99,7 +106,7 @@ def test_tc03_solid_check_im_block_modus_gibt_exit_code_1_bei_vi():
         )
         (specs_dir / "SPEC-BLK-bloated.md").write_text(bad_spec_text, encoding="utf-8")
 
-        result = _run(["solid-check", "SPEC-BLK"], cwd=tmpdir)
+        result = _run(["spec", "solid", "SPEC-BLK"], cwd=tmpdir)
         # In block mode, exit code 1 if violation; 0 if compliant
         # We just assert it's not exit 2 (not-found) — the LLM result is non-deterministic
         assert result.returncode in {0, 1}, (
@@ -109,7 +116,7 @@ def test_tc03_solid_check_im_block_modus_gibt_exit_code_1_bei_vi():
 
 def test_tc04_solid_check_mit_principle_filtert_auf_ein_prinzip():
     """Scenario: solid-check mit --principle filtert auf ein Prinzip (CON-0048)."""
-    result = _run(["solid-check", "--json", "--principle", "S", REAL_SPEC])
+    result = _run(["spec", "solid", "--json", "--principle", "S", REAL_SPEC])
     assert result.returncode != 2, f"Spec nicht gefunden: {result.stderr}"
     data = json.loads(result.stdout)
     findings = data.get("solid_findings", [])
@@ -121,7 +128,7 @@ def test_tc04_solid_check_mit_principle_filtert_auf_ein_prinzip():
 
 def test_tc05_solid_check_mit_unbekannter_id_gibt_exit_code_2():
     """Scenario: solid-check mit unbekannter ID gibt Exit-Code 2 (CON-0048)."""
-    result = _run(["solid-check", "SPEC-DOES-NOT-EXIST-9999"])
+    result = _run(["spec", "solid", "SPEC-DOES-NOT-EXIST-9999"])
     assert result.returncode == 2, (
         f"Unbekannte ID muss Exit-Code 2 geben, bekommen: {result.returncode}\n"
         f"stderr: {result.stderr}"
@@ -130,6 +137,10 @@ def test_tc05_solid_check_mit_unbekannter_id_gibt_exit_code_2():
 
 # ─── pattern-suggest ─────────────────────────────────────────────────────────
 
+@pytest.mark.xfail(
+    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
+    strict=True,
+)
 def test_tc06_pattern_suggest_gibt_1_4_vorschl_ge_aus():
     """Scenario: pattern-suggest gibt 1-4 Vorschläge aus (CON-0048)."""
     result = _run(["pattern-suggest", REAL_SPEC])
@@ -170,6 +181,10 @@ def test_tc07_pattern_suggest_ohne_persistenz_nur_ausgabe():
 
 # ─── pattern accept ───────────────────────────────────────────────────────────
 
+@pytest.mark.xfail(
+    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
+    strict=True,
+)
 def test_tc08_pattern_accept_persistiert_annahme_im_register():
     """Scenario: pattern-accept persistiert Annahme im Register (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -214,6 +229,10 @@ def test_tc09_pattern_accept_ohne_reason_schl_gt_fehl():
 
 # ─── pattern reject ───────────────────────────────────────────────────────────
 
+@pytest.mark.xfail(
+    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
+    strict=True,
+)
 def test_tc10_pattern_reject_persistiert_ablehnung_mit_begr_ndun():
     """Scenario: pattern-reject persistiert Ablehnung mit Begründung (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -256,6 +275,10 @@ def test_tc11_pattern_reject_ohne_reason_schl_gt_fehl():
 
 # ─── pattern list ─────────────────────────────────────────────────────────────
 
+@pytest.mark.xfail(
+    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
+    strict=True,
+)
 def test_tc12_pattern_list_zeigt_tabelle_mit_entscheidungen():
     """Scenario: pattern-list zeigt Tabelle mit Entscheidungen (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -277,6 +300,10 @@ def test_tc12_pattern_list_zeigt_tabelle_mit_entscheidungen():
         assert "accepted" in output, f"Status 'accepted' muss erscheinen:\n{output}"
 
 
+@pytest.mark.xfail(
+    reason="sdd pattern* wurde mit SPEC-0044 entfernt, ohne Nachfolger — siehe #90",
+    strict=True,
+)
 def test_tc13_pattern_list_ohne_register_gibt_leere_tabelle_kein():
     """Scenario: pattern-list ohne Register gibt leere Tabelle (kein Fehler) (CON-0048)."""
     with tempfile.TemporaryDirectory() as tmpdir:
