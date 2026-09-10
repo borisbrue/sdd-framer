@@ -277,15 +277,7 @@ def run_pipeline(
     effective_build_cmd = build_cmd or orch_cfg.get("build_command", "")
     code_gen_timeout = int(orch_cfg.get("code_gen_timeout", 600))
 
-    # Den Build-Schritt hat SPEC-0026 (45b29e6) in die Container-Finalisierung
-    # verlegt; --build-cmd und orchestrator.build_command blieben stehen und
-    # wurden seither still ignoriert. Bis #111 entschieden ist, sagt der Lauf das.
-    if effective_build_cmd:
-        _step(
-            f"⚠ Build-Kommando '{effective_build_cmd}' wird nicht ausgefuehrt — "
-            "--build-cmd bzw. orchestrator.build_command haben seit SPEC-0026 "
-            "keine Wirkung (#111). Getestet wird in der Container-Finalisierung."
-        )
+    # Der Build laeuft in der Finalisierung, im Dev-Container vor den Tests (#111).
 
     # Track base branch so we can reset between attempts
     _, _base = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], config.root)
@@ -372,6 +364,7 @@ def run_pipeline(
                 spec_id,
                 no_commit=True,   # Branch + Commit bereits oben erledigt
                 branch=branch,
+                build_cmd=effective_build_cmd or None,
             )
         except RuntimeError as exc:
             _step(f"✗ Finalisierung fehlgeschlagen: {exc}")
@@ -384,6 +377,18 @@ def run_pipeline(
             continue
 
         build_passed: bool | None = fin_report.tests_passed
+        if fin_report.build_passed is False:
+            # Wie vor 45b29e6: der naechste Versuch bekommt die Build-Ausgabe als
+            # Fehlerkontext. Ein leeres test_output haette der Code-Generierung
+            # nicht gesagt, was sie reparieren soll (#111).
+            _step(f"✗ Build fehlgeschlagen (Attempt {attempt_num})")
+            error_context = f"Build failed (attempt {attempt_num}):\n{fin_report.build_output}"
+            report.attempts.append(PipelineAttempt(
+                attempt=attempt_num, branch=branch,
+                build_passed=False, eval_pass_rate=None, pr_url=None,
+                error=fin_report.build_output[:1000], explanation=explanation,
+            ))
+            continue
         if not fin_report.tests_passed:
             _step(f"✗ Container-Tests fehlgeschlagen (Attempt {attempt_num})")
             error_context = fin_report.test_output

@@ -6,7 +6,8 @@ Wird verwendet von:
   - sdd orchestrate (nach Code-Generierung)
   - sdd distribute (nach Task-Loop)
 
-Ablauf: git commit → Container-Check → Tests im Container → Container entfernen → PR
+Ablauf: git commit → Container-Check → Build (optional, #111) → Tests im Container
+        → Container entfernen → PR
 """
 from __future__ import annotations
 
@@ -38,6 +39,19 @@ class FinalizeReport:
     pr_url: str | None
     pr_path: Path | None
     error: str | None
+    # Build vor den Tests (#111). None: kein Build-Kommando gesetzt.
+    build_passed: bool | None = None
+    build_output: str = ""
+
+
+def _befehl_ausfuehren(befehl, *, cwd: Path, timeout: int, shell: bool = False) -> tuple[bool, str]:
+    """Fuehrt den Build aus; (erfolgreich, Ausgabe). Ein Zeitlimit ist ein Fehlschlag."""
+    try:
+        r = subprocess.run(befehl, shell=shell, capture_output=True, text=True,
+                           cwd=cwd, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False, f"Zeitlimit von {timeout}s ueberschritten"
+    return r.returncode == 0, (r.stdout + r.stderr).strip()
 
 
 def _git(args: list[str], *, cwd: Path, capture: bool = True) -> subprocess.CompletedProcess:
@@ -79,6 +93,7 @@ class SpecFinalizer:
         no_commit: bool = False,
         branch: str | None = None,
         skip_container: bool = False,
+        build_cmd: str | None = None,
     ) -> FinalizeReport:
         effective_branch = branch or branch_name(spec_id, prefix=FINALIZE_BRANCH_PREFIX)
         root = self._cfg.root
@@ -138,6 +153,16 @@ class SpecFinalizer:
         extra_args = test_cfg.get("extra_args", [])
         timeout = test_cfg.get("timeout_per_spec", 120)
 
+        # Build-Kommando: Argument (--build-cmd) vor orchestrator.build_command.
+        # SPEC-0026 hatte den Build-Schritt aus dem Orchestrator entfernt, ohne ihn
+        # hier anzubinden — Option und Config-Schluessel wirkten seither nicht
+        # (#111). Er laeuft auf demselben Weg wie die Tests, unmittelbar davor.
+        if build_cmd is None:
+            build_cmd = str((self._cfg.raw.get("orchestrator") or {}).get("build_command") or "")
+        build_cmd = build_cmd.strip() or None
+        build_passed: bool | None = None
+        build_output = ""
+
         # Auto-detect project type when no command is configured
         if custom_cmd:
             test_cmd = custom_cmd
@@ -151,6 +176,12 @@ class SpecFinalizer:
 
         if compose_file:
             # Container-Stack muss bereits laufen
+            if build_cmd:
+                build_passed, build_output = _befehl_ausfuehren(
+                    build_cmd, cwd=root, timeout=timeout, shell=True)
+                if not build_passed:
+                    return self._build_fehlgeschlagen(
+                        spec_id, effective_branch, commit_hash, build_output)
             try:
                 test_result = subprocess.run(
                     [test_cmd] + test_args,
@@ -173,6 +204,16 @@ class SpecFinalizer:
                 raise RuntimeError(
                     f"✗ Dev-Container nicht gefunden – starte ihn mit 'sdd start {spec_id}'"
                 )
+
+            if build_cmd:
+                build_passed, build_output = _befehl_ausfuehren(
+                    [runtime.cli(), "exec", cname, "bash", "-c", f"cd /workspace && {build_cmd}"],
+                    cwd=root, timeout=timeout)
+                if not build_passed:
+                    # Der Container bleibt stehen — wie bei roten Tests, damit man
+                    # hineinschauen kann.
+                    return self._build_fehlgeschlagen(
+                        spec_id, effective_branch, commit_hash, build_output)
 
             inner_cmd = f"cd /workspace && {test_cmd} tests/ -x --tb=short " + " ".join(extra_args)
             test_result = subprocess.run(
@@ -213,6 +254,8 @@ class SpecFinalizer:
                     pr_url=None,
                     pr_path=None,
                     error=compliance_error,
+                    build_passed=build_passed,
+                    build_output=build_output,
                 )
             pr_url, pr_path, pr_error = self._create_pr(
                 spec_id, effective_branch, commit_hash)
@@ -231,6 +274,24 @@ class SpecFinalizer:
             pr_url=pr_url,
             pr_path=pr_path,
             error=error,
+            build_passed=build_passed,
+            build_output=build_output,
+        )
+
+    def _build_fehlgeschlagen(
+        self, spec_id: str, branch: str, commit_hash: str | None, ausgabe: str,
+    ) -> FinalizeReport:
+        return FinalizeReport(
+            spec_id=spec_id,
+            branch=branch,
+            commit_hash=commit_hash,
+            tests_passed=False,
+            test_output="",
+            pr_url=None,
+            pr_path=None,
+            error=f"Build fehlgeschlagen:\n{ausgabe[:1000]}",
+            build_passed=False,
+            build_output=ausgabe,
         )
 
     def _run_compliance_check(self, spec_id: str) -> str | None:

@@ -931,7 +931,8 @@ def holdout_run(base_url: str | None, hol_ids: tuple, save: bool, output_json: b
 @click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
               help="Basis-URL des Services für den Evaluator-Schritt.")
 @click.option("--build-cmd", default=None,
-              help="Build + Test-Kommando. Überschreibt orchestrator.build_command in config.yaml.")
+              help="Build-Kommando; läuft in der Finalisierung vor den Tests (im Dev-Container). "
+                   "Überschreibt orchestrator.build_command.")
 @click.option("--max-retries", default=3, show_default=True,
               help="Max. Versuche bei Fehlschlag.")
 @click.option("--no-pr", is_flag=True, help="PR-Erstellung überspringen.")
@@ -2323,7 +2324,8 @@ def _print_in_progress_section(cfg: object) -> None:
 @click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
               help="Basis-URL für den Evaluator-Schritt (nur mit --auto).")
 @click.option("--build-cmd", default=None,
-              help="Build-Kommando (nur mit --auto). Überschreibt orchestrator.build_command.")
+              help="Build-Kommando (nur mit --auto); läuft in der Finalisierung vor den Tests. "
+                   "Überschreibt orchestrator.build_command.")
 @click.option("--no-pr", is_flag=True, help="PR-Erstellung überspringen (nur mit --auto).")
 @click.option("--no-container", is_flag=True,
               help="Container nicht starten (z.B. in CI ohne Docker-Daemon).")
