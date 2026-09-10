@@ -35,16 +35,8 @@ class _FakeAsyncStream:
 
 
 class _FakeAsyncClient:
-    def __init__(self, tokens: list[str] = ("Hello",)) -> None:
-        self._tokens = tokens
-
-    class _Messages:
-        def __init__(self, tokens):
-            self._tokens = tokens
-
-        def stream(self, **kwargs):
-            return _FakeAsyncStream(self._tokens)
-
+    # Hier standen __init__ und _Messages doppelt hintereinander; wirksam war nur
+    # die zweite Fassung (ruff F811). Die erste ist entfernt — Verhalten gleich.
     def __init__(self, tokens: list[str] = ("Hello",)) -> None:
         self.messages = self._Messages(tokens)
         self._tokens = tokens

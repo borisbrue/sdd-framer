@@ -278,6 +278,16 @@ def run_pipeline(
     effective_build_cmd = build_cmd or orch_cfg.get("build_command", "")
     code_gen_timeout = int(orch_cfg.get("code_gen_timeout", 600))
 
+    # Den Build-Schritt hat SPEC-0026 (45b29e6) in die Container-Finalisierung
+    # verlegt; --build-cmd und orchestrator.build_command blieben stehen und
+    # wurden seither still ignoriert. Bis #111 entschieden ist, sagt der Lauf das.
+    if effective_build_cmd:
+        _step(
+            f"⚠ Build-Kommando '{effective_build_cmd}' wird nicht ausgefuehrt — "
+            "--build-cmd bzw. orchestrator.build_command haben seit SPEC-0026 "
+            "keine Wirkung (#111). Getestet wird in der Container-Finalisierung."
+        )
+
     # Track base branch so we can reset between attempts
     _, _base = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], config.root)
     base_branch = _base.strip() or "main"
@@ -467,7 +477,10 @@ def run_pipeline(
             _step(f"✓ Pipeline abgeschlossen — {report.final_status} · {spec_id} → implemented")
             break
 
-        error_context = eval_context or build_output
+        # Frueher `eval_context or build_output` — die Variable gibt es seit
+        # 45b29e6 nicht mehr (F821). Erreichbar ist diese Zeile nur nach einer
+        # nicht bestandenen Evaluation, die eval_context immer fuellt.
+        error_context = eval_context
         # cleanup happens at the top of the next attempt loop iteration
 
     # Ensure clean base branch state after all retries

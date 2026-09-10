@@ -794,7 +794,6 @@ def holdout_generate(spec_id: str) -> None:
     for cid in skipped_missing:
         console.print(f"[yellow]⚠[/] Contract {cid} nicht gefunden – übersprungen.")
 
-    existing_hols = get_existing_hol_ids_for_spec(spec_id, cfg)
     spec_content = (spec["_path"]).read_text(encoding="utf-8")
 
     provider = get_completion_provider(cfg, component="completion")
@@ -805,10 +804,6 @@ def holdout_generate(spec_id: str) -> None:
     for contract in contracts:
         cid = contract["id"]
 
-        existing_for_contract = {
-            hid for hid in existing_hols
-            if (cfg.holdout_dir / f"{hid}-*.md").exists()
-        }
         already_have = any(
             parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
             for p in cfg.holdout_dir.rglob("*.md")
@@ -2642,7 +2637,6 @@ def _print_estimate_table(results: list, cfg: "object") -> None:
 
     conf_color = {"LOW": "red", "MEDIUM": "yellow", "HIGH": "green"}
     total_usd = 0.0
-    budget_exceeded_total = False
 
     for r in results:
         total_usd += r.estimated_usd
@@ -3329,7 +3323,7 @@ def autonomy_level(project_id: str) -> None:
 def autonomy_set_level(project_id: str, level: float) -> None:
     cfg = _ensure_project()
     try:
-        project = set_autonomy_level(cfg, project_id, level)
+        set_autonomy_level(cfg, project_id, level)
     except ValueError as e:
         console.print(f"[red]✗[/] {e}")
         sys.exit(1)

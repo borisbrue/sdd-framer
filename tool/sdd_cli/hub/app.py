@@ -21,7 +21,9 @@ def create_app(
     event_bus: StatusEventBus | None = None,
     config: HubConfig | None = None,
 ) -> FastAPI:
-    cfg = config or HubConfig.load()
+    # `config` wird hier nicht gebraucht — den Port wendet der Aufrufer an
+    # (main.py: uvicorn mit cfg.port). Das fruehere `cfg = config or
+    # HubConfig.load()` las ~/.config/sdd/hub.yaml und verwarf das Ergebnis.
     reg = registry or ProjectRegistry()
     bus = event_bus or StatusEventBus()
     manager = ProcessManager(reg, bus)

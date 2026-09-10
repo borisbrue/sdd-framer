@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
 import pytest
+from starlette.websockets import WebSocketDisconnect
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -36,7 +37,7 @@ class TestTST0082:
         with _patched_bus(bus):
             app = _make_app(bus)
             client = TestClient(app)
-            with pytest.raises(Exception):
+            with pytest.raises(WebSocketDisconnect):
                 # Server should close before/after accept with invalid spec_id
                 with client.websocket_connect("/ws/logs/INVALID"):
                     pass
@@ -95,6 +96,6 @@ class TestTST0082:
         with _patched_bus(bus):
             app = _make_app(bus)
             client = TestClient(app)
-            with pytest.raises(Exception):
+            with pytest.raises(WebSocketDisconnect):
                 with client.websocket_connect("/ws/logs/SPEC-22"):
                     pass

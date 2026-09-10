@@ -41,7 +41,7 @@ def _find_sdd() -> str:
         if c.exists():
             return str(c)
     return "sdd"
-from sdd_context import get_config, get_log_streamer
+from sdd_context import get_config, get_log_event_bus, get_log_streamer
 from sdd_cli.frontmatter import parse_safe
 from sdd_cli.dev_container import container_name, get_runtime
 
@@ -464,9 +464,12 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
     if not base_url:
         return {"ok": False, "output": "Kein evaluator_base_url konfiguriert. Bitte in den Einstellungen setzen."}
 
+    # Der Aufruf lief frueher ueber einen Modulnamen, der hier nie importiert
+    # wurde. Das NameError verschluckte das except, bus blieb immer None, und
+    # dieser Trigger streamte nie Logs ins Web-UI. Gefunden von ruff (F821, #112).
     bus = None
     try:
-        bus = sdd_context.get_log_event_bus()
+        bus = get_log_event_bus()
     except Exception:
         pass
 
@@ -515,9 +518,12 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
 def trigger_implement(spec_id: str) -> dict[str, Any]:
     import threading
 
+    # Der Aufruf lief frueher ueber einen Modulnamen, der hier nie importiert
+    # wurde. Das NameError verschluckte das except, bus blieb immer None, und
+    # dieser Trigger streamte nie Logs ins Web-UI. Gefunden von ruff (F821, #112).
     bus = None
     try:
-        bus = sdd_context.get_log_event_bus()
+        bus = get_log_event_bus()
     except Exception:
         pass
 
