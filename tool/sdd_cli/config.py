@@ -1,6 +1,9 @@
 """Konfiguration und Pfad-Auflösung für ein SDD-Projekt."""
 from __future__ import annotations
 
+import copy
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 import yaml
@@ -9,12 +12,36 @@ import yaml
 SDD_DIR = ".sdd"
 CONFIG_FILE = "config.yaml"
 
+# Lokale Ergaenzung zu config.yaml, gitignored (#103). Ueberlagert die
+# versionierte Konfiguration Schluessel fuer Schluessel. Gedacht fuer das, was
+# nicht in die Versionierung gehoert — zuerst der PWA-Token, der die
+# Bearer-Credential fuer POST /api/remote/run ist.
+LOCAL_CONFIG_FILE = "config.local.yaml"
+
+_LOKAL_KOPF = (
+    "# Lokale Ergaenzung zu .sdd/config.yaml — NICHT versionieren.\n"
+    "# Ueberlagert config.yaml Schluessel fuer Schluessel. Hier stehen Werte,\n"
+    "# die nur auf diesem Rechner gelten, etwa pwa.auth.token.\n"
+)
+
 
 @dataclass
 class SddConfig:
-    """Geparste Projektkonfiguration."""
+    """Geparste Projektkonfiguration.
+
+    `raw` ist die wirksame Sicht: config.yaml, ueberlagert von
+    config.local.yaml. `raw_basis` ist nur der Inhalt der versionierten Datei.
+    Wer config.yaml zurueckschreibt, muss `basis` nehmen — sonst landen lokale
+    Werte in der Versionierung (#103).
+    """
     root: Path
     raw: dict
+    raw_basis: dict | None = None
+
+    @property
+    def basis(self) -> dict:
+        """Nur config.yaml, ohne lokale Ueberlagerung."""
+        return self.raw_basis if self.raw_basis is not None else self.raw
 
     @property
     def sdd_dir(self) -> Path:
@@ -158,5 +185,63 @@ def load_config(root: Path | None = None) -> SddConfig:
         )
     config_path = project_root / SDD_DIR / CONFIG_FILE
     with config_path.open("r", encoding="utf-8") as f:
-        raw = yaml.safe_load(f) or {}
-    return SddConfig(root=project_root, raw=raw)
+        basis = yaml.safe_load(f) or {}
+    wirksam = _deep_merge(basis, load_local(project_root))
+    return SddConfig(root=project_root, raw=wirksam, raw_basis=basis)
+
+
+def _deep_merge(basis: dict, ueber: dict) -> dict:
+    """Neues dict: `basis`, rekursiv ueberlagert von `ueber`. Listen ersetzen."""
+    ergebnis = copy.deepcopy(basis)
+    for schluessel, wert in (ueber or {}).items():
+        if isinstance(wert, dict) and isinstance(ergebnis.get(schluessel), dict):
+            ergebnis[schluessel] = _deep_merge(ergebnis[schluessel], wert)
+        else:
+            ergebnis[schluessel] = copy.deepcopy(wert)
+    return ergebnis
+
+
+def local_config_path(root: Path) -> Path:
+    return Path(root) / SDD_DIR / LOCAL_CONFIG_FILE
+
+
+def load_local(root: Path) -> dict:
+    """Inhalt von config.local.yaml, oder {} wenn es sie nicht gibt."""
+    pfad = local_config_path(root)
+    if not pfad.is_file():
+        return {}
+    daten = yaml.safe_load(pfad.read_text(encoding="utf-8")) or {}
+    return daten if isinstance(daten, dict) else {}
+
+
+def set_local(root: Path, schluessel: str, wert: object) -> Path:
+    """Setzt einen Wert in config.local.yaml, z.B. `pwa.auth.token`.
+
+    Atomar (temporaere Datei + rename) und mit Rechten 0600 — die Datei ist fuer
+    Geheimnisse da. Andere Schluessel der Datei bleiben erhalten.
+    """
+    pfad = local_config_path(root)
+    pfad.parent.mkdir(parents=True, exist_ok=True)
+    daten = load_local(root)
+    knoten = daten
+    teile = schluessel.split(".")
+    for teil in teile[:-1]:
+        if not isinstance(knoten.get(teil), dict):
+            knoten[teil] = {}
+        knoten = knoten[teil]
+    knoten[teile[-1]] = wert
+
+    fd, tmp = tempfile.mkstemp(dir=str(pfad.parent), suffix=".tmp")
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(_LOKAL_KOPF)
+            yaml.dump(daten, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
+        os.replace(tmp, pfad)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+    return pfad

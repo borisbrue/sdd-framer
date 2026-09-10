@@ -43,7 +43,7 @@ class TestTST0098:
         old = "0" * 64
         ctx = _mock_ctx(token=old)
         with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 response = client.post(
                     "/auth/rotate-token",
@@ -68,26 +68,29 @@ class TestTST0098:
             response = client.get("/auth/qr-payload")
         assert HEX64.match(response.json()["token"])
 
-    # CON-0088: rotate-token config.yaml update preserves project.name
-    def test_rotate_token_preserves_project_name(self) -> None:
+    # CON-0088 / CON-0086 v0.2.0: rotate-token schreibt genau einen neuen Token
+    # und nichts sonst. Frueher schrieb die Rotation die ganze config.yaml neu,
+    # und der Test pruefte, dass project.name das ueberlebte. Seit #103 geht
+    # der Token nach .sdd/config.local.yaml — config.yaml wird gar nicht mehr
+    # angefasst (siehe test_lokale_config.py::TestTokenEndpunkte).
+    def test_rotate_token_schreibt_genau_den_neuen_token(self) -> None:
         old = "c" * 64
-        written_raw: list[dict] = []
+        geschrieben: list[str] = []
 
-        def capture_write(path, raw):
-            written_raw.append(raw)
+        def capture(config, token):
+            geschrieben.append(token)
 
         ctx = _mock_ctx(token=old, name="My Project")
         with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._write_config_atomic", side_effect=capture_write):
+            with patch("routes.auth._store_token", side_effect=capture):
                 client = TestClient(_make_app())
-                client.post(
+                response = client.post(
                     "/auth/rotate-token",
                     headers={"Authorization": f"Bearer {old}"},
                 )
-        assert len(written_raw) == 1
-        # pwa.auth.token was written
-        assert "pwa" in written_raw[0]
-        assert "token" in written_raw[0]["pwa"]["auth"]
+        assert len(geschrieben) == 1
+        assert geschrieben[0] == response.json()["token"]
+        assert HEX64.match(geschrieben[0])
 
     # CON-0088: successive rotations each produce unique tokens
     def test_successive_rotations_produce_unique_tokens(self) -> None:
@@ -98,7 +101,7 @@ class TestTST0098:
         ctx.blacklist_token.side_effect = blacklist.add
 
         with patch("routes.auth.sdd_context", ctx):
-            with patch("routes.auth._write_config_atomic"):
+            with patch("routes.auth._store_token"):
                 client = TestClient(_make_app())
                 r1 = client.post(
                     "/auth/rotate-token",

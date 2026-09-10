@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 import shutil
 import subprocess
 import sys
@@ -161,7 +163,10 @@ def patch_config_fields(body: ConfigPatch) -> dict[str, Any]:
     import yaml
     cfg = get_config()
     config_file = cfg.root / ".sdd" / "config.yaml"
-    data: dict = dict(cfg.raw)
+    # cfg.basis, nicht cfg.raw: raw enthaelt die lokale Ueberlagerung aus
+    # config.local.yaml. Zurueckgeschrieben landete sie in der versionierten
+    # Datei — mit ihr der PWA-Token (#103).
+    data: dict = copy.deepcopy(cfg.basis)
 
     if body.title is not None:
         data["title"] = body.title

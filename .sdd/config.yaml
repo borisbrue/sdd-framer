@@ -168,7 +168,9 @@ docker:
     max_lines: 500
 pwa:
   auth:
-    token: 1dcc9db3d45429d5606a6dfbc53c2cc0db8f3454f62008e016f21a358f94395d
+    # Leer: der Token steht in .sdd/config.local.yaml (gitignored) und
+    # ueberlagert diesen Wert (#103). Neu erzeugen: POST /api/auth/generate-token.
+    token: ''
 title: SDD Framer
 hub:
   port: 8100

@@ -57,7 +57,7 @@ class TestTST0099:
         # Each rotation uses a fresh mock so token always matches
         for _ in range(samples):
             with patch("routes.auth.sdd_context", _mock_ctx(token=token)):
-                with patch("routes.auth._write_config_atomic"):
+                with patch("routes.auth._store_token"):
                     client = TestClient(_make_app())
                     t0 = time.monotonic()
                     client.post(

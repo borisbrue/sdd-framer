@@ -22,3 +22,6 @@ node_modules/
 
 # Wheel-Dateien
 *.whl
+
+# Lokale Ergaenzung zur SDD-Konfiguration — Geheimnisse, rechnerspezifisch (#103)
+.sdd/config.local.yaml

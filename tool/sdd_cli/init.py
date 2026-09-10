@@ -229,6 +229,25 @@ def write_autonomous_local(target: Path) -> None:
         gitignore.write_text(existing + prefix + ".claude/settings.local.json\n", encoding="utf-8")
 
 
+def ignore_local_config(target: Path) -> bool:
+    """Traegt .sdd/config.local.yaml in die .gitignore des Projekts ein.
+
+    Die Datei nimmt auf, was nicht in die Versionierung gehoert — zuerst den
+    PWA-Token (#103). Ohne den Eintrag waere sie beim ersten `git add -A`
+    genau dort, wo sie nicht hin soll. Anders als settings.local.json gilt das
+    fuer jedes Projekt, nicht nur im autonomen Modus.
+
+    Gibt True zurueck, wenn der Eintrag neu hinzukam.
+    """
+    gitignore = target / ".gitignore"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if ".sdd/config.local.yaml" in existing:
+        return False
+    prefix = "" if (not existing or existing.endswith("\n")) else "\n"
+    gitignore.write_text(existing + prefix + ".sdd/config.local.yaml\n", encoding="utf-8")
+    return True
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Projekt-Initialisierung
 # ─────────────────────────────────────────────────────────────────────────────
@@ -309,6 +328,8 @@ def init_project(
             if name.endswith(".sh"):
                 dst_file.chmod(0o755)
             created.append(dst_file)
+
+    ignore_local_config(target)
 
     # AGENTS.md im Projekt-Root anlegen.
     #
