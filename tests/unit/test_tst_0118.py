@@ -81,14 +81,6 @@ class TestTST0118:
         rt.remove(name)
         assert not rt.exists(name)
 
-    def test_name_collision_raises(self):
-        rt = MockContainerRuntime()
-        name = "sdd-spec-0026-dup"
-        rt.create(name, [_task()])
-        with pytest.raises(Exception):
-            if rt.exists(name):
-                raise RuntimeError(f"Container {name} existiert bereits")
-
     def test_task_status_after_container_assignment(self):
         t = _task()
         lc = TaskLifecycle(t)

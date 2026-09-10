@@ -49,7 +49,10 @@ class ProcessManager:
         return proc
 
     def stop(self, project_id: str) -> None:
-        entry = self._registry.get(project_id)
+        # Nicht entfernen: get() wirft ProjectNotFoundError fuer unbekannte IDs.
+        # ruff meldete die Zuweisung als unbenutzt (F841) — der Aufruf ist die
+        # Pruefung, nur der Name war ueberfluessig.
+        self._registry.get(project_id)
         proc = self._processes.get(project_id)
         if proc is None or proc.poll() is not None:
             from fastapi import HTTPException

@@ -305,7 +305,6 @@ class TestGenerator:
         title = contract.get("title", "")
         spec = contract.get("spec", "")
         fmt = contract.get("format", "markdown")
-        con_id_lower = con_id.lower()
 
         header = (
             f"# AUTO-GENERATED from {con_id} via sdd test generate — do not delete\n"
