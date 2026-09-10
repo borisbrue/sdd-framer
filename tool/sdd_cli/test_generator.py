@@ -16,6 +16,22 @@ class GenerationResult:
     syntax_errors: list[str] = field(default_factory=list)
 
 
+@dataclass
+class WriteOutcome:
+    """Was mit der Zieldatei tatsaechlich geschah.
+
+    Vorher meldete jeder Lauf pauschal Erfolg mit der Testzahl der *Vorlage*.
+    Eine Datei mit 27 Tests, die auf 22 Stubs zusammengestrichen wurde, kam als
+    "(22 Tests)" durch — das einzige Warnsignal war eine Zahl, die niemand mit
+    dem Dateiinhalt verglich.
+    """
+
+    status: str            # created | extended | unchanged | overwritten | unparsable
+    test_count: int = 0    # Tests in der Datei DANACH, nicht in der Vorlage
+    stubs_added: int = 0
+    backup: Path | None = None
+
+
 _SLUGIFY_RE = re.compile(r"[^a-z0-9]+")
 
 # Platzhalter, wie ihn `sdd new test` in artifact: schreibt – kein echter Pfad.
@@ -73,38 +89,84 @@ def _extract_scenarios(feature_text: str) -> list[str]:
     return titles
 
 
-def _extract_manual_functions(existing: str, generated: str) -> str:
-    """Return function bodies present in `existing` but not in `generated`."""
-    def _func_names(src: str) -> set[str]:
-        names = set()
-        for line in src.splitlines():
-            m = re.match(r"^def (test_\w+)\(", line)
-            if m:
-                names.add(m.group(1))
-        return names
+def _test_funktionen(src: str) -> dict[str, tuple[int, int]]:
+    """Name -> (erste Zeile inkl. Dekoratoren, letzte Zeile), 1-basiert.
 
-    gen_names = _func_names(generated)
-    ex_names = _func_names(existing)
-    manual_names = ex_names - gen_names
-    if not manual_names:
-        return ""
+    Der Vorgaenger suchte Zeilen nach dem Muster `^def (test_\\w+)\\(` und sammelte
+    danach alles ein, was mit Leerzeichen beginnt. Daraus folgte der Datenverlust
+    aus #92:
 
-    # Extract each manual function body
-    blocks = []
-    lines = existing.splitlines(keepends=True)
-    i = 0
-    while i < len(lines):
-        m = re.match(r"^def (test_\w+)\(", lines[i])
-        if m and m.group(1) in manual_names:
-            block = [lines[i]]
-            i += 1
-            while i < len(lines) and (lines[i].startswith(" ") or lines[i].strip() == ""):
-                block.append(lines[i])
-                i += 1
-            blocks.append("".join(block).rstrip())
-        else:
-            i += 1
-    return "\n\n".join(blocks)
+    - `@pytest.mark.parametrize` steht VOR `def` und lag damit ausserhalb des
+      Blocks — der Dekorator ging verloren, die Funktion behielt ihre Parameter.
+    - Bei mehrzeiliger Signatur steht die schliessende `):` in Spalte 0. Die
+      Sammlung brach dort ab, der Koerper fehlte, uebrig blieb ein Syntaxfehler.
+
+    ast kennt beides: `decorator_list` gehoert zur Funktion, und wo sie endet,
+    entscheidet der Parser statt der Einrueckung.
+    """
+    try:
+        baum = ast.parse(src)
+    except SyntaxError:
+        return {}
+    treffer: dict[str, tuple[int, int]] = {}
+    for knoten in baum.body:
+        if not isinstance(knoten, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if not knoten.name.startswith("test_"):
+            continue
+        start = min([knoten.lineno] + [d.lineno for d in knoten.decorator_list])
+        treffer[knoten.name] = (start, knoten.end_lineno or knoten.lineno)
+    return treffer
+
+
+def _block(src: str, spanne: tuple[int, int]) -> str:
+    zeilen = src.splitlines()
+    return "\n".join(zeilen[spanne[0] - 1 : spanne[1]]).rstrip()
+
+
+def _hat_pytest_import(baum: ast.Module) -> bool:
+    for knoten in ast.walk(baum):
+        if isinstance(knoten, ast.Import):
+            if any(a.name.split(".")[0] == "pytest" for a in knoten.names):
+                return True
+        elif isinstance(knoten, ast.ImportFrom):
+            if (knoten.module or "").split(".")[0] == "pytest":
+                return True
+    return False
+
+
+def _mit_pytest_import(text: str) -> str:
+    """Ergaenzt `import pytest`, falls die Datei ihn nicht hat.
+
+    Die angehaengten Ruempfe rufen `pytest.skip`. Ohne den Import waere das ein
+    NameError zur Laufzeit — ein Fehler, den der Generator selbst eintraegt.
+    Eingefuegt wird nach dem letzten Import auf Modulebene, sonst nach dem
+    Docstring, sonst ganz oben.
+    """
+    try:
+        baum = ast.parse(text)
+    except SyntaxError:
+        return text
+    if _hat_pytest_import(baum):
+        return text
+
+    nach = 0
+    for knoten in baum.body:
+        if isinstance(knoten, (ast.Import, ast.ImportFrom)):
+            nach = knoten.end_lineno or knoten.lineno
+        elif (
+            nach == 0
+            and isinstance(knoten, ast.Expr)
+            and isinstance(knoten.value, ast.Constant)
+            and isinstance(knoten.value.value, str)
+        ):
+            nach = knoten.end_lineno or knoten.lineno
+        elif nach:
+            break
+
+    zeilen = text.splitlines()
+    zeilen.insert(nach, "import pytest  # von sdd test generate ergaenzt")
+    return "\n".join(zeilen) + ("\n" if text.endswith("\n") else "")
 
 
 class TestGenerator:
@@ -288,20 +350,70 @@ class TestGenerator:
         return (self.repo_root / "tests" / _FORMAT_DIR.get(fmt, "contract")
                 / f"test_{_module_name(con_id)}.py")
 
-    # ── File writing with manual-addition preservation ────────────────────────
+    # ── Schreiben ohne Verlust ────────────────────────────────────────────────
+    #
+    # Die Richtung war verkehrt herum: gebaut wurde die Vorlage, und aus der
+    # vorhandenen Datei wurden Bruchstuecke hineingerettet. Alles, was kein
+    # `def test_`-Block war — Docstring, Importe, Fixtures, Konstanten,
+    # Hilfsklassen — hatte in der Vorlage keinen Platz und verschwand.
+    #
+    # Jetzt bleibt die Datei die Grundlage. Ergaenzt wird nur, was der Contract
+    # verlangt und die Datei nicht hat. CON-0028 INV-05 und INV-07 verlangen
+    # genau das; erfuellt war es nicht.
 
-    def _write_with_preservation(self, out_path: Path, new_content: str) -> None:
-        if out_path.exists():
-            existing = out_path.read_text(encoding="utf-8")
-            manual = _extract_manual_functions(existing, new_content)
-            if manual:
-                new_content = new_content.rstrip() + "\n\n\n" + manual + "\n"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(new_content, encoding="utf-8")
+    def _write_with_preservation(
+        self, out_path: Path, new_content: str, force: bool = False
+    ) -> WriteOutcome:
+        if not out_path.exists():
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(new_content, encoding="utf-8")
+            return WriteOutcome(
+                "created",
+                test_count=len(_test_funktionen(new_content)),
+                stubs_added=len(_test_funktionen(new_content)),
+            )
+
+        existing = out_path.read_text(encoding="utf-8")
+
+        if force:
+            backup = out_path.with_suffix(out_path.suffix + ".bak")
+            backup.write_text(existing, encoding="utf-8")
+            out_path.write_text(new_content, encoding="utf-8")
+            return WriteOutcome(
+                "overwritten",
+                test_count=len(_test_funktionen(new_content)),
+                backup=backup,
+            )
+
+        try:
+            ast.parse(existing)
+        except SyntaxError:
+            # Nicht auswertbar heisst nicht ueberschreibbar. Wer hier schreibt,
+            # zerstoert eine Datei, die er nicht gelesen hat.
+            return WriteOutcome("unparsable")
+
+        vorhanden = _test_funktionen(existing)
+        erzeugt = _test_funktionen(new_content)
+        fehlend = [name for name in erzeugt if name not in vorhanden]
+
+        if not fehlend:
+            return WriteOutcome("unchanged", test_count=len(vorhanden))
+
+        bloecke = [_block(new_content, erzeugt[name]) for name in fehlend]
+        ergaenzt = _mit_pytest_import(existing).rstrip("\n")
+        ergaenzt += "\n\n\n" + "\n\n\n".join(bloecke) + "\n"
+        out_path.write_text(ergaenzt, encoding="utf-8")
+        return WriteOutcome(
+            "extended",
+            test_count=len(vorhanden) + len(fehlend),
+            stubs_added=len(fehlend),
+        )
 
     # ── Main entry point ──────────────────────────────────────────────────────
 
-    def generate(self, spec_id: str, contracts: list[str]) -> GenerationResult:
+    def generate(
+        self, spec_id: str, contracts: list[str], force: bool = False
+    ) -> GenerationResult:
         result = GenerationResult()
         for con_id in contracts:
             contract = self._find_contract(con_id)
@@ -328,15 +440,24 @@ class TestGenerator:
                 out_path.write_text(content, encoding="utf-8")
                 continue
 
-            self._write_with_preservation(out_path, content)
+            outcome = self._write_with_preservation(out_path, content, force=force)
 
-            test_count = sum(
-                1 for line in content.splitlines() if line.startswith("def test_")
-            )
+            if outcome.status == "unparsable":
+                result.success = False
+                result.syntax_errors.append(
+                    f"{out_path.relative_to(self.repo_root)}: vorhandene Datei ist "
+                    f"nicht auswertbar — nicht angetastet. Repariere sie oder nutze "
+                    f"--force (sichert nach .bak)."
+                )
+
             result.generated_files.append({
                 "contract_id": con_id,
                 "path": str(out_path.relative_to(self.repo_root)),
-                "test_count": test_count,
+                "test_count": outcome.test_count,
+                "status": outcome.status,
+                "stubs_added": outcome.stubs_added,
+                "backup": str(outcome.backup.relative_to(self.repo_root))
+                if outcome.backup else None,
             })
 
         return result

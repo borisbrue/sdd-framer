@@ -1921,7 +1921,9 @@ def test_group() -> None:
 @test_group.command("generate", help="Generiert Contract-Tests aus Contract-Definitionen.")
 @click.argument("spec_id")
 @click.argument("contract_ids", nargs=-1, required=True)
-def test_generate(spec_id: str, contract_ids: tuple) -> None:
+@click.option("--force", is_flag=True,
+              help="Vorhandene Testdateien neu schreiben. Sichert vorher nach <datei>.bak.")
+def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
     cfg = _ensure_project()
     from .gate import ExecutionGate
     from .test_generator import TestGenerator
@@ -1933,13 +1935,37 @@ def test_generate(spec_id: str, contract_ids: tuple) -> None:
     g.mark_phase_started(spec_id, "tests-generated")
 
     gen = TestGenerator(cfg.root)
-    result = gen.generate(spec_id, list(contract_ids))
+    result = gen.generate(spec_id, list(contract_ids), force=force)
 
+    # Die Ausgabe meldete pauschal Erfolg mit der Testzahl der Vorlage. Eine
+    # Datei mit 27 Tests, die auf 22 Ruempfe zusammengestrichen wurde, kam als
+    # "(22 Tests)" durch. Jetzt sagt jede Zeile, was mit der Datei geschah, und
+    # die Zahl zaehlt die Datei.
     for f in result.generated_files:
-        console.print(
-            f"[green]✓[/] {f['contract_id']}: "
-            f"[bold]{f['path']}[/] ({f['test_count']} Tests)"
-        )
+        pfad = f"[bold]{f['path']}[/]"
+        anzahl = f"{f['test_count']} Tests"
+        status = f.get("status", "created")
+        if status == "created":
+            console.print(f"[green]✓[/] {f['contract_id']}: {pfad} ({anzahl} erzeugt)")
+        elif status == "extended":
+            console.print(
+                f"[green]✓[/] {f['contract_id']}: {pfad} "
+                f"(+{f['stubs_added']} Ruempfe ergaenzt, jetzt {anzahl})"
+            )
+        elif status == "unchanged":
+            console.print(
+                f"[cyan]=[/] {f['contract_id']}: {pfad} "
+                f"(unveraendert, {anzahl} — jeder Testfall des Contracts ist da)"
+            )
+        elif status == "overwritten":
+            console.print(
+                f"[yellow]![/] {f['contract_id']}: {pfad} neu geschrieben "
+                f"({anzahl}) · Sicherung: [dim]{f['backup']}[/]"
+            )
+        else:  # unparsable
+            console.print(
+                f"[red]✗[/] {f['contract_id']}: {pfad} nicht auswertbar — nicht angetastet"
+            )
 
     if result.syntax_errors:
         for err in result.syntax_errors:
