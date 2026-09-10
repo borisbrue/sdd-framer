@@ -1,4 +1,4 @@
-"""TST-0190 – sdd evaluate JSON-Output: tier_summary Schema (Contract)
+"""TST-0190 – sdd holdout run JSON-Output: tier_summary Schema (Contract)
 Spec: SPEC-0042 · Contract: CON-0162
 """
 import json
@@ -23,13 +23,13 @@ def _make_scenario(hol_id: str, priority: str, passed: bool) -> ScenarioResult:
 
 
 def _invoke_json(report: EvaluationReport, mock_cfg: MagicMock) -> dict:
-    """Invoke sdd evaluate --json, extract and parse the JSON from output."""
+    """Invoke sdd holdout run --json, extract and parse the JSON from output."""
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg), \
          patch("sdd_cli.main.run_evaluation", return_value=report), \
          patch("sdd_cli.main.persist_report", return_value=None):
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://x", "--json", "--no-save"
+            "holdout", "run", "--base-url", "http://x", "--json", "--no-save"
         ])
     assert "{" in result.output, f"Kein JSON in Output: {result.output!r}"
     return json.loads(result.output[result.output.index("{"):])

@@ -1,4 +1,4 @@
-"""TST-0189 – sdd evaluate --tier CLI-Flags und Exit-Codes (Contract)
+"""TST-0189 – sdd holdout run --tier CLI-Flags und Exit-Codes (Contract)
 Spec: SPEC-0042 · Contract: CON-0161
 """
 import textwrap
@@ -65,7 +65,7 @@ def test_tier_critical_flag_accepted(mock_cfg):
             timestamp="2026-01-01T00:00:00Z", base_url="http://localhost:9999"
         )
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://localhost:9999", "--tier", "critical"
+            "holdout", "run", "--base-url", "http://localhost:9999", "--tier", "critical"
         ])
     assert result.exit_code != 2, f"UsageError: {result.output}"
 
@@ -80,7 +80,7 @@ def test_tier_normal_flag_accepted(mock_cfg):
             timestamp="2026-01-01T00:00:00Z", base_url="http://localhost:9999"
         )
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://localhost:9999", "--tier", "normal"
+            "holdout", "run", "--base-url", "http://localhost:9999", "--tier", "normal"
         ])
     assert result.exit_code != 2, f"UsageError: {result.output}"
 
@@ -95,7 +95,7 @@ def test_tier_edge_case_flag_accepted(mock_cfg):
             timestamp="2026-01-01T00:00:00Z", base_url="http://localhost:9999"
         )
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://localhost:9999", "--tier", "edge-case"
+            "holdout", "run", "--base-url", "http://localhost:9999", "--tier", "edge-case"
         ])
     assert result.exit_code != 2, f"UsageError: {result.output}"
 
@@ -108,7 +108,7 @@ def test_tier_no_matches_exits_zero(mock_cfg):
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://localhost:9999",
+            "holdout", "run", "--base-url", "http://localhost:9999",
             "--tier", "critical", "--spec", "SPEC-TEST"
         ])
     assert result.exit_code == 0
@@ -127,7 +127,7 @@ def test_tier_and_hol_ids_hol_takes_precedence(mock_cfg):
             timestamp="2026-01-01T00:00:00Z", base_url="http://localhost:9999"
         )
         result = runner.invoke(cli, [
-            "evaluate", "--base-url", "http://localhost:9999",
+            "holdout", "run", "--base-url", "http://localhost:9999",
             "--tier", "critical", "--hol", "HOL-0001"
         ])
     assert result.exit_code != 2
@@ -140,5 +140,5 @@ def test_smoke_flag_accepted(mock_cfg):
     """--smoke ist ein gültiges Flag und erfordert kein --base-url."""
     runner = CliRunner()
     with patch("sdd_cli.main._ensure_project", return_value=mock_cfg):
-        result = runner.invoke(cli, ["evaluate", "--smoke"])
+        result = runner.invoke(cli, ["holdout", "run", "--smoke"])
     assert result.exit_code != 2, f"UsageError: {result.output}"

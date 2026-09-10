@@ -296,11 +296,19 @@ class TestReviewContract:
         )
         return provider
 
-    def test_approved_verdict_creates_tst_with_generated_by(self, cfg, sdd_project):
-        """TC-01: approved-Antwort → TST-Datei mit generated_by: llm."""
-        self._make_contract(sdd_project, "CON-9901")
+    def test_approved_verdict_setzt_status_ohne_tst_datei(self, cfg, sdd_project):
+        """TC-01: approved-Antwort → Status approved, KEINE TST-Datei.
+
+        Der Test erwartete frueher eine erzeugte TST-Datei und ein Feld
+        `result.tst_path`. SPEC-0044 FR-07 / CON-0170 hat das Anlegen aus
+        `review_contract` herausgenommen — die Verantwortung liegt bei
+        `sdd test generate`. Die Zusage steht so im Docstring der Funktion;
+        geprueft hat sie niemand (#102).
+        """
+        contract_path = self._make_contract(sdd_project, "CON-9901")
         (sdd_project / ".sdd" / "specs").mkdir(parents=True, exist_ok=True)
         _write_spec(sdd_project / ".sdd" / "specs" / "SPEC-0001-test.md", "SPEC-0001", "draft")
+        vorher = set((sdd_project / ".sdd").rglob("TST-*.md"))
 
         with patch(
             "sdd_cli.llm.factory.get_completion_provider",
@@ -308,11 +316,12 @@ class TestReviewContract:
         ):
             result = review_contract(cfg, "CON-9901")
 
-        assert result.tst_path.exists()
-        content = result.tst_path.read_text(encoding="utf-8")
-        assert "generated_by: llm" in content
-        assert "status: draft" in content
         assert result.llm_verdict == "approved"
+        assert not hasattr(result, "tst_path"), (
+            "review_contract legt wieder TST-Dateien an — das gehoert zu sdd test generate"
+        )
+        assert set((sdd_project / ".sdd").rglob("TST-*.md")) == vorher
+        assert "status: approved" in contract_path.read_text(encoding="utf-8")
 
     def test_needs_revision_appends_review_notes_to_contract(self, cfg, sdd_project):
         """TC-02: needs_revision → LLM Review Notes an Contract angehängt."""
@@ -327,9 +336,27 @@ class TestReviewContract:
 
         assert "## LLM Review Notes" in contract_path.read_text(encoding="utf-8")
 
-    def test_contract_linked_with_tst_id(self, cfg, sdd_project):
-        """TC-03: Contract-Datei enthält die neue TST-ID."""
-        contract_path = self._make_contract(sdd_project, "CON-9903")
+    def test_needs_revision_laesst_den_status_stehen(self, cfg, sdd_project):
+        """Die Gegenprobe zu #104: nur ein positives Verdikt setzt approved."""
+        contract_path = self._make_contract(sdd_project, "CON-9905")
+        _write_spec(sdd_project / ".sdd" / "specs" / "SPEC-0001-test.md", "SPEC-0001", "draft")
+
+        with patch(
+            "sdd_cli.llm.factory.get_completion_provider",
+            return_value=self._mock_provider(self._LLM_REVISION),
+        ):
+            review_contract(cfg, "CON-9905")
+
+        assert "status: review" in contract_path.read_text(encoding="utf-8")
+
+    def test_ergebnis_traegt_nur_verdict_und_notes(self, cfg, sdd_project):
+        """TC-03: ContractReviewResult hat kein tst_id mehr.
+
+        Frueher trug der Contract nach dem Review eine frisch erzeugte TST-ID.
+        Seit SPEC-0044 FR-07 entsteht sie erst in `sdd test generate`; das Feld
+        gibt es nicht mehr, und der Test lief in einen AttributeError.
+        """
+        self._make_contract(sdd_project, "CON-9903")
         _write_spec(sdd_project / ".sdd" / "specs" / "SPEC-0001-test.md", "SPEC-0001", "draft")
 
         with patch(
@@ -338,8 +365,9 @@ class TestReviewContract:
         ):
             result = review_contract(cfg, "CON-9903")
 
-        contract_content = contract_path.read_text(encoding="utf-8")
-        assert result.tst_id in contract_content
+        assert not hasattr(result, "tst_id")
+        assert result.llm_verdict == "approved"
+        assert isinstance(result.notes, str)
 
     def test_llm_error_propagates_without_file(self, cfg, sdd_project):
         """TC-04: LLM RuntimeError → kein TST geschrieben."""

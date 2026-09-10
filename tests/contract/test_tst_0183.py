@@ -1,4 +1,4 @@
-"""TST-0183 – CLI-Verhalten von sdd generate-holdouts (CON-0157, SPEC-0033)."""
+"""TST-0183 – CLI-Verhalten von sdd holdout generate (CON-0157, SPEC-0033)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -58,14 +58,14 @@ class TestTST0183:
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
         with patch("sdd_cli.generate_holdouts.generate_holdout_scenarios", side_effect=_fake_generate):
-            result = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"], catch_exceptions=False)
+            result = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"], catch_exceptions=False)
         assert result.exit_code == 0, result.output
 
     def test_happy_path_output_contains_hol_ids(self, sdd_project: Path, monkeypatch) -> None:
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
         with patch("sdd_cli.generate_holdouts.generate_holdout_scenarios", side_effect=_fake_generate):
-            result = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"])
+            result = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"])
         assert "HOL-" in result.output
         assert "angelegt" in result.output
 
@@ -76,7 +76,7 @@ class TestTST0183:
         )
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"])
+        result = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"])
         assert result.exit_code == 1
         assert "approved oder in-progress" in result.output
 
@@ -87,13 +87,13 @@ class TestTST0183:
         )
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"])
+        result = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"])
         assert result.exit_code == 1
         assert "Keine Contracts gefunden" in result.output
 
     def test_unknown_spec_exits_with_code_one(self, sdd_project: Path, monkeypatch) -> None:
         monkeypatch.chdir(sdd_project)
         runner = CliRunner()
-        result = runner.invoke(cli, ["generate-holdouts", "SPEC-9999"])
+        result = runner.invoke(cli, ["holdout", "generate", "SPEC-9999"])
         assert result.exit_code == 1
         assert "SPEC-9999 nicht gefunden" in result.output
