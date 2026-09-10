@@ -47,7 +47,7 @@ SCENARIO = {
     "description": "Der Nutzer ruft den Befehl auf.",
     "setup": None,
     "test": {
-        "action": {"command": "sdd", "args": ["generate-holdouts", "SPEC-0033"]},
+        "action": {"command": "sdd", "args": ["holdout", "generate", "SPEC-0033"]},
         "assert": {"exit_code": 0, "stdout_contains": ["HOL-"]},
     },
     "teardown": None,
@@ -98,7 +98,7 @@ class TestTST0184:
         runner = CliRunner()
 
         with patch("sdd_cli.generate_holdouts.generate_holdout_scenarios", side_effect=_fake_generate):
-            result1 = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"])
+            result1 = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"])
         assert result1.exit_code == 0
 
         hol_files_after_first = list((sdd_project / ".sdd" / "holdout").rglob("*.md"))
@@ -106,7 +106,7 @@ class TestTST0184:
         assert count_after_first >= 2
 
         with patch("sdd_cli.generate_holdouts.generate_holdout_scenarios", side_effect=_fake_generate):
-            result2 = runner.invoke(cli, ["generate-holdouts", "SPEC-0033"])
+            result2 = runner.invoke(cli, ["holdout", "generate", "SPEC-0033"])
         assert result2.exit_code == 0
         assert "übersprungen" in result2.output
 

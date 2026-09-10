@@ -136,7 +136,9 @@ class TestNewAdr:
         monkeypatch.chdir(project)
         result = runner.invoke(cli, ["new", "adr", "Use Postgres"])
         assert result.exit_code == 0
-        adrs = list((project / ".sdd" / "docs" / "adr").glob("*.md"))
+        # Zielort ist adr.output_dir, Default `docs/adr` im Projekt-Root —
+        # so nennt es auch SPEC-0009 FR-01. Der Test erwartete .sdd/docs/adr.
+        adrs = list((project / "docs" / "adr").glob("*.md"))
         assert len(adrs) == 1
 
     def test_new_adr_output_contains_id(self, runner, project, monkeypatch):
@@ -196,7 +198,7 @@ class TestTrace:
         assert "Traceability-Matrix" in result.output
 
 
-# ─── sdd set-level ────────────────────────────────────────────────────────────
+# ─── sdd autonomy set-level (frueher: sdd set-level) ──────────────────────────
 
 class TestSetLevel:
     def _create_test_project(self, cfg_root: Path) -> None:
@@ -209,7 +211,7 @@ class TestSetLevel:
         from sdd_cli.config import SddConfig
         cfg = SddConfig(root=project, raw={})
         p = create_project(cfg, name="My Project")
-        result = runner.invoke(cli, ["set-level", p.id, "2"])
+        result = runner.invoke(cli, ["autonomy", "set-level", p.id, "2"])
         assert result.exit_code == 0
         assert p.id in result.output
 
@@ -218,16 +220,16 @@ class TestSetLevel:
         from sdd_cli.config import SddConfig
         cfg = SddConfig(root=project, raw={})
         p = create_project(cfg, name="My Project")
-        result = runner.invoke(cli, ["set-level", p.id, "99"])
+        result = runner.invoke(cli, ["autonomy", "set-level", p.id, "99"])
         assert result.exit_code != 0
 
     def test_set_level_unknown_project_exits_nonzero(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        result = runner.invoke(cli, ["set-level", "PRJ-9999", "2"])
+        result = runner.invoke(cli, ["autonomy", "set-level", "PRJ-9999", "2"])
         assert result.exit_code != 0
 
 
-# ─── sdd level ────────────────────────────────────────────────────────────────
+# ─── sdd autonomy level (frueher: sdd level) ──────────────────────────────────
 
 class TestLevelCmd:
     def test_level_shows_criteria_table(self, runner, project, monkeypatch):
@@ -235,62 +237,66 @@ class TestLevelCmd:
         from sdd_cli.config import SddConfig
         cfg = SddConfig(root=project, raw={})
         p = create_project(cfg, name="My Project")
-        result = runner.invoke(cli, ["level", p.id])
+        result = runner.invoke(cli, ["autonomy", "level", p.id])
         assert result.exit_code == 0
         assert "Level-Kriterien" in result.output
 
     def test_level_unknown_project_exits_nonzero(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        result = runner.invoke(cli, ["level", "PRJ-9999"])
+        result = runner.invoke(cli, ["autonomy", "level", "PRJ-9999"])
         assert result.exit_code != 0
 
 
-# ─── sdd mark-false-positive ──────────────────────────────────────────────────
+# ─── sdd autonomy false-positive (frueher: sdd mark-false-positive) ───────────
 
 class TestMarkFalsePositive:
     def test_mark_false_positive(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        result = runner.invoke(cli, ["mark-false-positive", "PR-0001", "--project", "PRJ-0001"])
+        result = runner.invoke(cli, ["autonomy", "false-positive", "PR-0001", "--project", "PRJ-0001"])
         assert result.exit_code == 0
         assert "False Positive" in result.output
 
     def test_mark_false_positive_output_contains_pr(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        result = runner.invoke(cli, ["mark-false-positive", "PR-0042", "--project", "PRJ-0001"])
+        result = runner.invoke(cli, ["autonomy", "false-positive", "PR-0042", "--project", "PRJ-0001"])
         assert "PR-0042" in result.output
 
 
-# ─── sdd new agents-md ────────────────────────────────────────────────────────
+# ─── sdd new agents-md (entfernt) ─────────────────────────────────────────────
+#
+# Die Tests hier legten die AGENTS.md ueber `sdd new agents-md` an. Den Befehl
+# hat SPEC-0044 entfernt; die Datei entsteht seit #16 in `sdd init`. Der
+# positive Weg ist in tests/unit/test_init_agents_md.py abgedeckt — hier bleibt
+# der Migrationspfad: der Stub muss weiterverweisen statt still zu scheitern.
 
-class TestNewAgentsMd:
-    def test_creates_agents_md(self, runner, project, monkeypatch):
+class TestNewAgentsMdEntfernt:
+    def test_stub_endet_mit_fehler(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
         result = runner.invoke(cli, ["new", "agents-md"])
-        assert result.exit_code == 0
-        assert (project / "AGENTS.md").exists()
+        assert result.exit_code == 1
 
-    def test_second_call_warns_already_exists(self, runner, project, monkeypatch):
+    def test_stub_verweist_auf_sdd_init(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        runner.invoke(cli, ["new", "agents-md"])
         result = runner.invoke(cli, ["new", "agents-md"])
-        assert "existiert bereits" in result.output
+        assert "sdd init" in result.output
 
 
-# ─── sdd new github-workflow ──────────────────────────────────────────────────
+# ─── sdd new github-workflow (entfernt) ───────────────────────────────────────
+#
+# SPEC-0044 FR-06 wurde zurueckgenommen: der Workflow wird nicht angelegt, die
+# Vorlage ist zu kopieren. Der Stub und seine Formulierung sind in
+# tests/unit/test_github_workflow_removed.py abgedeckt.
 
-class TestNewGithubWorkflow:
-    def test_creates_workflow_file(self, runner, project, monkeypatch):
+class TestNewGithubWorkflowEntfernt:
+    def test_stub_endet_mit_fehler(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
         result = runner.invoke(cli, ["new", "github-workflow"])
-        assert result.exit_code == 0
-        wf = project / ".github" / "workflows" / "sdd-orchestrate.yml"
-        assert wf.exists()
+        assert result.exit_code == 1
 
-    def test_second_call_warns_already_exists(self, runner, project, monkeypatch):
+    def test_stub_nennt_die_vorlage(self, runner, project, monkeypatch):
         monkeypatch.chdir(project)
-        runner.invoke(cli, ["new", "github-workflow"])
         result = runner.invoke(cli, ["new", "github-workflow"])
-        assert "existiert bereits" in result.output
+        assert "sdd-orchestrate.yml" in result.output
 
 
 # ─── sdd spec approve ─────────────────────────────────────────────────────────

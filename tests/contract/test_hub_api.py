@@ -31,18 +31,28 @@ def _make_client(tmp_path, entries: list[ProjectEntry] | None = None) -> TestCli
     return TestClient(app)
 
 
+# GET /projects liefert ein Objekt `{"projects": [...], ...}`, keine nackte
+# Liste. So konsumiert es auch das Web-UI (`web/ui/src/api.ts:459`:
+# `projects: HubProject[]`). Der Test erwartete die Liste und lief deshalb in
+# `TypeError: string indices must be integers` (#102).
+#
+# CON-0132 entscheidet die Frage nicht: sein OpenAPI-Artifact ist noch das
+# unausgefuellte Skeleton (`Example` mit `id`/`name`). Massgeblich ist damit,
+# worauf sich Implementierung und UI geeinigt haben.
+
+
 def test_get_hub_projects_empty(tmp_path):
     client = _make_client(tmp_path)
     r = client.get("/projects")
     assert r.status_code == 200
-    assert r.json() == []
+    assert r.json()["projects"] == []
 
 
 def test_get_hub_projects_returns_registered(tmp_path):
     client = _make_client(tmp_path, [_entry("app1"), _entry("app2", port=9001)])
     r = client.get("/projects")
     assert r.status_code == 200
-    ids = [p["id"] for p in r.json()]
+    ids = [p["id"] for p in r.json()["projects"]]
     assert "app1" in ids
     assert "app2" in ids
 
@@ -50,7 +60,7 @@ def test_get_hub_projects_returns_registered(tmp_path):
 def test_get_hub_projects_live_status_stopped(tmp_path):
     client = _make_client(tmp_path, [_entry("app1")])
     r = client.get("/projects")
-    assert r.json()[0]["status"] == "stopped"
+    assert r.json()["projects"][0]["status"] == "stopped"
 
 
 def test_post_start_returns_starting(tmp_path):

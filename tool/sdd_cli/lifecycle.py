@@ -265,6 +265,14 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
     if verdict == "needs_revision" and notes:
         with contract_doc.path.open("a", encoding="utf-8") as fh:
             fh.write(f"\n## LLM Review Notes\n\n{notes}\n")
+    elif verdict == "approved":
+        # SPEC-0044 FR-07 und CON-0170 G-01 verlangen beides: die TST-Anlage
+        # entfernen UND den Status setzen. Gebaut war nur die entfernende
+        # Haelfte — der Docstring sagte die zweite zu, der Code loeste sie nie
+        # ein. Ein Contract kam nie aus `review` heraus, und `sdd test generate`
+        # arbeitet auf approved Contracts: die Kette brach genau dort (#104).
+        from .frontmatter import patch_status
+        patch_status(contract_doc.path, "approved")
 
     return ContractReviewResult(
         llm_verdict=verdict,
