@@ -1,9 +1,10 @@
 version: 1.0.0
 project:
-  name: SDD-Framer
+  name: <PROJECT_TITLE>
   description: <PROJECT_DESCRIPTION>
-  owners:
-  - Boris
+  # sdd init traegt hier den Namen aus `git config user.name` ein. Frueher
+  # stand ein fester Name im Blueprint und landete in jedem Projekt (#116).
+  owners: []
 ids:
   spec_prefix: SPEC
   contract_prefix: CON
@@ -86,8 +87,11 @@ orchestrator:
 maintenance:
   stale_after_weeks: 4
 obsidian:
-  vault_path: /home/deck/Documents/Obsidian/Vault 33/Development
-  subfolder: SDD Framer
+  # Leer: die Obsidian-Integration ist aus, bis ein Vault gesetzt ist — `sdd
+  # obsidian` meldet dann "obsidian.vault_path nicht konfiguriert" (SPEC-0009).
+  # Frueher stand hier der Vault-Pfad eines anderen Rechners (#116).
+  vault_path: ''
+  subfolder: SDD
   watch_interval_secs: 5
   auto_wiki_links: true
 test_runner:
