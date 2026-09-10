@@ -133,6 +133,45 @@ def _asyncapi_operationen(doc: dict) -> list[str]:
     return []
 
 
+def _pep8_leerzeilen(text: str) -> str:
+    """Genau zwei Leerzeilen vor jeder Definition auf Modulebene.
+
+    Der Header endete mit `import pytest`, die erste Funktion begann eine
+    Leerzeile spaeter. ruff meldete das in *jeder* erzeugten Datei als I001
+    ("Import block is un-sorted or un-formatted") — 4 von 7 Fehlern in #99.
+
+    Ueber ast, nicht ueber ein Zeilenmuster: ein Dekorator gehoert zur
+    Definition, und er kann sich ueber mehrere Zeilen erstrecken. Ein Muster,
+    das `def` und `class` am Zeilenanfang sucht, schiebt in beiden Faellen
+    Leerzeilen an die falsche Stelle.
+
+    Zentral statt je Format, damit die Regel auch fuer Formate gilt, die
+    spaeter dazukommen.
+    """
+    try:
+        baum = ast.parse(text)
+    except SyntaxError:
+        return text
+
+    anfaenge = sorted(
+        min([knoten.lineno] + [d.lineno for d in knoten.decorator_list])
+        for knoten in baum.body
+        if isinstance(knoten, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    )
+
+    zeilen = text.split("\n")
+    for anfang in reversed(anfaenge):   # von hinten, damit die Indizes stabil bleiben
+        bis = anfang - 1                # 0-basiert
+        von = bis
+        while von > 0 and zeilen[von - 1].strip() == "":
+            von -= 1
+        if von == 0:                    # Definition am Dateianfang
+            continue
+        zeilen[von:bis] = ["", ""]
+
+    return "\n".join(zeilen).rstrip("\n") + "\n"
+
+
 def _extract_scenarios(feature_text: str) -> list[str]:
     """Extract scenario titles from a .feature file."""
     titles = []
@@ -283,6 +322,22 @@ class TestGenerator:
             if not scenarios:
                 # Fallback: try to extract from body
                 scenarios = _extract_scenarios(contract.get("_body", ""))
+            if not scenarios:
+                # Ohne Szenarien entstand eine Datei ganz ohne Tests: Header,
+                # `import pytest`, Ende. Sie behauptete im Kopf, aus dem
+                # Contract erzeugt zu sein, pruefte nichts und war nicht
+                # lintbar (#99).
+                return (
+                    header
+                    + f"\n\ndef test_tc01_{_slug(con_id)}():\n"
+                    f'    """Verhaltens-Contract {con_id} — kein Szenario gefunden.\n\n'
+                    f"    Weder im Artifact noch im Contract-Text steht ein\n"
+                    f"    `Scenario:`. Ergaenze den Contract oder schreibe die Tests\n"
+                    f"    von Hand.\n"
+                    '    """\n'
+                    "    pytest.skip(\"Test noch nicht implementiert\")\n"
+                )
+
             functions = []
             for i, title_s in enumerate(scenarios, 1):
                 fn = f"test_tc{i:02d}_{_slug(title_s)}"
@@ -316,15 +371,15 @@ class TestGenerator:
                 functions.append(
                     f"\ndef {fn}():\n"
                     f'    """Happy-path für {path} ({con_id})."""\n'
-                    "    import httpx\n"
-                    "    # TODO: configure base_url and assert response\n"
+                    "    # TODO: httpx-Client gegen die base_url aufsetzen und\n"
+                    "    # die Antwort gegen das Schema pruefen\n"
                     "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 )
             if not functions:
                 functions = [
                     "\ndef test_tc01_endpoint():\n"
                     '    """API contract test ({con_id})."""\n'
-                    "    import httpx\n"
+                    "    # TODO: httpx-Client gegen die base_url aufsetzen\n"
                     "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 ]
             return header + "".join(functions) + "\n"
@@ -367,13 +422,15 @@ class TestGenerator:
         if fmt == "json-schema":
             return (
                 header
-                + "\nimport json\nimport jsonschema\n"
                 + f"\n\ndef test_tc01_valid_instance_passes():\n"
                 f'    """Valide Instanz besteht Schema-Validierung ({con_id})."""\n'
+                "    # TODO: Instanz laden und mit jsonschema gegen das Schema\n"
+                "    # aus dem Artifact pruefen\n"
                 "    pytest.skip(\"Test noch nicht implementiert\")\n"
                 f"\n\ndef test_tc02_invalid_instance_rejected():\n"
                 f'    """Invalide Instanz wird abgelehnt ({con_id})."""\n'
-                "    pytest.skip(\"Test noch nicht implementiert\")\n\n"
+                "    # TODO: gezielt gegen eine Regel des Schemas verstossen\n"
+                "    pytest.skip(\"Test noch nicht implementiert\")\n"
             )
 
         # fallback / markdown
@@ -513,7 +570,7 @@ class TestGenerator:
             out_path = self._output_path(con_id, contract)
 
             try:
-                content = self._render_template(contract)
+                content = _pep8_leerzeilen(self._render_template(contract))
             except Exception as exc:
                 result.success = False
                 result.syntax_errors.append(f"{con_id}: render error: {exc}")
