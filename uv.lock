@@ -2673,7 +2673,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "pywebpush", specifier = ">=2.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rich", specifier = ">=13.7" },
+    { name = "rich", specifier = ">=14" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4" },
     { name = "torch", marker = "extra == 'huggingface-local'", specifier = ">=2.0" },
     { name = "transformers", marker = "extra == 'huggingface-local'", specifier = ">=4.40" },

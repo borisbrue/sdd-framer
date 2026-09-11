@@ -1,8 +1,25 @@
 """Shared test fixtures und sys.path-Konfiguration."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+# ─── Farbfreie CLI-Ausgabe, unabhängig von der Shell (#124) ──────────────────
+#
+# Tests vergleichen CLI-Ausgabe als Klartext. Die rich-Console in main.py legt
+# ihr Farbsystem beim Import fest, nicht beim Ausgeben. Sieht sie dabei
+# FORCE_COLOR oder ein echtes Terminal (`pytest -s`), schreibt sie später auch in
+# den CliRunner Farbcodes, und sechs Tests scheiterten je nach Shell.
+#
+# TTY_COMPATIBLE=0 sagt rich "kein Terminal". rich prüft das vor FORCE_COLOR, und
+# es ist genau der Zustand eines normalen Laufs mit Capture. pytest liest die
+# Variable nicht, seine eigene Ausgabe bleibt farbig. TERM=dumb hätte auch die
+# abgeschaltet.
+#
+# Die Zeile muss hier stehen, beim Laden des conftest und damit vor dem ersten
+# Import von sdd_cli. Eine Fixture käme zu spät.
+os.environ["TTY_COMPATIBLE"] = "0"
 
 # Die Web-API, die der Server laedt (ui.py: _web_root() / "api"). Bis #107 zeigte
 # der Pfad auf eine zweite Kopie unter web/api/ im Repo-Root, die nirgends
