@@ -43,11 +43,19 @@ def _cli_commands() -> dict[str, object]:
 # `sdd regression-check` stehen (#90).
 _REPO_SKILL_DIR = _ROOT / ".claude" / "commands"
 
+# Die dritte Kopie liegt unter .sdd/templates/. `sdd new` liest daraus, und
+# `sdd upgrade` ergänzt aus ihr andere Projekte (upgrade.py, BLUEPRINT_ROOT). Sie
+# war seit Juni nicht mehr nachgezogen worden, und `sdd dev exec` stand darin
+# noch fünfmal (#123).
+_REPO_TEMPLATE_DIR = _ROOT / ".sdd" / "templates" / "agents-md"
+
 
 def _skill_dateien() -> list[Path]:
     dateien = [p for p in _SKILL_DIR.rglob("*.md") if p.is_file()]
     if _REPO_SKILL_DIR.is_dir():
         dateien += [p for p in _REPO_SKILL_DIR.glob("*.md") if p.is_file()]
+    if _REPO_TEMPLATE_DIR.is_dir():
+        dateien += [p for p in _REPO_TEMPLATE_DIR.rglob("*.md") if p.is_file()]
     return sorted(dateien)
 
 

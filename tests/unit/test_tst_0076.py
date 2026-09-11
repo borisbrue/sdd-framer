@@ -48,7 +48,7 @@ def test_tc01_valid_pr_document_has_required_fields(cfg):
         assert field in fm, f"Pflichtfeld '{field}' fehlt"
 
 
-# ── TC-02: spec_id und branch sind konsistent (INV-01) ───────────────────────
+# ── TC-02: ohne übergebenen Branch leitet die Strategie dev/ ab (INV-01) ──────
 
 def test_tc02_spec_id_branch_consistent(cfg):
     pr_path = _create_pr_doc(cfg)
@@ -81,3 +81,22 @@ def test_tc05_test_result_passed_requires_all_passing(cfg):
     if fm["test_result"] == "passed":
         assert fm.get("tests_passed", 0) == fm.get("tests_total", -1)
         assert fm.get("tests_total", 0) > 0
+
+
+# ── TC-06: ein übergebener Branch landet im Dokument (INV-01, v0.3.0) ────────
+#
+# Die Finalisierung übergibt ihren eigenen Branch (feat/SPEC-XXXX). Bis #123
+# verlangte das Schema dev/SPEC-XXXX, und kein Test prüfte den übergebenen Fall,
+# also genau den, der heute tatsächlich vorkommt.
+
+def test_tc06_uebergebener_branch_landet_im_dokument(cfg):
+    save_test_result(cfg, "SPEC-0021", passed=3, total=3)
+    with patch("sdd_cli.dev_container._git",
+               return_value=MagicMock(returncode=0, stdout="3 files changed")) as mock_git:
+        LocalGitStrategy().create("SPEC-0021", cfg, branch="feat/SPEC-0021")
+
+    fm = _parse_frontmatter(cfg.root / ".sdd" / "prs" / "PR-SPEC-0021.md")
+    assert fm["branch"] == "feat/SPEC-0021"
+    assert "feat/SPEC-0021" in fm["merge_command"]
+    mock_git.assert_called_once_with(
+        ["diff", "main..feat/SPEC-0021", "--stat"], capture=True, check=False)

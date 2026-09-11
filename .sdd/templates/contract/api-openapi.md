@@ -30,7 +30,7 @@ Dieser Contract ist **bindend**. Jede Implementierung MUSS:
 
 1. das im Artifact (`{{artifact}}`) hinterlegte OpenAPI-Schema einhalten,
 2. die Contract-Tests (siehe Frontmatter `tests:`) bestehen,
-3. Breaking Changes nur mit Versions-Bump (MAJOR) und ADR einführen.
+3. Breaking Changes nur mit Versions-Bump (MAJOR) und Begründung in der zugehörigen Spec einführen.
 
 ## Versionierung
 

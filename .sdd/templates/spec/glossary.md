@@ -18,4 +18,4 @@
 ## Pflege
 
 - Neue Begriffe werden im Rahmen einer Spec-Review aufgenommen.
-- Änderungen an bestehenden Definitionen erfordern ein ADR, wenn sie die Domäne neu schneiden.
+- Änderungen an bestehenden Definitionen werden im Abschnitt "Architektur & Design Patterns" der betroffenen Spec begründet.

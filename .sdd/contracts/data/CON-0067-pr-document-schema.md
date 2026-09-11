@@ -4,9 +4,8 @@ title: "pr-document-schema"
 type: data
 format: json-schema
 spec: SPEC-0021
-version: 0.2.0
+version: 0.3.0
 status: draft
-artifact: "contracts/data/pr-document.schema.json"
 tests: [TST-0076]
 ---
 
@@ -16,8 +15,22 @@ tests: [TST-0076]
 
 ## Zweck
 
-Definiert die Pflichtfelder des PR-Dokuments (`.sdd/prs/PR-SPEC-XXXX.md`),
-das `sdd dev pr` nach erfolgreichem Gate erstellt.
+Definiert die Pflichtfelder des PR-Dokuments (`.sdd/prs/PR-SPEC-XXXX.md`).
+Es schreibt die lokale PR-Strategie (`LocalGitStrategy`). Die Finalisierung
+greift auf sie zurück, wenn `gh pr create` nicht verfügbar ist oder scheitert
+(CON-0066, v0.3.0).
+
+> **v0.3.0 (2026-09-11):** Drei Korrekturen (#123).
+>
+> - Als Erzeuger stand hier `sdd dev pr`. Den Befehl gibt es seit SPEC-0044
+>   nicht mehr.
+> - Das Schema verlangte für `branch` das Muster `dev/SPEC-XXXX`. Die
+>   Finalisierung übergibt aber ihren eigenen Branch, `feat/SPEC-XXXX` oder bei
+>   `sdd distribute` `spec/SPEC-XXXX`, und genau der landet im Dokument. Jedes
+>   Dokument, das heute entsteht, hätte das Schema verletzt. Das Muster und
+>   INV-01 sind entsprechend angepasst.
+> - Das `artifact`-Feld zeigte auf eine nie angelegte Schema-Datei und ist
+>   entfernt.
 
 **Abhängigkeiten:**
 - `test_result` und `tests_passed`/`tests_total` übernehmen das Format aus
@@ -50,8 +63,8 @@ das `sdd dev pr` nach erfolgreichem Gate erstellt.
     },
     "branch": {
       "type": "string",
-      "pattern": "^dev/SPEC-[0-9]{4}$",
-      "description": "Git-Branch-Name für interaktive Entwicklung (dev/-Präfix)"
+      "minLength": 1,
+      "description": "Branch, von dem der PR ausgeht: der von der Finalisierung übergebene (feat/SPEC-XXXX, bei sdd distribute spec/SPEC-XXXX); ohne Angabe dev/SPEC-XXXX"
     },
     "created": {
       "type": "string",
@@ -76,11 +89,11 @@ das `sdd dev pr` nach erfolgreichem Gate erstellt.
     "merge_command": {
       "type": "string",
       "description": "Ausführbarer git-Befehl für den Merge",
-      "example": "git checkout main && git merge dev/SPEC-0021"
+      "example": "git checkout main && git merge feat/SPEC-0021"
     },
     "diff_stat": {
       "type": "string",
-      "description": "Ausgabe von git diff main..dev/SPEC-XXXX --stat"
+      "description": "Ausgabe von git diff main..<branch> --stat"
     },
     "pr_strategy": {
       "type": "string",
@@ -93,9 +106,10 @@ das `sdd dev pr` nach erfolgreichem Gate erstellt.
 
 ## Invarianten
 
-- **INV-01:** `spec_id` und `branch` sind konsistent: `SPEC-0021` → `dev/SPEC-0021`.
+- **INV-01:** `branch` ist der Branch, den der Aufrufer übergibt. Bei der Finalisierung
+  ist das `feat/SPEC-0021`. Ohne Angabe leitet die Strategie `dev/SPEC-0021` ab.
 - **INV-02:** `test_result: passed` nur wenn `tests_passed == tests_total` und
   beide > 0.
 - **INV-03:** `merge_command` enthält den Branch-Namen aus dem `branch`-Feld.
-- **INV-04:** `.sdd/prs/` wird von `sdd dev pr` automatisch erstellt falls nicht
-  vorhanden (analog zu `.sdd/pipeline/`).
+- **INV-04:** `.sdd/prs/` wird von der lokalen PR-Strategie automatisch erstellt, falls
+  nicht vorhanden (analog zu `.sdd/pipeline/`).

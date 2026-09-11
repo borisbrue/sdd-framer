@@ -4,105 +4,50 @@ title: "sdd-dev-pr-validation-gate"
 type: behavior
 format: gherkin
 spec: SPEC-0021
-version: 0.2.0
-status: draft
-artifact: "contracts/behavior/sdd-dev-pr-validation-gate.feature"
+version: 0.3.0
+status: deprecated
 tests: [TST-0075]
 ---
 
-# Contract: sdd-dev-pr-validation-gate
+# Contract: sdd-dev-pr-validation-gate (deprecated)
 
-> **Spec:** SPEC-0021 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0021 · **Typ:** Verhalten (Gherkin) · **Status:** deprecated
 
 ## Zweck
 
-Beschreibt das beobachtbare Verhalten von `sdd dev pr SPEC-XXXX`:
-Validierungsgatter vor PR-Erstellung im interaktiven Entwicklungspfad.
+Beschrieb das Validierungsgatter von `sdd dev pr SPEC-XXXX` vor der
+PR-Erstellung im interaktiven Pfad.
 
-**Verhältnis zu CON-0025 (Execution Gate Phase State Machine):**
-`sdd dev pr` ist ein Werkzeug für den interaktiven Level-2/3-Pfad und setzt
-voraus, dass CON-0025 bereits `execute-unlocked` gesetzt hat (Spec ist approved).
-CON-0025 bleibt die Authority für Pipeline-Phasen. CON-0066 definiert zusätzliche
-Laufzeit-Prüfungen (Test-Ergebnis, validate-Output) spezifisch für `sdd dev pr` —
-kein Ersatz, sondern Ergänzung auf Laufzeitebene.
+> **v0.3.0 (2026-09-11), deprecated (#123):** `sdd dev pr` ist mit SPEC-0044
+> entfallen, zusammen mit der ganzen `sdd dev`-Gruppe. `DevContainerManager.pr()`
+> erreichten seitdem nur noch TST-0075 und TST-0077. Die Methode und TST-0075
+> sind entfernt.
+>
+> Das PR-Gate liegt heute in der Finalisierung (`SpecFinalizer.run`). Welche
+> Zusage dort geblieben ist, zeigt die Tabelle unten. Einige hat die
+> Finalisierung ins Gegenteil gedreht, das ist so gewollt und kein Fehler.
+>
+> Das `artifact`-Feld zeigte auf eine nie angelegte `.feature`-Datei und ist
+> entfernt.
 
-## Garantien
+## Was aus den Zusagen wurde
 
-- **G-01:** `sdd dev pr` blockiert wenn die letzte Test-Ausführung im Container
-  fehlgeschlagen ist oder keine Test-Ausführung protokolliert wurde.
-- **G-02:** `sdd dev pr` blockiert wenn `sdd validate` Fehler meldet.
-- **G-03:** `sdd dev pr` warnt (blockiert nicht) bei uncommitted changes im
-  Working Tree des Containers.
-- **G-04:** Bei erfolgreichem Gate wird ein PR-Dokument unter
-  `.sdd/prs/PR-SPEC-XXXX.md` erstellt und eine Merge-Anleitung ausgegeben.
-- **G-05:** Der Regression-Check (`git diff main..dev/SPEC-XXXX --stat`) ist
-  Teil des PR-Dokuments.
-
-## Invarianten
-
-- **INV-01:** `sdd dev pr` nimmt keinen automatischen `git commit` vor.
-- **INV-02:** Das PR-Dokument wird nur erstellt wenn alle Prüfungen bestanden sind.
-- **INV-03:** Die Merge-Anleitung enthält immer den konkreten Branch-Namen
-  (`dev/SPEC-XXXX`).
-- **INV-04:** `sdd dev pr` erfordert keinen aktiven Container — es liest den
-  zuletzt protokollierten Test-Ergebnisstatus aus `.sdd/test-results/`.
-
-## Szenarien
-
-```gherkin
-Feature: sdd dev pr – Validierungsgatter vor PR-Erstellung
-
-  Background:
-    Given ein SDD-Projekt mit .sdd/config.yaml
-    And Branch "dev/SPEC-0021" ist ausgecheckt
-
-  Scenario: Erfolgreiches Gate – PR-Dokument wird erstellt
-    Given der letzte Test-Lauf im Container hat Exit-Code 0 protokolliert
-    And "sdd validate" meldet keine Fehler
-    And keine uncommitted changes im Working Tree
-    When der Nutzer "sdd dev pr SPEC-0021" ausführt
-    Then wird git diff main..dev/SPEC-0021 --stat ausgeführt
-    And wird .sdd/prs/PR-SPEC-0021.md erstellt
-    And die Merge-Anleitung wird ausgegeben:
-      "git checkout main && git merge dev/SPEC-0021"
-    And der Exit-Code ist 0
-
-  Scenario: Gate blockiert – letzter Test-Lauf fehlgeschlagen
-    Given der letzte protokollierte Test-Lauf hat Exit-Code != 0
-    When der Nutzer "sdd dev pr SPEC-0021" ausführt
-    Then wird kein PR-Dokument erstellt
-    And erscheint Fehler: "Tests nicht grün – führe 'sdd dev exec SPEC-0021 pytest' aus."
-    And der Exit-Code ist ungleich 0
-
-  Scenario: Gate blockiert – sdd validate meldet Fehler
-    Given letzter Test-Lauf ist grün
-    And "sdd validate" meldet 1 oder mehr Fehler
-    When der Nutzer "sdd dev pr SPEC-0021" ausführt
-    Then wird kein PR-Dokument erstellt
-    And die Validierungsfehler werden ausgegeben
-    And der Exit-Code ist ungleich 0
-
-  Scenario: Warnung bei uncommitted changes
-    Given letzter Test-Lauf ist grün
-    And "sdd validate" ist sauber
-    And es gibt uncommitted changes im Working Tree
-    When der Nutzer "sdd dev pr SPEC-0021" ausführt
-    Then erscheint eine Warnung: "Uncommitted changes vorhanden – bitte committen"
-    And das Gate fährt fort (kein Abbruch)
-    And PR-Dokument wird erstellt
-
-  Scenario: Gate blockiert – kein Test-Ergebnis protokolliert
-    Given keine Test-Ausführung wurde für SPEC-0021 protokolliert
-    When der Nutzer "sdd dev pr SPEC-0021" ausführt
-    Then erscheint Fehler: "Kein Test-Ergebnis für SPEC-0021 – führe 'sdd dev exec SPEC-0021 pytest' aus."
-    And kein PR-Dokument wird erstellt
-    And der Exit-Code ist ungleich 0
-```
-
-## Begriffe
-
-| Begriff | Definition |
+| Zusage (v0.2.0) | Heute in der Finalisierung |
 |---|---|
-| Gate | Laufzeit-Validierungsprüfung ergänzend zu CON-0025 (Phase State Machine) |
-| PR-Dokument | Markdown-Datei unter `.sdd/prs/` mit Diff-Zusammenfassung und Merge-Anleitung |
-| Regression-Check | `git diff main..dev/SPEC-XXXX --stat` |
+| G-01: Kein PR bei roten oder fehlenden Tests | **Geblieben, anders begründet.** Die Finalisierung liest kein protokolliertes Ergebnis, sie führt die Tests selbst aus. Sind sie rot, entsteht kein PR. |
+| G-02: Kein PR, wenn `sdd validate` Fehler meldet | **Ersetzt.** Statt `sdd validate` läuft die Compliance-Kette (`strict=True`). Fehler dort blockieren den PR. |
+| G-03: Warnung bei uncommitted changes, kein Abbruch | **Entfallen.** Die Finalisierung committet offene Änderungen selbst, außer bei `no_commit`. |
+| G-04: PR-Dokument `.sdd/prs/PR-SPEC-XXXX.md` und Merge-Anleitung | **Als Fallback geblieben.** Zuerst `gh pr create`. Ist `gh` nicht da oder scheitert es, schreibt `LocalGitStrategy` das Dokument (CON-0067). |
+| G-05: Regression-Check (`git diff main..<branch> --stat`) im PR-Dokument | **Im Fallback geblieben**, im Text des gh-PR nicht. |
+| INV-01: Kein automatischer `git commit` | **Umgekehrt**, siehe G-03. |
+| INV-02: PR nur, wenn alle Prüfungen bestanden sind | **Geblieben.** Der PR entsteht erst nach grünen Tests und sauberer Compliance-Kette. |
+| INV-03: Merge-Anleitung nennt den konkreten Branch | **Im Fallback geblieben**, mit dem Branch, den die Finalisierung übergibt. |
+| INV-04: Kein aktiver Container nötig | **Umgekehrt.** Ohne `docker.compose_file` bricht die Finalisierung ab, wenn der Dev-Container nicht läuft. |
+
+## Verweise
+
+- CON-0065 G-06: Container-Lifecycle in der Finalisierung
+- CON-0067: Schema des lokalen PR-Dokuments
+- Tests der Finalisierung: `tests/unit/test_finalize_container.py`,
+  `tests/unit/test_finalize_push.py`, `tests/unit/test_finalize_build.py`,
+  `tests/unit/test_finalize_pr_branch.py`

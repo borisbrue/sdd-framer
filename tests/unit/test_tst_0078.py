@@ -3,11 +3,12 @@ from __future__ import annotations
 
 
 def test_slo_placeholder():
-    """SLO-Test erfordert ein laufendes Docker-Image (sdd-dev:latest).
+    """Platzhalter: Eine Zeitmessung für CON-0068 gibt es noch nicht.
 
-    In der Unit-Test-Suite wird nur sichergestellt, dass das Modul
-    importierbar ist. Der echte Zeitmessungs-Test läuft im Dev-Container
-    via 'sdd dev exec SPEC-0021 pytest tests/performance/'.
+    Geprüft werden nur die deterministischen Namen (CON-0065 INV-01/INV-02).
+    Die Docstring nannte bis #123 einen Messlauf über `sdd dev exec` nach
+    tests/performance/. Den Befehl gibt es seit SPEC-0044 nicht mehr, und die
+    Messdatei wurde nie angelegt.
     """
     from sdd_cli.dev_container import branch_name, container_name
     assert container_name("SPEC-0021") == "sdd-dev-spec-0021"

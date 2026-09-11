@@ -403,12 +403,10 @@ class DevContainerManager:
     def __init__(
         self,
         cfg: SddConfig,
-        pr_strategy: PRStrategy | None = None,
         runtime: ContainerRuntime | None = None,
         log_streamer: LogStreamer | None = None,
     ) -> None:
         self.cfg = cfg
-        self._pr_strategy = pr_strategy or LocalGitStrategy()
         self._runtime = runtime or get_runtime(cfg)
         self._log_streamer = log_streamer
 
@@ -583,33 +581,3 @@ class DevContainerManager:
             self._runtime.stop(cname)
             self._runtime.rm(cname)
             print(f"✓ Container {cname} gestoppt und entfernt.")
-
-    def pr(self, spec_id: str) -> None:
-        test_result, passed, total = _load_last_test_result(self.cfg, spec_id)
-
-        if test_result == "skipped":
-            print(
-                f"✗ Kein Test-Ergebnis für {spec_id} – führe "
-                f"'sdd finalize {spec_id}' aus.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-        if test_result == "failed":
-            print(
-                f"✗ Tests nicht grün – prüfe den Lauf aus 'sdd finalize {spec_id}'.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
-        result = _run(["sdd", "validate"], capture=True, check=False)
-        if result.returncode != 0:
-            print("✗ sdd validate meldet Fehler:", file=sys.stderr)
-            print(result.stdout, file=sys.stderr)
-            sys.exit(1)
-
-        uncommitted = _git(["status", "--porcelain"], capture=True, check=False)
-        if uncommitted.stdout.strip():
-            print("[WARN] Uncommitted changes vorhanden – bitte committen.", file=sys.stderr)
-
-        self._pr_strategy.create(spec_id, self.cfg)

@@ -1,32 +1,38 @@
 ---
 id: TST-0075
 project: PRJ-0001
-title: "Tests: sdd pr – Validierungsgatter"
+title: "Tests: sdd dev pr – Validierungsgatter (entfallen)"
 contract: CON-0066
 contracts: ["CON-0066"]
 spec: SPEC-0021
 level: contract
-status: draft
-artifact: "tests/contract/test_sdd_pr_gate.py"
+status: skipped
 ---
 
-# Test: sdd pr Validierungsgatter
+# Test: sdd dev pr Validierungsgatter (entfallen)
 
-> **Contract:** CON-0066 · **Typ:** Contract-Test · **Status:** draft
+> **Contract:** CON-0066 (deprecated) · **Typ:** Contract-Test · **Status:** skipped
 
-## Abgedeckte Garantien
+## Stand
 
-- CON-0066 G-01: Gate blockiert bei fehlgeschlagenen Tests
-- CON-0066 G-02: Gate blockiert bei `sdd validate`-Fehlern
-- CON-0066 G-03: Warnung (kein Abbruch) bei uncommitted changes
-- CON-0066 G-04: PR-Dokument wird bei grünem Gate erstellt
-- CON-0066 G-05: Regression-Check ist Teil des PR-Dokuments
+**Entfallen (#123).** `sdd dev pr` ist mit SPEC-0044 weggefallen, CON-0066 ist
+deprecated. Die fünf Testfälle prüften `DevContainerManager.pr()`, das seitdem
+nur noch Tests erreichten. Mit der Methode ist `tests/unit/test_tst_0075.py`
+entfernt worden.
 
-## Test-Datei
+Das Schema kennt kein `deprecated` für Tests, deshalb steht der Status auf
+`skipped`. Das Dokument bleibt stehen, weil SPEC-0021 und CON-0066 darauf
+verweisen.
 
-`tests/contract/test_sdd_pr_gate.py`
+## Wo das Verhalten heute geprüft wird
 
-## Testfälle
+Das PR-Gate liegt in der Finalisierung (siehe CON-0066, v0.3.0):
+
+- `tests/unit/test_finalize_container.py`: rote Tests, kein Aufräumen, kein PR-Pfad
+- `tests/unit/test_finalize_push.py`: Push vor dem PR, Reihenfolge
+- `tests/unit/test_finalize_build.py`: gescheiterter Build, keine Tests, kein PR
+
+## Ehemalige Testfälle
 
 | ID | Szenario | Erwartetes Ergebnis |
 |---|---|---|
