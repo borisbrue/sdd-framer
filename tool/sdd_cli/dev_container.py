@@ -156,9 +156,6 @@ class ContainerRuntime(abc.ABC):
         args += [image, "tail", "-f", "/dev/null"]
         self._cmd(args)
 
-    def exec_in(self, name: str, cmd: list[str]) -> subprocess.CompletedProcess:
-        return self._cmd(["exec", name] + cmd, capture=False, check=False)
-
     def logs_popen(self, name: str) -> subprocess.Popen:
         return subprocess.Popen(
             [self.cli(), "logs", "--follow", name],
@@ -569,18 +566,14 @@ class DevContainerManager:
                 )
             sys.exit(1)
 
-    def exec_cmd(self, spec_id: str, cmd: list[str]) -> None:
-        cname = container_name(spec_id)
-        if self._runtime.inspect_status(cname) != "running":
-            print(
-                f"✗ Container {cname} läuft nicht. Führe 'sdd start {spec_id}' aus.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        result = self._runtime.exec_in(cname, cmd)
-        sys.exit(result.returncode)
+    def close(self, spec_id: str) -> None:
+        """Stoppt und entfernt den Dev-Container bzw. faehrt den Compose-Stack herunter.
 
-    def close(self, spec_id: str, *, delete_branch: bool = False) -> None:
+        Aufgerufen von der Finalisierung nach gruenen Tests (CON-0065 G-06). Der
+        Branch bleibt erhalten. `delete_branch` und `exec_cmd()` bedienten die mit
+        SPEC-0044 entfernten `sdd dev close/exec` und erreichte seither kein
+        Nutzerweg mehr, nur noch Tests (#121).
+        """
         compose_file = self._compose_file()
         if compose_file:
             self._runtime.compose_down(compose_file)
@@ -590,11 +583,6 @@ class DevContainerManager:
             self._runtime.stop(cname)
             self._runtime.rm(cname)
             print(f"✓ Container {cname} gestoppt und entfernt.")
-        if delete_branch:
-            bname = branch_name(spec_id)
-            if _branch_exists(bname):
-                _git(["branch", "-D", bname])
-                print(f"✓ Branch {bname} gelöscht.")
 
     def pr(self, spec_id: str) -> None:
         test_result, passed, total = _load_last_test_result(self.cfg, spec_id)

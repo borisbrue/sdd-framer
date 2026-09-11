@@ -4,9 +4,8 @@ title: "docker-spec-lifecycle"
 type: behavior
 format: gherkin
 spec: SPEC-0021
-version: 0.3.0
+version: 0.4.0
 status: draft
-artifact: "contracts/behavior/docker-spec-lifecycle.feature"
 tests: [TST-0074]
 ---
 
@@ -16,25 +15,32 @@ tests: [TST-0074]
 
 ## Zweck
 
-Beschreibt das beobachtbare Verhalten von `sdd start`, `sdd dev exec` und
-`sdd dev close` beim Verwalten isolierter Docker-Entwicklungscontainer pro Spec.
+Beschreibt das beobachtbare Verhalten des Dev-Containers einer Spec: `sdd start`
+legt Branch und Container an, die Finalisierung räumt ihn auf. Das gilt für
+`sdd finalize` und für jeden Pfad, der die Finalisierung nutzt.
 
-Diese Befehle sind explizit **von `sdd start` getrennt** (SPEC-0019/CON-0060):
-- `sdd start SPEC-XXXX` → TDD-Statusübergang: `draft → in-progress` (SPEC-0019)
-- `sdd start SPEC-XXXX` → Docker-Container + Git-Branch für isolierte Entwicklung
+Eigene Container-Befehle (`sdd dev start|exec|close`) gibt es seit SPEC-0044
+nicht mehr. `sdd start` erledigt Statusübergang (SPEC-0019), Branch und
+Container in einem Aufruf; `--no-container` lässt den Container weg.
 
-> **Noch offen:** G-05 und G-06 sowie die zugehoerigen Szenarien beschreiben
-> `sdd dev exec` und `sdd dev close` — ebenfalls mit SPEC-0044 entfernt. Anders
-> als bei `start` gibt es dafuer keinen Nachfolgebefehl: der Container-Lebenszyklus
-> laeuft intern ueber `sdd start`, `sdd finalize` und `sdd orchestrate`. Ob diese
-> Garantien auf die internen Aufrufe umgeschrieben oder gestrichen werden,
-> ist nicht entschieden und bleibt hier unangetastet.
+> **v0.4.0 (2026-09-11):** Zwei Probleme behoben (#121).
 >
-> **v0.3.0 (2026-09-09):** Der Contract war durchgehend fuer `sdd start`
-> geschrieben — ein Befehl, den SPEC-0044 entfernt hat. Das Verhalten liegt
-> seither bei `sdd start`, das die Garantien geerbt hat, ohne dass das je
-> entschieden wurde. Der Wortlaut ist entsprechend nachgezogen, und G-01 zweigt
-> nicht mehr fest von `main` ab (siehe Begruendung dort).
+> G-05/G-06 beschrieben `sdd dev exec` und `sdd dev close --delete-branch`,
+> Befehle, die SPEC-0044 entfernt hat. In v0.3.0 standen sie als „noch offen".
+> Jetzt steht hier, was der Code tut: G-05 entfällt, weil Befehle im Container
+> direkt über die Runtime laufen, und G-06 beschreibt das Aufräumen durch die
+> Finalisierung. `DevContainerManager.exec_cmd()` und `close(delete_branch=True)`
+> erreichten nur noch Tests und sind entfernt.
+>
+> Dazu kommt ein Widerspruch aus v0.3.0 (#78). Die mechanische Umbenennung
+> `sdd dev start` → `sdd start` hatte dort, wo beide Befehle gegeneinander
+> abgegrenzt waren, zweimal denselben Namen hinterlassen: INV-04 hieß
+> „`sdd start` und `sdd start` sind unabhängige Befehle", und ein Szenario
+> behauptete „kein in-progress-Übergang". Laut SPEC-0019 setzt `sdd start` den
+> Status aber auf `in-progress`.
+>
+> Das `artifact`-Feld zeigte auf eine nie angelegte `.feature`-Datei und ist
+> entfernt. Die Szenarien stehen unten.
 
 **Branch-Ownership:** `sdd start` erstellt den Branch für interaktive
 Entwicklung. Der Orchestrator (CON-0012) verwaltet eigene Branches im autonomen
@@ -61,21 +67,27 @@ interaktiven Level-2/3-Entwicklungspfad.
   und startet keinen zweiten Container (Idempotenz).
 - **G-04:** Ein gestoppter (nicht entfernter) Container wird durch `sdd start`
   wieder gestartet — kein neuer Container wird erstellt.
-- **G-05:** `sdd dev exec SPEC-XXXX <befehl>` führt den Befehl via `docker exec`
-  im laufenden Container aus und gibt Exit-Code und Output 1:1 zurück.
-- **G-06:** `sdd dev close SPEC-XXXX` stoppt und entfernt den Container.
-  Mit `--delete-branch` wird auch der Git-Branch `dev/SPEC-XXXX` gelöscht.
+- **G-05:** *entfallen (v0.4.0).* Befehle im laufenden Container werden direkt
+  über die Runtime ausgeführt: `docker exec sdd-dev-<spec-id-klein> <befehl>`
+  bzw. `podman exec …`. So beschreiben es die Skills (`/sdd-implement`).
+- **G-06:** Die Finalisierung entfernt den Container, **nachdem die Tests darin
+  grün waren**. Nach roten Tests oder einem gescheiterten Build (CON-0012,
+  Schritt 5) bleibt er stehen, damit man hineinschauen kann. Ein erneutes
+  `sdd start` findet ihn dann vor (G-03). Der Branch `dev/SPEC-XXXX` bleibt in
+  jedem Fall erhalten. Mit `docker.compose_file` fasst die Finalisierung den
+  Stack nicht an.
 
 ## Invarianten
 
 - **INV-01:** Container-Name ist deterministisch: `sdd-dev-{spec-id-lowercase}`
   → `sdd-dev-spec-0021`.
 - **INV-02:** Branch-Name ist deterministisch: `dev/{SPEC-ID}` → `dev/SPEC-0021`.
-- **INV-03:** Der main-Branch wird durch `sdd start`, `sdd dev exec` oder
-  `sdd dev close` nie verändert.
-- **INV-04:** `sdd start` und `sdd start` (SPEC-0019) sind unabhängige Befehle
-  mit getrennten Zuständen — ein `sdd start` setzt den Spec-Status nicht auf
-  `in-progress`.
+- **INV-03:** Der main-Branch wird durch `sdd start` und die Finalisierung nie
+  verändert.
+- **INV-04:** `sdd start` ist **ein** Befehl mit zwei Wirkungen: den
+  Statusübergang `approved → in-progress` (SPEC-0019; eine Spec, die schon
+  `in-progress` ist, ist kein Fehler) und Branch + Container (G-01).
+  `--no-container` lässt den zweiten Teil weg.
 
 ## Szenarien
 
@@ -88,13 +100,13 @@ Feature: Docker Container Lifecycle für Spec-Entwicklung
     And kein Container "sdd-dev-spec-0021" existiert
     And kein Branch "dev/SPEC-0021" existiert
 
-  Scenario: Normaler Start – Container und Branch werden erzeugt
-    Given SPEC-0021 existiert
+  Scenario: Normaler Start – Status, Container und Branch
+    Given SPEC-0021 ist approved
     When der Nutzer "sdd start SPEC-0021" ausführt
-    Then wird Branch "dev/SPEC-0021" aus dem aktuellen HEAD erzeugt
+    Then wechselt der Spec-Status von approved auf in-progress
+    And wird Branch "dev/SPEC-0021" aus dem aktuellen HEAD erzeugt
     And Container "sdd-dev-spec-0021" wird gestartet
     And Container hat Volume-Mount und Env-Variablen gemäß config.yaml
-    And Spec-Status bleibt unverändert (kein in-progress-Übergang)
     And der Exit-Code ist 0
 
   Scenario: Idempotenz – Container läuft bereits
@@ -119,33 +131,26 @@ Feature: Docker Container Lifecycle für Spec-Entwicklung
     And eine Fehlermeldung beschreibt den Docker-Fehler
     And der Exit-Code ist ungleich 0
 
-  Scenario: sdd dev exec – Befehl im Container ausführen
+  Scenario: Finalisierung nach grünen Tests räumt den Container auf
     Given Container "sdd-dev-spec-0021" ist aktiv
-    When der Nutzer "sdd dev exec SPEC-0021 pytest tests/ -x" ausführt
-    Then wird "docker exec sdd-dev-spec-0021 pytest tests/ -x" ausgeführt
-    And Output und Exit-Code werden 1:1 weitergeleitet
-
-  Scenario: sdd dev exec – Container nicht aktiv
-    Given Container "sdd-dev-spec-0021" ist nicht aktiv
-    When der Nutzer "sdd dev exec SPEC-0021 pytest tests/" ausführt
-    Then erscheint Fehler: "Container sdd-dev-spec-0021 läuft nicht. Führe 'sdd start SPEC-0021' aus."
-    And der Exit-Code ist ungleich 0
-
-  Scenario: sdd dev close – Container stoppen und entfernen
-    Given Container "sdd-dev-spec-0021" ist aktiv
-    When der Nutzer "sdd dev close SPEC-0021" ausführt
-    Then wird "docker stop sdd-dev-spec-0021" ausgeführt
-    And wird "docker rm sdd-dev-spec-0021" ausgeführt
+    And die Tests im Container sind grün
+    When "sdd finalize SPEC-0021" ausgeführt wird
+    Then wird Container "sdd-dev-spec-0021" gestoppt und entfernt
     And Branch "dev/SPEC-0021" bleibt erhalten
-    And der Exit-Code ist 0
 
-  Scenario: sdd dev close --delete-branch – Container und Branch entfernen
+  Scenario: Finalisierung nach roten Tests lässt den Container stehen
     Given Container "sdd-dev-spec-0021" ist aktiv
-    And Branch "dev/SPEC-0021" ist nicht ausgecheckt
-    When der Nutzer "sdd dev close SPEC-0021 --delete-branch" ausführt
-    Then wird Container gestoppt und entfernt
-    And Branch "dev/SPEC-0021" wird gelöscht
-    And der Exit-Code ist 0
+    And die Tests im Container schlagen fehl
+    When "sdd finalize SPEC-0021" ausgeführt wird
+    Then läuft Container "sdd-dev-spec-0021" weiter
+    And die Finalisierung meldet den Fehlschlag
+
+  Scenario: Gescheiterter Build lässt den Container ebenfalls stehen
+    Given Container "sdd-dev-spec-0021" ist aktiv
+    And orchestrator.build_command ist gesetzt und schlägt fehl
+    When "sdd finalize SPEC-0021" ausgeführt wird
+    Then laufen keine Tests
+    And läuft Container "sdd-dev-spec-0021" weiter
 ```
 
 ## Begriffe
@@ -156,3 +161,4 @@ Feature: Docker Container Lifecycle für Spec-Entwicklung
 | Idempotenz | Mehrfaches Ausführen desselben Befehls führt zum selben Ergebnis ohne Fehler |
 | sdd-dev-spec-0021 | Container-Name: `sdd-dev-{spec-id-lowercase}` |
 | dev/SPEC-0021 | Branch-Name: `dev/{SPEC-ID}` (getrennt vom Orchestrator-Branch `spec/SPEC-XXXX`) |
+| Finalisierung | `SpecFinalizer.run()` — gemeinsam für `sdd finalize`, `/sdd-implement`, `sdd orchestrate`, `sdd distribute` |

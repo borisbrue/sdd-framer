@@ -23,12 +23,16 @@ def cfg(tmp_path):
 def _mock_runtime(status: str | None = None) -> MagicMock:
     rt = MagicMock(spec=ContainerRuntime)
     rt.inspect_status.return_value = status
-    rt.exec_in.return_value = MagicMock(returncode=0)
     return rt
 
 
-def test_full_flow_start_exec_pr_close(cfg):
-    """Smoke-Test: start → exec (simulated) → pr → close."""
+def test_full_flow_start_pr_close(cfg):
+    """Smoke-Test: start → Tests (Ergebnis simuliert) → pr → close.
+
+    Der Test läuft im Container direkt über die Runtime (`podman exec …`); die
+    Finalisierung schließt den Container nach grünen Tests, der Branch bleibt
+    (CON-0065 G-05/G-06, v0.4.0).
+    """
     spec_id = "SPEC-0021"
 
     rt = _mock_runtime(status=None)
@@ -51,8 +55,9 @@ def test_full_flow_start_exec_pr_close(cfg):
     mock_strategy.create.assert_called_once_with(spec_id, cfg)
 
     rt3 = _mock_runtime()
-    with (
-        patch("sdd_cli.dev_container._branch_exists", return_value=True),
-        patch("sdd_cli.dev_container._git"),
-    ):
-        DevContainerManager(cfg, runtime=rt3).close(spec_id, delete_branch=True)
+    with patch("sdd_cli.dev_container._git") as mock_git:
+        DevContainerManager(cfg, runtime=rt3).close(spec_id)
+
+    rt3.stop.assert_called_once_with("sdd-dev-spec-0021")
+    rt3.rm.assert_called_once_with("sdd-dev-spec-0021")
+    mock_git.assert_not_called()  # der Branch bleibt

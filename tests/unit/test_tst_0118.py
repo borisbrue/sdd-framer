@@ -1,10 +1,20 @@
-# TST-0118 – Container-Lifecycle (Unit)
-# Spec: SPEC-0026 | Contract: CON-0099
+# TST-0118 – Ausführungsort von Tasks (Unit)
+# Spec: SPEC-0026 | Contract: CON-0099 (v0.2.0)
+#
+# Bis #113 prüfte diese Datei ein hier definiertes MockContainerRuntime. Die
+# Tests dagegen konnten nicht rot werden, wenn Produktionscode kaputtgeht. Jetzt
+# übt jeder Test Produktionscode aus: TaskLifecycle, Task-Serialisierung und
+# DistributionOrchestrator.
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tool.sdd_cli.task_lifecycle import TaskLifecycle
-from tool.sdd_cli.task_model import Complexity, ContextSize, Task, TaskType
+from sdd_cli.dist_orchestrator import DistributionOrchestrator
+from sdd_cli.llm_pool import CostTier, LlmEntry, LlmPoolRegistry, LlmType
+from sdd_cli.task_lifecycle import InvalidTransitionError, TaskLifecycle
+from sdd_cli.task_model import Complexity, ContextSize, Task, TaskStatus, TaskType
 
 
 def _task(title="T") -> Task:
@@ -15,71 +25,56 @@ def _task(title="T") -> Task:
     )
 
 
-class MockContainerRuntime:
-    """Test-Double für Container-Runtime ohne echten Docker."""
-    def __init__(self):
-        self.containers: dict[str, list] = {}
-        self.removed: set[str] = set()
-
-    def create(self, name: str, tasks: list[Task]) -> str:
-        assert tasks, "Container braucht mindestens einen Task"
-        self.containers[name] = tasks
-        return name
-
-    def remove(self, name: str) -> None:
-        self.removed.add(name)
-        self.containers.pop(name, None)
-
-    def exists(self, name: str) -> bool:
-        return name in self.containers
-
-
 class TestTST0118:
-    def test_container_name_follows_schema(self):
-        spec_id = "SPEC-0026"
-        import uuid
-        uid = str(uuid.uuid4())[:8]
-        name = f"sdd-{spec_id.lower()}-{uid}"
-        assert name.startswith("sdd-spec-0026-")
-
-    def test_single_task_container(self):
-        rt = MockContainerRuntime()
-        t = _task()
-        name = "sdd-spec-0026-abc"
-        rt.create(name, [t])
-        assert rt.exists(name)
-
-    def test_multiple_tasks_same_container(self):
-        rt = MockContainerRuntime()
-        tasks = [_task(f"T{i}") for i in range(3)]
-        name = "sdd-spec-0026-multi"
-        rt.create(name, tasks)
-        assert len(rt.containers[name]) == 3
-
-    def test_empty_task_list_raises(self):
-        rt = MockContainerRuntime()
-        with pytest.raises(AssertionError):
-            rt.create("sdd-spec-0026-empty", [])
-
-    def test_remove_clears_container(self):
-        rt = MockContainerRuntime()
-        name = "sdd-spec-0026-del"
-        rt.create(name, [_task()])
-        rt.remove(name)
-        assert not rt.exists(name)
-        assert name in rt.removed
-
-    def test_remove_idempotent(self):
-        rt = MockContainerRuntime()
-        name = "sdd-spec-0026-idem"
-        rt.create(name, [_task()])
-        rt.remove(name)
-        rt.remove(name)
-        assert not rt.exists(name)
-
-    def test_task_status_after_container_assignment(self):
+    def test_start_running_haelt_ausfuehrungsort_fest(self):
+        """G-01: Status und container_id gehen gemeinsam über."""
         t = _task()
         lc = TaskLifecycle(t)
         lc.assign("llm-1")
-        lc.start_running("sdd-spec-0026-x")
-        assert t.container_id == "sdd-spec-0026-x"
+        lc.start_running("local")
+        assert t.status == TaskStatus.RUNNING
+        assert t.container_id == "local"
+
+    def test_kein_ausfuehrungsort_ohne_running(self):
+        """INV-01: Ein verbotener Übergang hinterlässt keinen container_id."""
+        t = _task()
+        with pytest.raises(InvalidTransitionError):
+            TaskLifecycle(t).start_running("local")
+        assert t.status == TaskStatus.PENDING
+        assert t.container_id is None
+
+    def test_ausfuehrungsort_uebersteht_speichern_und_laden(self):
+        """G-04"""
+        t = _task()
+        lc = TaskLifecycle(t)
+        lc.assign("llm-1")
+        lc.start_running("local")
+        geladen = Task.from_dict(t.to_dict())
+        assert geladen.container_id == "local"
+        assert geladen.status == TaskStatus.RUNNING
+
+    def test_distribute_fuehrt_tasks_lokal_aus(self, tmp_path):
+        """G-02: container_id ist "local", eine Task-Container-Runtime gibt es nicht."""
+        cfg = MagicMock()
+        cfg.root = tmp_path
+        registry = LlmPoolRegistry([
+            LlmEntry("local", LlmType.LOCAL, "ollama", CostTier.CHEAP, 100000)
+        ])
+        gesehen: dict[str, tuple[TaskStatus, str | None]] = {}
+
+        def review(task, commit_fn=None):
+            gesehen[task.title] = (task.status, task.container_id)
+            return False  # nichts committed -> keine Finalisierung
+
+        pipeline = MagicMock()
+        pipeline.run.side_effect = review
+        tasks = [_task("A"), _task("B")]
+        with patch("sdd_cli.dist_orchestrator._git",
+                   return_value=MagicMock(returncode=0, stdout="")), \
+             patch("sdd_cli.dist_orchestrator.ReviewPipeline", return_value=pipeline):
+            DistributionOrchestrator(cfg, registry, work_dir=tmp_path).run("SPEC-0026", tasks)
+
+        assert gesehen == {
+            "A": (TaskStatus.RUNNING, "local"),
+            "B": (TaskStatus.RUNNING, "local"),
+        }

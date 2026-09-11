@@ -25,7 +25,6 @@ def cfg(tmp_path):
 def _mock_runtime(status: str | None = None) -> MagicMock:
     rt = MagicMock(spec=ContainerRuntime)
     rt.inspect_status.return_value = status
-    rt.exec_in.return_value = MagicMock(returncode=0)
     return rt
 
 
@@ -101,32 +100,9 @@ def test_tc04_rollback_on_docker_failure(cfg):
     assert branch_delete_calls, "Branch wurde bei Runtime-Fehler nicht zurückgerollt"
 
 
-# ── TC-05: sdd dev exec leitet Output weiter ──────────────────────────────────
-
-def test_tc05_exec_forwards_output(cfg):
-    rt = _mock_runtime(status="running")
-    rt.exec_in.return_value = MagicMock(returncode=0)
-
-    with pytest.raises(SystemExit) as exc_info:
-        _mgr(cfg, rt).exec_cmd("SPEC-0021", ["pytest", "tests/", "-x"])
-
-    rt.exec_in.assert_called_once_with("sdd-dev-spec-0021", ["pytest", "tests/", "-x"])
-    assert exc_info.value.code == 0
-
-
-# ── TC-06: sdd dev exec – Container nicht aktiv ──────────────────────────────
-
-def test_tc06_exec_no_container(cfg, capsys):
-    rt = _mock_runtime(status=None)
-
-    with pytest.raises(SystemExit) as exc_info:
-        _mgr(cfg, rt).exec_cmd("SPEC-0021", ["pytest"])
-
-    assert exc_info.value.code != 0
-    assert "läuft nicht" in capsys.readouterr().err
-
-
-# ── TC-07: sdd dev close ──────────────────────────────────────────────────────
+# ── TC-07: close() — aufgerufen von der Finalisierung (CON-0065 G-06) ─────────
+# TC-05/06 (sdd dev exec) und TC-08 (--delete-branch) entfielen mit CON-0065
+# v0.4.0 (#121); die Finalisierung prüft tests/unit/test_finalize_container.py.
 
 def test_tc07_close_stops_and_removes(cfg):
     rt = _mock_runtime()
@@ -135,15 +111,3 @@ def test_tc07_close_stops_and_removes(cfg):
     rt.stop.assert_called_once_with("sdd-dev-spec-0021")
     rt.rm.assert_called_once_with("sdd-dev-spec-0021")
 
-
-# ── TC-08: sdd dev close --delete-branch ─────────────────────────────────────
-
-def test_tc08_close_deletes_branch(cfg):
-    rt = _mock_runtime()
-    with (
-        patch("sdd_cli.dev_container._branch_exists", return_value=True),
-        patch("sdd_cli.dev_container._git") as mock_git,
-    ):
-        _mgr(cfg, rt).close("SPEC-0021", delete_branch=True)
-
-    mock_git.assert_called_with(["branch", "-D", "dev/SPEC-0021"])
