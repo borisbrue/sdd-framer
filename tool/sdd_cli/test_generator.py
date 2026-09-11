@@ -12,6 +12,7 @@ class GenerationResult:
     generated_files: list[dict] = field(default_factory=list)
     success: bool = True
     syntax_errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -28,6 +29,7 @@ class WriteOutcome:
     test_count: int = 0    # Tests in der Datei DANACH, nicht in der Vorlage
     stubs_added: int = 0
     backup: Path | None = None
+    note: str = ""         # Grund fuer `unchanged`, wenn er nicht der Regelfall ist
 
 
 _SLUGIFY_RE = re.compile(r"[^a-z0-9]+")
@@ -170,15 +172,53 @@ def _pep8_leerzeilen(text: str) -> str:
     return "\n".join(zeilen).rstrip("\n") + "\n"
 
 
+# Szenario-Schluesselwoerter je Gherkin-Sprache (Auszug aus gherkin-languages.json:
+# `scenario` und `scenarioOutline`). Bis #135 kannte der Generator nur die
+# englischen; ein deutsches Feature mit zehn `Szenario:` galt als leer, und an
+# die fertige Testdatei kam ein Skip-Platzhalter.
+_SZENARIO_SCHLUESSELWOERTER: dict[str, tuple[str, ...]] = {
+    "en": ("Scenario", "Example", "Scenario Outline", "Scenario Template"),
+    "de": ("Szenario", "Beispiel", "Szenariogrundriss", "Szenarien"),
+    "fr": ("Scénario", "Exemple", "Plan du scénario", "Plan du Scénario"),
+    "es": ("Escenario", "Ejemplo", "Esquema del escenario"),
+    "it": ("Scenario", "Esempio", "Schema dello scenario"),
+    "nl": ("Scenario", "Voorbeeld", "Abstract Scenario"),
+    "pt": ("Cenário", "Cenario", "Exemplo", "Esquema do Cenário", "Esquema do Cenario",
+           "Delineação do Cenário", "Delineacao do Cenario"),
+    "pl": ("Scenariusz", "Przykład", "Szablon scenariusza"),
+    "ru": ("Сценарий", "Пример", "Структура сценария", "Шаблон сценария"),
+    "sv": ("Scenario", "Exempel", "Abstrakt Scenario"),
+    "da": ("Scenarie", "Eksempel", "Abstrakt Scenario"),
+}
+
+_LANGUAGE_RE = re.compile(r"^\s*#\s*language\s*:\s*([A-Za-z][\w-]*)", re.MULTILINE)
+
+
+def _feature_sprache(feature_text: str) -> str | None:
+    """Sprachcode aus der `# language:`-Zeile, sonst None (= Englisch)."""
+    m = _LANGUAGE_RE.search(feature_text)
+    return m.group(1).lower() if m else None
+
+
 def _extract_scenarios(feature_text: str) -> list[str]:
-    """Extract scenario titles from a .feature file."""
+    """Szenario-Titel aus einem .feature-Text, gemaess dessen `# language:`.
+
+    Eine unbekannte Sprache faellt auf Englisch zurueck; `generate()` warnt dann.
+    """
+    sprache = _feature_sprache(feature_text) or "en"
+    woerter = _SZENARIO_SCHLUESSELWOERTER.get(sprache, _SZENARIO_SCHLUESSELWOERTER["en"])
     titles = []
     for line in feature_text.splitlines():
         stripped = line.strip()
-        if stripped.startswith("Scenario:") or stripped.startswith("Scenario Outline:"):
-            title = stripped.split(":", 1)[1].strip()
-            titles.append(title)
+        # Genau `Wort:` — `Beispiele:` (Examples-Tabelle) ist kein `Beispiel:`.
+        if any(stripped.startswith(w + ":") for w in woerter):
+            titles.append(stripped.split(":", 1)[1].strip())
     return titles
+
+
+# pytest-bdd bindet ein Feature mit `scenarios("….feature")` als Ganzes. Eine
+# solche Datei deckt jedes Szenario ab; Ruempfe je Titel waeren Doppelungen.
+_PYTEST_BDD_SCENARIOS_RE = re.compile(r"^\s*scenarios\s*\(", re.MULTILINE)
 
 
 def _test_funktionen(src: str) -> dict[str, tuple[int, int]]:
@@ -553,6 +593,51 @@ class TestGenerator:
             stubs_added=len(fehlend),
         )
 
+    # ── Gherkin: Datei mit scenarios() oder Contract ohne Szenario (#135) ─────
+
+    def _gherkin_sonderfaelle(
+        self, con_id: str, contract: dict, out_path: Path, force: bool,
+        result: GenerationResult,
+    ) -> WriteOutcome | None:
+        """Gibt ein Outcome zurueck, wenn nichts geschrieben werden darf; sonst None.
+
+        Beide Faelle haengten bis #135 einen Skip-Platzhalter an eine fertige
+        Datei und meldeten Erfolg: eine pytest-bdd-Datei, die das Feature per
+        `scenarios(...)` komplett bindet, und ein Contract, in dem der Generator
+        kein Szenario findet (etwa wegen unbekannter Sprache).
+        """
+        if contract.get("format") != "gherkin" or force:
+            return None
+        rel = out_path.relative_to(self.repo_root) if out_path.is_absolute() else out_path
+        vorhanden = out_path.read_text(encoding="utf-8") if out_path.exists() else None
+
+        if vorhanden is not None and _PYTEST_BDD_SCENARIOS_RE.search(vorhanden):
+            return WriteOutcome("unchanged", test_count=len(_test_funktionen(vorhanden)),
+                                note="bindet das Feature per scenarios(), deckt jedes Szenario ab")
+
+        artifact_text = self._read_artifact(contract)
+        quelle = artifact_text or contract.get("_body", "")
+        if _extract_scenarios(quelle):
+            return None
+
+        sprache = _feature_sprache(quelle)
+        if sprache and sprache not in _SZENARIO_SCHLUESSELWOERTER:
+            result.warnings.append(
+                f"{con_id}: `# language: {sprache}` ist dem Generator unbekannt "
+                f"(bekannt: {', '.join(sorted(_SZENARIO_SCHLUESSELWOERTER))}); "
+                f"gesucht wurde nach englischen Schluesselwoertern."
+            )
+        if vorhanden is None:
+            result.warnings.append(
+                f"{con_id}: kein Szenario gefunden — {rel} enthaelt nur einen Platzhalter."
+            )
+            return None  # der lintbare Platzhalter entsteht wie bisher (#99)
+        result.warnings.append(
+            f"{con_id}: kein Szenario gefunden — {rel} bleibt unangetastet."
+        )
+        return WriteOutcome("unchanged", test_count=len(_test_funktionen(vorhanden)),
+                            note="kein Szenario im Contract, Datei nicht angetastet")
+
     # ── Main entry point ──────────────────────────────────────────────────────
 
     def generate(
@@ -584,7 +669,9 @@ class TestGenerator:
                 out_path.write_text(content, encoding="utf-8")
                 continue
 
-            outcome = self._write_with_preservation(out_path, content, force=force)
+            outcome = self._gherkin_sonderfaelle(con_id, contract, out_path, force, result)
+            if outcome is None:
+                outcome = self._write_with_preservation(out_path, content, force=force)
 
             if outcome.status == "unparsable":
                 result.success = False
@@ -602,6 +689,7 @@ class TestGenerator:
                 "stubs_added": outcome.stubs_added,
                 "backup": str(outcome.backup.relative_to(self.repo_root))
                 if outcome.backup else None,
+                "note": outcome.note,
             })
 
         return result
