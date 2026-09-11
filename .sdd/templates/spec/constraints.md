@@ -1,6 +1,6 @@
 # Constraints
 
-> Rahmenbedingungen, die für ALLE Specs gelten. Eine Spec darf hiervon nur per ADR abweichen.
+> Rahmenbedingungen, die für ALLE Specs gelten. Abweichungen werden im Abschnitt "Architektur & Design Patterns" der betroffenen Spec begründet.
 
 ## Technische Constraints
 

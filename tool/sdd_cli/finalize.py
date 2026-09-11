@@ -123,7 +123,6 @@ class SpecFinalizer:
         self._dry_run = dry_run
         self._mgr = DevContainerManager(
             cfg,
-            pr_strategy=GhFallbackPRStrategy(),
             runtime=get_runtime(cfg),
         )
 

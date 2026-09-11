@@ -4,7 +4,7 @@ title: Isolierte Docker-Entwicklungsumgebung pro Spec
 status: implemented
 owner: Boris
 created: 2026-05-16
-updated: '2026-05-16'
+updated: '2026-09-11'
 version: 0.1.0
 priority: medium
 tags:
@@ -31,6 +31,24 @@ started_at: '2026-05-16T21:21:32Z'
 # Isolierte Docker-Entwicklungsumgebung pro Spec
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+
+> **Nachtrag (2026-09-11, #121/#123):** Die Befehlsgruppe `sdd dev` ist mit
+> SPEC-0044 entfallen. Was das für die Anforderungen unten heißt:
+>
+> - **FR-01:** `sdd dev start` heißt `sdd start` und setzt zusätzlich den Status
+>   auf `in-progress` (SPEC-0019). Der Branch entsteht aus dem aktuellen HEAD,
+>   nicht aus `main` (CON-0065 G-01, v0.3.0).
+> - **FR-03, FR-04:** `sdd dev exec` gibt es nicht mehr. Befehle im Container
+>   laufen direkt über die Runtime (`docker exec` / `podman exec`), die Tests
+>   über die Finalisierung (CON-0065 G-05).
+> - **FR-05, US-03:** `sdd dev pr` gibt es nicht mehr. Das PR-Gate liegt in der
+>   Finalisierung. CON-0066 ist deprecated und nennt, was davon geblieben ist.
+> - **FR-06, US-05:** `sdd dev close` gibt es nicht mehr. Die Finalisierung
+>   entfernt den Container nach grünen Tests. `--delete-branch` ist entfallen
+>   (CON-0065 G-06).
+>
+> Die Abschnitte unten beschreiben den ursprünglichen Entwurf und bleiben
+> unverändert stehen.
 
 ## 1. Kontext & Motivation
 

@@ -34,27 +34,32 @@ def _finalisieren(tmp_path, *, test_rc: int, compose: str = ""):
          patch.object(finalize, "_git", return_value=CompletedProcess([], 0, stdout="abc", stderr="")), \
          patch.object(finalize, "save_test_result"), \
          patch.object(finalize.SpecFinalizer, "_run_compliance_check", return_value=None), \
-         patch.object(finalize.SpecFinalizer, "_create_pr", return_value=("https://pr/1", None, None)), \
+         patch.object(finalize.SpecFinalizer, "_create_pr",
+                      return_value=("https://pr/1", None, None)) as pr_anlegen, \
          patch.object(finalize.subprocess, "run", side_effect=run):
         report = finalize.SpecFinalizer(cfg).run("SPEC-0021", no_commit=True)
-    return report, mgr
+    return report, mgr, pr_anlegen
 
 
 def test_gruene_tests_raeumen_den_container_auf(tmp_path):
-    report, mgr = _finalisieren(tmp_path, test_rc=0)
+    report, mgr, pr_anlegen = _finalisieren(tmp_path, test_rc=0)
     assert report.tests_passed
     mgr.close.assert_called_once_with("SPEC-0021")
+    pr_anlegen.assert_called_once()
 
 
 def test_rote_tests_lassen_den_container_stehen(tmp_path):
     """Der Fall, den bisher kein Test prüfte."""
-    report, mgr = _finalisieren(tmp_path, test_rc=1)
+    report, mgr, pr_anlegen = _finalisieren(tmp_path, test_rc=1)
     assert not report.tests_passed
     mgr.close.assert_not_called()
+    # Kein PR bei roten Tests: früher CON-0066 G-01 über `sdd dev pr`,
+    # heute das Gate der Finalisierung.
+    pr_anlegen.assert_not_called()
 
 
 def test_compose_stack_bleibt_unberuehrt(tmp_path):
-    _, mgr = _finalisieren(tmp_path, test_rc=0, compose="compose.yml")
+    _, mgr, _ = _finalisieren(tmp_path, test_rc=0, compose="compose.yml")
     mgr.close.assert_not_called()
 
 
@@ -71,3 +76,10 @@ def test_kein_exec_weg_mehr():
 
     assert not hasattr(DevContainerManager, "exec_cmd")
     assert not hasattr(ContainerRuntime, "exec_in")
+
+
+def test_kein_pr_weg_mehr():
+    """`pr()` bediente das entfernte `sdd dev pr` (CON-0066 deprecated, #123)."""
+    from sdd_cli.dev_container import DevContainerManager
+
+    assert not hasattr(DevContainerManager, "pr")

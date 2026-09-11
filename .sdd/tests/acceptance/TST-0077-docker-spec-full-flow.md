@@ -1,24 +1,23 @@
 ---
 id: TST-0077
 project: PRJ-0001
-title: "Acceptance Test: Vollständiger Docker-Spec-Flow"
+title: "Acceptance Test: Docker-Spec-Flow"
 contract: CON-0065
-contracts: ["CON-0065", "CON-0066", "CON-0067"]
+contracts: ["CON-0065"]
 spec: SPEC-0021
 level: acceptance
 status: draft
 artifact: "tests/unit/test_tst_0077.py"
 ---
 
-# Acceptance Test: Vollständiger Docker-Spec-Flow
+# Acceptance Test: Docker-Spec-Flow
 
-> **Contracts:** CON-0065, CON-0066, CON-0067 · **Typ:** Acceptance-Test · **Status:** draft
+> **Contract:** CON-0065 · **Typ:** Acceptance-Test · **Status:** draft
 
 ## Abgedeckte Erfolgskriterien (SPEC-0021)
 
 - Projekt automatisch in Container geladen
-- Tests laufen im Container
-- PR-Dokument wird erstellt mit korrektem Merge-Befehl
+- Das Testergebnis wird festgehalten und lässt sich wieder lesen
 - Container wird nach grünen Tests entfernt, der Branch bleibt
 
 ## Test-Datei
@@ -33,22 +32,20 @@ artifact: "tests/unit/test_tst_0077.py"
    → Container sdd-dev-spec-0021 gestartet
 
 2. podman exec sdd-dev-spec-0021 pytest …   (bzw. docker exec)
-   → Tests laufen im Container; im Test wird das Ergebnis gespeichert
+   → im Test simuliert: Ergebnis wird gespeichert und wieder gelesen
 
-3. sdd pr SPEC-0021
-   → Gate: Tests grün ✓
-   → PR über die PR-Strategie erstellt
-
-4. close() — so, wie die Finalisierung es nach grünen Tests aufruft
+3. close() — so, wie die Finalisierung es nach grünen Tests aufruft
    → Container gestoppt + entfernt
    → Branch bleibt erhalten
 ```
 
-Bis CON-0065 v0.4.0 (#121) liefen Schritt 2 und 4 über `sdd exec` und
-`sdd close --delete-branch`. Beide Befehle gibt es seit SPEC-0044 nicht mehr.
+Bis #121/#123 gehörten `sdd exec`, `sdd pr` und `sdd close --delete-branch` zum
+Ablauf. Diese Befehle gibt es seit SPEC-0044 nicht mehr. Den PR legt heute die
+Finalisierung an. Das prüfen `test_finalize_push.py` und
+`test_finalize_container.py`, CON-0066 ist deprecated.
 
 ## Akzeptanzkriterien
 
 - [ ] Container und Branch folgen CON-0065 INV-01/INV-02
-- [ ] PR-Strategie wird mit spec_id und Config aufgerufen
+- [ ] Das gespeicherte Testergebnis ist wieder lesbar (`passed`, 4/4)
 - [ ] Nach `close()` sind Container gestoppt und entfernt, der Branch unberührt
