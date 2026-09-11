@@ -15,9 +15,9 @@ sie nach **expliziter Nutzerbestätigung**. Kein Schreiben ohne "ja" / "ok" / "s
    Falls nicht: "Kein SDD-Projekt gefunden. Führe `sdd init` aus." und abbrechen.
 2. Lese `.sdd/config.yaml` vollständig.
 3. Führe aus: `sdd config validate`
-4. Zeige strukturierte Übersicht aller Sections (project, llm_pool, docker, evaluator, orchestrator).
+4. Zeige strukturierte Übersicht aller Sections (project, llm inkl. `llm.roles`, docker, evaluator, orchestrator).
 5. Hebe Probleme hervor:
-   - Remote-Provider ohne `api_key_env`
+   - `llm.roles`: Parameter, die der Provider ignoriert, und gleiches Modell für Reviewer und Implementierer
    - `max_parallel_containers < 1`
    - `registry.url` gesetzt ohne `registry.auth_env`
    - Fehlende Pflichtfelder
@@ -64,9 +64,9 @@ sdd config wizard --section llm  # Nur LLM-Section konfigurieren
 ```
 Nutzer: /sdd-config
 → Skill liest config.yaml
-→ Erkennt: Remote-Provider 'claude-sonnet' hat kein api_key_env
-→ Schlägt vor: api_key_env: ANTHROPIC_API_KEY
+→ Erkennt: llm.roles.reviewer nutzt dasselbe Modell wie llm.roles.implementer
+→ Schlägt vor: reviewer auf claude-cli umstellen
 → Nutzer: "ja"
-→ Schreibt: sdd config set llm_pool.providers[0].api_key_env=ANTHROPIC_API_KEY
+→ Schreibt: sdd config set llm.roles.reviewer.provider=claude-cli
 → Führt aus: sdd config validate → ✓
 ```

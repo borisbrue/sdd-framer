@@ -39,7 +39,10 @@ class TestTST0131:
         assert _REGRESSION in _skill_text()
 
     def test_tc04_order_solid_pattern_regression(self) -> None:
+        # Seit #134 steht vor Schritt 1 eine Tabelle der Gate-Kette, die alle
+        # Befehle nennt. Die Reihenfolge der Schritte beginnt bei "## Schritt 1".
         text = _skill_text()
+        text = text[text.find("## Schritt 1"):]
         pos_solid = text.find(_SOLID_UND_PATTERN)
         pos_pattern = text.find(_PATTERN_PERSISTENZ)
         pos_regression = text.find(_REGRESSION)

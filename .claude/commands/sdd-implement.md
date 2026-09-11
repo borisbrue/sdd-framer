@@ -1,7 +1,7 @@
 ---
 scope: tdd-implementation
 ---
-<!-- skill: sdd-implement | version: 1.0.0 | sdd-blueprint: true | updated: 2026-09-26 -->
+<!-- skill: sdd-implement | version: 1.1.0 | sdd-blueprint: true | updated: 2026-09-28 -->
 
 # /sdd-implement – Implementierung über die Rollen-Pipeline
 
@@ -20,18 +20,27 @@ Implementierungskontext einfließen. Die Pipeline liefert nur Holdout-Ergebnisse
 - Lies `status` aus dem Frontmatter der Spec:
   - `deprecated`: "✗ Spec ist deprecated – Implementierung nicht möglich." und abbrechen.
   - `in-progress`: Die Pipeline startet nur bei `approved`. Frage den Nutzer, ob die Spec
-    zurück auf `approved` soll (`sdd spec approve $ARGUMENTS`), sonst abbrechen.
+    zurück auf `approved` soll (erneute Freigabe wie im letzten Punkt von Schritt 2; die
+    Gate-Phasen sind dann schon erfüllt), sonst abbrechen.
 
 ## Schritt 2: Review und Approve (nur bei `draft` oder `review`)
-Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
+Die Freigabe der Spec verlangt jede Phase der Gate-Kette (CON-0025); fehlt eine, meldet sie
+`✗ Phase '<phase>' noch nicht abgeschlossen`. Spawne einen Subagenten (Agent-Tool), der die Kette
+in dieser Reihenfolge durchläuft:
 
-> Führe das Review für $ARGUMENTS autonom durch:
-> 1. `sdd review spec $ARGUMENTS` – SOLID-Analyse und Pattern-Vorschläge; Warnungen loggen.
-> 2. Sinnvolle Patterns annehmen: `sdd review pattern accept $ARGUMENTS <Pattern> --reason "…"`.
-> 3. `sdd spec regression $ARGUMENTS` – bei Severity `error`: Abbruch mit Bericht.
-> 4. Contracts mit `status: draft` prüfen (messbar, vollständig, atomar, widerspruchsfrei) und
->    `status: approved` setzen, wenn inhaltlich in Ordnung.
-> 5. `sdd spec approve $ARGUMENTS`, wenn alle Contracts approved sind.
+> Führe das Review für $ARGUMENTS autonom durch, Schritt für Schritt:
+> 1. `sdd spec review $ARGUMENTS` – schließt `spec-review` ab; SOLID-Analyse und Pattern-Vorschläge
+>    (`sdd review spec $ARGUMENTS`) loggen, sinnvolle Patterns mit
+>    `sdd review pattern accept $ARGUMENTS <Pattern> --reason "…"` annehmen.
+> 2. Contracts prüfen (messbar, vollständig, atomar, widerspruchsfrei), dann
+>    `sdd contract propose $ARGUMENTS CON-… CON-…` (Spec-ID zuerst, dann alle Contract-IDs).
+> 3. `sdd contract analyze $ARGUMENTS CON-… CON-…`; offene Konflikte mit
+>    `sdd conflict resolve|acknowledge $ARGUMENTS <CF-ID>` sachlich auflösen oder begründen.
+> 4. `sdd test generate $ARGUMENTS CON-… CON-…` – Test-Rümpfe und `tests-generated`.
+> 5. `sdd spec regression $ARGUMENTS` – bei Severity `error`: Abbruch mit Bericht.
+> 6. Contracts mit `status: draft` auf `status: approved` setzen, wenn inhaltlich in Ordnung
+>    (das Frontmatter allein ersetzt keine Gate-Phase), fehlende `fr_test_map`-Einträge ergänzen,
+>    dann `sdd spec approve $ARGUMENTS`.
 
 Scheitert das Review: Bericht zeigen und abbrechen mit
 "✗ Automatisches Review fehlgeschlagen – '/sdd-review $ARGUMENTS' manuell ausführen."
