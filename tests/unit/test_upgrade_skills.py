@@ -70,3 +70,65 @@ def test_unbekannter_provider_bricht_vor_jeder_aenderung_ab(tmp_path):
         upgrade.upgrade_project(ziel)
     assert not (ziel / ".sdd" / "schemas").exists()
     assert (ziel / ".sdd" / "config.yaml").read_text(encoding="utf-8") == vorher
+
+
+# ── Ältere Blueprint-Fassungen werden ersetzt (#134) ─────────────────────────
+#
+# Ein Projekt behielt sonst auf Dauer Skills, die auf entfernte Befehle zeigten
+# und die Gate-Kette nicht kannten. Erkennungsmerkmal ist die Kopfzeile
+# `sdd-blueprint: true` mit Versionsnummer; Dateien ohne sie gelten als eigene.
+
+_ALT = "<!-- skill: sdd-review | version: 0.4.0 | sdd-blueprint: true | updated: 2026-06-09 -->\n\nalt\n"
+
+
+def _blueprint_review() -> str:
+    return (_blueprint_root() / "templates" / "agents-md" / "providers" / "claude"
+            / "sdd-review.md").read_text(encoding="utf-8")
+
+
+def test_aeltere_blueprint_fassung_wird_ersetzt(tmp_path):
+    ziel = _projekt(tmp_path)
+    datei = ziel / ".claude" / "commands" / "sdd-review.md"
+    datei.parent.mkdir(parents=True)
+    datei.write_text(_ALT, encoding="utf-8")
+
+    result = upgrade.upgrade_project(ziel)
+    assert datei.read_text(encoding="utf-8") == _blueprint_review()
+    assert datei in result["skills_updated"] and datei in result["updated"]
+    assert datei not in result["skills"]
+
+
+def test_frontmatter_bleibt_beim_ersetzen(tmp_path):
+    """Die Repo-Skills tragen `scope:` (TST-0196); das darf ein Upgrade nicht kosten."""
+    ziel = _projekt(tmp_path)
+    datei = ziel / ".claude" / "commands" / "sdd-review.md"
+    datei.parent.mkdir(parents=True)
+    datei.write_text("---\nscope: spec-review\n---\n" + _ALT, encoding="utf-8")
+
+    upgrade.upgrade_project(ziel)
+    assert datei.read_text(encoding="utf-8") == "---\nscope: spec-review\n---\n" + _blueprint_review()
+
+
+@pytest.mark.parametrize("kopf", [
+    "<!-- skill: sdd-review | version: 99.0.0 | sdd-blueprint: true | updated: 2030-01-01 -->",
+    "<!-- skill: sdd-review | version: 0.1.0 | sdd-blueprint: false | updated: 2026-06-09 -->",
+    "# Mein eigener Review-Skill",
+])
+def test_neuere_oder_eigene_fassung_bleibt(tmp_path, kopf):
+    ziel = _projekt(tmp_path)
+    datei = ziel / ".claude" / "commands" / "sdd-review.md"
+    datei.parent.mkdir(parents=True)
+    datei.write_text(kopf + "\n\nmeins\n", encoding="utf-8")
+
+    result = upgrade.upgrade_project(ziel)
+    assert datei.read_text(encoding="utf-8") == kopf + "\n\nmeins\n"
+    assert result["skills_updated"] == []
+
+
+def test_zweiter_lauf_ersetzt_nichts_mehr(tmp_path):
+    ziel = _projekt(tmp_path)
+    datei = ziel / ".claude" / "commands" / "sdd-review.md"
+    datei.parent.mkdir(parents=True)
+    datei.write_text(_ALT, encoding="utf-8")
+    upgrade.upgrade_project(ziel)
+    assert upgrade.upgrade_project(ziel)["skills_updated"] == []

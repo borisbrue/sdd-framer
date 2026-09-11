@@ -1,4 +1,4 @@
-<!-- skill: sdd-implement | version: 0.7.0 | sdd-blueprint: true | updated: 2026-06-09 -->
+<!-- skill: sdd-implement | version: 0.10.0 | sdd-blueprint: true | updated: 2026-09-11 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -27,16 +27,33 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 
 > Führe das vollständige Review für $ARGUMENTS autonom durch:
 >
-> 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse und Pattern-Vorschläge ausgeben;
->    beides beratend, keine Blockade. Warnings loggen. Sinnvolle Vorschläge mit
->    `sdd review pattern accept $ARGUMENTS <Name> --reason "…"` festhalten,
+> 1. `sdd spec review $ARGUMENTS` — schließt die Gate-Phase `spec-review` ab. SOLID-Analyse
+>    und Pattern-Vorschläge laufen darin (wenn in `.sdd/config.yaml` aktiviert), beratend,
+>    keine Blockade. Sinnvolle Vorschläge festhalten:
+>    ```bash
+>    sdd review pattern accept $ARGUMENTS <PatternName> --reason "<Begründung>"
+>    ```
 >    die übrigen mit `sdd review pattern reject`.
-> 2. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
-> 3. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
+> 2. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
+>    - Fehlt die `artifact`-Datei eines Contracts: anlegen (Phase `contracts-draft`)
 >    - Setze `status: approved` im Frontmatter wenn inhaltlich ok (Edit-Tool)
 >    - Kein interaktiver Bestätigungsschritt — autonom entscheiden
-> 4. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+> 3. `sdd contract propose $ARGUMENTS CON-… CON-…` mit allen Contracts der Spec — Phasen
+>    `contracts-proposed` und `contracts-draft`
+> 4. `sdd contract analyze $ARGUMENTS CON-… CON-…` — Phase `contracts-review`. Offene
+>    Konflikte per `sdd conflict resolve $ARGUMENTS <ID> --action "…"` klären; sie
+>    blockieren sonst die nächste Phase.
+> 5. `sdd test generate $ARGUMENTS CON-… CON-…` — Phase `tests-generated`. Danach
+>    TST-Dokumente anlegen und `tests:` im Spec- und Contract-Frontmatter eintragen.
+> 6. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem
+>    Bericht; bei `warning`/`info`: weiter. Wurde die LLM-Stufe übersprungen (kein
+>    LLM-Zugang): Überschneidungen mit den fachlich nächsten Specs selbst prüfen, dann
+>    `sdd spec regression $ARGUMENTS --allow-skipped-llm`.
+> 7. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+>
+> Meldet ein Befehl `✗ Phase 'X' noch nicht abgeschlossen`: Der Befehl zur Phase X fehlt
+> (Tabelle "Die Gate-Kette" in `/sdd-review`). Nachholen, nie das Gate umgehen.
 >
 > Kein Warten auf Nutzereingabe. Bei Regression-Konflikt (error): Abbruch.
 
@@ -184,8 +201,12 @@ Lese folgende Dateien (und NUR diese):
 1. `.sdd/specs/$ARGUMENTS-*.md` – vollständiger Spec-Inhalt
 2. Alle CON-IDs aus `contracts:`-Frontmatter → zugehörige Contract-Dateien in `.sdd/contracts/`
 3. `.sdd/patterns/$ARGUMENTS-patterns.json` – falls vorhanden
-4. `AGENTS.md` – falls vorhanden (zeige [WARN] wenn fehlend)
-5. Vorhandene Test-Dateien aus TST-`artifact`-Feldern in `.sdd/tests/`
+4. `.sdd/patterns/_catalog.json` – globaler Pattern-Katalog (projektweite Aggregation
+   akzeptierter Patterns über alle Specs). Bei Verfügbarkeit per
+   `PatternRegistry.catalog_summary(exclude_spec_id=$ARGUMENTS)` (CON-0183) zu einer
+   kompakten Zusammenfassung formatieren, die den Eintrag der eigenen Spec ausschließt.
+5. `AGENTS.md` – falls vorhanden (zeige [WARN] wenn fehlend)
+6. Vorhandene Test-Dateien aus TST-`artifact`-Feldern in `.sdd/tests/`
 
 **Nicht lesen:** `.sdd/holdout/` – nie, unter keinen Umständen.
 
@@ -193,6 +214,9 @@ Fasse den geladenen Kontext kurz zusammen:
 - Spec: Titel, Status, N Contracts, M Tests
 - Contracts: [CON-IDs]
 - Pattern-Register: [Pattern-Namen falls vorhanden]
+- Falls die Katalog-Zusammenfassung aus `_catalog.json` nicht leer ist, zeige zusätzlich
+  eine Zeile: "Etablierte Patterns im Projekt: [...]" (kompakte Zusammenfassung der
+  projektweiten, fremden Patterns – leer/fehlend → Zeile entfällt komplett).
 
 ## Schritt 3: Task-Plan via Decompose laden
 
@@ -218,6 +242,30 @@ Falls nicht: erweitere den Task manuell um ein sinnvolles `test_file`/`test_comm
 
 Zeige den Plan und starte sofort – keine Bestätigung erforderlich.
 
+## Schritt 3.5: Task-Routing prüfen
+
+Lese `task_routing` aus `.sdd/config.yaml`:
+```bash
+grep -A5 "task_routing:" .sdd/config.yaml
+```
+
+Setze **ROUTING_MODE** basierend auf dem Ergebnis:
+
+- `task_routing.enabled: false` (oder Block fehlt) → **ROUTING_MODE=claude** (Standardpfad, alle Tasks durch Claude)
+- `task_routing.enabled: true` UND `llm.local_llm` konfiguriert → **ROUTING_MODE=hybrid**
+- `task_routing.enabled: true` ABER kein `llm.local_llm` → **ROUTING_MODE=claude** + Warnung:
+  `[WARN] task_routing.enabled=true aber kein llm.local_llm konfiguriert – alle Tasks laufen via Claude.`
+
+Zeige kurz:
+```
+Routing-Modus: <claude|hybrid>
+  threshold: <complexity_threshold> (default: 30)
+  local_llm:  <model @ base_url> oder "nicht konfiguriert"
+```
+
+Bei **ROUTING_MODE=claude**: Schritt 4 läuft vollständig im Claude-Pfad (keine Änderung).
+Bei **ROUTING_MODE=hybrid**: Schritt 4 entscheidet pro Task via `sdd task-route`.
+
 ## Schritt 4: Per-Task TDD-Zyklus
 
 ⚠️ **KERNREGEL: Jeder `type=code`-Task durchläuft zwingend RED → GREEN.**
@@ -227,17 +275,24 @@ Tasks ohne grünen Test werden NICHT als erledigt markiert.
 Code wird auf dem Host-Filesystem geschrieben (Read/Edit/Write-Tools).
 Tests laufen je nach CONTAINER_MODE:
 - **host**: direkt auf dem Host
-- **container**: via `$RUNTIME exec sdd-dev-<spec-id-klein> <cmd>`
-  (`$RUNTIME` = `docker.runtime` aus `.sdd/config.yaml`, Containername
-  deterministisch nach CON-0065 INV-01: `SPEC-0021` → `sdd-dev-spec-0021`)
+- **container**: via `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') <cmd>`
+  (`sdd dev exec` existiert seit SPEC-0044 nicht mehr als CLI-Befehl — CON-0165 — die
+  Container-Runtime/Containername-Konvention sind dieselben wie im Diagnose-Schritt 1b)
 
 ### Für JEDEN `type=code`-Task (in Abhängigkeitsreihenfolge):
+
+**Bei ROUTING_MODE=hybrid:** Bestimme zuerst den Executor:
+```bash
+sdd task-route $ARGUMENTS <task-id>
+```
+Ausgabe ist `local` oder `claude`. Setze **TASK_EXECUTOR** entsprechend.
 
 #### 4a: Test-Datei erstellen (falls noch nicht vorhanden)
 
 Lese `task.test_file`. Falls die Datei noch nicht existiert:
 
 **Erstelle eine ECHTE fehlschlagende Test-Datei** — KEIN `pytest.skip()`, KEIN `pass`.
+(Immer Claude — unabhängig von TASK_EXECUTOR.)
 
 Der Test muss:
 - Die zu implementierende Funktion/Klasse/Modul direkt importieren
@@ -291,7 +346,7 @@ React-Komponenten ohne DOM-Setup sind schwer testbar — die Logik darunter ist 
 Führe `task.test_command` aus:
 
 - Host-Modus: direkt ausführen
-- Container-Modus: `$RUNTIME exec sdd-dev-<spec-id-klein> <test_command>`
+- Container-Modus: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') <test_command>`
 
 **Erwartetes Ergebnis: Test MUSS fehlschlagen** (ImportError, NameError, AssertionError usw.)
 
@@ -303,8 +358,39 @@ Falls der Test rot ist: ✓ Fortfahren mit 4c.
 
 #### 4c: Implementierung schreiben
 
+**TASK_EXECUTOR=claude (oder ROUTING_MODE=claude):**
+
 Schreibe den Implementierungscode für diesen Task (Spec + Contracts als Grundlage).
 Halte den Code minimal — nur was nötig ist damit der Test grün wird.
+
+**TASK_EXECUTOR=local:**
+
+Delegiere die Implementierung an das lokale LLM:
+
+```bash
+sdd task-exec $ARGUMENTS <task-id>
+```
+
+- Container-Modus: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') sdd task-exec $ARGUMENTS <task-id>`
+
+Das Ergebnis ist exit-code 0 (Tests grün) oder exit-code 1 (Tests noch rot).
+
+Falls exit-code 1 → **Retry-Loop (max. 2 Versuche):**
+
+```bash
+# Versuch 2 mit Fehlerkontext aus dem vorherigen Lauf:
+sdd task-exec $ARGUMENTS <task-id> --iteration 2 --error-context "<pytest-output>"
+```
+
+Falls auch Versuch 2 fehlschlägt → **Eskalation zu Claude:**
+```
+[ESCALATE] Lokales LLM konnte Task '<title>' nach 2 Versuchen nicht lösen.
+           Claude übernimmt mit Fehlerkontext aus beiden Versuchen.
+```
+Claude analysiert den Traceback und implementiert direkt (4c-claude-Pfad).
+
+Zeige nach erfolgreichem lokalem LLM-Lauf:
+`[LOCAL] Task '<title>' durch lokales LLM implementiert (Versuch N).`
 
 #### 4d: Test GREEN verifizieren
 
@@ -312,7 +398,7 @@ Führe `task.test_command` erneut aus.
 
 Falls grün: ✓ Task abgeschlossen — weiter mit dem nächsten Task.
 
-Falls rot:
+Falls rot (Claude-Pfad):
 - Analysiere den Traceback
 - Korrigiere den Implementierungscode
 - Wiederhole 4d (max. 3 Iterationen)
@@ -324,7 +410,7 @@ Nach jedem grünen Task: Führe die vollständige Test-Suite aus um Regressionen
 
 - Host, Python: `pytest tests/ -x --tb=short`
 - Host, TypeScript: `npm test` (im jeweiligen Package-Verzeichnis)
-- Container: `$RUNTIME exec sdd-dev-<spec-id-klein> pytest tests/ -x --tb=short`
+- Container: `<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') pytest tests/ -x --tb=short`
 
 Bei Regression: repariere bevor du zum nächsten Task übergehst.
 
@@ -352,9 +438,12 @@ Alle Tasks grün — jetzt werden die Holdout-Szenarien tier-spezifisch geprüft
 
 ### 5.5a: Critical-Tier
 
+`sdd evaluate` existiert seit der Holdout-Konsolidierung nicht mehr — Ersatz ist
+`sdd holdout run` mit identischen Flags (`--base-url`, `--spec`, `--tier`).
+
 **CONTAINER_MODE=container:**
 ```bash
-$RUNTIME exec sdd-dev-<spec-id-klein> bash -c \
+<runtime> exec sdd-dev-$(echo $ARGUMENTS | tr '[:upper:]' '[:lower:]') bash -c \
   "pip install -q --no-user --no-cache-dir -e '/workspace/tool/[evaluate]' > /dev/null && \
    sdd holdout run --base-url $SDD_EVAL_BASE_URL --spec $ARGUMENTS --tier critical"
 ```

@@ -1,14 +1,14 @@
-<!-- skill: sdd-new | version: 0.2.0 | sdd-blueprint: true | updated: 2026-05-30 -->
+<!-- skill: sdd-new | version: 0.3.0 | sdd-blueprint: true | updated: 2026-09-11 -->
 
-# /sdd-new – Neuen SDD-Spec, Contract oder Test erstellen
+# /sdd-new – Neuen SDD-Spec, Contract, Test oder ADR erstellen
 
 ## Aufgabe
 Führe den Nutzer interaktiv durch die Erstellung eines neuen SDD-Dokuments.
-`$ARGUMENTS` enthält den Typ: `spec`, `contract` oder `test`.
+`$ARGUMENTS` enthält den Typ: `spec`, `contract`, `test` oder `adr`.
 
 ## Schritt 1: Typ bestimmen
-Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / holdout)"
-Akzeptiere Abkürzungen: s=spec, c=contract, t=test, h=holdout.
+Falls `$ARGUMENTS` leer: frage "Was möchtest du erstellen? (spec / contract / test / adr / holdout)"
+Akzeptiere Abkürzungen: s=spec, c=contract, t=test, a=adr, h=holdout.
 
 Falls Typ `holdout`: verweise auf `/sdd-holdout $SPEC_ID` — Holdouts werden
 über einen eigenen Skill erstellt (isolierter Kontext, keine Sourcecode-Sicht).
@@ -47,6 +47,22 @@ Zeige das Dokument zur Bestätigung. Erst nach "ja" / "ok" / "speichern":
 Falls die SPEC-ID nicht ermittelbar ist (z.B. keine bestehenden Specs im Verzeichnis),
 brich mit Fehlermeldung ab — keine Datei schreiben, keine Ausgabe mit falscher ID.
 
+## Schritt 3: Offene Fragen klären (vor sdd-review)
+
+Lies den Abschnitt "Offene Fragen" aus der soeben gespeicherten Spec.
+Falls offene Fragen vorhanden sind (Einträge mit `- [ ]`):
+
+Gehe jede Frage **einzeln** durch — stelle sie dem Nutzer, warte auf Antwort,
+dann nächste Frage. Keine Batch-Abfragen.
+
+Nach allen Antworten:
+- Ersetze `- [ ]` durch `- [x]` und ergänze die Antwort direkt hinter der Frage
+- Aktualisiere betroffene FRs / Nicht-Ziele / Architektur-Abschnitte wo die Antwort
+  die Spec inhaltlich verändert
+- Zeige kurz welche Abschnitte aktualisiert wurden
+
+Falls keine offenen Fragen vorhanden: direkt zu "Nächster Schritt".
+
 **Nächster Schritt:** `/sdd-review SPEC-XXXX` — ersetze XXXX durch die soeben vergebene ID.
 
 ## Schritt 2b: CONTRACT erstellen
@@ -79,3 +95,11 @@ Template: `.sdd/templates/test/default.md`. Speichere in `tests/<stufe>/`.
 
 **Nächster Schritt:** `/sdd-review TST-XXXX` — Test reviewen bevor implementiert wird.
 
+## Schritt 2d: ADR erstellen
+Fragen:
+1. Welche Entscheidung wird dokumentiert? (Titel)
+2. Kontext und Problem?
+3. Entscheidung und Begründung?
+4. Konsequenzen?
+
+Template: `.sdd/templates/adr/default.md`. Nächste ADR-ID ermitteln.

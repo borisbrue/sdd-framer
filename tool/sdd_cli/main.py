@@ -240,8 +240,9 @@ def init(target: str, project_title: str, force: bool,
 # ─────────────────────────────────────────────────────────────────────────────
 @cli.command(help=(
     "Aktualisiert ein bestehendes SDD-Projekt auf die aktuelle Paket-Version. "
-    "Aktualisiert Schemas, Templates und fehlende Skill-Dateien (.claude/commands/) "
-    "– ohne Specs, Contracts oder Tests anzufassen."
+    "Aktualisiert Schemas, Templates und Skill-Dateien (.claude/commands/): fehlende "
+    "werden nachgerüstet, Blueprint-Fassungen mit älterer Version ersetzt, eigene "
+    "Dateien bleiben – ohne Specs, Contracts oder Tests anzufassen."
 ))
 @click.option("--path", "target", default=".", help="Projektverzeichnis (Default: aktuelles).")
 @click.option("--verbose", "-v", is_flag=True, help="Zeigt jede geänderte Datei.")
@@ -270,6 +271,11 @@ def upgrade(target: str, verbose: bool) -> None:
         console.print(f"  [cyan]↺[/] {n_updated} Dateien aktualisiert (Schemas)")
     if result.get("skills"):
         console.print(f"  [green]+[/] {len(result['skills'])} Skill-Dateien nachgerüstet")
+    if result.get("skills_updated"):
+        console.print(
+            f"  [cyan]↺[/] {len(result['skills_updated'])} Skill-Dateien auf die "
+            f"aktuelle Blueprint-Fassung gebracht"
+        )
     if n_skipped > 0 and verbose:
         console.print(f"  [dim]○ {n_skipped} Dateien unverändert[/]")
 

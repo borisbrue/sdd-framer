@@ -4,8 +4,9 @@ Was wird aktualisiert:
   - .sdd/schemas/     → immer überschreiben (kein Nutzerinhalt)
   - .sdd/templates/   → nur hinzufügen, nie überschreiben (Nutzer können eigene haben)
   - .sdd/config.yaml  → fehlende Sektionen aus dem Paket-Template ergänzen (deep merge)
-  - Skill-Dateien     → fehlende nachrüsten (Provider aus skills.provider),
-                        vorhandene nie überschreiben (CON-0169)
+  - Skill-Dateien     → fehlende nachrüsten (Provider aus skills.provider);
+                        Blueprint-Fassungen mit älterer Version ersetzen,
+                        eigene Dateien nie anfassen (CON-0169)
   - neue Verzeichnisse → anlegen falls noch nicht vorhanden
 
 Was wird NICHT angefasst:
@@ -15,6 +16,7 @@ Was wird NICHT angefasst:
 """
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -39,6 +41,49 @@ def _quelle() -> Path:
     return quelle
 
 
+# Kopfzeile jeder ausgelieferten Skill-Datei. `sdd-blueprint: true` sagt: Die
+# Datei stammt unveraendert aus dem Blueprint. Wer sie selbst pflegt, nimmt die
+# Zeile heraus, und upgrade laesst die Datei in Ruhe.
+_SKILL_HEADER_RE = re.compile(
+    r"<!--\s*skill:\s*[\w-]+\s*\|\s*version:\s*(?P<version>\d+(?:\.\d+)*)"
+    r"\s*\|\s*sdd-blueprint:\s*true\b"
+)
+_FRONTMATTER_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+
+
+def _skill_version(text: str) -> tuple[int, ...] | None:
+    m = _SKILL_HEADER_RE.search(text[:800])
+    return tuple(int(x) for x in m.group("version").split(".")) if m else None
+
+
+def _replace_outdated_skills(
+    target: Path, src_dir: Path, dst_dir: Path, result: dict[str, list[Path]], verbose: bool,
+) -> None:
+    """Ersetzt Blueprint-Skills, deren Kopfzeile eine aeltere Version traegt (#134).
+
+    Bis dahin blieb jede vorhandene Skill-Datei stehen, auch wenn sie seit
+    Monaten auf entfernte Befehle zeigte; nur `sdd init --force-skills` half,
+    und das ueberschrieb auch eigene Dateien. Ein vorangestelltes YAML-
+    Frontmatter (etwa `scope:`) bleibt erhalten.
+    """
+    for src_file in sorted(src_dir.glob("*.md")):
+        dst_file = dst_dir / src_file.name
+        if not dst_file.exists():
+            continue
+        alt = dst_file.read_text(encoding="utf-8")
+        v_alt, v_neu = _skill_version(alt), _skill_version(src_file.read_text(encoding="utf-8"))
+        if v_alt is None or v_neu is None or v_alt >= v_neu:
+            continue
+        m = _FRONTMATTER_RE.match(alt)
+        prefix = m.group(0) if m else ""
+        dst_file.write_text(prefix + src_file.read_text(encoding="utf-8"), encoding="utf-8")
+        result["updated"].append(dst_file)
+        result["skills_updated"].append(dst_file)
+        if verbose:
+            print(f"  ↺ {dst_file.relative_to(target)} "
+                  f"({'.'.join(map(str, v_alt))} → {'.'.join(map(str, v_neu))})")
+
+
 def _skill_provider(config_path: Path) -> str:
     """`skills.provider` aus der Projekt-Config, sonst claude wie bei `sdd init`."""
     try:
@@ -60,13 +105,15 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
     """
     target = target.resolve()
     quelle = _quelle()
-    result: dict[str, list[Path]] = {"created": [], "updated": [], "skipped": [], "skills": []}
+    result: dict[str, list[Path]] = {
+        "created": [], "updated": [], "skipped": [], "skills": [], "skills_updated": [],
+    }
 
     # Provider vor jeder Änderung prüfen: ein unbekannter Name bricht ab, bevor
     # etwas geschrieben ist, statt ein halbes Upgrade zu hinterlassen.
     from .init import copy_skill_files, get_skill_provider
     provider = _skill_provider(target / ".sdd" / "config.yaml")
-    get_skill_provider(provider)
+    prov = get_skill_provider(provider)
 
     # 1. Neue Verzeichnisse anlegen (aus init.py REQUIRED_DIRS)
     from .init import REQUIRED_DIRS
@@ -130,6 +177,10 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
     if verbose:
         for datei in erstellt:
             print(f"  + {datei.relative_to(target)}")
+    _replace_outdated_skills(
+        target, quelle / "templates" / "agents-md" / prov.source_subdir,
+        target / prov.target_dir, result, verbose,
+    )
 
     return result
 

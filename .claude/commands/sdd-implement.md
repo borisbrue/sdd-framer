@@ -1,7 +1,7 @@
 ---
 scope: tdd-implementation
 ---
-<!-- skill: sdd-implement | version: 0.9.0 | sdd-blueprint: true | updated: 2026-06-23 -->
+<!-- skill: sdd-implement | version: 0.10.0 | sdd-blueprint: true | updated: 2026-09-11 -->
 
 # /sdd-implement – TDD-Implementierungsphase
 
@@ -30,21 +30,33 @@ Spawne einen Subagenten (Agent-Tool) für das vollständige automatische Review:
 
 > Führe das vollständige Review für $ARGUMENTS autonom durch:
 >
-> 1. `sdd review spec $ARGUMENTS` — SOLID-Analyse + Pattern-Vorschläge kombiniert ausgeben
->    (ersetzt die früheren separaten Befehle `solid-check`/`pattern-suggest`, seit SPEC-0044
->    entfernt). Warnings loggen, keine Blockade.
-> 2. Sinnvolle Pattern-Vorschläge annehmen, alle anderen überspringen:
+> 1. `sdd spec review $ARGUMENTS` — schließt die Gate-Phase `spec-review` ab. SOLID-Analyse
+>    und Pattern-Vorschläge laufen darin (wenn in `.sdd/config.yaml` aktiviert), beratend,
+>    keine Blockade. Sinnvolle Vorschläge festhalten:
 >    ```bash
 >    sdd review pattern accept $ARGUMENTS <PatternName> --reason "<Begründung>"
 >    ```
->    (Bis #90 stand hier ein `python3 -c`-Einzeiler direkt auf `PatternRegistry`,
->    weil SPEC-0044 die Pattern-Befehle ohne Nachfolger entfernt hatte.)
-> 3. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem Bericht; bei `warning`/`info`: weiter
-> 4. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
+>    die übrigen mit `sdd review pattern reject`.
+> 2. Alle Contracts der Spec mit `status: draft` sequenziell reviewen:
 >    - Prüfe Messbarkeit, Vollständigkeit, Atomarität, Widersprüche
+>    - Fehlt die `artifact`-Datei eines Contracts: anlegen (Phase `contracts-draft`)
 >    - Setze `status: approved` im Frontmatter wenn inhaltlich ok (Edit-Tool)
 >    - Kein interaktiver Bestätigungsschritt — autonom entscheiden
-> 5. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+> 3. `sdd contract propose $ARGUMENTS CON-… CON-…` mit allen Contracts der Spec — Phasen
+>    `contracts-proposed` und `contracts-draft`
+> 4. `sdd contract analyze $ARGUMENTS CON-… CON-…` — Phase `contracts-review`. Offene
+>    Konflikte per `sdd conflict resolve $ARGUMENTS <ID> --action "…"` klären; sie
+>    blockieren sonst die nächste Phase.
+> 5. `sdd test generate $ARGUMENTS CON-… CON-…` — Phase `tests-generated`. Danach
+>    TST-Dokumente anlegen und `tests:` im Spec- und Contract-Frontmatter eintragen.
+> 6. `sdd spec regression $ARGUMENTS` — bei Severity `error`: Abbruch mit detailliertem
+>    Bericht; bei `warning`/`info`: weiter. Wurde die LLM-Stufe übersprungen (kein
+>    LLM-Zugang): Überschneidungen mit den fachlich nächsten Specs selbst prüfen, dann
+>    `sdd spec regression $ARGUMENTS --allow-skipped-llm`.
+> 7. `sdd spec approve $ARGUMENTS` — nur wenn alle Contracts approved sind
+>
+> Meldet ein Befehl `✗ Phase 'X' noch nicht abgeschlossen`: Der Befehl zur Phase X fehlt
+> (Tabelle "Die Gate-Kette" in `/sdd-review`). Nachholen, nie das Gate umgehen.
 >
 > Kein Warten auf Nutzereingabe. Bei Regression-Konflikt (error): Abbruch.
 
