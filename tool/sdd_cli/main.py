@@ -2033,9 +2033,10 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
                 f"(+{f['stubs_added']} Ruempfe ergaenzt, jetzt {anzahl})"
             )
         elif status == "unchanged":
+            grund = f.get("note") or "jeder Testfall des Contracts ist da"
             console.print(
                 f"[cyan]=[/] {f['contract_id']}: {pfad} "
-                f"(unveraendert, {anzahl} — jeder Testfall des Contracts ist da)"
+                f"(unveraendert, {anzahl} — {grund})"
             )
         elif status == "overwritten":
             console.print(
@@ -2060,6 +2061,8 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
     if result.syntax_errors:
         for err in result.syntax_errors:
             console.print(f"[red]✗[/] {err}")
+    for warnung in result.warnings:
+        console.print(f"[yellow]⚠[/] {warnung}")
 
     for fehlend in result.fehlende_dateien:
         console.print(f"[red]✗[/] {fehlend}")
