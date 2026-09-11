@@ -27,6 +27,30 @@ def _hf_path(repo_root: Path, hf_id: str) -> Path:
     return _hotfixes_dir(repo_root) / f"{hf_id}.md"
 
 
+def _record_loader():
+    """YAML-Loader, der Skalare als Text belässt; nur `null` wird aufgelöst.
+
+    Ein Record ist eine Handvoll Textfelder. yaml.safe_load riet aber den Typ:
+    Ein Kurzhash aus lauter Ziffern (`commit: 2494608`, jeder 16.) wurde int,
+    und `sdd status` brach beim Rendern ab (#130). Schlimmer: `0123456` wurde
+    als Oktalzahl zu 42798, str() hätte einen falschen Hash geliefert. Und ein
+    unquotiertes `created: 2026-09-11` wurde ein date. Der Writer quotet solche
+    Werte, aber die Dateien sind von Hand editierbar.
+    """
+    import yaml
+
+    class RecordLoader(yaml.SafeLoader):
+        pass
+
+    null = "tag:yaml.org,2002:null"
+    # Kopie statt Änderung: das dict gehört sonst SafeLoader selbst.
+    RecordLoader.yaml_implicit_resolvers = {
+        k: [(tag, rx) for tag, rx in v if tag == null]
+        for k, v in yaml.SafeLoader.yaml_implicit_resolvers.items()
+    }
+    return RecordLoader
+
+
 def _read_hf(path: Path) -> dict:
     import re
 
@@ -34,7 +58,7 @@ def _read_hf(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n?", text, re.DOTALL)
     if m:
-        return yaml.safe_load(m.group(1)) or {}
+        return yaml.load(m.group(1), Loader=_record_loader()) or {}
     return {}
 
 
