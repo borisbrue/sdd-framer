@@ -1,26 +1,32 @@
 ---
 id: TST-0118
-title: "Container-Lifecycle (Unit)"
+title: "Ausführungsort von Tasks (Unit)"
 level: unit
 spec: SPEC-0026
 contract: CON-0099
 status: draft
+artifact: "tests/unit/test_tst_0118.py"
 ---
 
-# TST-0118: Container-Lifecycle
+# TST-0118: Ausführungsort von Tasks
 
 ## Zu prüfendes Verhalten
 
-`container.py` erstellt, startet und entfernt Container korrekt gemäß CON-0099.
-Tests laufen gegen einen Docker/Podman-Mock oder eine Test-Registry.
+Wo die Tasks einer Spec laufen, gemäß CON-0099 v0.2.0. Jeder Test übt
+Produktionscode aus: `TaskLifecycle`, `Task.to_dict`/`from_dict` und
+`DistributionOrchestrator`.
+
+Bis #113 lief diese Datei gegen ein `MockContainerRuntime`, das in ihr selbst
+definiert war. Die Testfälle T01–T08 beschrieben eine Task-Container-Runtime
+(`container.py`, Namensschema `sdd-SPEC-XXXX-<uuid>`, SIGINT-Cleanup), die es
+nie gab. CON-0099 v0.2.0 führt sie als entfallene Zusagen.
 
 ## Testfälle
 
-- T01: `container.create([T1])` → Name folgt Schema `sdd-SPEC-XXXX-<uuid>` (INV-03)
-- T02: Container enthält Code-Stand von Git-HEAD (INV-02)
-- T03: Container mit 3 Tasks → alle 3 dem selben Container zugewiesen (INV-01)
-- T04: Leere Task-Liste → ValueError (INV-01)
-- T05: `container.remove(C1)` → Container existiert danach nicht mehr (INV-04)
-- T06: SIGINT während laufendem Container → cleanup() wird aufgerufen
-- T07: Container-Name-Kollision (gleiche UUID) → zweiter Aufruf schlägt fehl
-- T08: Container-Status nach remove → nicht "running" oder "stopped"
+- T01: `start_running("local")` → Status `running`, `container_id == "local"` (G-01)
+- T02: `start_running` aus `pending` → `InvalidTransitionError`, kein `container_id` (INV-01)
+- T03: `container_id` übersteht `to_dict` → `from_dict` (G-04)
+- T04: `DistributionOrchestrator.run` → alle Tasks laufen mit `container_id == "local"` (G-02)
+
+Das Aufräumen des Dev-Containers (G-03) prüft `tests/unit/test_finalize_container.py`
+(CON-0065 G-06).
