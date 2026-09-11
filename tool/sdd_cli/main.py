@@ -254,7 +254,11 @@ def upgrade(target: str, verbose: bool) -> None:
         sys.exit(1)
 
     console.print(f"[bold]SDD Upgrade[/] → [bold]{target_path}[/]")
-    result = upgrade_project(target_path, verbose=verbose)
+    try:
+        result = upgrade_project(target_path, verbose=verbose)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]✗[/] {e}")
+        sys.exit(1)
 
     n_created = len(result["created"])
     n_updated = len(result["updated"])
@@ -264,6 +268,8 @@ def upgrade(target: str, verbose: bool) -> None:
         console.print(f"  [green]+[/] {n_created} neue Dateien/Verzeichnisse erstellt")
     if n_updated > 0:
         console.print(f"  [cyan]↺[/] {n_updated} Dateien aktualisiert (Schemas)")
+    if result.get("skills"):
+        console.print(f"  [green]+[/] {len(result['skills'])} Skill-Dateien nachgerüstet")
     if n_skipped > 0 and verbose:
         console.print(f"  [dim]○ {n_skipped} Dateien unverändert[/]")
 

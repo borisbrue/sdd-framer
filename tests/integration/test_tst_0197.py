@@ -37,9 +37,19 @@ def test_new_github_workflow_removed():
         "Fehlerausgabe muss auf die Vorlage hinweisen"
 
 
-def test_upgrade_has_skill_retrofit_logic():
-    result = _run(["upgrade", "--help"])
-    assert result.returncode == 0, "sdd upgrade --help muss Exit 0 liefern"
-    combined = (result.stdout + result.stderr).lower()
-    assert "skill" in combined or "agent" in combined or "commands" in combined, \
-        "sdd upgrade --help muss Skill-Nachrüstung erwähnen"
+def test_upgrade_ruestet_fehlende_skills_nach(tmp_path):
+    """CON-0169: `sdd upgrade` rüstet fehlende Skill-Dateien nach.
+
+    Bis #126 prüfte dieser Test nur, ob `--help` das Wort erwähnt. Umgesetzt war
+    die Nachrüstung nicht, der Test war trotzdem grün.
+    """
+    (tmp_path / ".sdd").mkdir()
+    (tmp_path / ".sdd" / "config.yaml").write_text("project:\n  name: T\n", encoding="utf-8")
+    eigen = tmp_path / ".claude" / "commands" / "sdd.md"
+    eigen.parent.mkdir(parents=True)
+    eigen.write_text("meins", encoding="utf-8")
+
+    result = _run(["upgrade", "--path", str(tmp_path)])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (tmp_path / ".claude" / "commands" / "sdd-implement.md").is_file()
+    assert eigen.read_text(encoding="utf-8") == "meins"
