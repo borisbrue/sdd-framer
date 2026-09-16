@@ -6,12 +6,16 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .test_languages import PYTHON, language_for_path, language_for_runner, suffixes_mit_generator
+
 
 @dataclass
 class GenerationResult:
     generated_files: list[dict] = field(default_factory=list)
     success: bool = True
     syntax_errors: list[str] = field(default_factory=list)
+    #: Testdateien fremder Sprachen, die es noch nicht gibt (HF-0010).
+    fehlende_dateien: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -285,6 +289,24 @@ class TestGenerator:
             except Exception:
                 pass
         return None
+
+    def _projektsprache(self):
+        """Sprachprofil aus `test_runner.command` — ohne Konfiguration None.
+
+        Ohne dieses Signal wuerde der Rueckfallpfad in einem Rust-Projekt eine
+        `.py`-Datei erfinden, nur weil kein TST-Dokument ein artifact deklariert.
+        """
+        import yaml
+
+        cfg = self.repo_root / ".sdd" / "config.yaml"
+        if not cfg.exists():
+            return None
+        try:
+            raw = yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
+        except Exception:
+            return None
+        command = ((raw.get("test_runner") or {}).get("command") or "")
+        return language_for_runner(str(command))
 
     def _read_artifact(self, contract: dict) -> str:
         artifact = contract.get("artifact", "")
@@ -566,6 +588,36 @@ class TestGenerator:
 
             out_path = self._output_path(con_id, contract)
 
+            # HF-0010: Fuer Sprachen ohne Generator wird nichts erfunden. Eine vorhandene
+            # Datei gilt als erfuellt, eine fehlende wird mit Bitte um Handarbeit gemeldet.
+            lang = language_for_path(out_path)
+            deklariert = bool((self._find_test_doc(con_id) or {}).get("artifact"))
+            projekt = self._projektsprache()
+            if not deklariert and projekt is not None and not projekt.generates_stubs:
+                lang = projekt
+
+            if lang is None or not lang.generates_stubs:
+                bezeichnung = lang.name if lang is not None else "diese Dateiendung"
+                rel = out_path.relative_to(self.repo_root) if out_path.is_absolute() else out_path
+                vorhanden = out_path.exists()
+                result.generated_files.append({
+                    "contract_id": con_id,
+                    "path": str(rel),
+                    "test_count": 0,
+                    "status": "foreign" if vorhanden else "foreign-missing",
+                    "stubs_added": 0,
+                    "backup": None,
+                    "language": bezeichnung,
+                })
+                if not vorhanden:
+                    result.success = False
+                    result.fehlende_dateien.append(
+                        f"{rel}: sdd erzeugt fuer {bezeichnung} keine Testruempfe. Schreibe die "
+                        f"Datei von Hand und trage sie im TST-Dokument unter artifact ein, oder "
+                        f"nutze eine Endung mit Generator ({', '.join(suffixes_mit_generator())})."
+                    )
+                continue
+
             try:
                 content = _pep8_leerzeilen(self._render_template(contract))
             except Exception as exc:
@@ -586,6 +638,7 @@ class TestGenerator:
 
             outcome = self._write_with_preservation(out_path, content, force=force)
 
+
             if outcome.status == "unparsable":
                 result.success = False
                 result.syntax_errors.append(
@@ -602,6 +655,7 @@ class TestGenerator:
                 "stubs_added": outcome.stubs_added,
                 "backup": str(outcome.backup.relative_to(self.repo_root))
                 if outcome.backup else None,
+                "language": PYTHON.name,
             })
 
         return result

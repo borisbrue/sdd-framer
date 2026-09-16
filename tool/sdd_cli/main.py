@@ -1995,6 +1995,16 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
                 f"[yellow]![/] {f['contract_id']}: {pfad} neu geschrieben "
                 f"({anzahl}) · Sicherung: [dim]{f['backup']}[/]"
             )
+        elif status == "foreign":
+            console.print(
+                f"[cyan]=[/] {f['contract_id']}: {pfad} "
+                f"({f.get('language', 'fremde Sprache')}-Testdatei, vorhanden und nicht angetastet)"
+            )
+        elif status == "foreign-missing":
+            console.print(
+                f"[yellow]![/] {f['contract_id']}: {pfad} fehlt — "
+                f"fuer {f.get('language', 'diese Sprache')} erzeugt sdd keine Ruempfe"
+            )
         else:  # unparsable
             console.print(
                 f"[red]✗[/] {f['contract_id']}: {pfad} nicht auswertbar — nicht angetastet"
@@ -2004,6 +2014,9 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
         for err in result.syntax_errors:
             console.print(f"[red]✗[/] {err}")
 
+    for fehlend in result.fehlende_dateien:
+        console.print(f"[red]✗[/] {fehlend}")
+
     if result.success:
         g.mark_phase_complete(
             spec_id, "tests-generated",
@@ -2012,8 +2025,9 @@ def test_generate(spec_id: str, contract_ids: tuple, force: bool) -> None:
         console.print("[green]✓[/] Phase [bold]tests-generated[/] abgeschlossen.")
     else:
         g.mark_phase_complete(spec_id, "tests-generated", result="failed",
-                              syntax_errors=result.syntax_errors)
-        console.print("[red]✗[/] Syntaxfehler – Phase tests-generated fehlgeschlagen.")
+                              syntax_errors=result.syntax_errors + result.fehlende_dateien)
+        grund = "Syntaxfehler" if result.syntax_errors else "fehlende Testdateien"
+        console.print(f"[red]✗[/] {grund} – Phase tests-generated fehlgeschlagen.")
         sys.exit(1)
 
 

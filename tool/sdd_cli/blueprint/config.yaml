@@ -98,6 +98,14 @@ test_runner:
   # Fuer pytest-artige Kommandos (pytest, uv run pytest, python -m pytest)
   # haengt die Finalisierung `tests/ -x --tb=short` an, fuer npm `test`;
   # alles andere laeuft wie hier eingetragen. extra_args kommt immer dazu.
+  #
+  # Die Sprache bestimmt `sdd test run` an der Endung der Testdatei aus dem
+  # TST-Dokument (.py, .rs, .ts/.js, .go). Steht hier noch der Default `pytest`,
+  # waehlt sdd das Standardkommando der Sprache (cargo test, npm test, go test).
+  # Fuer ein Nicht-Python-Projekt gehoert das echte Kommando hierher, z.B.
+  # `cargo test --workspace`. Testruempfe erzeugt `sdd test generate` nur fuer
+  # Python; in anderen Sprachen wird eine vorhandene Testdatei anerkannt und eine
+  # fehlende gemeldet.
   command: pytest
   extra_args: []
   timeout_per_spec: 120

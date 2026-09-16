@@ -81,7 +81,7 @@ class TestOnlyRedTestsBlock:
 
 
 class TestRunnerHandlesExitFive:
-    """test_runner._run_pytest: Exitcode 5 ist ein leerer Lauf, kein Fehlschlag."""
+    """test_runner._run_artifact_tests: Exitcode 5 ist ein leerer Lauf, kein Fehlschlag."""
 
     def _cfg(self, root: Path, command: str = "pytest"):
         from sdd_cli.config import load_config
@@ -98,7 +98,7 @@ class TestRunnerHandlesExitFive:
         artifact.parent.mkdir(parents=True)
         artifact.write_text("# keine Tests\n", encoding="utf-8")
 
-        status, _, message = test_runner._run_pytest(
+        status, _, message = test_runner._run_artifact_tests(
             self._cfg(tmp_path), "tests/test_leer.py", timeout=60)
 
         assert status == "skipped", f"Exitcode 5 als {status!r} gewertet"
@@ -124,7 +124,7 @@ class TestRunnerHandlesExitFive:
             return R()
 
         with patch.object(test_runner.subprocess, "run", fake_run):
-            status, _, _ = test_runner._run_pytest(cfg, "tests/test_x.py", timeout=30)
+            status, _, _ = test_runner._run_artifact_tests(cfg, "tests/test_x.py", timeout=30)
 
         assert status == "passed"
         assert captured["cmd"][:2] == ["env", "pytest"], captured["cmd"]
