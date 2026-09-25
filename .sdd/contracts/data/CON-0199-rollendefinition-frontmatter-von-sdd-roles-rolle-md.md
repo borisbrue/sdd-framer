@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0053
 version: 0.2.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/rollendefinition-frontmatter-von-sdd-roles-rolle-md.schema.json"
 tests: ["TST-0228"]
 ---
 
 # Contract: Rollendefinition (Frontmatter von .sdd/roles/<rolle>.md)
 
-> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
