@@ -1,31 +1,58 @@
 ---
 id: SPEC-0060
-title: "Vollständige Usage-Erfassung aller LLM-Provider inkl. Reasoning-Tokens"
+title: Vollständige Usage-Erfassung aller LLM-Provider inkl. Reasoning-Tokens
 type: feature
-status: approved
-owner: "Boris"
+status: implemented
+owner: Boris
 created: 2026-09-25
-updated: 2026-09-25
+updated: '2026-09-25'
 version: 0.3.0
 priority: high
-tags: [llm, token-tracking, usage, keyless]
-depends_on: [SPEC-0003, SPEC-0005, SPEC-0008, SPEC-0011, SPEC-0013, SPEC-0035, SPEC-0050]
-contracts: [CON-0206, CON-0207]
-tests: [TST-0235, TST-0236]
+tags:
+- llm
+- token-tracking
+- usage
+- keyless
+depends_on:
+- SPEC-0003
+- SPEC-0005
+- SPEC-0008
+- SPEC-0011
+- SPEC-0013
+- SPEC-0035
+- SPEC-0050
+contracts:
+- CON-0206
+- CON-0207
+tests:
+- TST-0235
+- TST-0236
 fr_test_map:
-  FR-01: [TST-0236]
-  FR-02: [TST-0236]
-  FR-03: [TST-0236]
-  FR-04: [TST-0236]
-  FR-05: [TST-0235, TST-0236]
-  FR-06: [TST-0236]
-  FR-07: [TST-0236]
-  FR-08: [TST-0236]
-  FR-09: [TST-0236]
-  FR-10: [TST-0236]
-  FR-11: [TST-0236]
+  FR-01:
+  - TST-0236
+  FR-02:
+  - TST-0236
+  FR-03:
+  - TST-0236
+  FR-04:
+  - TST-0236
+  FR-05:
+  - TST-0235
+  - TST-0236
+  FR-06:
+  - TST-0236
+  FR-07:
+  - TST-0236
+  FR-08:
+  - TST-0236
+  FR-09:
+  - TST-0236
+  FR-10:
+  - TST-0236
+  FR-11:
+  - TST-0236
+started_at: '2026-09-25T16:32:29Z'
 ---
-
 # Vollständige Usage-Erfassung aller LLM-Provider inkl. Reasoning-Tokens
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
