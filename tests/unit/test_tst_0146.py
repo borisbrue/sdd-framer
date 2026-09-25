@@ -79,6 +79,24 @@ class TestTST0146:
         assert t2.actual_tokens == 500
         assert t2.run_id == "run-001"
 
+    def test_executor_field_roundtrip(self):
+        """SPEC-0045 US-02: executor-Feld überlebt to_dict()/from_dict()."""
+        t = _task("Y")
+        assert t.executor is None
+        t.executor = "claude (escalated)"
+        d = t.to_dict()
+        assert d["executor"] == "claude (escalated)"
+        t2 = Task.from_dict(d)
+        assert t2.executor == "claude (escalated)"
+
+    def test_executor_field_defaults_to_none_when_missing_from_dict(self):
+        """Alte Task-JSONs ohne executor-Key bleiben ladbar (Abwärtskompatibilität)."""
+        t = _task("Z")
+        d = t.to_dict()
+        del d["executor"]
+        t2 = Task.from_dict(d)
+        assert t2.executor is None
+
     def test_circular_tasks_get_blocked_status(self):
         t1 = _task("A", deps=["B"])
         t2 = _task("B", deps=["A"])

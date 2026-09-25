@@ -3807,6 +3807,49 @@ def task_exec_cmd(
 
 
 @cli.command(
+    "task-loop",
+    help="Headless Batch-Loop: verarbeitet alle Tasks einer Spec unbeaufsichtigt (SPEC-0045).",
+)
+@click.argument("spec_id")
+@click.option(
+    "--max-concurrent", "max_concurrent", default=None, type=int,
+    help="Override für task_routing.max_concurrent.",
+)
+def task_loop_cmd(spec_id: str, max_concurrent: int | None) -> None:
+    import asyncio
+
+    from .task_routing.task_loop import execute_task_loop
+
+    root = find_project_root()
+    cfg = load_config(root)
+
+    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
+    if not task_file.exists():
+        console.print(
+            f"[red]✗[/] Task-Datei nicht gefunden: {task_file}. "
+            f"Zuerst [cyan]sdd decompose {spec_id}[/] ausführen."
+        )
+        sys.exit(1)
+
+    report = asyncio.run(
+        execute_task_loop(spec_id, cfg, root, max_concurrent=max_concurrent)
+    )
+
+    console.print(f"\n[bold]Task-Loop {spec_id}[/]")
+    console.print("─" * 60)
+    for o in report.outcomes:
+        icon = "[green]✓[/]" if o.status == "completed" else "[red]✗[/]"
+        console.print(f"{icon} {o.task.title} — {o.executor} ({o.iterations} Versuch(e))")
+        if o.status != "completed" and o.detail:
+            console.print(f"    {o.detail[:200]}")
+
+    n_ok = sum(1 for o in report.outcomes if o.status == "completed")
+    console.print(f"\n{n_ok}/{len(report.outcomes)} Tasks abgeschlossen.")
+    if not report.all_passed:
+        sys.exit(1)
+
+
+@cli.command(
     "generate-holdouts",
     help="[Entfernt] Verwende: sdd holdout generate",
 )

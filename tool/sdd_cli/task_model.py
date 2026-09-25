@@ -66,6 +66,8 @@ class Task:
     test_file: str | None = None
     test_command: str | None = None
     test_framework: str | None = None
+    # SPEC-0045 US-02: welcher Executor den Task tatsächlich bearbeitet hat.
+    executor: str | None = None  # "local" | "claude" | "claude (escalated)"
 
     def to_dict(self) -> dict:
         return {
@@ -92,6 +94,7 @@ class Task:
             "test_file": self.test_file,
             "test_command": self.test_command,
             "test_framework": self.test_framework,
+            "executor": self.executor,
         }
 
     @classmethod
@@ -120,4 +123,5 @@ class Task:
             test_file=d.get("test_file"),
             test_command=d.get("test_command"),
             test_framework=d.get("test_framework"),
+            executor=d.get("executor"),
         )
