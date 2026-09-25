@@ -2516,8 +2516,9 @@ def install_hooks_cmd() -> None:
 
     console.print(f"[green]✓[/] Pre-Commit-Hook installiert: [bold]{hook_path}[/]")
     console.print(
-        "  Bei jedem [cyan]git commit[/] laufen [cyan]Status-Check[/] "
-        "und [cyan]Regressions-Gate[/]."
+        "  Bei jedem [cyan]git commit[/] laufen [cyan]Status-Check[/], "
+        "[cyan]Regressions-Gate[/] und – mit .sdd/architecture.yaml – "
+        "[cyan]sdd arch check[/]."
     )
 
 

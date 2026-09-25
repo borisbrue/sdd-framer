@@ -1,0 +1,55 @@
+# Architekturregeln von sdd-framer (SPEC-0059, Mechanik aus SPEC-0054).
+# Eine Datei gehört zur ersten Schicht, deren Muster passt (Reihenfolge ist Bedeutung).
+# Jede Regel ist an ein ADR in docs/adr/ gebunden; neue Regel = neues ADR im selben PR.
+version: 1
+layers:
+  entry:            # Kompositionswurzel: CLI-Einstieg und Befehlsgruppen (ADR-0003)
+    - tool/sdd_cli/main.py
+    - tool/sdd_cli/*_cli.py
+  core:             # Basismodule ohne eigene Abhängigkeiten ins Projekt (ADR-0003)
+    - tool/sdd_cli/__init__.py
+    - tool/sdd_cli/config.py
+    - tool/sdd_cli/frontmatter.py
+    - tool/sdd_cli/quality/files.py
+    - tool/sdd_cli/pipeline/path_policy.py
+  web: [tool/sdd_cli/web/api/**]
+  ui: [tool/sdd_cli/ui.py, tool/sdd_cli/web/ui/**]
+  pwa: [tool/sdd_cli/web/pwa/**]
+  hub: [tool/sdd_cli/hub/**]
+  llm: [tool/sdd_cli/llm/**]
+  cli: [tool/sdd_cli/**]
+rules:
+  - id: ARCH-01
+    adr: ADR-0002
+    kind: write_ownership
+    description: SDD-Artefakte schreibt nur die CLI; unaufgelöste Schreibziele zählen (CON-0208).
+    paths: [.sdd/**, docs/adr/**]
+    owners: [cli, entry, core]
+    unresolved: violation
+  - id: ARCH-02
+    adr: ADR-0003
+    kind: allowed_dependencies
+    description: Einstieg → Web/UI/PWA/Hub → CLI → LLM → Core.
+    graph:
+      entry: [core, web, ui, pwa, hub, cli, llm]
+      web: [core, cli, llm]
+      ui: [core, cli, llm]
+      pwa: [core, cli, llm]
+      hub: [core, cli, llm]
+      cli: [core, llm]
+      llm: [core]
+      core: []
+  - id: ARCH-03
+    adr: ADR-0004
+    kind: forbidden_dependency
+    description: Provider entstehen nur in der Factory.
+    from: [entry, core, web, ui, pwa, hub, cli]
+    to_paths: [tool/sdd_cli/llm/providers/**]
+  - id: ARCH-04
+    adr: ADR-0005
+    kind: forbidden_call
+    description: Die claude-CLI wird nur im Provider claude_cli aufgelöst.
+    in: [entry, core, web, ui, pwa, hub, cli, llm]
+    calls: [shutil.which]
+    args_match: "^claude$"
+    except: [tool/sdd_cli/llm/providers/claude_cli.py]

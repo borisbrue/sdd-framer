@@ -1,5 +1,24 @@
 # Changelog
 
+## [Unreleased] – SPEC-0059: Architekturregeln und ADRs für sdd-framer (Dogfooding)
+
+### Added
+
+- `.sdd/architecture.yaml` mit den Regeln ARCH-01 bis ARCH-04 und den ADRs ADR-0002 bis ADR-0005
+  (CLI einziger Schreiber, Schichtrichtung, Provider nur über die Factory, `claude` nur im
+  Provider). Bekannte Altlasten stehen mit Grund und Ziel-Spec in `.sdd/quality/arch-baseline.json`.
+- `.sdd/quality.yaml` (Preset `python`, angepasst: nur `tool/**`, Werkzeuge aus `.venv/bin/`).
+- `write_ownership` kennt `unresolved: skip|violation` (CON-0208): Schreibzugriffe mit variablem
+  Ziel können als Verstoß zählen.
+- Pre-Commit-Hook (`sdd install-hooks`) führt `sdd arch check` aus, wenn `.sdd/architecture.yaml`
+  existiert und `.py`-Dateien gestaged sind; `quality.arch_pre_commit: false` schaltet das ab.
+- `sdd arch check` zeigt bei Baseline-Treffern die Spec, die sie behebt (`warn (Baseline, SPEC-0058)`).
+
+### Changed
+
+- Rollen-Provider der Pipeline entstehen in der Factory (`llm.factory.get_role_provider`);
+  `pipeline/providers.py` importiert nichts mehr aus `llm/providers/`.
+
 ## [Unreleased] – SPEC-0053: Rollenbasierte Pipeline mit Claude als Supervisor
 
 ### Added

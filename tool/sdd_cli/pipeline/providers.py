@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ..llm.factory import _resolve, _resolve_env_var
-from ..llm.usage import RecordingCompletionProvider
 
 if TYPE_CHECKING:
     from ..config import SddConfig
@@ -89,34 +88,16 @@ def resolve_binding(config: SddConfig, role_def: RoleDefinition) -> RoleBinding:
 
 
 def build_provider(config: SddConfig, binding: RoleBinding, role_def: RoleDefinition) -> Any:
-    """Provider für die Belegung, umhüllt vom Usage-Decorator."""
-    params = {**role_def.defaults, **binding.params}
-    p = binding.provider
-    if p == "claude-cli":
-        from ..llm.providers.claude_cli import ClaudeCliCompletionProvider
-        inner = ClaudeCliCompletionProvider(
-            timeout=params.get("timeout_seconds") or config.llm_timeout())
-    elif p == "anthropic":
-        from ..llm.factory import _DEFAULT_ANTHROPIC_MODEL
-        from ..llm.providers.anthropic import AnthropicCompletionProvider
-        inner = AnthropicCompletionProvider(model=binding.model or _DEFAULT_ANTHROPIC_MODEL,
-                                            api_key=binding.api_key,
-                                            temperature=float(params.get("temperature") or 0.0))
-    elif p == "openai-compat":
-        if not binding.base_url or not binding.model:
-            raise RoleConfigError(
-                f"llm.roles.{binding.role}: base_url und model sind Pflicht für openai-compat.")
-        from ..llm.providers.openai_compat import OpenAICompatCompletionProvider
-        inner = OpenAICompatCompletionProvider(
-            base_url=binding.base_url, model=binding.model, api_key=binding.api_key or "lm-studio",
-            temperature=float(params.get("temperature") or 0.0),
-            enable_thinking=bool(params.get("thinking", True)),
-            top_p=params.get("top_p"), reasoning_effort=params.get("reasoning_effort"))
-    else:
-        raise RoleConfigError(f"llm.roles.{binding.role}: Provider {p!r} wird für Rollen nicht "
-                              f"unterstützt (erlaubt: {', '.join(SUPPORTED)}).")
-    return RecordingCompletionProvider(inner, component=f"role:{binding.role}",
-                                       model=binding.model, root=config.root)
+    """Provider für die Belegung; gebaut von der Factory (SPEC-0059 FR-08, ARCH-03)."""
+    from ..llm.factory import get_role_provider
+
+    try:
+        return get_role_provider(config, role=binding.role, provider=binding.provider,
+                                 model=binding.model, base_url=binding.base_url,
+                                 api_key=binding.api_key,
+                                 params={**role_def.defaults, **binding.params})
+    except ValueError as exc:
+        raise RoleConfigError(str(exc)) from exc
 
 
 def role_config_issues(config: SddConfig) -> list[tuple[str, str, str]]:

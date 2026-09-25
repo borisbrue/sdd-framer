@@ -105,8 +105,9 @@ Angenommene Patterns (Wiederverwendung, keine neuen Mechanismen):
 
   Regeln:
   - **ARCH-01** `write_ownership` mit `unresolved: violation`: Schreibzugriffe auf `.sdd/**` und
-    `docs/adr/**` nur aus `cli` und `entry`; ein Schreibzugriff mit unaufgelöstem Ziel aus einer
-    anderen Schicht gilt als Verstoß.
+    `docs/adr/**` nur aus `cli`, `entry` und `core` (Basismodule wie `frontmatter.patch_status`,
+    über die die CLI schreibt); ein Schreibzugriff mit unaufgelöstem Ziel aus einer anderen Schicht
+    gilt als Verstoß.
   - **ARCH-02** `allowed_dependencies`: `entry → alle`; `web|ui|pwa|hub → cli, llm, core`;
     `cli → llm, core`; `llm → core`; `core → –`.
   - **ARCH-03** `forbidden_dependency`: Nichts außerhalb von `tool/sdd_cli/llm/**` importiert aus

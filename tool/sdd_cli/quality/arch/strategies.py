@@ -80,7 +80,12 @@ class WriteOwnership(RuleStrategy):
 
     def violates(self, rule: Rule, edge: Edge, layers: dict[str, list[str]]) -> bool:
         if edge.unresolved or edge.target is None:
-            return False
+            # CON-0208: mit `unresolved: violation` zählt ein Schreibzugriff mit unbekanntem Ziel
+            # aus einer Schicht außerhalb der owners; Dateien ohne Schicht bleiben ausgenommen.
+            if rule.params.get("unresolved", "skip") != "violation":
+                return False
+            schicht = layer_of(edge.source, layers)
+            return schicht is not None and schicht not in rule.layers("owners")
         if not any(glob_match(edge.target, p) for p in rule.layers("paths")):
             return False
         return layer_of(edge.source, layers) not in rule.layers("owners")

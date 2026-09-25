@@ -1,0 +1,45 @@
+# sdd-Preset `python` (SPEC-0054), angepasst für sdd-framer (SPEC-0059 FR-03):
+# - gemessen wird nur der Code unter tool/ (Tests, Web-Frontends und die VS-Code-Extension nicht);
+# - Werkzeuge kommen bevorzugt aus .venv/bin/, sonst aus dem PATH;
+# - die Testsonde setzt tool/ vor den PYTHONPATH, damit Worktrees ihren eigenen Code testen.
+version: 1
+preset: python
+paths: ["tool/**/*.py"]
+exclude: [".venv/**", "venv/**", "build/**", "dist/**", "**/dist/**", "**/__pycache__/**",
+          "**/node_modules/**", "vscode-extension/**", "**/site-packages/**"]
+test_paths: ["tests/**"]
+probes:
+  tests:
+    command: "PY=$([ -x .venv/bin/python ] && echo .venv/bin/python || echo python3); PYTHONPATH=.sdd/quality:tool${PYTHONPATH:+:$PYTHONPATH} $PY -m pytest -q -p sdd_fr_marker --junitxml={out}"
+    format: junit
+    role: tests
+    fr_marker: property
+    timeout_seconds: 1800
+    version_command: "$([ -x .venv/bin/python ] && echo .venv/bin/python || echo python3) -m pytest --version"
+  lint:
+    command: "RUFF=$([ -x .venv/bin/ruff ] && echo .venv/bin/ruff || command -v ruff) || exit 127; $RUFF check --exit-zero --output-format sarif --output-file {out} {paths}"
+    format: sarif
+    metric: lint_per_kloc
+    diff_scoped: true
+    version_command: "$([ -x .venv/bin/ruff ] && echo .venv/bin/ruff || echo ruff) --version"
+  types:
+    command: "command -v mypy >/dev/null || exit 127; mypy --output json {paths} | python3 .sdd/quality/mypy_to_sarif.py > {out}"
+    format: sarif
+    metric: type_errors
+    diff_scoped: true
+    version_command: "mypy --version"
+  imports:
+    command: "python3 .sdd/quality/extract_deps.py {paths} > {out}"
+    format: sdd-deps
+    role: deps
+  complexity:
+    command: "command -v lizard >/dev/null || exit 127; lizard --csv {paths} | python3 .sdd/quality/lizard_to_metrics.py > {out}"
+    format: sdd-metrics
+    version_command: "lizard --version"
+normalization:
+  complexity_mean: {good: 2, bad: 10}
+  complexity_max: {good: 10, bad: 40}
+  complex_function_share: {good: 0, bad: 0.2}
+  long_function_share: {good: 0, bad: 0.2}
+suppressions:
+  "**/*.py": ['#\s*noqa', '#\s*type:\s*ignore', 'pragma:\s*no cover']

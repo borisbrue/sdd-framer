@@ -19,11 +19,16 @@ _ROOT = Path(__file__).resolve().parents[2]
 _SDD = _ROOT / ".sdd"
 
 
+# Hilfsskripte der Sonden-Presets (SPEC-0054) liegen bewusst unter .sdd/quality/: Sie sind
+# Mess-Tooling des Projekts (Konverter, Extraktor, pytest-Plugin), kein Testcode.
+_SONDEN_HILFEN = _SDD / "quality"
+
+
 def test_kein_python_unterhalb_von_sdd():
     treffer = [
         str(p.relative_to(_ROOT))
         for p in _SDD.rglob("*.py")
-        if "__pycache__" not in p.parts
+        if "__pycache__" not in p.parts and not p.is_relative_to(_SONDEN_HILFEN)
     ]
     assert not treffer, "Testcode unter .sdd/: " + ", ".join(treffer)
 

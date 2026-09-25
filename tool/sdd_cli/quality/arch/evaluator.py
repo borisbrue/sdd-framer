@@ -22,6 +22,7 @@ class Violation:
     symbol: str
     severity: str
     baselined: bool = False
+    fixed_by: str | None = None  # nur für die Textausgabe; der Report (CON-0195) kennt es nicht
     adr_title: str | None = None
     excerpt: str | None = None
 
