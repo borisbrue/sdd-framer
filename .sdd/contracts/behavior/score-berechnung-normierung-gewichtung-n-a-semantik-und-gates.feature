@@ -40,14 +40,20 @@ Funktionalität: Score-Berechnung
     Wenn requirements berechnet wird
     Dann ist der Score von requirements 0.5
 
-  Szenario: Holdout-Ergebnisse fließen zur Hälfte ein
+  Szenariogrundriss: Holdout-Ergebnisse fließen gewichtet ein
     Angenommen der FR-Anteil erfüllt ist 0.5
     Und die holdout_pass_rate ist 0.9
+    Und quality.weights.requirements.holdout ist <h>
     Wenn requirements berechnet wird
-    Dann ist der Score von requirements 0.7
+    Dann ist der Score von requirements <score>
+
+    Beispiele:
+      | h         | score |
+      | (Default) | 0.7   |
+      | 0.25      | 0.6   |
 
   Szenario: Ausgefallene Testsonde
-    Angenommen die Sonde "tests" ist ausgefallen
+    Angenommen die Sonde mit role tests ist ausgefallen
     Wenn requirements berechnet wird
     Dann haben alle FRs den Status unbekannt
     Und requirements ist n/a
@@ -76,11 +82,23 @@ Funktionalität: Score-Berechnung
     Und es gibt 4 Verstöße mit severity error, die alle in der Baseline stehen
     Wenn architecture berechnet wird
     Dann ist der Score von architecture 0.8
-    Und architecture.errors ist 0
+    Und count.architecture.errors ist 0
+
+  Szenario: Konfigurierbare Severity-Gewichte
+    Angenommen quality.architecture.threshold ist 5
+    Und quality.architecture.severity_weights ist error 1.0 und warn 0.5
+    Und es gibt 2 Verstöße mit severity error und 2 mit severity warn
+    Wenn architecture berechnet wird
+    Dann ist der Score von architecture 0.4
+
+  Szenario: Architektur ohne Abhängigkeitssonde
+    Angenommen quality.yaml enthält keine Sonde mit role deps
+    Wenn architecture berechnet wird
+    Dann ist architecture n/a mit Grund
 
   Szenario: Zu viele Regeln ohne benötigte Kantenart
     Angenommen architecture.yaml hat 3 Regeln
-    Und die Sonde "deps" liefert nur die Kantenart import
+    Und die Sonde mit role deps liefert nur die Kantenart import
     Und 2 der Regeln brauchen die Kantenart call oder write
     Wenn architecture berechnet wird
     Dann ist architecture n/a
@@ -93,18 +111,13 @@ Funktionalität: Score-Berechnung
     Dann hat die Sonde den Status ok
     Und lint_per_kloc wird aus 3 Befunden berechnet
 
-  Szenariogrundriss: Sondenausfall
-    Angenommen die Sonde "lint" <fehlerbild>
-    Wenn die Sonde ausgewertet wird
-    Dann hat die Sonde den Status n/a mit Grund "<grund>"
-
-    Beispiele:
-      | fehlerbild                                       | grund                    |
-      | verweist auf einen nicht installierten Befehl    | Befehl nicht gefunden    |
-      | überschreitet timeout_seconds                    | Zeitlimit überschritten  |
-      | schreibt keine Datei nach {out}                  | keine Ausgabe            |
-      | schreibt ungültiges SARIF nach {out}             | Ausgabe nicht parsebar   |
-      | enthält einen Pfad unter .sdd/holdout/           | Holdout-Pfad verboten    |
+  Szenario: Ausgefallene Metrik-Sonde wird renormiert
+    Angenommen code_quality hat die Metriken lint_per_kloc 0.6 und type_errors 1.0 mit Gewicht 1
+    Und die Sonde für type_errors ist ausgefallen
+    Wenn code_quality berechnet wird
+    Dann ist type_errors n/a mit Grund
+    Und der Score von code_quality ist 0.6
+    Und code_quality trägt renormalized true
 
   Szenario: Judge ohne Gewicht verändert den Score nicht
     Angenommen der Judge-Knoten hat den Score 0.2 und das Gewicht 0
@@ -120,9 +133,21 @@ Funktionalität: Score-Berechnung
     Dann ist das Gate <ergebnis>
 
     Beispiele:
-      | gate                      | wert | ergebnis        |
-      | requirements >= 1.0       | 1.0  | bestanden       |
-      | requirements >= 1.0       | 0.75 | nicht bestanden |
-      | requirements >= 1.0       | n/a  | nicht bestanden |
-      | architecture.errors == 0  | 0    | bestanden       |
-      | code_quality >= 0.7       | n/a  | nicht bestanden |
+      | gate                                 | wert | ergebnis        |
+      | requirements >= 1.0                  | 1.0  | bestanden       |
+      | requirements >= 1.0                  | 0.75 | nicht bestanden |
+      | requirements >= 1.0                  | n/a  | nicht bestanden |
+      | count.architecture.errors == 0       | 0    | bestanden       |
+      | code_quality >= 0.7                  | n/a  | nicht bestanden |
+      | code_quality.lint_per_kloc >= 0.5    | 0.6  | bestanden       |
+
+  Szenariogrundriss: Ungültige Gates sind Konfigurationsfehler
+    Angenommen quality.gates enthält "<gate>"
+    Wenn die Konfiguration validiert wird
+    Dann meldet sie einen Fehler "<fehler>"
+
+    Beispiele:
+      | gate                              | fehler                |
+      | count.architecture.errors >= 0.8  | ganze Zahl erwartet   |
+      | requirements >= 3                 | Wert in [0, 1] erwartet |
+      | security >= 0.5                   | unbekannter Pfad      |

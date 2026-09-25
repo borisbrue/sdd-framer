@@ -4,15 +4,15 @@ title: "Quality-Report"
 type: data
 format: json-schema
 spec: SPEC-0054
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: approved
 artifact: ".sdd/contracts/data/quality-report.schema.json"
 tests: ["TST-0224"]
 ---
 
 # Contract: Quality-Report
 
-> **Spec:** SPEC-0054 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0054 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -21,6 +21,12 @@ Schnittstelle zu allen Verbrauchern: Pipeline-Gates und Supervisor (SPEC-0053), 
 (SPEC-0055), Benchmark (SPEC-0056) und `sdd finalize`. Der Score-Baum `tree` ist die Serialisierung
 des Composite; wie die Werte berechnet werden, regelt CON-0196.
 
+## Aufbau
+
+Der Report ist bewusst **ein** Dokument für alle Verbraucher. `tree` trägt die Bewertung,
+`requirements`, `architecture` und `probes` tragen die Belege dazu. Eine neue Qualitätsdimension ist
+eine Spec-Änderung und erhöht `schema_version`.
+
 ## Invarianten
 
 - **INV-01:** Jeder Score ist eine Zahl in [0, 1] oder `null`. `null` bedeutet `n/a` und ist nie
@@ -28,12 +34,16 @@ des Composite; wie die Werte berechnet werden, regelt CON-0196.
 - **INV-02:** `score` auf oberster Ebene ist gleich `tree.score`.
 - **INV-03:** `incomplete` ist genau dann `true`, wenn mindestens ein Knoten oder eine Metrik im
   Baum `null` ist.
-- **INV-04:** Jede Metrik oder Sonde mit `null` bzw. `status: "n/a"` trägt einen `reason`.
-- **INV-05:** `requirements.frs` enthält jede FR-ID aus Abschnitt „Funktionale Anforderungen“ der
-  Spec genau einmal, auch ohne zugeordnete Tests (`status: "fehlt"`, `tests: []`).
-- **INV-06:** FR-Status `unbekannt` tritt genau dann auf, wenn die Sonde `tests` `n/a` ist. Dann
+- **INV-04:** Jedes Element ohne Wert trägt einen `reason`: Knoten und Metriken mit `null`,
+  Sonden mit `status: "n/a"`. `null` (bei Werten) und `"n/a"` (bei Sondenstatus) sind die einzigen
+  beiden Darstellungen von „kein Messwert“.
+- **INV-05:** `requirements.frs` enthält jede FR-ID, die der FR-Parser von sdd (`compliance.py`)
+  für die Spec liefert, genau einmal, auch ohne zugeordnete Tests (`status: "fehlt"`,
+  `tests: []`).
+- **INV-06:** FR-Status `unbekannt` tritt genau dann auf, wenn die Sonde mit `role: tests` `n/a` ist. Dann
   sind alle FRs `unbekannt` und der Knoten `requirements` ist `null`.
-- **INV-07:** Jeder Verstoß nennt `rule` und `adr`. `baselined: true` impliziert `severity: "warn"`.
+- **INV-07:** Jeder Verstoß nennt `rule`, `adr` und `symbol` (Verstoß-Schlüssel, CON-0194 INV-09).
+  `baselined: true` impliziert `severity: "warn"`.
 - **INV-08:** Die Liste `probes` enthält jede in `quality.yaml` definierte Sonde genau einmal, in
   Deklarationsreihenfolge, mit dem **gerenderten** Befehl ohne Geheimnisse (Umgebungsvariablen
   werden nicht expandiert).

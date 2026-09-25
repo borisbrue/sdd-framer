@@ -6,17 +6,17 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.5.0
+version: 0.6.0
 priority: high
 tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
 depends_on: [SPEC-0006, SPEC-0008, SPEC-0014, SPEC-0015, SPEC-0041]
-contracts: [CON-0192, CON-0193, CON-0194, CON-0195, CON-0196, CON-0197]
+contracts: [CON-0192, CON-0193, CON-0194, CON-0195, CON-0196, CON-0197, CON-0198]
 tests: []
 ---
 
 # Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.5.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.6.0
 
 ## 1. Kontext & Motivation
 
@@ -120,9 +120,10 @@ Kernänderung.
 version: 1
 preset: python                  # Herkunft; die Dateien liegen danach im Projekt
 probes:
-  tests:
+  pytest:
     command: "pytest -q --junitxml={out}"
     format: junit
+    role: tests                 # Bedeutung über die Rolle, nie über den Namen
     fr_marker: property         # property (JUnit <property name="fr">) | name (FR-ID im Testnamen)
   lint:
     command: "ruff check --output-format sarif --output-file {out} {paths}"
@@ -132,9 +133,10 @@ probes:
     command: "mypy --output json {paths} | python .sdd/quality/mypy_to_sarif.py > {out}"
     format: sarif
     metric: type_errors
-  deps:
+  imports:
     command: "python .sdd/quality/extract_deps.py {paths} > {out}"
     format: sdd-deps
+    role: deps
   complexity:
     command: "lizard --xml {paths} | python .sdd/quality/lizard_to_metrics.py > {out}"
     format: sdd-metrics
@@ -166,7 +168,7 @@ rules:
     adr: ADR-0007          # „Web-Schicht delegiert jede Schreiboperation an die CLI“
     kind: forbidden_dependency
     from: web
-    to: ["tool/sdd_cli/templates.py"]
+    to_paths: ["tool/sdd_cli/templates.py"]
     severity: error
   - id: ARCH-02
     adr: ADR-0008
@@ -203,7 +205,7 @@ rekursiv. Der Report ist die Serialisierung dieses Baums. Gewichte und Schwellen
   `sdd-metrics` und `sdd-findings`. Die drei `sdd-*`-Formate sind als JSON-Schema im Contract
   festgelegt. Sprach- oder Werkzeugwissen enthält der Kern nicht.
 - **FR-03:** **Anforderungserfüllung.** Tests werden ausschließlich über den Test-Runner aus
-  SPEC-0006 ausgeführt. Er wird erweitert: Ist in `quality.yaml` eine Sonde `tests` definiert, führt
+  SPEC-0006 ausgeführt. Er wird erweitert: Ist in `quality.yaml` eine Sonde mit `role: tests` definiert, führt
   `sdd test run SPEC-XXXX` diese Sonde aus. Er legt das JUnit-Ergebnis neben seinem bisherigen
   Run-Report ab und ergänzt den Report um die einzelnen Testfälle mit Status und FR-Markierung.
   `sdd quality measure --spec` startet diesen Lauf bzw. nutzt mit `--reuse-test-run` den letzten
@@ -266,8 +268,10 @@ rekursiv. Der Report ist die Serialisierung dieses Baums. Gewichte und Schwellen
   eigene Arbeit bewertet. Das Ergebnis erscheint als eigener Knoten `judge` mit Modell und
   Rubrikversion. Es fließt nur in den Gesamtscore ein, wenn `quality.weights.judge > 0` gesetzt ist.
 - **FR-10:** `quality.gates` in `config.yaml` definiert Schwellen, z. B. `requirements >= 1.0`,
-  `architecture.errors == 0`, `code_quality >= 0.7`. Die Gates sind **fail-closed**: Ein Teilscore
-  `n/a` in einer Dimension mit Schwelle gilt als nicht bestanden. Verwendet werden sie:
+  `count.architecture.errors == 0`, `code_quality >= 0.7`. Score-Pfade (Werte in [0, 1]) und
+  Zähler-Pfade (`count.…`, ganze Zahlen) sind getrennt; die Syntax legt CON-0196 fest. Die Gates
+  sind **fail-closed**: Ein Teilscore `n/a` in einer Dimension mit Schwelle gilt als nicht
+  bestanden. Verwendet werden sie:
   - als Gate-Handler für SPEC-0053 (nach `implementer` und zum Abschluss);
   - als zusätzliche Stufe des Qualitäts-Gates aus SPEC-0014;
   - im `--auto`-Modus der Pipeline als Merge-Voraussetzung neben der Holdout-Pass-Rate aus SPEC-0004;
@@ -334,7 +338,7 @@ Feature: Qualitätsmessung
     And requirements.score ist kleiner als 1.0
 
   Scenario: Ausgefallene Testsonde wird nicht schöngerechnet
-    Given die Sonde "tests" bricht ohne JUnit-Ausgabe ab
+    Given die Sonde mit role tests bricht ohne JUnit-Ausgabe ab
     When ich "sdd quality measure --spec SPEC-0900 --json" ausführe
     Then haben alle FRs den Status "unbekannt"
     And requirements.score ist "n/a"
@@ -374,7 +378,8 @@ Feature: Qualitätsmessung
 |-------------|----------|-----------------------------------------------------------------|
 | CON-0192    | data     | `quality-config.schema.json` (`.sdd/quality.yaml`: Sonden, Normierung, Suppressions) |
 | CON-0193    | data     | Austauschformate `sdd-deps`, `sdd-metrics`, `sdd-findings`      |
-| CON-0194    | data     | `architecture-rules.schema.json` inkl. Pflichtfeld `adr`, `arch-baseline.json` |
+| CON-0194    | data     | `architecture-rules.schema.json` inkl. Pflichtfeld `adr` und Verstoß-Schlüssel |
+| CON-0198    | data     | `arch-baseline.json` (bekannte Verstöße)                        |
 | CON-0195    | data     | `quality-report.schema.json`                                    |
 | CON-0196    | behavior | Score-Berechnung: Normierung, Gewichtung, einheitliche `n/a`-Semantik, fail-closed Gates |
 | CON-0197    | behavior | CLI `sdd quality measure|doctor|init`, `sdd arch check|init`, Erweiterung `sdd test run`, ADR-Prüfung in `sdd validate` |
@@ -409,3 +414,4 @@ Feature: Qualitätsmessung
 | 2026-09-25 | 0.3.0   | Boris, Claude | Regeln sind an ADRs gebunden (`adr`/`enforced_by`)           |
 | 2026-09-25 | 0.4.0   | Boris, Claude | Dogfooding mit Baseline; Claude als Default-Gutachter        |
 | 2026-09-25 | 0.5.0   | Boris, Claude | Review: Patterns Template Method/Adapter/Strategy/Composite; einheitliche `n/a`-Semantik und fail-closed Gates; `sdd-findings`; Preset-Skripte statt CLI-Befehle; Tests über `sdd test run` (SPEC-0006); Abgrenzung zu SPEC-0004/0008/0014/0015; Dogfooding → SPEC-0059 |
+| 2026-09-25 | 0.6.0   | Boris, Claude | Contract-Review: Sonden-Rollen statt reservierter Namen, typisierte Gates (`count.…`), konfigurierbare Holdout-/Severity-Gewichte, `to_layers`/`to_paths`, Baseline als CON-0198 |

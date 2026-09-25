@@ -45,9 +45,9 @@ Funktionalität: CLI für Qualitätsmessung und Architekturregeln
     Und der Report enthält base_ref "BASE"
 
   Szenario: test run nutzt die Testsonde und speichert Testfälle
-    Angenommen .sdd/quality.yaml definiert die Sonde "tests"
+    Angenommen .sdd/quality.yaml definiert eine Sonde mit role tests
     Wenn ich "sdd test run SPEC-0900" ausführe
-    Dann wurde der Befehl der Sonde "tests" ausgeführt
+    Dann wurde der Befehl dieser Sonde ausgeführt
     Und neben dem Run-Report liegt eine JUnit-Datei
     Und der Run-Report enthält je Testfall Name, Status und FR-Markierung
 
@@ -59,7 +59,7 @@ Funktionalität: CLI für Qualitätsmessung und Architekturregeln
   Szenario: measure nutzt vorhandenen Test-Run
     Angenommen es gibt einen Run-Report von SPEC-0900 für den aktuellen Git-SHA
     Wenn ich "sdd quality measure --spec SPEC-0900 --reuse-test-run" ausführe
-    Dann wurde die Sonde "tests" nicht erneut ausgeführt
+    Dann wurde die Testsonde nicht erneut ausgeführt
     Und requirements.test_run verweist auf diesen Run-Report
 
   Szenario: doctor meldet Probleme je Sonde
@@ -107,6 +107,20 @@ Funktionalität: CLI für Qualitätsmessung und Architekturregeln
     Dann enthält .sdd/quality/arch-baseline.json jeden aktuellen error-Verstoß mit dem reason-Platzhalter "TODO"
     Und der Exit-Code ist 0
 
+  Szenario: Baseline fortschreiben erhält vorhandene Einträge
+    Angenommen die Baseline enthält einen Eintrag mit reason "Altlast, SPEC-0053"
+    Und es ist ein neuer error-Verstoß hinzugekommen
+    Wenn ich "sdd arch check --write-baseline" ausführe
+    Dann enthält die Baseline den alten Eintrag mit unverändertem reason
+    Und einen neuen Eintrag mit reason "TODO"
+    Und stderr zeigt den Diff
+
+  Szenario: --out überschreibt ein vorhandenes Ziel
+    Angenommen build/q.json existiert
+    Wenn ich "sdd quality measure --out build/q.json" ausführe
+    Dann ist build/q.json der neue Report
+    Und es entsteht keine Datei build/q.json.new
+
   Szenario: arch check ohne architecture.yaml
     Angenommen .sdd/architecture.yaml existiert nicht
     Wenn ich "sdd arch check" ausführe
@@ -124,6 +138,23 @@ Funktionalität: CLI für Qualitätsmessung und Architekturregeln
     Wenn ich "sdd validate" ausführe
     Dann meldet die Ausgabe einen Fehler zu ARCH-05 und ADR-0099
     Und eine Warnung zu ADR-0007 und ARCH-09
+    Und der Exit-Code ist 1
+
+  Szenario: validate warnt bei Regel an abgelöstem ADR
+    Angenommen Regel ARCH-02 verweist auf ADR-0008 mit Status superseded
+    Wenn ich "sdd validate" ausführe
+    Dann meldet die Ausgabe eine Warnung zu ARCH-02 und ADR-0008
+
+  Szenario: validate meldet doppelte Regel-IDs
+    Angenommen architecture.yaml enthält zweimal die Regel-ID ARCH-03
+    Wenn ich "sdd validate" ausführe
+    Dann meldet die Ausgabe einen Fehler "doppelte Regel-ID ARCH-03"
+
+  Szenario: Zwei Sonden mit derselben Rolle
+    Angenommen .sdd/quality.yaml definiert zwei Sonden mit role tests
+    Wenn ich "sdd quality measure" ausführe
+    Dann ist der Exit-Code 2
+    Und die Ausgabe nennt beide Sondennamen
 
   Szenario: Keine sprachspezifischen Befehle
     Wenn ich "sdd --help" und die Hilfe jeder Befehlsgruppe ausgebe

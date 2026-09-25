@@ -4,15 +4,15 @@ title: "Austauschformate sdd-deps, sdd-metrics und sdd-findings"
 type: data
 format: json-schema
 spec: SPEC-0054
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: approved
 artifact: ".sdd/contracts/data/austauschformate-sdd-deps-sdd-metrics-und-sdd-findings.schema.json"
 tests: ["TST-0222"]
 ---
 
 # Contract: Austauschformate sdd-deps, sdd-metrics und sdd-findings
 
-> **Spec:** SPEC-0054 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0054 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -38,13 +38,31 @@ diesem Schema genügen.
   liefert. Eine Regel, deren Kantenart fehlt, ist `n/a`, nicht erfüllt.
 - **INV-04:** Eine Kante mit `to: null` hat `unresolved: true`. Unaufgelöste Kanten sind nie ein
   Verstoß, werden aber gezählt (`architecture.unresolved_edges` im Report).
-- **INV-05:** Kanten der Art `call` tragen `symbol` (voll qualifizierter Name, z. B.
-  `subprocess.run`) und, soweit statisch auflösbar, Literal-Argumente in `args`.
+- **INV-05:** Jede Kante trägt `symbol` mit fester Bedeutung je Art:
+  | `kind` | `symbol` | `to` | `args` |
+  |--------|----------|------|--------|
+  | `import` | importierter Name (Modul oder Symbol) | importierte Datei | nicht erlaubt |
+  | `call` | voll qualifizierter Aufrufname, z. B. `subprocess.run` | Datei der Definition, falls auflösbar | Literal-Argumente, soweit statisch auflösbar |
+  | `write` | schreibende Funktion, z. B. `pathlib.Path.write_text` | geschriebener Pfad | nicht erlaubt |
 - **INV-06:** `sdd-metrics`-Namen sind `snake_case`. Derselbe Name mit `scope: project` darf je Datei
   nur einmal vorkommen. Mehrere dateibezogene Werte desselben Namens werden nicht aggregiert; das
   Projekt liefert die gewünschte Aggregation als `scope: project` (z. B. `complexity_max`).
-- **INV-07:** `sdd-findings.severity` ist `error`, `warning` oder `note`. Für `lint_per_kloc` und
-  `type_errors` zählen alle Schweregrade außer `note`.
+- **INV-07:** `sdd-findings.severity` ist `error`, `warning` oder `note`. Wie Befunde gezählt
+  werden, regelt CON-0196, nicht dieses Format.
+- **INV-08 (Gleichwertigkeit mit SARIF):** Der SARIF-Parser bildet jedes `result` auf genau einen
+  Befund dieses Formats ab. `sdd-findings` und SARIF sind damit für alle Verbraucher austauschbar:
+  | `sdd-findings` | aus SARIF |
+  |----------------|-----------|
+  | `rule` | `ruleId`, sonst `rule.id`, sonst `unknown` |
+  | `message` | `message.text` |
+  | `file` | `locations[0].physicalLocation.artifactLocation.uri`, `uriBaseId` aufgelöst, `file://` entfernt, relativ zur Projektwurzel (INV-02); Befunde außerhalb der Wurzel werden verworfen und gezählt |
+  | `line` / `column` | `region.startLine` (fehlt: 1) / `region.startColumn` |
+  | `severity` | `level`: `error` → `error`, `warning` oder fehlend → `warning`, `note`/`none` → `note` |
+
+## Versionierung
+
+Jedes Format trägt sein eigenes `version`-Feld und wird unabhängig weiterentwickelt. Eine neue
+Formatversion erhöht die Contract-Version. Parser akzeptieren alle Versionen, die im Schema stehen.
 
 ## Beispiele
 
@@ -57,6 +75,8 @@ diesem Schema genügen.
   "edges": [
     { "from": "tool/sdd_cli/decompose.py", "to": "tool/sdd_cli/llm/providers/claude_cli.py",
       "kind": "import", "symbol": "ClaudeCliCompletionProvider", "file": "tool/sdd_cli/decompose.py", "line": 110 },
+    { "from": "tool/sdd_cli/web/api/routes/x.py", "to": ".sdd/specs/SPEC-0001.md", "kind": "write",
+      "symbol": "pathlib.Path.write_text", "file": "tool/sdd_cli/web/api/routes/x.py", "line": 42 },
     { "from": "tool/sdd_cli/local_agent.py", "to": null, "kind": "call", "symbol": "subprocess.run",
       "args": ["claude"], "file": "tool/sdd_cli/local_agent.py", "line": 126, "unresolved": true }
   ]
@@ -66,9 +86,11 @@ diesem Schema genügen.
 **Ungültig (und warum):**
 ```json
 { "format": "sdd-deps", "version": 1, "kinds_provided": ["import"],
-  "edges": [{ "from": "../other/x.py", "to": null, "kind": "import", "file": "x.py", "line": 1 }] }
+  "edges": [{ "from": "../other/x.py", "to": null, "kind": "import", "symbol": "x",
+              "args": ["a"], "file": "x.py", "line": 1 }] }
 ```
-→ Verstößt gegen INV-02 (`..` im Pfad) und INV-04 (`to: null` ohne `unresolved: true`).
+→ Verstößt gegen INV-02 (`..` im Pfad), INV-04 (`to: null` ohne `unresolved: true`) und INV-05
+(`args` bei `import`).
 
 ## Validierung
 

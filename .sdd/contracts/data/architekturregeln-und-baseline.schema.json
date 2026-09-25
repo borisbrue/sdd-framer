@@ -1,70 +1,175 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sdd-framer.local/schemas/architecture-rules.schema.json",
-  "title": "SDD Architekturregeln (.sdd/architecture.yaml) und Baseline (.sdd/quality/arch-baseline.json)",
-  "description": "SPEC-0054 / CON-0194. Wurzel beschreibt architecture.yaml; $defs/baseline beschreibt arch-baseline.json.",
+  "title": "SDD Architekturregeln (.sdd/architecture.yaml)",
+  "description": "SPEC-0054 / CON-0194. Schichten und Regeln; die Baseline beschreibt CON-0198.",
   "type": "object",
-  "required": ["version", "layers", "rules"],
+  "required": [
+    "version",
+    "layers",
+    "rules"
+  ],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
     "layers": {
       "type": "object",
       "minProperties": 1,
-      "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      },
       "additionalProperties": {
         "type": "array",
         "minItems": 1,
-        "items": { "type": "string", "minLength": 1 }
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
       },
       "description": "Schicht → Glob-Muster. Eine Datei gehört zur ersten Schicht (Deklarationsreihenfolge), deren Muster passt."
     },
     "rules": {
       "type": "array",
-      "items": { "$ref": "#/$defs/rule" }
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
     }
   },
   "$defs": {
     "layerOrLayers": {
       "oneOf": [
-        { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
-        { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" } }
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          }
+        }
       ]
     },
-    "globs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "globs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "rule": {
       "type": "object",
-      "required": ["id", "adr", "kind"],
+      "required": [
+        "id",
+        "adr",
+        "kind"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^ARCH-[0-9]{2,}$" },
-        "adr": { "type": "string", "pattern": "^ADR-[0-9]{4}$" },
-        "description": { "type": "string" },
-        "severity": { "enum": ["error", "warn"], "default": "error" },
-        "kind": { "enum": ["forbidden_dependency", "allowed_dependencies", "forbidden_call", "write_ownership"] }
+        "id": {
+          "type": "string",
+          "pattern": "^ARCH-[0-9]{2,}$"
+        },
+        "adr": {
+          "type": "string",
+          "pattern": "^ADR-[0-9]{4}$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warn"
+          ],
+          "default": "error"
+        },
+        "kind": {
+          "enum": [
+            "forbidden_dependency",
+            "allowed_dependencies",
+            "forbidden_call",
+            "write_ownership"
+          ]
+        }
       },
       "allOf": [
         {
-          "if": { "properties": { "kind": { "const": "forbidden_dependency" } } },
-          "then": {
-            "required": ["from", "to"],
+          "if": {
             "properties": {
-              "id": true, "adr": true, "description": true, "severity": true, "kind": true,
-              "from": { "$ref": "#/$defs/layerOrLayers" },
-              "to": { "$ref": "#/$defs/globs", "description": "Schichtnamen oder Glob-Muster der verbotenen Ziele." }
+              "kind": {
+                "const": "forbidden_dependency"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "from"
+            ],
+            "properties": {
+              "id": true,
+              "adr": true,
+              "description": true,
+              "severity": true,
+              "kind": true,
+              "from": {
+                "$ref": "#/$defs/layerOrLayers"
+              },
+              "to_layers": {
+                "$ref": "#/$defs/layerOrLayers",
+                "description": "Verbotene Zielschichten."
+              },
+              "to_paths": {
+                "$ref": "#/$defs/globs",
+                "description": "Verbotene Zielpfade (Glob)."
+              }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "anyOf": [
+              {
+                "required": [
+                  "to_layers"
+                ]
+              },
+              {
+                "required": [
+                  "to_paths"
+                ]
+              }
+            ]
           }
         },
         {
-          "if": { "properties": { "kind": { "const": "allowed_dependencies" } } },
-          "then": {
-            "required": ["graph"],
+          "if": {
             "properties": {
-              "id": true, "adr": true, "description": true, "severity": true, "kind": true,
+              "kind": {
+                "const": "allowed_dependencies"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "graph"
+            ],
+            "properties": {
+              "id": true,
+              "adr": true,
+              "description": true,
+              "severity": true,
+              "kind": true,
               "graph": {
                 "type": "object",
                 "minProperties": 1,
-                "additionalProperties": { "type": "array", "items": { "type": "string" } },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
                 "description": "Schicht → erlaubte Zielschichten. Abhängigkeiten innerhalb einer Schicht sind immer erlaubt."
               }
             },
@@ -72,55 +177,72 @@
           }
         },
         {
-          "if": { "properties": { "kind": { "const": "forbidden_call" } } },
-          "then": {
-            "required": ["in", "calls"],
+          "if": {
             "properties": {
-              "id": true, "adr": true, "description": true, "severity": true, "kind": true,
-              "in": { "$ref": "#/$defs/layerOrLayers" },
-              "calls": { "$ref": "#/$defs/globs", "description": "Voll qualifizierte Aufrufnamen; '*' als Platzhalter erlaubt." },
-              "args_match": { "type": "string", "description": "Optionaler Regex auf die Literal-Argumente (z. B. '^claude$')." },
-              "except": { "$ref": "#/$defs/globs" }
+              "kind": {
+                "const": "forbidden_call"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "in",
+              "calls"
+            ],
+            "properties": {
+              "id": true,
+              "adr": true,
+              "description": true,
+              "severity": true,
+              "kind": true,
+              "in": {
+                "$ref": "#/$defs/layerOrLayers"
+              },
+              "calls": {
+                "$ref": "#/$defs/globs",
+                "description": "Voll qualifizierte Aufrufnamen; '*' als Platzhalter erlaubt."
+              },
+              "args_match": {
+                "type": "string",
+                "description": "Optionaler Regex auf die Literal-Argumente (z. B. '^claude$')."
+              },
+              "except": {
+                "$ref": "#/$defs/globs"
+              }
             },
             "additionalProperties": false
           }
         },
         {
-          "if": { "properties": { "kind": { "const": "write_ownership" } } },
-          "then": {
-            "required": ["paths", "owners"],
+          "if": {
             "properties": {
-              "id": true, "adr": true, "description": true, "severity": true, "kind": true,
-              "paths": { "$ref": "#/$defs/globs" },
-              "owners": { "$ref": "#/$defs/layerOrLayers" }
+              "kind": {
+                "const": "write_ownership"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "paths",
+              "owners"
+            ],
+            "properties": {
+              "id": true,
+              "adr": true,
+              "description": true,
+              "severity": true,
+              "kind": true,
+              "paths": {
+                "$ref": "#/$defs/globs"
+              },
+              "owners": {
+                "$ref": "#/$defs/layerOrLayers"
+              }
             },
             "additionalProperties": false
           }
         }
       ]
-    },
-    "baseline": {
-      "type": "object",
-      "required": ["version", "entries"],
-      "additionalProperties": false,
-      "properties": {
-        "version": { "const": 1 },
-        "entries": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["rule", "file", "symbol", "reason"],
-            "additionalProperties": false,
-            "properties": {
-              "rule": { "type": "string", "pattern": "^ARCH-[0-9]{2,}$" },
-              "file": { "type": "string", "minLength": 1 },
-              "symbol": { "type": "string", "minLength": 1 },
-              "reason": { "type": "string", "minLength": 1 },
-              "fixed_by": { "type": "string", "pattern": "^SPEC-[0-9]{4}$" }
-            }
-          }
-        }
-      }
     }
   }
 }
