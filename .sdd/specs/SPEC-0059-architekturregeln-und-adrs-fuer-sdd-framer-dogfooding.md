@@ -1,28 +1,48 @@
 ---
 id: SPEC-0059
-title: "Architekturregeln und ADRs für sdd-framer (Dogfooding)"
+title: Architekturregeln und ADRs für sdd-framer (Dogfooding)
 type: feature
-status: approved
-owner: "Boris"
+status: implemented
+owner: Boris
 created: 2026-09-25
-updated: 2026-09-25
+updated: '2026-09-25'
 version: 0.2.0
 priority: medium
-tags: [architecture, adr, dogfooding, quality]
-depends_on: [SPEC-0054, SPEC-0053, SPEC-0060]
-contracts: [CON-0208, CON-0209]
-tests: [TST-0237, TST-0238]
+tags:
+- architecture
+- adr
+- dogfooding
+- quality
+depends_on:
+- SPEC-0054
+- SPEC-0053
+- SPEC-0060
+contracts:
+- CON-0208
+- CON-0209
+tests:
+- TST-0237
+- TST-0238
 fr_test_map:
-  FR-01: [TST-0238]
-  FR-02: [TST-0238]
-  FR-03: [TST-0238]
-  FR-04: [TST-0238]
-  FR-05: [TST-0238]
-  FR-06: [TST-0238]
-  FR-07: [TST-0237, TST-0238]
-  FR-08: [TST-0238]
+  FR-01:
+  - TST-0238
+  FR-02:
+  - TST-0238
+  FR-03:
+  - TST-0238
+  FR-04:
+  - TST-0238
+  FR-05:
+  - TST-0238
+  FR-06:
+  - TST-0238
+  FR-07:
+  - TST-0237
+  - TST-0238
+  FR-08:
+  - TST-0238
+started_at: '2026-09-25T20:36:41Z'
 ---
-
 # Architekturregeln und ADRs für sdd-framer (Dogfooding)
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
