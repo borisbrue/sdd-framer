@@ -1,48 +1,47 @@
 ---
 id: TST-0230
-project: ""                # PRJ-XXXX
 title: "Supervisor-Commands fuer S1 bis S3"
-level: unit            # unit | integration | contract | acceptance | performance | property
+level: unit
 spec: SPEC-0053
 contract: CON-0201
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/unit/test_con_0201.py"
+tags: [pipeline, roles]
 ---
 
 # Test: Supervisor-Commands fuer S1 bis S3
 
-> **Level:** {{level}} · **Spec:** SPEC-0053 · **Contract:** CON-0201 · **Status:** draft
+> **Level:** unit · **Spec:** SPEC-0053 · **Contract:** CON-0201 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
+Supervisor-Commands je Entscheidungspunkt.
+
+Schematests prüfen das Contract-Artefakt und laufen sofort. Verhaltenstests laufen gegen die echte
+CLI mit einem OpenAI-kompatiblen Fake-Server und werden mit `requires_pipeline_cli` übersprungen,
+bis `sdd pipeline` existiert.
 
 ## Vorbedingungen
 
-- ...
+- Schema-Artefakt von CON-0201.
 
 ## Ablauf
 
-1. ...
-2. ...
-3. ...
+1. Alle Kombinationen aus Punkt (S1–S3) und Command gegen das Schema prüfen.
 
 ## Erwartetes Ergebnis
 
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+- Genau die Commands aus der Tabelle in INV-02 sind je Punkt gültig.
+- Begründung Pflicht; reassign nie an supervisor; accept_frs mit Beleg.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0201:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-08

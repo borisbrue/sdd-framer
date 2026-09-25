@@ -1,48 +1,48 @@
 ---
 id: TST-0229
-project: ""                # PRJ-XXXX
 title: "Rollenausgaben: decomposer, test_author, implementer, reviewer"
-level: unit            # unit | integration | contract | acceptance | performance | property
+level: unit
 spec: SPEC-0053
 contract: CON-0200
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/unit/test_con_0200.py"
+tags: [pipeline, roles]
 ---
 
 # Test: Rollenausgaben: decomposer, test_author, implementer, reviewer
 
-> **Level:** {{level}} · **Spec:** SPEC-0053 · **Contract:** CON-0200 · **Status:** draft
+> **Level:** unit · **Spec:** SPEC-0053 · **Contract:** CON-0200 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
+Ausgabeschemata der vier Arbeitsrollen.
+
+Schematests prüfen das Contract-Artefakt und laufen sofort. Verhaltenstests laufen gegen die echte
+CLI mit einem OpenAI-kompatiblen Fake-Server und werden mit `requires_pipeline_cli` übersprungen,
+bis `sdd pipeline` existiert.
 
 ## Vorbedingungen
 
-- ...
+- Schema-Artefakt von CON-0200.
 
 ## Ablauf
 
-1. ...
-2. ...
-3. ...
+1. Je Rolle gültige und ungültige Ausgaben gegen `$defs/<rolle>` prüfen.
 
 ## Erwartetes Ergebnis
 
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+- code/test-Tasks ohne FR, ohne `test_file`, ohne `allowed_paths` und leere Zerlegungen werden abgelehnt; doc-Tasks ohne FR sind gültig.
+- `fail` ohne Befund und Pfadflucht im implementer werden abgelehnt.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0200:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-05, FR-11

@@ -1,48 +1,45 @@
 ---
 id: TST-0231
-project: ""                # PRJ-XXXX
 title: "Run-Verzeichnis: run.json, state.json, events, decisions, pending-decision"
-level: unit            # unit | integration | contract | acceptance | performance | property
+level: unit
 spec: SPEC-0053
 contract: CON-0202
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/unit/test_con_0202.py"
+tags: [pipeline, roles]
 ---
 
 # Test: Run-Verzeichnis: run.json, state.json, events, decisions, pending-decision
 
-> **Level:** {{level}} · **Spec:** SPEC-0053 · **Contract:** CON-0202 · **Status:** draft
+> **Level:** unit · **Spec:** SPEC-0053 · **Contract:** CON-0202 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
+Dateien des Run-Verzeichnisses.
+
+Schematests prüfen das Contract-Artefakt und laufen sofort. Verhaltenstests laufen gegen die echte
+CLI mit einem OpenAI-kompatiblen Fake-Server und werden mit `requires_pipeline_cli` übersprungen,
+bis `sdd pipeline` existiert.
 
 ## Vorbedingungen
 
-- ...
+- Schema-Artefakt von CON-0202.
 
 ## Ablauf
 
-1. ...
-2. ...
-3. ...
+1. Gültige und ungültige Instanzen je `$defs`-Eintrag prüfen.
 
 ## Erwartetes Ergebnis
 
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+- Entscheidungen und Anfragen tragen `request_id`; Anfragen nennen mindestens ein zulässiges Command.
+- Unbekannte Status, Task-Zustände und Klartextfelder werden abgelehnt.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0202:
+- [x] INV-02
+- [x] INV-05
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-12, FR-15
