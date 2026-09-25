@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0060",
-  "pipeline_phase": "contracts-review",
+  "pipeline_phase": "execute-unlocked",
   "phase_history": [
     {
       "phase": "spec-draft",
@@ -32,6 +32,37 @@
       "result": "ok",
       "conflicts_found": 12,
       "conflicts_high": 1
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-09-25T15:23:39Z",
+      "result": "ok",
+      "files_generated": [
+        "tests/unit/test_con_0206.py",
+        "tests/acceptance/test_con_0207.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-09-25T15:24:01Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-09-25T15:24:36Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "11/11",
+        "scenarios_covered": "",
+        "contracts_consistent": true,
+        "contracts_count": 2,
+        "tests_count": 2
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-09-25T15:24:36Z",
+      "result": "ok"
     }
   ],
   "blocking_issues": [],

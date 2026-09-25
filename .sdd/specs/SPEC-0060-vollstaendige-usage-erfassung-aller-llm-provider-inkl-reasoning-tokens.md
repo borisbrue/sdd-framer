@@ -2,7 +2,7 @@
 id: SPEC-0060
 title: "Vollständige Usage-Erfassung aller LLM-Provider inkl. Reasoning-Tokens"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25

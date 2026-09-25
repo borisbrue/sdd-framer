@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0060",
-  "generated_at": "2026-09-25T15:16:56Z",
+  "generated_at": "2026-09-25T15:24:01Z",
   "new_contracts": [
     "CON-0206",
     "CON-0207"
@@ -184,6 +184,171 @@
       "resolution": {
         "action": "Analyzer-Completions laufen nach SPEC-0060 FR-06 über die Factory (tc11 prüft das); interaktive Claude-Code-Sitzungen sind keine Provider-Aufrufe (in CON-0207 Abhängigkeiten festgehalten).",
         "resolved_at": "2026-09-25T15:23:29Z"
+      }
+    },
+    {
+      "id": "CF-0060-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0003:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0003 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:26Z"
+      }
+    },
+    {
+      "id": "CF-0060-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0004:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0004 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:27Z"
+      }
+    },
+    {
+      "id": "CF-0060-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0007:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:28Z"
+      }
+    },
+    {
+      "id": "CF-0060-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0008:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0008 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:29Z"
+      }
+    },
+    {
+      "id": "CF-0060-R005",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0011:1. Kontext & Motivation",
+      "detail": "SPEC-0011 sieht die Token-Erfassung über `usage_store` in den AI-Routes und `.sdd/evaluations.db` als Datenbasis vor; SPEC-0060 legt dieselbe Erfassung neu und vollständig für alle Provider in `token_usage` an, deshalb muss die Schemaerweiterung (reasoning_tokens, cache_*, stop_reason) mit Schätzung und Kalibrierung aus SPEC-0011 abgestimmt sein.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: SPEC-0060 erweitert token_usage additiv (CON-0206), Schätzung/Kalibrierung schließen nur unavailable aus (FR-11).",
+        "resolved_at": "2026-09-25T15:24:30Z"
+      }
+    },
+    {
+      "id": "CF-0060-R006",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0003:2.1 REST-API",
+      "detail": "Die Web-API aus SPEC-0003 führt mit `.sdd/ai_usage.json` einen zweiten Usage-Speicher, den SPEC-0060 nach `token_usage` migriert und ablöst; der Contract von SPEC-0003 zu den AI-Usage-Endpunkten muss angepasst werden, sonst gibt es zwei Wahrheiten.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: FR-08 migriert ai_usage.json nach token_usage; die usage_store-API (record_usage/get_all/get_summary) und damit die Endpunkte bleiben unverändert.",
+        "resolved_at": "2026-09-25T15:24:31Z"
+      }
+    },
+    {
+      "id": "CF-0060-R007",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "SPEC-0008 legt die Provider-Abstraktion und die Factory fest; SPEC-0060 umhüllt die Provider in der Factory zusätzlich und ändert die Rückgabe von `CodeGenProvider.generate` (Usage), damit ändert sich die Schnittstelle, die SPEC-0008 als stabil beschreibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: Decorator ändert die Schnittstelle nicht (CON-0207 INV-03); generate() bleibt als (files, explanation) entpackbar (FR-04).",
+        "resolved_at": "2026-09-25T15:24:31Z"
+      }
+    },
+    {
+      "id": "CF-0060-R008",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0005:1. Kontext & Motivation",
+      "detail": "Der Analyzer aus SPEC-0005 (`web/api/analyzer.py`) erzeugt `ClaudeCliCompletionProvider` direkt an der Factory vorbei; nach SPEC-0060 muss er über die Factory laufen, sonst fällt er aus der Erfassungsgarantie heraus.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Durch FR-06 abgedeckt; tc11 prüft, dass analyzer.py über get_completion_provider läuft.",
+        "resolved_at": "2026-09-25T15:24:32Z"
+      }
+    },
+    {
+      "id": "CF-0060-R009",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0004:2. Zielsetzung",
+      "detail": "Evaluator und Orchestrator aus SPEC-0004 schreiben heute keine Usage; SPEC-0060 erfasst sie künftig automatisch über die Factory, ohne dass sich das Verhalten von SPEC-0004 ändert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt, keine Verhaltensänderung für SPEC-0004.",
+        "resolved_at": "2026-09-25T15:24:33Z"
+      }
+    },
+    {
+      "id": "CF-0060-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0013:2. Zielsetzung",
+      "detail": "Der HuggingFace-Provider aus SPEC-0013 liefert keine echte Usage; SPEC-0060 legt für ihn geschätzte Werte fest, die in `token_usage` als geschätzt markiert sein müssen, damit sie die Kalibrierung nicht verfälschen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Durch CON-0207 INV-08 abgedeckt: HuggingFace meldet source estimated.",
+        "resolved_at": "2026-09-25T15:24:34Z"
+      }
+    },
+    {
+      "id": "CF-0060-R011",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0016:1. Kontext & Motivation",
+      "detail": "Die asynchronen Analyse-Jobs aus SPEC-0016 sind zusätzliche LLM-Aufrufe und müssen ebenfalls über die Factory laufen, damit SPEC-0060 für jeden Aufruf genau einen Datensatz erzeugt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Analyse-Jobs nutzen den Analyzer, der nach FR-06 über die Factory läuft.",
+        "resolved_at": "2026-09-25T15:24:35Z"
       }
     }
   ],
