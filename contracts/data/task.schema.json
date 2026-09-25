@@ -99,6 +99,11 @@
     },
     "test_framework": {
       "type": ["string", "null"]
+    },
+    "executor": {
+      "description": "SPEC-0045 US-02: welcher Executor den Task tatsächlich bearbeitet hat.",
+      "type": ["string", "null"],
+      "enum": [null, "local", "claude", "claude (escalated)"]
     }
   },
   "if": {

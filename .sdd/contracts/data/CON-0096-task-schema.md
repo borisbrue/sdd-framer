@@ -4,7 +4,7 @@ title: "Task-Schema – Datenstruktur eines Distribution-Tasks"
 type: data
 format: json-schema
 spec: SPEC-0026
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: "contracts/data/task.schema.json"
 tests:
@@ -49,6 +49,7 @@ Wird in `decompose.py`, `task_runner.py` und `orchestrator.py` verwendet.
 | `commit_hash` | string\|null | ja | Git-Commit-Hash oder null |
 | `dependencies` | array[string] | ja | IDs abhängiger Tasks (kann leer sein) |
 | `error_context` | array[string] | ja | Fehlermeldungen aus Retries |
+| `executor` | string\|null | nein | SPEC-0045 US-02: `local` \| `claude` \| `claude (escalated)` \| `null` |
 
 ## Beispiele
 

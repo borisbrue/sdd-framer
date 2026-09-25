@@ -16,6 +16,8 @@ class TDDLoopResult:
     pytest_returncode: int
     iteration: int
     error: str | None = None
+    test_code: str = ""
+    impl_code: str = ""
 
 
 class LocalLLMExecutor:
@@ -29,7 +31,7 @@ class LocalLLMExecutor:
         self._config = config
 
     async def execute(
-        self, task: Any, workspace: Path, iteration: int
+        self, task: Any, workspace: Path, iteration: int, error_context: str = ""
     ) -> TDDLoopResult:
         """Führt einen TDD-Zyklus aus.
 
@@ -38,6 +40,11 @@ class LocalLLMExecutor:
         INV-03: pytest via asyncio.create_subprocess_exec (kein blocking call).
         INV-04: Ergebnis enthält status, pytest_stdout, pytest_returncode, iteration.
         INV-06: LLM-Call via get_completion_provider, kein direkter HTTP-Call.
+
+        error_context: akkumulierte Fehlerbegründungen aus vorigen Iterationen
+        (CON-0173 INV-03). Ab Iteration 2 bleibt die Testdatei unverändert
+        (RED-Zieldefinition darf ein Retry nicht verschieben) — nur die
+        Implementierung wird mit dem Fehlerkontext neu generiert.
         """
         try:
             provider = get_completion_provider(self._config, "local_llm")
@@ -50,26 +57,33 @@ class LocalLLMExecutor:
                 error=f"LLM timeout: {exc}",
             )
 
-        try:
-            test_code = provider.complete(
-                f"Write a pytest test for task: {task.description}"
-            ).text
-        except TimeoutError as exc:
-            return TDDLoopResult(
-                status="fail",
-                pytest_stdout="",
-                pytest_returncode=-1,
-                iteration=iteration,
-                error=f"LLM timeout: {exc}",
-            )
-
-        # INV-01: Test ZUERST schreiben
         test_file = workspace / "tests" / "unit" / f"test_{task.id}.py"
-        await self._write_file(test_file, test_code)
 
-        impl_code = provider.complete(
-            f"Implement the following: {task.description}"
-        ).text
+        if iteration == 1 or not test_file.exists():
+            try:
+                test_code = provider.complete(
+                    f"Write a pytest test for task: {task.description}"
+                ).text
+            except TimeoutError as exc:
+                return TDDLoopResult(
+                    status="fail",
+                    pytest_stdout="",
+                    pytest_returncode=-1,
+                    iteration=iteration,
+                    error=f"LLM timeout: {exc}",
+                )
+            # INV-01: Test ZUERST schreiben
+            await self._write_file(test_file, test_code)
+        else:
+            test_code = test_file.read_text(encoding="utf-8")
+
+        impl_prompt = f"Implement the following: {task.description}"
+        if iteration > 1 and error_context:
+            impl_prompt += (
+                f"\n\nVorherige Versuche sind fehlgeschlagen:\n{error_context}\n"
+                "Analysiere die Fehler und korrigiere die Implementierung."
+            )
+        impl_code = provider.complete(impl_prompt).text
         impl_file = workspace / f"{task.id}.py"
         await self._write_file(impl_file, impl_code)
 
@@ -79,6 +93,8 @@ class LocalLLMExecutor:
             pytest_stdout=stdout,
             pytest_returncode=returncode,
             iteration=iteration,
+            test_code=test_code,
+            impl_code=impl_code,
         )
 
     async def _write_file(self, path: Path, content: str) -> None:
