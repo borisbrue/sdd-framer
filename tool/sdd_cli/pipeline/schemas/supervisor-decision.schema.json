@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/supervisor-decision.schema.json",
+  "title": "SDD Supervisor-Command",
+  "description": "SPEC-0053 / CON-0201. Genau ein Command je Entscheidung; welcher Punkt welche Commands erlaubt, legt 'point' fest.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S1"
+          ]
+        },
+        "command": {
+          "const": "approve"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S1"
+          ]
+        },
+        "command": {
+          "const": "revise"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason",
+        "task_id",
+        "hint"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S2"
+          ]
+        },
+        "command": {
+          "const": "retry_with_hint"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hint": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason",
+        "task_id",
+        "role",
+        "model"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S2"
+          ]
+        },
+        "command": {
+          "const": "reassign"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "test_author",
+            "implementer",
+            "reviewer"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S2"
+          ]
+        },
+        "command": {
+          "const": "redecompose"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason",
+        "frs"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S3"
+          ]
+        },
+        "command": {
+          "const": "accept_frs"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "status",
+              "evidence"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^FR-[0-9]+[a-z]?$"
+              },
+              "status": {
+                "enum": [
+                  "erfüllt",
+                  "teilweise",
+                  "fehlt"
+                ]
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason"
+      ],
+      "properties": {
+        "point": {
+          "enum": [
+            "S1",
+            "S2",
+            "S3"
+          ]
+        },
+        "command": {
+          "const": "halt"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  ]
+}

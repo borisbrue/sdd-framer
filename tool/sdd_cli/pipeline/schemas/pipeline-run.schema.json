@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/pipeline-run.schema.json",
+  "title": "SDD Pipeline-Run-Verzeichnis",
+  "description": "SPEC-0053 / CON-0202. $defs je Datei unter .sdd/runs/<SPEC>/<run_id>/; events.jsonl und decisions.jsonl enthalten je Zeile ein Objekt.",
+  "$defs": {
+    "run": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "spec_id",
+        "started_at",
+        "sdd_version",
+        "roles",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "pattern": "^[0-9A-Za-z_-]+$"
+        },
+        "spec_id": {
+          "type": "string",
+          "pattern": "^SPEC-\\d{4}$"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sdd_version": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object"
+        },
+        "roles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "role_version"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "provider": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "mode": {
+                "enum": [
+                  "inline",
+                  "session"
+                ]
+              },
+              "role_version": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": [
+        "run_id",
+        "status",
+        "phase",
+        "tasks",
+        "updated_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "running",
+            "awaiting_supervisor",
+            "awaiting_session",
+            "halted",
+            "completed",
+            "failed"
+          ]
+        },
+        "phase": {
+          "enum": [
+            "decompose",
+            "tasks",
+            "acceptance",
+            "finalize",
+            "done"
+          ]
+        },
+        "revisions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "task_id",
+              "state",
+              "attempts"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "task_id": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "pending",
+                  "red",
+                  "green",
+                  "reviewed",
+                  "done",
+                  "retry",
+                  "reassigned",
+                  "halted"
+                ]
+              },
+              "attempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "assignment": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "pending_request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": [
+        "ts",
+        "run_id",
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ts": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "transition",
+            "role_call",
+            "gate",
+            "decision",
+            "write_rejected",
+            "warning"
+          ]
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "prompt_hash": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "object"
+        },
+        "call_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Bei role_call: Verknüpfung zur Usage-Zeile (context_json.call_id)"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "role_call"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "role",
+              "call_id",
+              "outcome",
+              "attempt"
+            ],
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "ok",
+                  "invalid_output",
+                  "gate_failed",
+                  "rejected",
+                  "error"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "ts",
+        "request_id",
+        "point",
+        "source",
+        "valid",
+        "command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ts": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "point": {
+          "enum": [
+            "S1",
+            "S2",
+            "S3"
+          ]
+        },
+        "source": {
+          "enum": [
+            "inline",
+            "session"
+          ]
+        },
+        "valid": {
+          "type": "boolean"
+        },
+        "command": {
+          "type": "object",
+          "description": "Command nach CON-0201 (bei valid=false die unveränderte Rohantwort)"
+        },
+        "error": {
+          "type": "string"
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "pending_decision": {
+      "type": "object",
+      "required": [
+        "request_id",
+        "point",
+        "created_at",
+        "allowed_commands",
+        "facts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "point": {
+          "enum": [
+            "S1",
+            "S2",
+            "S3"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "allowed_commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "approve",
+              "revise",
+              "retry_with_hint",
+              "reassign",
+              "redecompose",
+              "accept_frs",
+              "halt"
+            ]
+          }
+        },
+        "facts": {
+          "type": "object",
+          "required": [
+            "gate_results"
+          ],
+          "properties": {
+            "gate_results": {
+              "type": "array"
+            },
+            "diffs": {
+              "type": "array"
+            },
+            "errors": {
+              "type": "array"
+            },
+            "tokens": {
+              "type": "object"
+            }
+          }
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

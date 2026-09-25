@@ -353,6 +353,34 @@ Vollautomatische Pipeline: Spec → Code → Tests → PR → Evaluation → Ret
 
 ---
 
+### `sdd pipeline` — Rollen-Pipeline mit Supervisor
+
+```bash
+sdd pipeline run SPEC-XXXX [--dry-run] [--resume <run_id>] [--max-tasks N]
+sdd pipeline decide <run_id> --json '{"point": "S1", "command": "approve", "reason": "…"}'
+sdd pipeline status <run_id>
+sdd pipeline report <run_id>
+```
+
+Rollen (`decomposer`, `test_author`, `implementer`, `reviewer`) arbeiten über die Modelle aus
+`llm.roles.<rolle>` in `.sdd/config.yaml`; die Rollen selbst stehen in `.sdd/roles/<rolle>.md`.
+Der Supervisor entscheidet nur an S1 (Zerlegung), S2 (Eskalation) und S3 (Abnahme):
+`llm.roles.supervisor.mode: inline` (Supervisor-Modell antwortet sofort) oder `session`
+(der Run hält mit Exit 3 an; Claude Code entscheidet im Dialog über `/sdd-supervise`).
+Schreibrechte regelt die PathPolicy: nur `test_author` (Testdatei) und `implementer`
+(`allowed_paths` des Tasks). Protokoll und Zustand liegen unter `.sdd/runs/<SPEC>/<run_id>/`.
+
+```yaml
+llm:
+  roles:
+    decomposer:  {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-thinking}
+    implementer: {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-coder}
+    reviewer:    {provider: claude-cli}
+    supervisor:  {provider: claude-cli, mode: session}
+```
+
+---
+
 ### `sdd holdout run` — Holdout-Evaluation
 
 ```bash

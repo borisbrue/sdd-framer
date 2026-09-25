@@ -45,10 +45,12 @@ def cli() -> None:
 
 
 def _register_quality_commands() -> None:
+    from .pipeline_cli import pipeline_group
     from .quality_cli import arch_group, quality_group
 
     cli.add_command(quality_group)
     cli.add_command(arch_group)
+    cli.add_command(pipeline_group)
 
 
 _register_quality_commands()
@@ -282,6 +284,9 @@ def upgrade(target: str, verbose: bool) -> None:
         console.print(f"  [green]+[/] {len(result['skills'])} Skill-Dateien nachgerüstet")
     if n_skipped > 0 and verbose:
         console.print(f"  [dim]○ {n_skipped} Dateien unverändert[/]")
+    for neu in result.get("roles_new", []):
+        console.print(f"  [yellow]![/] Rolle lokal geändert – neue Version liegt in "
+                      f"[cyan]{neu.relative_to(target_path)}[/]; bitte abgleichen.")
 
     if n_created == 0 and n_updated == 0:
         console.print("[green]✓[/] Projekt ist bereits auf dem neuesten Stand.")

@@ -144,6 +144,7 @@ def make_pipeline_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     from sdd_cli.gate import PHASE_ORDER, ExecutionGate
     from sdd_cli.init import init_project
 
+    pytest.importorskip("openai")  # die Rollen sprechen den Fake-Server über openai-compat an
     init_project(tmp_path, title="Pipeline-Testprojekt")
     (tmp_path / "src").mkdir()
     (tmp_path / "tests").mkdir(exist_ok=True)

@@ -145,6 +145,21 @@ class QualityCheck(ConfigCheck):
                       for p in check_quality_config(daten))
 
 
+class RolesCheck(ConfigCheck):
+    """SPEC-0053 FR-04: Block `llm.roles` – Parameter je Provider und gleiche Modelle."""
+
+    def __init__(self, root: Path | None = None) -> None:
+        self._root = root
+
+    def run(self, raw: dict, issues: list[ConfigIssue]) -> None:
+        from .config import SddConfig
+        from .pipeline.providers import role_config_issues
+
+        config = SddConfig(root=self._root or Path.cwd(), raw=raw)
+        issues.extend(ConfigIssue(level, pfad, meldung)
+                      for level, pfad, meldung in role_config_issues(config))
+
+
 class ConfigValidator:
     _CHECKS: list[ConfigCheck] = [
         RequiredFieldsCheck(),
@@ -160,6 +175,6 @@ class ConfigValidator:
 
     def validate(self) -> list[ConfigIssue]:
         issues: list[ConfigIssue] = []
-        for check in [*self._CHECKS, QualityCheck(self._root)]:
+        for check in [*self._CHECKS, QualityCheck(self._root), RolesCheck(self._root)]:
             check.run(self._raw, issues)
         return issues
