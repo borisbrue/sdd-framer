@@ -1,0 +1,74 @@
+{
+  "spec_id": "SPEC-0060",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0060-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0011:1. Kontext & Motivation",
+      "detail": "SPEC-0011 baut seine Kostenschätzung auf den Token-Daten in `.sdd/evaluations.db` und dem `usage_store` der AI-Routes auf; SPEC-0060 erweitert genau diese Erfassung um neue Felder und muss das Schema abwärtskompatibel halten, damit `sdd estimate` und `sdd calibrate` unverändert funktionieren.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0060-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "3. Decorator: RecordingProvider",
+      "conflicting_contract": "SPEC-0008:3. Architektur (Provider-Factory)",
+      "detail": "SPEC-0060 hängt einen `RecordingProvider`-Decorator in die Provider-Factory aus SPEC-0008 ein und erweitert `UsageMetadata`; weil SPEC-0008 noch im Status draft ist, können sich Factory-Schnittstelle und Usage-Rückgabetyp beider Specs auseinanderentwickeln.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0060-R003",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0003:2.1 REST-API (AI-Routes / Usage)",
+      "detail": "Die Web-API führt mit `.sdd/ai_usage.json` einen zweiten Usage-Speicher neben der Tabelle `token_usage`; SPEC-0060 will alle Aufrufe in `token_usage` erfassen und muss deshalb festlegen, ob `ai_usage.json` abgelöst wird, sonst entsteht eine Doppelerfassung.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0060-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0005:1. Kontext & Motivation (Claude-CLI-Subprocess im Analyzer)",
+      "detail": "Der Analyzer aus SPEC-0005 ruft `claude` als eigenen Subprocess auf; läuft dieser Aufruf nicht über die Provider-Factory, greift der Decorator aus SPEC-0060 dort nicht, und das Erfolgskriterium „kein Aufruf ohne Datensatz“ bleibt für die Web-Analyse unerfüllt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0060-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0004:Evaluator/Orchestrator",
+      "detail": "Evaluator und Orchestrator aus SPEC-0004 schreiben heute keine Usage; SPEC-0060 macht deren Aufrufe über den Decorator erfassungspflichtig, und das setzt voraus, dass auch der agentische Orchestrator-Subprocess über die Factory läuft.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0060-R006",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "3. Adapter: Usage je Provider",
+      "conflicting_contract": "SPEC-0013:Provider-Implementierung (Usage)",
+      "detail": "SPEC-0060 schreibt für HuggingFace eine Usage-Schätzung per Adapter vor; das muss zur bestehenden Usage-Rückgabe des HF-Providers aus SPEC-0013 passen, damit keine zwei unterschiedlichen Schätzlogiken entstehen.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-09-25T15:05:18Z"
+}

@@ -6,7 +6,7 @@ status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.6.0
+version: 0.7.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor]
 depends_on: [SPEC-0008, SPEC-0011, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054, SPEC-0060]
@@ -33,7 +33,7 @@ fr_test_map:
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.6.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.7.0
 
 ## 1. Kontext & Motivation
 
@@ -217,9 +217,10 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► S3 Abnahme ─►
   bekommt das neue Feld `fr_ids` (Liste der abgedeckten FRs). Tasks ohne `fr_ids` sind nur für
   `type: config|doc` zulässig.
 - **FR-06:** Der `RoleRunner` liefert für jeden Aufruf ein `RoleResult` (Ausgabe, Usage,
-  Metadaten). Er übergibt die Usage an die Erfassung aus SPEC-0060 mit dem Rollenkontext `role`,
-  `run_id`, `attempt`, `outcome` (`ok|invalid_output|gate_failed|rejected|error`) und
-  `role_version`. Bei `finish_reason=length` ohne verwertbaren Inhalt wiederholt er einmalig mit
+  Metadaten). Er setzt für jeden Aufruf den Aufrufkontext aus SPEC-0060 (`usage_context`) mit
+  `run_id`, `role`, `attempt`, `role_version` und einer eindeutigen `call_id`; die Usage-Zeile
+  trägt diesen Kontext. Das Ergebnis des Aufrufs (`outcome`: `ok|invalid_output|gate_failed|
+  rejected|error`) steht im Ereignis `role_call` in `events.jsonl` mit derselben `call_id`. Bei `finish_reason=length` ohne verwertbaren Inhalt wiederholt er einmalig mit
   dem 1,5-fachen Ausgabebudget. Jeder Prompt trägt einen Nonce gegen Proxy-Caches.
 - **FR-07:** **PathPolicy.** Jeder Schreibvorgang einer Rolle läuft über eine anbieterunabhängige
   `PathPolicy` (CON-0204, Default deny). Schreiben dürfen nur `test_author` (ausschließlich die
@@ -400,3 +401,4 @@ Feature: Rollenbasierte Pipeline
 | 2026-09-25 | 0.4.0   | Boris, Claude | Warnung bei gleichem Modell für Reviewer und Implementierer |
 | 2026-09-25 | 0.5.0   | Boris, Claude | Review: Patterns Template Method/Strategy/Mediator/Command; `supervisor.mode` + fortsetzbarer Zustandsautomat statt `provider: session` (LSP); PathPolicy (DIP); Grenze Rollen-Checks ↔ Gates; `legacy_component` in Rollendatei (OCP); Warnung bei wirkungslosen Parametern (ISP); Usage-Erfassung → SPEC-0060, `task-loop`-Ablösung → SPEC-0058; Abgrenzung zu SPEC-0004/0005/0007/0008/0011; FRs neu nummeriert |
 | 2026-09-25 | 0.6.0   | Boris, Claude | Contract-Review: PathPolicy mit Default deny und `pipeline.protected_paths`; Anfragen mit `request_id` und Archiv statt Löschen |
+| 2026-09-25 | 0.7.0   | Boris, Claude | Anpassung an SPEC-0060 0.2.0: Rollenkontext über `usage_context`, `outcome` in `events.jsonl` (Verknüpfung über `call_id`) |

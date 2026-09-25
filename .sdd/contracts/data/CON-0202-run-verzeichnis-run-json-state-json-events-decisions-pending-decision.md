@@ -4,7 +4,7 @@ title: "Run-Verzeichnis: run.json, state.json, events, decisions, pending-decisi
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/data/run-verzeichnis-run-json-state-json-events-decisions-pending-decision.schema.json"
 tests: ["TST-0231"]
@@ -51,7 +51,8 @@ und Schnittstelle für den Dialogmodus.
   Das Run-Verzeichnis hält nur den Zustand eines Runs; `state.tasks[].task_id` verweist auf Tasks
   nach CON-0096 in `.sdd/tasks/<SPEC>.json`, deren Status weiter nach CON-0095 gepflegt wird.
 - **INV-09:** `events.jsonl` enthält keine Tokenzahlen; der Verbrauch steht ausschließlich in
-  `token_usage` (SPEC-0060) und wird über `run_id` verknüpft.
+  `token_usage` (SPEC-0060). Jedes Ereignis `role_call` nennt `role`, `attempt`, `outcome` und eine
+  `call_id`; dieselbe `call_id` steht im `context_json` der Usage-Zeile.
 - **INV-06:** `run.json` nennt je Rolle `role_version`; `warnings` enthält u. a. die Warnung bei
   gleichem Modell für Reviewer und Implementierer (SPEC-0053 FR-04).
 

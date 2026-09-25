@@ -125,10 +125,18 @@ class PipelineProject:
         return [json.loads(z) for z in pfad.read_text().splitlines() if z.strip()] if pfad.exists() else []
 
     def usage(self) -> list[dict]:
+        """Usage-Zeilen; die Schlüssel aus context_json (SPEC-0060) werden flach ergänzt."""
         db = self.root / ".sdd/evaluations.db"
         with sqlite3.connect(db) as con:
             con.row_factory = sqlite3.Row
-            return [dict(r) for r in con.execute("SELECT * FROM token_usage")]
+            zeilen = [dict(r) for r in con.execute("SELECT * FROM token_usage")]
+        for z in zeilen:
+            z.update(json.loads(z.get("context_json") or "{}"))
+        return zeilen
+
+    def role_calls(self, rolle: str | None = None) -> list[dict]:
+        return [e for e in self.jsonl("events.jsonl")
+                if e["type"] == "role_call" and (rolle is None or e.get("role") == rolle)]
 
 
 def make_pipeline_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,

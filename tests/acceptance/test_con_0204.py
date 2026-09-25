@@ -112,8 +112,7 @@ def test_tc09_abgelehnter_schreibvorgang_im_protokoll(tmp_path, monkeypatch, llm
     assert abgelehnt and abgelehnt[0]["role"] == "implementer"
     assert "src/anders.sh" in str(abgelehnt[0]) and "außerhalb allowed_paths" in str(abgelehnt[0])
     assert not (p.root / "src/anders.sh").exists()
-    outcomes = {u["outcome"] for u in p.usage() if u.get("role") == "implementer"}
-    assert "gate_failed" in outcomes
+    assert "gate_failed" in {e["outcome"] for e in p.role_calls("implementer")}
 
 
 def test_tc10_unabhaengig_vom_provider(policy):

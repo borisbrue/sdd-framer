@@ -203,8 +203,47 @@
         },
         "detail": {
           "type": "object"
+        },
+        "call_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Bei role_call: Verknüpfung zur Usage-Zeile (context_json.call_id)"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "role_call"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "role",
+              "call_id",
+              "outcome",
+              "attempt"
+            ],
+            "properties": {
+              "outcome": {
+                "enum": [
+                  "ok",
+                  "invalid_output",
+                  "gate_failed",
+                  "rejected",
+                  "error"
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     "decision": {
       "type": "object",

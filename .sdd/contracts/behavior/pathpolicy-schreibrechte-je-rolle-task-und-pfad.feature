@@ -51,7 +51,7 @@ Feature: PathPolicy
   Scenario: Abgelehnter Schreibvorgang im Protokoll
     When die Rolle implementer "tool/other/b.py" schreiben will
     Then enthält events.jsonl ein Ereignis write_rejected mit Rolle, Pfad und Grund
-    And der Rollenaufruf hat outcome gate_failed
+    And das Ereignis role_call des Rollenaufrufs hat outcome gate_failed
     And die Datei wurde nicht geschrieben
 
   Scenario Outline: Unabhängig vom Provider

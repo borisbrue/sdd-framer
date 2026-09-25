@@ -240,7 +240,7 @@ def test_tc13_modellserver_nicht_erreichbar(projekt1, llm):
     llm.antworte("test_author", rot_test(T1))
     projekt1.run("pipeline", "run", "SPEC-0900")
     assert [d["point"] for d in _entscheidungen(projekt1)] == ["S1", "S2"]
-    outcomes = [u["outcome"] for u in projekt1.usage() if u.get("role") == "implementer"]
+    outcomes = [e["outcome"] for e in projekt1.role_calls("implementer")]
     assert outcomes and set(outcomes) == {"error"}
 
 
@@ -284,8 +284,10 @@ def test_tc17_usage_mit_rollenkontext(projekt, llm):
     zeilen = [u for u in projekt.usage() if u.get("run_id") == run_id]
     assert {u["role"] for u in zeilen} >= {"decomposer", "supervisor"}
     decomposer = next(u for u in zeilen if u["role"] == "decomposer")
-    assert decomposer["reasoning_tokens"] == 321
-    assert decomposer["attempt"] == 1 and decomposer["outcome"] == "ok"
+    assert decomposer["reasoning_tokens"] == 321 and decomposer["attempt"] == 1
+    ereignis = next(e for e in projekt.role_calls("decomposer")
+                    if e["call_id"] == decomposer["call_id"])
+    assert ereignis["outcome"] == "ok"
 
 
 def test_fr14_report_zeigt_rollen_und_claude_anteil(projekt, llm):

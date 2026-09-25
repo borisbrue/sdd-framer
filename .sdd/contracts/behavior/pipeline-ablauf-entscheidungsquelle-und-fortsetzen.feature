@@ -86,7 +86,7 @@ Feature: Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen
   Scenario: Modellserver nicht erreichbar
     Given der Provider des implementer ist nicht erreichbar
     When t-1 bearbeitet wird
-    Then hat der Rollenaufruf outcome error
+    Then hat das Ereignis role_call des implementer das outcome error
     And nach max_attempts wird S2 angefragt
 
   Scenario: Längenabbruch des Thinking-Modells
@@ -106,4 +106,5 @@ Feature: Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen
 
   Scenario: Usage mit Rollenkontext
     When ich "sdd pipeline run SPEC-0900 --dry-run" ausführe
-    Then enthält token_usage je Rollenaufruf einen Datensatz mit role, run_id, attempt und outcome
+    Then enthält token_usage je Rollenaufruf einen Datensatz mit run_id und im context_json role, attempt und call_id
+    And events.jsonl enthält zu jeder call_id ein Ereignis role_call mit outcome

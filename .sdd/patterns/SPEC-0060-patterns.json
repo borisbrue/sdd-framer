@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0060",
+  "generated_at": "2026-09-25T15:06:57Z",
+  "patterns": [
+    {
+      "pattern_name": "Decorator",
+      "status": "accepted",
+      "decided_at": "2026-09-25T15:06:57Z",
+      "acceptance_reason": "RecordingCompletionProvider/RecordingCodeGenProvider mit derselben Schnittstelle wie der umhuellte Provider; kein Aufruf ohne Datensatz",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/decorator"
+    },
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-09-25T15:06:58Z",
+      "acceptance_reason": "Usage je Provider (claude-cli-Envelope, OpenAI-usage, Anthropic, Schaetzung) auf ein einheitliches UsageMetadata",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/adapter"
+    },
+    {
+      "pattern_name": "Factory Method",
+      "status": "accepted",
+      "decided_at": "2026-09-25T15:06:59Z",
+      "acceptance_reason": "Nur die Factory erzeugt Provider und umhuellt sie; direkte Instanziierungen entfallen",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/factory-method"
+    },
+    {
+      "pattern_name": "Observer",
+      "status": "accepted",
+      "decided_at": "2026-09-25T15:07:00Z",
+      "acceptance_reason": "UsageSink-Abstraktion: Decorator meldet an registrierte Senken (SQLite als Default, Fakes in Tests)",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/observer"
+    }
+  ]
+}
