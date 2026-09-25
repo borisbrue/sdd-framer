@@ -241,22 +241,31 @@ def _git_benutzername(target: Path) -> str | None:
     return name or None
 
 
+# Rechnerlokale Dateien, die nie in die Versionierung gehören: die lokale Konfiguration mit
+# Geheimnissen (#103) und die Usage-Datenbank, in die jeder LLM-Aufruf schreibt (SPEC-0060).
+LOCAL_IGNORES = (".sdd/config.local.yaml", ".sdd/evaluations.db")
+
+
 def ignore_local_config(target: Path) -> bool:
-    """Traegt .sdd/config.local.yaml in die .gitignore des Projekts ein.
+    """Traegt die rechnerlokalen Dateien (LOCAL_IGNORES) in die .gitignore des Projekts ein.
 
-    Die Datei nimmt auf, was nicht in die Versionierung gehoert — zuerst den
-    PWA-Token (#103). Ohne den Eintrag waere sie beim ersten `git add -A`
-    genau dort, wo sie nicht hin soll. Anders als settings.local.json gilt das
-    fuer jedes Projekt, nicht nur im autonomen Modus.
+    Die lokale Konfiguration nimmt auf, was nicht in die Versionierung gehoert — zuerst den
+    PWA-Token (#103); die Usage-Datenbank waechst mit jedem LLM-Aufruf. Ohne die Eintraege
+    waeren beide beim ersten `git add -A` (etwa in `sdd finalize`) genau dort, wo sie nicht
+    hin sollen. Anders als settings.local.json gilt das fuer jedes Projekt, nicht nur im
+    autonomen Modus.
 
-    Gibt True zurueck, wenn der Eintrag neu hinzukam.
+    Gibt True zurueck, wenn mindestens ein Eintrag neu hinzukam.
     """
     gitignore = target / ".gitignore"
     existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    if ".sdd/config.local.yaml" in existing:
+    vorhanden = set(existing.splitlines())
+    fehlend = [e for e in LOCAL_IGNORES if e not in vorhanden]
+    if not fehlend:
         return False
     prefix = "" if (not existing or existing.endswith("\n")) else "\n"
-    gitignore.write_text(existing + prefix + ".sdd/config.local.yaml\n", encoding="utf-8")
+    gitignore.write_text(existing + prefix + "".join(f"{e}\n" for e in fehlend),
+                         encoding="utf-8")
     return True
 
 

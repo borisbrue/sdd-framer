@@ -132,7 +132,13 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in erstellt:
             print(f"  + {datei.relative_to(target)}")
 
-    # 6. Rollen der Pipeline (SPEC-0053 FR-02): fehlende anlegen, lokal geänderte nicht
+    # 6. Rechnerlokale Dateien (config.local.yaml, Usage-DB) in die .gitignore eintragen;
+    #    Projekte von vor SPEC-0060 kennen den Eintrag für die Usage-DB noch nicht.
+    from .init import ignore_local_config
+    if ignore_local_config(target):
+        result["updated"].append(target / ".gitignore")
+
+    # 7. Rollen der Pipeline (SPEC-0053 FR-02): fehlende anlegen, lokal geänderte nicht
     #    überschreiben, sondern die neue Version als <rolle>.md.new daneben legen.
     from .pipeline.roles import install_roles
     angelegt, neu, gleich = install_roles(target)
@@ -143,7 +149,7 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in [*angelegt, *neu]:
             print(f"  + {datei.relative_to(target)}")
 
-    # 7. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
+    # 8. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
     migriert = migrate_ai_usage_json(target)
     if migriert is not None:
         result["updated"].append(migriert)
