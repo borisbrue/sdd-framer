@@ -173,8 +173,9 @@ Feature: Stack-Vorlagen
 - [ ] Soll das vorhandene Sprachwissen in `test_languages.py` und `test_generator.py` langfristig in
       die Vorlagen wandern, sodass der Kern ganz ohne Sprachwissen auskommt? Das wäre eine eigene
       Migrations-Spec.
-- [ ] Soll es ein eigenes Repo für Vorlagen geben (`borisbrue/sdd-stacks`), aus dem `sdd stack`
-      per Git-URL zieht?
+- [x] Eigenes Repo für Vorlagen → nein, die Vorlagen liegen im Haupt-Repo unter
+      `tool/sdd_cli/blueprint/stacks/` und werden mit sdd-framer versioniert (entschieden
+      2026-09-25). Git-URLs bleiben als Quelle für projekt- oder nutzereigene Vorlagen erhalten.
 - [ ] Wird eine Rust-Vorlage (`rust-cargo`, z. B. aus sddit extrahiert) die erste Vorlage außerhalb
       von Python?
 

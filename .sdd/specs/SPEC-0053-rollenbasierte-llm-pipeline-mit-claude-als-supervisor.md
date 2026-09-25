@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor, token-tracking]
 depends_on: [SPEC-0008, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054]
@@ -16,7 +16,7 @@ tests: []
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -184,6 +184,11 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► supervisor: Abnah
   dessen Logik auf. Das Run-Protokoll liegt unter `.sdd/runs/<SPEC>/<run_id>/`: `run.json`
   (Konfiguration inkl. Modell und Rollenversion je Rolle), `events.jsonl` (jeder Übergang, jeder
   Rollenaufruf) und `decisions.jsonl` (Supervisor-Entscheidungen mit Begründung).
+- **FR-12a:** `sdd pipeline run` ist der einzige Implementierungspfad für Specs mit Tasks und
+  ersetzt `sdd task-loop` (SPEC-0045) vollständig, ohne Alias. `task-loop` wird wie andere
+  abgelöste Befehle zu einem versteckten Befehl, der nur auf `sdd pipeline run` verweist. Die
+  lokale Task-Ausführung aus SPEC-0045 (TDD-Schleife, Retry, Eskalation) geht in den Rollen
+  `test_author`/`implementer` und im Entscheidungspunkt S2 auf.
 - **FR-13:** `--dry-run` führt nur `decomposer` und S1 aus und gibt Tasks, Tokenverbrauch und die
   geschätzte Rollenverteilung aus, ohne Code zu schreiben.
 - **FR-14:** `sdd pipeline report RUN_ID` zeigt pro Rolle Aufrufe, Tokens (in/out/reasoning),
@@ -293,9 +298,12 @@ Feature: Rollenbasierte Pipeline
 
 - [x] Claude Code im Dialog als Supervisor → ja, in dieser Spec (FR-15, FR-16; entschieden
       2026-09-25).
-- [ ] Ersetzt `sdd pipeline run` den Befehl `sdd task-loop` (SPEC-0045), oder bleibt `task-loop`
-      als schlanker Pfad bestehen? Vorschlag: `task-loop` wird zu `pipeline run` mit
-      Default-Rollenbelegung und bleibt als Alias.
+- [x] `task-loop` → wird von `pipeline run` abgelöst, ohne Alias (FR-12a; entschieden 2026-09-25).
+- [ ] Weitere Pfade überschneiden sich mit der Pipeline: `sdd task-exec` (Einzeltask lokal, von
+      `/sdd-implement` genutzt), `sdd distribute` (SPEC-0026, erzeugt keinen Code), `sdd orchestrate`
+      (Dark Factory, Code in einem Schritt), dazu nie verdrahtete Module (`sub_agent.py`,
+      `local_agent.py`). Vorschlag: eine eigene Konsolidierungs-Spec nach SPEC-0053, die jeden Pfad
+      auf die Pipeline abbildet oder entfernt.
 - [ ] Soll der `reviewer` bei Modellgleichheit mit dem `implementer` gewarnt werden, damit kein
       Modell sich selbst reviewt?
 - [ ] Die uncommittete Arbeit an SPEC-0045 (`Task.executor`, Eskalation im `loop_controller`)
@@ -307,3 +315,4 @@ Feature: Rollenbasierte Pipeline
 |------------|---------|---------------|---------------------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
 | 2026-09-25 | 0.2.0   | Boris, Claude | Supervisor im Dialog (`session`, `/sdd-supervise`) verbindlich; RED-Gate sprachneutral über JUnit |
+| 2026-09-25 | 0.3.0   | Boris, Claude | `pipeline run` löst `task-loop` ohne Alias ab |

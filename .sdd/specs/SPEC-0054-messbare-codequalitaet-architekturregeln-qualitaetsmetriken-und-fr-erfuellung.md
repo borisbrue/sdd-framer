@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
 depends_on: [SPEC-0015, SPEC-0041]
@@ -16,7 +16,7 @@ tests: []
 
 # Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -148,8 +148,20 @@ rules:
     owners: [cli]
 ```
 
-Taste Invariants in AGENTS.md können eine Regel referenzieren (`[ARCH-01]`). `sdd validate` meldet
-Invarianten ohne maschinelle Regel als Hinweis.
+### Entscheidung und Regel: ADR ↔ `architecture.yaml`
+Architekturentscheidungen stehen wie bisher als ADR (`sdd new adr`, `docs/adr/`): Kontext, Optionen,
+Entscheidung und Begründung, also das **Warum**. `architecture.yaml` enthält nur die maschinell
+prüfbare **Folge** einer Entscheidung. Jede Regel verweist auf ihr ADR (`adr: ADR-0007`), und ein ADR
+listet in der Frontmatter die Regeln, die es durchsetzen (`enforced_by: [ARCH-01]`). Taste Invariants
+in AGENTS.md können eine Regel ebenfalls referenzieren (`[ARCH-01]`).
+
+```yaml
+  - id: ARCH-01
+    adr: ADR-0007          # „Web-Schicht delegiert jede Schreiboperation an die CLI“
+    kind: forbidden_dependency
+    from: web
+    to: ["tool/sdd_cli/templates.py"]
+```
 
 ### Composite: Score-Baum
 `QualityScore` besteht aus `requirements` (Gewicht 0,5), `architecture` (0,25) und `code_quality`
@@ -188,6 +200,15 @@ Schwellen sind in `config.yaml` unter `quality:` überschreibbar.
 
   Jeder Verstoß wird mit Regel-ID, Datei, Zeile und Auszug gemeldet.
   Teilscore = `1 - min(1, verstöße_gewichtet / schwelle)`, mit `error` = 1,0 und `warn` = 0,25.
+- **FR-05a:** Jede Regel in `architecture.yaml` hat ein Pflichtfeld `adr`. `sdd validate` prüft die
+  Verknüpfung in beide Richtungen:
+  - Fehler: Regel verweist auf ein nicht existierendes ADR.
+  - Warnung: ADR mit Status `accepted`, dessen `enforced_by` auf eine fehlende Regel zeigt.
+  - Warnung: Regel, deren ADR `superseded` oder `deprecated` ist.
+  - Hinweis: Taste Invariants in AGENTS.md ohne maschinelle Regel.
+
+  Befunde von `sdd arch check` nennen das ADR mit Titel, damit Reviewer und Modelle die Begründung
+  finden. Das ADR-Template bekommt das optionale Feld `enforced_by`.
 - **FR-06:** `sdd arch check [--json]` wertet nur die Architekturregeln aus und endet mit
   Exit-Code 1 bei `error`-Verstößen. `sdd arch init` schlägt aus der Verzeichnisstruktur Schichten
   vor, ohne Regeln; die Regeln werden von Hand ergänzt.
@@ -318,3 +339,4 @@ Feature: Qualitätsmessung
 |------------|---------|---------------|--------------------------------------------------------------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung                                          |
 | 2026-09-25 | 0.2.0   | Boris, Claude | Sprachneutral: Sonden und Austauschformate statt Sprachadapter; Python als Preset; Gewichte festgelegt |
+| 2026-09-25 | 0.3.0   | Boris, Claude | Regeln sind an ADRs gebunden (`adr`/`enforced_by`) |
