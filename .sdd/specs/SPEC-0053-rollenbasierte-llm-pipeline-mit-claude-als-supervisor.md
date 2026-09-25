@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.3.0
+version: 0.4.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor, token-tracking]
 depends_on: [SPEC-0008, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054]
@@ -16,7 +16,7 @@ tests: []
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.4.0
 
 ## 1. Kontext & Motivation
 
@@ -179,6 +179,11 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► supervisor: Abnah
 - **FR-11:** `reviewer` bekommt Diff, Task, betroffene FRs, Contracts, AGENTS.md-Regeln und die
   Gate-Ergebnisse aus SPEC-0054. Er antwortet mit `pass` oder `fail` und je Befund Kategorie
   (`requirement|architecture|quality|test`), Datei, Zeile und Begründung.
+- **FR-11a:** Ist für `reviewer` dasselbe Modell (gleicher Endpunkt und Modellname) konfiguriert
+  wie für `implementer` oder `test_author`, warnen `sdd config validate` und der Start von
+  `sdd pipeline run`: „Modell reviewt seine eigene Arbeit“. Die Warnung steht auch in `run.json`
+  und im Report. Sie blockiert nicht. Bei `by_complexity`-Belegungen (SPEC-0058) wird je Stufe
+  verglichen.
 - **FR-12:** `sdd pipeline run SPEC-XXXX [--dry-run] [--resume RUN_ID] [--max-tasks N]` führt den
   Ablauf aus Abschnitt 3 aus. Voraussetzung ist Status `approved`; der Befehl ruft `sdd start` bzw.
   dessen Logik auf. Das Run-Protokoll liegt unter `.sdd/runs/<SPEC>/<run_id>/`: `run.json`
@@ -301,8 +306,8 @@ Feature: Rollenbasierte Pipeline
 - [x] `task-loop` → wird von `pipeline run` abgelöst, ohne Alias (FR-12a; entschieden 2026-09-25).
 - [x] Überschneidende Pfade (`task-exec`, `distribute`, `orchestrate`, `sub_agent.py`,
       `local_agent.py` …) → eigene Konsolidierungs-Spec SPEC-0058 (entschieden 2026-09-25).
-- [ ] Soll der `reviewer` bei Modellgleichheit mit dem `implementer` gewarnt werden, damit kein
-      Modell sich selbst reviewt?
+- [x] Warnung bei gleichem Modell für Reviewer und Implementierer → ja, als Warnung (FR-11a;
+      entschieden 2026-09-25).
 - [ ] Die uncommittete Arbeit an SPEC-0045 (`Task.executor`, Eskalation im `loop_controller`)
       muss vor der Umsetzung gemergt sein.
 
@@ -313,3 +318,4 @@ Feature: Rollenbasierte Pipeline
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
 | 2026-09-25 | 0.2.0   | Boris, Claude | Supervisor im Dialog (`session`, `/sdd-supervise`) verbindlich; RED-Gate sprachneutral über JUnit |
 | 2026-09-25 | 0.3.0   | Boris, Claude | `pipeline run` löst `task-loop` ohne Alias ab |
+| 2026-09-25 | 0.4.0   | Boris, Claude | Warnung bei gleichem Modell für Reviewer und Implementierer |

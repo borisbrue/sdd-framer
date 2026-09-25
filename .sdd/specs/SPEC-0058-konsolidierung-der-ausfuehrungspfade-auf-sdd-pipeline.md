@@ -58,6 +58,8 @@ Web-UI, Dark Factory) ist eine Konfiguration dieses Pfads.
 - Keine neuen Fähigkeiten über SPEC-0053 hinaus.
 - Die Holdout-Evaluation selbst (`evaluator.py`, `holdout_runner.py`) bleibt unverändert und wird nur
   als Abschluss-Gate eingebunden.
+- Die VS-Code-Extension wird nicht angepasst. Der Fokus für Editor-Integration liegt künftig auf
+  sddit. Nutzt die Extension einen entfernten Befehl, bleibt der versteckte Verweis ihre Brücke.
 
 ## 3. Architektur & Design Patterns
 
@@ -186,11 +188,8 @@ Feature: Ein Ausführungspfad
 
 ## 10. Offene Fragen
 
-- [ ] Braucht es `/sdd-implement` noch als eigenen Skill, wenn `/sdd-supervise` mit
-      `implementer: session` dasselbe kann? Vorschlag: ja, als bequemer Einstieg mit fester
-      Belegung, inhaltlich nur noch ein paar Zeilen.
-- [ ] Soll die VS-Code-Extension, falls sie Pfade aus dieser Liste nutzt, im selben Zug angepasst
-      werden?
+- [x] `/sdd-implement` bleibt als eigener Skill mit fester Belegung (entschieden 2026-09-25).
+- [x] VS-Code-Extension → wird nicht angepasst; Fokus liegt auf sddit (entschieden 2026-09-25).
 
 ## 11. Änderungshistorie
 
