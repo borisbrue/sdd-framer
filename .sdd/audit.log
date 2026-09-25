@@ -55,3 +55,4 @@
 2026-06-26T14:20:20Z SPEC-0052 approved → in-progress [sdd-start]
 2026-09-16T05:53:06Z  hotfix.start  HF-0010  'sdd test generate und sdd test run sind auf Python festgelegt: Rust-, Node- und Go-Testdateien gelten als Syntaxfehler und blockieren die Gate-Phase tests-generated'
 2026-09-16T06:13:09Z  hotfix.finalize  HF-0010  commit=4fb5d33
+2026-09-25T06:30:24Z  hotfix.start  HF-0011  'openai-compat schaltet den Denkmodus bei vLLM/LiteLLM nicht ab: enable_thinking=false wird nur als flaches extra_body.enable_thinking gesendet, das vLLM ignoriert; Qwen verlangt chat_template_kwargs.enable_thinking=false. task-exec liefert dadurch bei Qwen3.6/Qwen3.8 in 15-18 von 24 Laeufen leere Dateien'
