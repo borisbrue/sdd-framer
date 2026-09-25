@@ -146,7 +146,7 @@ auf `fail`. So kann jede Iteration nur halten oder verbessern.
 - **FR-10:** Modellprofile (`--model`) verweisen auf Einträge in `llm.profiles.<name>` in
   `config.yaml` (Provider, Modell, Endpunkt, Parameter). Dieselben Profile nutzt SPEC-0056.
   Ohne `--model` wird die in `llm.roles.<rolle>` konfigurierte Belegung verwendet.
-- **FR-11:** Rubrik-Items werden von der Rolle `judge` (SPEC-0054 FR-08) bewertet. Der Judge sieht
+- **FR-11:** Rubrik-Items werden von der Rolle `judge` (SPEC-0054 FR-09) bewertet. Der Judge sieht
   weder Modellnamen noch Rollenversion (Blind-Bewertung). Judge-Modell und Rubrikversion stehen im
   Report.
 

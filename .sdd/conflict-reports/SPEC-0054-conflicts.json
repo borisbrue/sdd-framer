@@ -1,0 +1,63 @@
+{
+  "spec_id": "SPEC-0054",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0054-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium FR-Erfüllung",
+      "conflicting_contract": "SPEC-0006:2. Zielsetzung",
+      "detail": "SPEC-0006 führt bereits die mit einer Spec verknüpften Tests aus und speichert Pass/Fail/Skip strukturiert. SPEC-0054 will den FR-Erfüllungsgrad aus ausgeführten Tests (JUnit) berechnen und sollte deshalb die Ergebnisse von test-run/test-results wiederverwenden, statt einen zweiten Weg zum Ausführen und Speichern von Tests zu bauen.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0054-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Erfolgskriterium Architekturregeln",
+      "conflicting_contract": "SPEC-0015:1. Kontext & Motivation",
+      "detail": "Beide Specs gehen gegen Architektur-Drift vor. SPEC-0015 prüft Specs, Contracts und Implementierungen per LLM auf SOLID, SPEC-0054 prüft deterministisch Schichtregeln und Importe im Code. Die Abgrenzung fehlt: Welche Prüfung zählt für den Architekturtreue-Score?",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0054-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0004:2. Zielsetzung",
+      "detail": "SPEC-0004 entscheidet über Quality Gates und Pass-Rate aus dem Evaluator automatisch über den Merge. SPEC-0054 liefert einen Gesamtscore für den Supervisor. Offen ist, ob dieser Score ein zusätzliches Gate wird oder in das bestehende Merge-Gate einfließt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0054-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0014:1. Kontext & Motivation",
+      "detail": "SPEC-0014 definiert ein gestuftes Qualitäts-Gate vor sdd execute. Die Qualitätsmetriken aus SPEC-0054 könnten als weitere Stufe dieses Gates gedacht sein, aber das Verhältnis der beiden Specs ist nicht geklärt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0054-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung (optionaler LLM-Judge)",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "Der optionale LLM-Judge in SPEC-0054 sollte über die Provider-Abstraktion aus SPEC-0008 laufen (Standard: claude-cli) und keinen eigenen LLM-Zugang einführen.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-09-25T08:05:34Z"
+}

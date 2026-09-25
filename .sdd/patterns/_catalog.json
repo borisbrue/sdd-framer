@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-06-23T15:58:49Z",
+  "last_updated": "2026-09-25T08:07:40Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -133,6 +133,34 @@
       "accepted_at": "2026-06-23T15:58:49Z",
       "acceptance_reason": "Geordnete Auswertung der Guardrail-Regeln: erste passende Regel gewinnt + Short-Circuit; pro Kommando-Segment",
       "refactoring_guru_url": "https://refactoring.guru/design-patterns/chain-of-responsibility"
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0054",
+      "accepted_at": "2026-09-25T08:07:37Z",
+      "acceptance_reason": "Ein Parser je Austauschformat (JUnit, SARIF, Cobertura, LCOV, sdd-deps, sdd-metrics, sdd-findings) hinter ProbeResultParser; Kern kennt keine Werkzeuge",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/adapter"
+    },
+    {
+      "pattern_name": "Composite",
+      "spec_id": "SPEC-0054",
+      "accepted_at": "2026-09-25T08:07:38Z",
+      "acceptance_reason": "Score-Baum requirements/architecture/code_quality/judge; Gewichtung und Renormierung bei n/a an einer Stelle, Report als Serialisierung des Baums",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/composite"
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0054",
+      "accepted_at": "2026-09-25T08:07:39Z",
+      "acceptance_reason": "Eine Strategie je Regelart der architecture.yaml, isoliert testbar; ersetzt das Specification Pattern, alle Regeln werden unabhaengig ausgewertet",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0054",
+      "accepted_at": "2026-09-25T08:07:40Z",
+      "acceptance_reason": "Gemeinsames Geruest je Sonde: Ausfuehren, Timeout, einheitliches n/a, Protokoll, Holdout-Sperre; measure und doctor ueberschreiben nur variable Schritte",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
     }
   ]
 }

@@ -9,7 +9,7 @@ updated: 2026-09-25
 version: 0.1.0
 priority: medium
 tags: [refactoring, pipeline, cleanup, cli]
-depends_on: [SPEC-0053]
+depends_on: [SPEC-0053, SPEC-0059]
 contracts: []
 tests: []
 ---
@@ -46,7 +46,7 @@ Web-UI, Dark Factory) ist eine Konfiguration dieses Pfads.
 
 **Erfolgskriterien (messbar):**
 - [ ] Kein Modul außerhalb von `tool/sdd_cli/pipeline/` enthält eigene Retry-, Routing- oder
-      Eskalationslogik für Tasks. Das prüft eine Regel in `architecture.yaml` (SPEC-0054).
+      Eskalationslogik für Tasks. Das prüft eine Regel in `architecture.yaml` von sdd-framer (SPEC-0054, SPEC-0059).
 - [ ] Die Module `sub_agent.py`, `local_agent.py`, `autopilot.py`, `dist_orchestrator.py`,
       `review_pipeline.py`, `llm_pool.py` und `task_routing/` sind entfernt oder in die Pipeline
       überführt. Die Testsuite ist danach grün.

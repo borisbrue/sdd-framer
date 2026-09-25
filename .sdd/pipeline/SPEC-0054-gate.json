@@ -1,0 +1,14 @@
+{
+  "spec_id": "SPEC-0054",
+  "pipeline_phase": "spec-draft",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-09-25T08:05:34Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}
