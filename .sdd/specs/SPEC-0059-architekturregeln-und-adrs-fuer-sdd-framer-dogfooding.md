@@ -10,8 +10,8 @@ version: 0.2.0
 priority: medium
 tags: [architecture, adr, dogfooding, quality]
 depends_on: [SPEC-0054, SPEC-0053, SPEC-0060]
-contracts: []
-tests: []
+contracts: [CON-0208, CON-0209]
+tests: [TST-0237, TST-0238]
 ---
 
 # Architekturregeln und ADRs für sdd-framer (Dogfooding)
@@ -119,7 +119,8 @@ Angenommene Patterns (Wiederverwendung, keine neuen Mechanismen):
 - **FR-07:** Erweiterung von SPEC-0054 (CON-0194): Eine Regel `write_ownership` akzeptiert
   `unresolved: skip | violation` (Default `skip`, bisheriges Verhalten). Bei `violation` ist jeder
   Schreibzugriff mit unaufgelöstem Ziel aus einer Schicht außerhalb von `owners` ein Verstoß; das
-  Symbol ist die Schreibfunktion (z. B. `pathlib.Path.write_text`).
+  Symbol ist die Schreibfunktion (z. B. `pathlib.Path.write_text`). `sdd arch check` zeigt bei
+  Baseline-Treffern `fixed_by` an (`warn (Baseline, SPEC-0058)`).
 - **FR-08:** Die Verstöße aus SPEC-0053 werden behoben: Die Factory bietet
   `get_role_provider(config, binding)` und baut Provider je Rolle; `pipeline/providers.py`
   importiert nichts mehr aus `llm/providers/**`. `pipeline/path_policy.py` liegt in der Schicht
@@ -175,15 +176,15 @@ Feature: Architekturregeln für sdd-framer
 
 | Contract-ID | Typ      | Was wird garantiert?                                   |
 |-------------|----------|--------------------------------------------------------|
-| CON-XXXX    | data     | Erweiterung von CON-0194: `write_ownership.unresolved` |
-| CON-XXXX    | behavior | `sdd arch check` auf sdd-framer, Pre-Commit-Hook (Gherkin aus Abschnitt 6) |
+| CON-0208    | data     | Erweiterung von CON-0194: `write_ownership.unresolved` |
+| CON-0209    | behavior | `sdd arch check` auf sdd-framer, Pre-Commit-Hook (Gherkin aus Abschnitt 6) |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test?                                        |
 |----------|-------------|------------------------------------------------------------|
-| TST-XXXX | unit        | Schema und Strategie `write_ownership` mit `unresolved`    |
-| TST-XXXX | acceptance  | Gherkin-Szenarien (Repo-Stand und temporäre Kopie), Pre-Commit-Hook |
+| TST-0237 | unit        | Schema und Strategie `write_ownership` mit `unresolved`    |
+| TST-0238 | acceptance  | Gherkin-Szenarien (Repo-Stand und temporäre Kopie), Pre-Commit-Hook |
 
 ## 10. Offene Fragen
 
