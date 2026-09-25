@@ -10,7 +10,7 @@ version: 0.2.0
 priority: high
 tags: [llm, token-tracking, usage, keyless]
 depends_on: [SPEC-0003, SPEC-0005, SPEC-0008, SPEC-0011, SPEC-0013, SPEC-0035, SPEC-0050]
-contracts: []
+contracts: [CON-0206, CON-0207]
 tests: []
 ---
 
@@ -191,8 +191,8 @@ Feature: Usage-Erfassung
 
 | Contract-ID | Typ      | Was wird garantiert?                                          |
 |-------------|----------|---------------------------------------------------------------|
-| CON-XXXX    | data     | `token_usage` 2.0: Zeilenschema, additive Spalten, `context_json` |
-| CON-XXXX    | behavior | Usage je Provider, Decorator, Aufrufkontext, Senken, Fehlertoleranz |
+| CON-0206    | data     | `token_usage` 2.0: Zeilenschema, additive Spalten, `context_json` |
+| CON-0207    | behavior | Usage je Provider, Decorator, Aufrufkontext, Senken, Fehlertoleranz |
 
 ## 9. Tests (wie wird verifiziert)
 
