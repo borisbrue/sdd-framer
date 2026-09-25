@@ -303,14 +303,18 @@ def analyze(
     template = _load_template(templates_dir, doc_type)
     prompt = _build_prompt(template, content, session.answered)
 
-    if config is not None:
-        from sdd_cli.llm import get_completion_provider
-        provider = get_completion_provider(config, "analyzer")
-    else:
-        from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
-        provider = ClaudeCliCompletionProvider()
+    from sdd_cli.llm import get_completion_provider
+    from sdd_cli.llm.usage import usage_context
 
-    raw, usage = _call_claude(prompt, provider)
+    if config is None:
+        # Ohne Projektkonfiguration: Built-in-Default (claude-cli), aber über die Factory,
+        # damit der Aufruf erfasst wird (SPEC-0060 FR-06).
+        from sdd_cli.config import SddConfig, find_project_root
+        config = SddConfig(root=find_project_root() or Path.cwd(), raw={})
+    provider = get_completion_provider(config, "analyzer")
+
+    with usage_context(origin="web", operation="analyze"):
+        raw, usage = _call_claude(prompt, provider)
 
     answered_ids = {a.id for a in session.answered}
     raw_questions = raw.get("questions") or []

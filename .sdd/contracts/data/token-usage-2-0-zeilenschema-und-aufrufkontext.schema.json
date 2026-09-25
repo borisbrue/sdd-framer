@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/token-usage-row.schema.json",
+  "title": "SDD token_usage 2.0 (Zeile)",
+  "description": "SPEC-0060 / CON-0206. Eine Zeile der Tabelle token_usage in .sdd/evaluations.db. Basis ist CON-0041, erweitert um CON-0121 (task_id/task_label) und CON-0129 (agent_type); alle Spalten aus SPEC-0060 sind nullable.",
+  "type": "object",
+  "required": [
+    "id",
+    "timestamp",
+    "component",
+    "model",
+    "input_tokens",
+    "output_tokens"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "spec_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Spec-ID; Präfix ist projektabhängig (config.yaml), daher kein festes Muster"
+    },
+    "component": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model": {
+      "type": "string",
+      "description": "Konfigurierte Modell-ID (llm.<komponente>.model); Altzeilen können '' enthalten"
+    },
+    "input_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "output_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cache_read_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cache_write_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "calibrated": {
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "task_label": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agent_type": {
+      "enum": [
+        "local",
+        "cloud",
+        null
+      ]
+    },
+    "reasoning_tokens": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "null = nicht gemeldet; 0 = gemeldet, kein Reasoning"
+    },
+    "finish_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "server_model": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Vom Server gemeldete Modell-ID; null, wenn nicht gemeldet"
+    },
+    "source": {
+      "enum": [
+        "reported",
+        "estimated",
+        "unavailable",
+        null
+      ]
+    },
+    "run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "context_json": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "JSON-Objekt mit allen übrigen Kontextschlüsseln (z. B. role, attempt, call_id, origin)"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "task_id"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "task_label"
+        ],
+        "properties": {
+          "task_label": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "agent_type"
+        ],
+        "properties": {
+          "agent_type": {
+            "enum": [
+              "local",
+              "cloud"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "model": {
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ]
+}

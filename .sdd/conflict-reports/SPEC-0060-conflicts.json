@@ -1,0 +1,362 @@
+{
+  "spec_id": "SPEC-0060",
+  "generated_at": "2026-09-25T15:24:01Z",
+  "new_contracts": [
+    "CON-0206",
+    "CON-0207"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0060-001",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0206",
+      "conflicting_contract": "CON-0121",
+      "detail": "Das Schema von CON-0206 übernimmt task_id und task_label nur als unabhängige nullable Strings. Die Kopplungsregel aus CON-0121 fehlt: Ist task_id gesetzt, muss task_label ein nicht leerer String sein, und beide werden immer gemeinsam gesetzt (INV-03, Garantien). Wegen additionalProperties:false soll CON-0206 das vollständige Zeilenschema sein. Eine Zeile mit task_id='T1' und task_label=null besteht damit CON-0206, verletzt aber CON-0121. Das ist keine rein additive Erweiterung. Abhilfe: ein if/then (dependentSchemas) mit minLength:1 ergänzen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0206 0.3.0: allOf if/then koppelt task_id an nicht leeres task_label (INV-08), Test test_inv08.",
+        "resolved_at": "2026-09-25T15:23:19Z"
+      }
+    },
+    {
+      "id": "CF-0060-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0206",
+      "conflicting_contract": "CON-0129",
+      "detail": "Nach CON-0129 INV-02 muss model ein nicht leerer String sein, sobald agent_type gesetzt ist. Im Schema von CON-0206 ist model ein String ohne minLength und ohne Bedingung auf agent_type. {agent_type:'cloud', model:''} wäre in CON-0206 gültig, in CON-0129 nicht. Außerdem führt CON-0206 server_model neu ein, ohne es gegen model abzugrenzen. CON-0129 INV-04 definiert model als echte Modell-ID (z. B. 'claude-sonnet-4-6'). Im Beispiel von CON-0206 steht in model aber ein Rollen- oder Config-Name ('fake-implementer') und die echte ID in server_model. Damit ist offen, welche Spalte die Provider-Modell-ID trägt und worauf token-history und calibrate gruppieren.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0206 INV-07: model = konfigurierte Modell-ID (Gruppierung), server_model = gemeldete ID; model nicht leer bei agent_type (Schema + Test).",
+        "resolved_at": "2026-09-25T15:23:20Z"
+      }
+    },
+    {
+      "id": "CF-0060-003",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0206",
+      "conflicting_contract": "CON-0041",
+      "detail": "Laut CON-0206 INV-01 bleiben Altzeilen gültig. Das neue Schema verschärft aber zwei Dinge gegenüber CON-0041. Erstens hat spec_id jetzt das feste Muster ^SPEC-\\d{4}$, während CON-0041 nur 'string|null' verlangt; Präfixe sind in config.yaml konfigurierbar. Zweitens gilt additionalProperties:false, und CON-0041 hat das nicht. Altzeilen mit einem anderen Spec-Präfix oder mit Zusatzspalten aus anderen Erweiterungen werden dadurch ungültig. Außerdem verweist CON-0206 nur auf CON-0121 und CON-0129 und nennt CON-0041 nicht als kanonisches Basisschema, obwohl CON-0121 darauf aufbaut.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "spec_id ohne festes Muster; CON-0041 als Basisschema genannt; additionalProperties:false bleibt, weil CON-0206 alle Spalten (0041+0121+0129+0060) listet.",
+        "resolved_at": "2026-09-25T15:23:21Z"
+      }
+    },
+    {
+      "id": "CF-0060-004",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0206",
+      "conflicting_contract": "CON-0129",
+      "detail": "Nach CON-0206 INV-03 enthält context_json 'alle Kontextschlüssel außer spec_id, task_id und run_id, die eigene Spalten haben'. task_label (CON-0121) und agent_type (CON-0129) haben aber ebenfalls eigene Spalten und fehlen in dieser Ausnahmeliste. Ein Writer kann agent_type oder task_label deshalb doppelt ablegen, in der Spalte und in context_json, und die Werte können auseinanderlaufen. Die Ausnahmeliste sollte alle Spalten nennen, oder INV-03 sollte allgemein 'alle Schlüssel mit eigener Spalte' ausschließen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "INV-03 verallgemeinert: alle Schlüssel mit eigener Spalte (spec_id, task_id, task_label, run_id, agent_type) nur in der Spalte.",
+        "resolved_at": "2026-09-25T15:23:21Z"
+      }
+    },
+    {
+      "id": "CF-0060-005",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0206",
+      "conflicting_contract": "CON-0121",
+      "detail": "Nach CON-0121 INV-05 entspricht die Summe der task-granularen Einträge dem Gesamtverbrauch der Spec in token-history. CON-0206 INV-06 nimmt Zeilen mit source='unavailable' aus den Summen heraus und weist sie getrennt aus. Numerisch bleibt das konsistent, weil diese Zeilen laut INV-05 0/0 Tokens haben. Anders ist es bei source='estimated': Ob geschätzte Zeilen in die Summe nach CON-0121 INV-05 eingehen oder gesondert markiert werden, legt CON-0206 nicht fest. Summe und Aufschlüsselung können dann auf unterschiedlichen Grundlagen beruhen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "INV-06 ergänzt: estimated zählt in Summen und Mittelwerte, unavailable (0/0) nicht – CON-0121 INV-05 bleibt erfüllt.",
+        "resolved_at": "2026-09-25T15:23:22Z"
+      }
+    },
+    {
+      "id": "CF-0060-006",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0022",
+      "detail": "Laut CON-0022 gibt `CompletionProvider.complete()` nur rohen Text (`-> str`) zurück. G-02 schreibt vor, dass der Claude-CLI-Provider die JSON-Hülle entfernt und nur `result` weitergibt, wodurch das `usage`-Feld der CLI-Antwort verloren geht. CON-0207 INV-02 verlangt dagegen, dass jeder Provider ein `UsageMetadata`-Objekt liefert, und zwar bei 'unveränderter Schnittstelle' der Factory. CON-0022 legt weder einen Rückkanal für die Metadaten fest (Attribut, Tupel, Seitenkanal) noch, dass `claude-cli` die Usage aus der Hülle auslesen muss. Einer der beiden Contracts muss angepasst werden, entweder G-02/Protokoll in CON-0022 oder CON-0207 mit einer ausdrücklichen Aussage zum Transport.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0207 legt den Transport fest: complete() liefert CompletionResult(text, usage) (Code tut das bereits, CON-0022 '-> str' ist veraltet); Text bleibt result der Hülle, Usage aus derselben Hülle.",
+        "resolved_at": "2026-09-25T15:23:23Z"
+      }
+    },
+    {
+      "id": "CF-0060-007",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0121",
+      "detail": "CON-0121 erweitert die Tabelle `token_usage` um die festen Spalten `task_id`/`task_label` samt eigener Migration und stützt sich auf das kanonische Schema aus CON-0041. CON-0207 migriert dieselbe Tabelle noch einmal mit neuen Spalten (`reasoning_tokens`, `finish_reason`, `source`, `run_id`, `context_json`) und speichert den Aufrufkontext als `context_json`. Es ist nicht festgelegt, ob `task_id`/`task_label` künftig aus `usage_context` kommen und in die Spalten oder in `context_json` gehören. Außerdem fehlt ein `depends_on` auf CON-0121/CON-0041. Dadurch drohen doppelte Quellen der Wahrheit und konkurrierende Migrationen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0207 INV-09: task_id/task_label/agent_type kommen aus usage_context und landen in den bestehenden Spalten; keine zweite Migration; Abhängigkeiten dokumentiert.",
+        "resolved_at": "2026-09-25T15:23:24Z"
+      }
+    },
+    {
+      "id": "CF-0060-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0121",
+      "detail": "CON-0121 INV-05 verlangt, dass die Summe der task-granularen Einträge den Gesamtverbrauch der Spec ergibt. Nach CON-0207 INV-01 entstehen auch für fehlgeschlagene Aufrufe Datensätze mit `source: unavailable` und 0/0 Tokens, und manche Werte sind nur `estimated`. Offen bleibt, ob solche Zeilen in die Summe eingehen oder herausgefiltert werden (das Feature-Szenario zu SPEC-0900 filtert offenbar nach `source`). Ohne diese Festlegung liefern `token-history` und die neue Auswertung unterschiedliche Summen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0207 INV-10 / CON-0206 INV-06: unavailable nicht in Summen, estimated schon.",
+        "resolved_at": "2026-09-25T15:23:25Z"
+      }
+    },
+    {
+      "id": "CF-0060-009",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0129",
+      "detail": "CON-0129 macht `model` in `token_usage` optional und verlangt es nur, wenn `agent_type` gesetzt ist. CON-0121 INV-01 und CON-0207 behandeln `model` als Pflichtfeld des UsageRecord. CON-0207 führt zusätzlich `server_model` ein, also das vom Server gemeldete statt des konfigurierten Modells. Unklar bleibt, welches der beiden Felder in die Spalte `model` geschrieben wird. Auch `agent_type` (`local`/`cloud`) ist in CON-0207 weder Feld noch vorgeschriebener Kontextschlüssel. Datensätze aus dem Decorator würden dann das SPEC-0036-Reporting nicht versorgen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0206 INV-07 / CON-0207 INV-09: Spalte model = konfigurierte ID, server_model separat; agent_type als Kontextschlüssel mit eigener Spalte.",
+        "resolved_at": "2026-09-25T15:23:26Z"
+      }
+    },
+    {
+      "id": "CF-0060-010",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0031",
+      "detail": "CON-0031 G-06 setzt beim HuggingFace-Provider nur `usage.estimated = True` und zählt die Tokens grob über `split()`. Die Pflichtfelder aus CON-0207 fehlen dort: `source` (vermutlich `estimated`), `finish_reason`, `latency_ms`, `server_model`, und `reasoning_tokens` müsste `None` sein, nicht 0. Außerdem führt CON-0022 G-05 `huggingface` gar nicht als erlaubten Completion-Provider. Damit ist unklar, ob HF von der Factory umhüllt wird und INV-01 für ihn überhaupt gilt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0207 INV-08: huggingface wird umhüllt, meldet source estimated, reasoning_tokens None. latency_ms ist nur UsageMetadata-Feld und wird in duration_ms gespeichert (SPEC-0060 FR-01).",
+        "resolved_at": "2026-09-25T15:23:27Z"
+      }
+    },
+    {
+      "id": "CF-0060-011",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0024",
+      "detail": "CON-0207 umhüllt auch `get_code_gen_provider` und verlangt genau einen UsageRecord pro Aufruf (INV-01). CodeGen-Provider (CON-0024) arbeiten jedoch typischerweise in mehrstufigen Agent-Sessions mit vielen Modellaufrufen pro `generate`-Aufruf. CON-0024 legt nicht fest, wie die Usage über die einzelnen Schritte zusammengefasst wird, und kennt `UsageMetadata` nicht. CON-0207 wiederum nennt keine Abhängigkeit auf CON-0024.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0207 INV-07: ein UsageRecord je generate(), interne Aufrufe summiert, sonst source unavailable; Abhängigkeit auf CON-0024 dokumentiert.",
+        "resolved_at": "2026-09-25T15:23:28Z"
+      }
+    },
+    {
+      "id": "CF-0060-012",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0207",
+      "conflicting_contract": "CON-0013",
+      "detail": "Der Analyzer (CON-0013) startet die Claude Code CLI als eigenen Subprozess mit Session-Verwaltung, wahrscheinlich an der Provider-Factory vorbei. Laut Zweck von CON-0207 soll aber 'jeder LLM-Aufruf' genau einen Usage-Datensatz erzeugen. Aufrufe außerhalb der Factory fallen damit aus der Erfassung, es sei denn, CON-0013 wird auf die Factory oder einen expliziten Senkenaufruf umgestellt. Diesen Punkt habe ich nur aus Titel und Typ von CON-0013 abgeleitet, nicht am Inhalt geprüft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "Analyzer-Completions laufen nach SPEC-0060 FR-06 über die Factory (tc11 prüft das); interaktive Claude-Code-Sitzungen sind keine Provider-Aufrufe (in CON-0207 Abhängigkeiten festgehalten).",
+        "resolved_at": "2026-09-25T15:23:29Z"
+      }
+    },
+    {
+      "id": "CF-0060-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0003:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0003 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:26Z"
+      }
+    },
+    {
+      "id": "CF-0060-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0004:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0004 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:27Z"
+      }
+    },
+    {
+      "id": "CF-0060-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0007:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:28Z"
+      }
+    },
+    {
+      "id": "CF-0060-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/analyzer",
+      "conflicting_contract": "SPEC-0008:endpoint /api/analyzer",
+      "detail": "Endpoint '/api/analyzer' auch in SPEC-0008 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0060 definiert keinen Endpoint neu; /api/analyzer wird nur als Aufrufer genannt, der auf die Factory umgestellt wird (FR-06).",
+        "resolved_at": "2026-09-25T15:24:29Z"
+      }
+    },
+    {
+      "id": "CF-0060-R005",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0011:1. Kontext & Motivation",
+      "detail": "SPEC-0011 sieht die Token-Erfassung über `usage_store` in den AI-Routes und `.sdd/evaluations.db` als Datenbasis vor; SPEC-0060 legt dieselbe Erfassung neu und vollständig für alle Provider in `token_usage` an, deshalb muss die Schemaerweiterung (reasoning_tokens, cache_*, stop_reason) mit Schätzung und Kalibrierung aus SPEC-0011 abgestimmt sein.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: SPEC-0060 erweitert token_usage additiv (CON-0206), Schätzung/Kalibrierung schließen nur unavailable aus (FR-11).",
+        "resolved_at": "2026-09-25T15:24:30Z"
+      }
+    },
+    {
+      "id": "CF-0060-R006",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0003:2.1 REST-API",
+      "detail": "Die Web-API aus SPEC-0003 führt mit `.sdd/ai_usage.json` einen zweiten Usage-Speicher, den SPEC-0060 nach `token_usage` migriert und ablöst; der Contract von SPEC-0003 zu den AI-Usage-Endpunkten muss angepasst werden, sonst gibt es zwei Wahrheiten.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: FR-08 migriert ai_usage.json nach token_usage; die usage_store-API (record_usage/get_all/get_summary) und damit die Endpunkte bleiben unverändert.",
+        "resolved_at": "2026-09-25T15:24:31Z"
+      }
+    },
+    {
+      "id": "CF-0060-R007",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "SPEC-0008 legt die Provider-Abstraktion und die Factory fest; SPEC-0060 umhüllt die Provider in der Factory zusätzlich und ändert die Rückgabe von `CodeGenProvider.generate` (Usage), damit ändert sich die Schnittstelle, die SPEC-0008 als stabil beschreibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt: Decorator ändert die Schnittstelle nicht (CON-0207 INV-03); generate() bleibt als (files, explanation) entpackbar (FR-04).",
+        "resolved_at": "2026-09-25T15:24:31Z"
+      }
+    },
+    {
+      "id": "CF-0060-R008",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0005:1. Kontext & Motivation",
+      "detail": "Der Analyzer aus SPEC-0005 (`web/api/analyzer.py`) erzeugt `ClaudeCliCompletionProvider` direkt an der Factory vorbei; nach SPEC-0060 muss er über die Factory laufen, sonst fällt er aus der Erfassungsgarantie heraus.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Durch FR-06 abgedeckt; tc11 prüft, dass analyzer.py über get_completion_provider läuft.",
+        "resolved_at": "2026-09-25T15:24:32Z"
+      }
+    },
+    {
+      "id": "CF-0060-R009",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0004:2. Zielsetzung",
+      "detail": "Evaluator und Orchestrator aus SPEC-0004 schreiben heute keine Usage; SPEC-0060 erfasst sie künftig automatisch über die Factory, ohne dass sich das Verhalten von SPEC-0004 ändert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beabsichtigt, keine Verhaltensänderung für SPEC-0004.",
+        "resolved_at": "2026-09-25T15:24:33Z"
+      }
+    },
+    {
+      "id": "CF-0060-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Abgrenzung",
+      "conflicting_contract": "SPEC-0013:2. Zielsetzung",
+      "detail": "Der HuggingFace-Provider aus SPEC-0013 liefert keine echte Usage; SPEC-0060 legt für ihn geschätzte Werte fest, die in `token_usage` als geschätzt markiert sein müssen, damit sie die Kalibrierung nicht verfälschen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Durch CON-0207 INV-08 abgedeckt: HuggingFace meldet source estimated.",
+        "resolved_at": "2026-09-25T15:24:34Z"
+      }
+    },
+    {
+      "id": "CF-0060-R011",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0016:1. Kontext & Motivation",
+      "detail": "Die asynchronen Analyse-Jobs aus SPEC-0016 sind zusätzliche LLM-Aufrufe und müssen ebenfalls über die Factory laufen, damit SPEC-0060 für jeden Aufruf genau einen Datensatz erzeugt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Analyse-Jobs nutzen den Analyzer, der nach FR-06 über die Factory läuft.",
+        "resolved_at": "2026-09-25T15:24:35Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 12,
+    "high": 1,
+    "medium": 6,
+    "low": 5,
+    "affected_specs_count": 0
+  }
+}

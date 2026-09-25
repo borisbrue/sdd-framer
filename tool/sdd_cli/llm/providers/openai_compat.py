@@ -9,7 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from ..base import CompletionResult, UsageMetadata
+from ..base import CodeGenResult, CompletionResult, UsageMetadata
 
 _PROTECTED_PREFIXES = ("specs/", "contracts/", "tests/", ".sdd/")
 
@@ -17,6 +17,31 @@ _CODE_GEN_SUFFIX = (
     "\n\nReturn ONLY a JSON object — no markdown fences, no prose:\n"
     '{"files":[{"path":"relative/path","content":"..."}],"explanation":"<one line>"}'
 )
+
+
+def usage_from_response(response: Any, model: str) -> UsageMetadata:
+    """Usage einer Chat-Completion-Antwort (SPEC-0060 FR-03)."""
+    choices = getattr(response, "choices", None) or []
+    finish_reason = getattr(choices[0], "finish_reason", None) if choices else None
+    server_model = getattr(response, "model", None) or None
+    raw = getattr(response, "usage", None)
+    if raw is None:
+        return UsageMetadata(model=model, finish_reason=finish_reason, server_model=server_model,
+                             source="unavailable")
+    details = getattr(raw, "completion_tokens_details", None)
+    reasoning = getattr(details, "reasoning_tokens", None) if details is not None else None
+    prompt_details = getattr(raw, "prompt_tokens_details", None)
+    cached = getattr(prompt_details, "cached_tokens", None) if prompt_details is not None else None
+    return UsageMetadata(
+        input_tokens=raw.prompt_tokens or 0,
+        output_tokens=raw.completion_tokens or 0,
+        cache_read_tokens=cached or 0,
+        model=model,
+        reasoning_tokens=reasoning,
+        finish_reason=finish_reason,
+        server_model=server_model,
+        source="reported",
+    )
 
 
 class OpenAICompatCompletionProvider:
@@ -76,15 +101,9 @@ class OpenAICompatCompletionProvider:
             }
 
         response = client.chat.completions.create(**create_kwargs)
-        raw_usage = response.usage
-        usage = UsageMetadata(
-            input_tokens=raw_usage.prompt_tokens if raw_usage else 0,
-            output_tokens=raw_usage.completion_tokens if raw_usage else 0,
-            model=self._model,
-        ) if raw_usage else None
         return CompletionResult(
             text=(response.choices[0].message.content or "").strip(),
-            usage=usage,
+            usage=usage_from_response(response, self._model),
         )
 
 
@@ -106,7 +125,7 @@ class OpenAICompatCodeGenProvider:
         *,
         timeout: int = 600,
         on_proc: Callable[[Any], None] | None = None,
-    ) -> tuple[list[dict[str, Any]], str]:
+    ) -> CodeGenResult:
         try:
             import openai
         except ImportError as exc:
@@ -154,4 +173,4 @@ class OpenAICompatCodeGenProvider:
             files_written.append({"path": rel_path, "content": content})
 
         explanation = data.get("explanation", "implement via openai-compat")[:200]
-        return files_written, explanation
+        return CodeGenResult(files_written, explanation, usage_from_response(response, self._model))

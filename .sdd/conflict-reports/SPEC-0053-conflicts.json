@@ -1,0 +1,651 @@
+{
+  "spec_id": "SPEC-0053",
+  "generated_at": "2026-09-25T14:01:51Z",
+  "new_contracts": [
+    "CON-0199",
+    "CON-0200",
+    "CON-0201",
+    "CON-0202",
+    "CON-0203",
+    "CON-0204",
+    "CON-0205"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0053-001",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0199 verlegt die Modellwahl nach `llm.roles.<rolle>` und fällt laut INV-04 auf `legacy_component` zurück. Das llm-Schema in CON-0023 kennt aber nur die festen Blöcke completion, code_gen, evaluator, analyzer, orchestrator und ai_routes. Einen Unterblock `roles` gibt es dort nicht. Außerdem legt G-02 die Auflösung genau so fest: erst `llm.<component>`, dann `llm.<default_block>`, dann der eingebaute Default. Eine Ebene davor für `llm.roles.<rolle>` fehlt. Ohne Änderung an CON-0023 (oder einen Nachfolge-Contract) ist nicht festgelegt, wie Rollen und Komponenten zueinander stehen. Offen ist zum Beispiel, ob `llm.roles.reviewer` einen gesetzten `llm.evaluator`-Block übersteuert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0199 INV-04: Rueckfall ueber legacy_component folgt CON-0023 G-02; llm.roles erweitert CON-0023/CON-0016 additiv",
+        "resolved_at": "2026-09-25T14:00:39Z"
+      }
+    },
+    {
+      "id": "CF-0053-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0023",
+      "detail": "Welche Werte `legacy_component` annehmen darf, legt CON-0199 nicht fest. Das Beispiel nutzt `completion`, also einen Default-Block aus CON-0023. Offen bleibt, ob auch Komponenten-Overrides wie `evaluator` oder `orchestrator` erlaubt sind. Die erben ihrerseits von completion bzw. code_gen. Dann wäre die Rückfallkette mehrstufig und im Schema nicht beschrieben. Zudem erlaubt CON-0023 je Block andere Provider: code_gen erlaubt kein `anthropic`. Eine Rolle mit `legacy_component: code_gen` kann deshalb eine Provider-Kombination erben, die im Rollen-Kontext nicht vorgesehen ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0199 INV-04: zulaessige Werte = Komponenten aus CON-0023, Kette wie G-02",
+        "resolved_at": "2026-09-25T14:00:40Z"
+      }
+    },
+    {
+      "id": "CF-0053-003",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0098",
+      "detail": "Der LLM-Pool-Selector aus CON-0098 wählt das LLM pro Task aus `llm_pool` in config.yaml. CON-0199 und SPEC-0053 wählen das Modell pro Rolle über `llm.roles.<rolle>`. Keiner der beiden Contracts regelt den Vorrang, wenn ein Task von einer Rolle wie implementer ausgeführt wird und zugleich der Pool-Selector greift. Damit gibt es zwei unabhängige Mechanismen zur Modellwahl für dieselbe Ausführung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm_pool (CON-0098): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:00:57Z"
+      }
+    },
+    {
+      "id": "CF-0053-004",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0125",
+      "detail": "LlmRoutingStrategy (CON-0125) trifft Routing-Entscheidungen für Tasks, also lokal oder Cloud, ausgeführt über LocalSubAgentProxy. Die Modellwahl über Rollen aus CON-0199 umgeht diese Strategie. Es fehlt die Festlegung, ob die Routing-Strategie auf Rollen-Aufrufe (decomposer, test-author, implementer, reviewer, supervisor) angewendet wird oder durch sie ersetzt ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "LlmRoutingStrategy (CON-0125): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:00:58Z"
+      }
+    },
+    {
+      "id": "CF-0053-005",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0016",
+      "detail": "Das config.yaml-Gesamtschema in CON-0016 enthält weder `llm.roles` noch das Verzeichnis `.sdd/roles/`. Da INV-06 unbekannte Felder in der Rollendatei verbietet, wäre Symmetrie bei der config zu erwarten. Wenn CON-0016 und CON-0023 unbekannte Schlüssel ablehnen oder nicht dokumentieren, ist `llm.roles` formal nicht abgedeckt. CON-0016 sollte ergänzt oder auf SPEC-0053 verwiesen werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0199 INV-04 und SPEC-0053 Abgrenzung: CON-0016 wird um llm.roles erweitert",
+        "resolved_at": "2026-09-25T14:00:41Z"
+      }
+    },
+    {
+      "id": "CF-0053-006",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0096",
+      "detail": "Bedeutung von dependencies: CON-0200 verlangt Titel anderer Tasks derselben Zerlegung. CON-0096 INV-06 verlangt gültige Task-IDs (UUID4) desselben Specs. Beim Übernehmen der decomposer-Ausgabe in das Task-Modell müssen Titel auf IDs abgebildet werden, und kein Contract regelt das.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0200 INV-06: Titel werden auf CON-0096-IDs abgebildet (unique_titles, deps_resolvable, acyclic)",
+        "resolved_at": "2026-09-25T14:00:42Z"
+      }
+    },
+    {
+      "id": "CF-0053-007",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0096",
+      "detail": "Der decomposer-Task in CON-0200 hat additionalProperties:false und kennt weder context_size noch estimated_tokens. CON-0096 führt beide als Pflichtfelder. Umgekehrt fehlen in CON-0096 fr_ids, allowed_paths, test_file und test_command. Aus der decomposer-Ausgabe entsteht also ohne Anreicherung oder Default-Werte kein gültiger CON-0096-Task.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0200 INV-06: context_size/estimated_tokens aus complexity, Startwerte aus CON-0096",
+        "resolved_at": "2026-09-25T14:00:43Z"
+      }
+    },
+    {
+      "id": "CF-0053-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0097",
+      "detail": "Laut CON-0097 hat jeder Task complexity, context_size und type, und INV-03 verlangt estimated_tokens > 0. Das decomposer-Schema aus CON-0200 lehnt context_size und estimated_tokens ab, weil additionalProperties:false gilt. Wenn beide Zerlegungspfade (sdd decompose aus SPEC-0026 und der decomposer-Rolle aus SPEC-0053) nebeneinander existieren, schließen sich ihre Ausgaben gegenseitig aus.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd decompose alt (CON-0097): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:00:59Z"
+      }
+    },
+    {
+      "id": "CF-0053-009",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0097",
+      "detail": "CON-0097 INV-02 verbietet doppelte Task-Titel. CON-0200 verweist in dependencies zwar auf Titel, fordert aber keine eindeutigen Titel, und das Schema kann das auch nicht ausdrücken. Außerdem wird nicht geprüft, ob die referenzierten Titel existieren oder zyklenfrei sind. Bei doppelten Titeln sind die Abhängigkeiten deshalb nicht eindeutig. Diese Prüfung muss der RoleRunner zusätzlich übernehmen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0200 INV-06: Rollen-Check unique_titles",
+        "resolved_at": "2026-09-25T14:00:44Z"
+      }
+    },
+    {
+      "id": "CF-0053-010",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0100",
+      "detail": "Beide Contracts regeln das Code-Review durch ein LLM mit Retry-Logik. CON-0100 lässt Claude nach Korrektheit, Stil und SOLID bewerten und schreibt failed(reason) als String in error_context. CON-0200 legt ein strukturiertes verdict mit findings[category∈requirement|architecture|quality|test, file, line, reason] fest. Dass invalid_output als gezählter Fehlversuch gilt, konkurriert mit der Zählung von retry_count und blocked in CON-0100. Offen bleibt, welcher Contract für das Review maßgeblich ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "ReviewPipeline (CON-0100): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:01:00Z"
+      }
+    },
+    {
+      "id": "CF-0053-011",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0124",
+      "detail": "Nach CON-0124 hängt die passed-Transition an test_ids. Laut CON-0200 liefern decomposer und test_author dagegen test_file, test_command und fr_ids, aber keine test_ids. Es fehlt eine Regel, wie das Completion-Gate aus test_file und test_command zu test_ids kommt. Ohne diese Regel blockiert CON-0124 jeden Task aus der neuen Pipeline, weil test_ids leer ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0200 INV-06: test_ids aus TST-Artefakten mit gleichem test_file",
+        "resolved_at": "2026-09-25T14:00:44Z"
+      }
+    },
+    {
+      "id": "CF-0053-012",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0100",
+      "detail": "Laut CON-0100 entscheidet die ReviewPipeline selbst, ob ein Task wiederholt wird. Bei CON-0201 trifft dagegen der Supervisor an S2 die Entscheidung (retry_with_hint, reassign, redecompose, halt), und der Mediator führt sie aus. Solange nicht festgelegt ist, welcher Mechanismus Vorrang hat oder ob S2 die feste Retry-Logik ersetzt, können beide Seiten für denselben fehlgeschlagenen Task eine Wiederholung auslösen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Retry der ReviewPipeline (CON-0100): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058; in der Pipeline entscheidet S2",
+        "resolved_at": "2026-09-25T14:01:01Z"
+      }
+    },
+    {
+      "id": "CF-0053-013",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0095",
+      "detail": "Nach einem reassign oder redecompose muss sich der Task-Zustand ändern. Die Übergänge in CON-0095 kennen aber weder einen Wechsel des Arbeiters noch das Ersetzen eines Tasks durch neue Teil-Tasks. CON-0201 verweist nicht auf diese Übergänge.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Task-Lifecycle (CON-0095): reassign/redecompose als neue Uebergaenge; Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:01:01Z"
+      }
+    },
+    {
+      "id": "CF-0053-014",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0096",
+      "detail": "Nach INV-03 nennt reassign einen Task und einen Arbeiter. Offen bleibt, ob die Task-ID und das Arbeiter- bzw. LLM-Feld dasselbe Format wie im Task-Schema von CON-0096 haben. Ohne gemeinsame Definition kann ein formal gültiges Command auf einen Task zeigen, den der Mediator nicht auflösen kann.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0201 INV-06: task_id ist CON-0096-ID, model Profil oder Modellname",
+        "resolved_at": "2026-09-25T14:00:45Z"
+      }
+    },
+    {
+      "id": "CF-0053-015",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0126",
+      "detail": "Laut CON-0126 gibt der LocalSubAgentProxy Fehler nach eigenen Regeln nach oben weiter. S2 trifft ebenfalls eine Entscheidung nach einem Fehler (reassign auf einen anderen Arbeiter). Ungeklärt ist, ob der Proxy erst selbst weitergibt und der Supervisor danach entscheidet oder ob S2 diese Weitergabe ersetzt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "LocalSubAgentProxy (CON-0126): Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:01:02Z"
+      }
+    },
+    {
+      "id": "CF-0053-016",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0125",
+      "detail": "reassign legt den Ziel-Arbeiter bzw. das Ziel-LLM direkt fest und umgeht damit die Routing-Entscheidung der LlmRoutingStrategy aus CON-0125. Es fehlt eine Regel, ob der Mediator das Command gegen den Pool und das Routing prüft oder ob der Supervisor das Routing übersteuern darf.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Routing (CON-0125): reassign uebersteuert laut CON-0201 INV-06; Ueberschneidung mit der bisherigen Distribution-Engine bzw. den Altpfaden; Abbildung oder Entfernung regelt SPEC-0058",
+        "resolved_at": "2026-09-25T14:01:03Z"
+      }
+    },
+    {
+      "id": "CF-0053-017",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0097",
+      "detail": "redecompose setzt voraus, dass die Task-Ableitung für einen einzelnen Task oder Teilbaum erneut läuft. CON-0097 beschreibt aber nur die Zerlegung einer ganzen Spec. CON-0201 legt nicht fest, welche Eingabe redecompose an sdd decompose übergibt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0201 INV-07: redecompose = ganze Spec mit history, erledigte Tasks bleiben",
+        "resolved_at": "2026-09-25T14:00:46Z"
+      }
+    },
+    {
+      "id": "CF-0053-018",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0201",
+      "conflicting_contract": "CON-0025",
+      "detail": "Die Commands approve und revise an S1 sowie accept_frs und halt an S3 sind Freigaben bzw. Abbrüche in der Pipeline. Die Phasen-Zustandsmaschine des Execution Gate in CON-0025 steuert ebenfalls die Freigabe zwischen Phasen. Es fehlt eine Zuordnung, welcher Gate-Übergang zu S1 bzw. S3 gehört und wer bei widersprüchlichen Signalen gewinnt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0205 INV-09: S1/S3 aendern keine Gate-Phasen; execute-unlocked ist Voraussetzung",
+        "resolved_at": "2026-09-25T14:00:47Z"
+      }
+    },
+    {
+      "id": "CF-0053-019",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0030",
+      "detail": "Beide Contracts legen fest, wie der Zustand eines Pipeline-Laufs gespeichert wird, aber an verschiedenen Orten und in verschiedenen Formen. CON-0030 erweitert `.sdd/pipeline/{timestamp}-{SPEC-ID}.json` um `pipeline_phase`, `phase_history`, `blocking_issues` und `override`. CON-0202 führt dafür `.sdd/runs/<SPEC>/<run_id>/state.json` mit `phase` und `status` ein, samt Übergängen in `events.jsonl`. CON-0202 sagt nicht, welche Datei für die Phase einer Spec maßgeblich ist, und nicht, ob ein Gate-Override aus CON-0030 als Entscheidung in `decisions.jsonl` landet. Leser, zum Beispiel ein Gate-Check oder die Web-UI, können dadurch unterschiedliche Phasen sehen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0202 INV-08: Phasen bleiben im Gate-File, Run-Verzeichnis nur Run-Zustand",
+        "resolved_at": "2026-09-25T14:00:48Z"
+      }
+    },
+    {
+      "id": "CF-0053-020",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0021",
+      "detail": "`run_id` hat zwei verschiedene Formate. In CON-0021 lautet sie `{spec_id}-{unix_timestamp_ms}` (INV-01: global eindeutig), das Beispiel in CON-0202 zeigt `20260925-101500-a1` (Zeitstempel plus Suffix, eindeutig nur innerhalb von `<SPEC>/`). Auch der `status` hat eigene Werte: CON-0021 nennt running/labeled/failed, CON-0202 unter anderem `awaiting_supervisor`. Zeigt `GET /api/pipeline/{run_id}` später auch Läufe von SPEC-0053, passen die Formate von `run_id` und `status` nicht zusammen. CON-0202 sollte den Namensraum ausdrücklich abgrenzen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0202 INV-07: run_id = <SPEC-ID>-<Zeitstempel>-<suffix>, projektweit eindeutig",
+        "resolved_at": "2026-09-25T14:00:49Z"
+      }
+    },
+    {
+      "id": "CF-0053-021",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0096",
+      "detail": "`state.json` enthält `tasks[]` mit Task-Zuständen. CON-0096 (Task-Schema) und CON-0095 (Task-Lifecycle) beschreiben Task-Strukturen und ihre Übergänge schon für die Distribution Engine. CON-0202 sagt weder, ob `state.tasks[]` dieses Schema wiederverwendet, noch ob es ein eigenes, unabhängiges Task-Modell ist. Das birgt das Risiko doppelter, auseinanderlaufender Status-Enums.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0202 INV-08: state.tasks verweist auf CON-0096-Tasks, Status weiter nach CON-0095",
+        "resolved_at": "2026-09-25T14:00:50Z"
+      }
+    },
+    {
+      "id": "CF-0053-022",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0121",
+      "detail": "Laut `events.jsonl` wird jeder Rollenaufruf mit Provider und Modell protokolliert. Aufrufe mit Provider und Modell erfasst auch die Token-History (CON-0121 und CON-0129 mit `agent_type`/`model`). Die Usage-Erfassung wurde nach SPEC-0060 ausgelagert, aber CON-0202 grenzt nicht ab, dass Events keine Usage-Daten tragen und die Token-History nicht ersetzen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0202 INV-09: events ohne Tokenzahlen, Verbrauch nur in token_usage (SPEC-0060)",
+        "resolved_at": "2026-09-25T14:00:50Z"
+      }
+    },
+    {
+      "id": "CF-0053-023",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0203",
+      "conflicting_contract": "CON-0096",
+      "detail": "Das CON-0096-Schema (contracts/data/task.schema.json) setzt \"additionalProperties\": false, und weder fr_ids noch allowed_paths stehen in seinen properties. Laut CON-0203 INV-03 ist eine Task-Instanz gültig, wenn sie gegen CON-0096 UND gegen die Erweiterung gültig ist. Jede Task, die eines der neuen Felder trägt, scheitert damit an CON-0096. Die Erweiterung ist also nicht rein additiv, wie behauptet. Lösung: task.schema.json um beide Properties ergänzen (das ist dann eine Änderung an CON-0096) oder INV-03 umformulieren, z. B. auf ein zusammengeführtes Schema bzw. unevaluatedProperties statt additionalProperties.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0203 INV-03: task.schema.json nimmt fr_ids/allowed_paths additiv auf",
+        "resolved_at": "2026-09-25T14:00:51Z"
+      }
+    },
+    {
+      "id": "CF-0053-024",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0203",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 hat Status draft, CON-0203 ist approved und baut darauf auf ('Alle Invarianten von CON-0096 bleiben gültig'). Ändert sich CON-0096 noch, verliert CON-0203 seine Basis, ohne dass das auffällt. Außerdem hat CON-0096 schon vorher Felder nachträglich bekommen (con_ids, test_ids, run_id, test_* …). Eine zweite, getrennt gepflegte Delta-Beschreibung macht Abweichungen wahrscheinlich.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0096 ist draft; Erweiterung als eigenes Delta CON-0203, Aufnahme ins Basis-Artefakt bei der Umsetzung",
+        "resolved_at": "2026-09-25T14:01:04Z"
+      }
+    },
+    {
+      "id": "CF-0053-025",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0203",
+      "conflicting_contract": "CON-0204",
+      "detail": "INV-02 verweist für den Fall ohne allowed_paths auf die allgemeine PathPolicy aus CON-0204. CON-0204 steht aber nicht in der Liste der bestehenden Contracts. Damit ist die Rückfall-Semantik von allowed_paths nicht abgesichert, solange CON-0204 nicht angelegt und approved ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Werkzeugbefund: CON-0204 existiert und ist approved; der Analyse-Index kannte ihn nicht",
+        "resolved_at": "2026-09-25T14:01:05Z"
+      }
+    },
+    {
+      "id": "CF-0053-026",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0203",
+      "conflicting_contract": "CON-0097",
+      "detail": "Der Contract für sdd decompose (CON-0097) legt fest, welche Felder beim Ableiten von Tasks befüllt werden. CON-0203 INV-01 verlangt bei type code/test mindestens eine FR-ID, sobald fr_ids vorhanden ist. CON-0097 sagt aber nicht, dass decompose fr_ids bzw. allowed_paths erzeugt oder dass FR-IDs aus der Spec übernommen werden. Ohne diese Vorgabe bleiben die Felder in der Praxis leer, oder die Verantwortung dafür ist unklar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0053 FR-05 stellt sdd decompose auf die Rolle decomposer um, die fr_ids und allowed_paths liefert",
+        "resolved_at": "2026-09-25T14:01:06Z"
+      }
+    },
+    {
+      "id": "CF-0053-027",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0203",
+      "conflicting_contract": "CON-0100",
+      "detail": "Die ReviewPipeline (CON-0100) und das Task-Completion-Gate (CON-0124) prüfen Tasks vor passed/committed, berücksichtigen aber keine Pfadbeschränkungen. Setzt eine Task allowed_paths und der Code greift außerhalb davon, legt keiner der beiden bestehenden Contracts fest, ob die Task abgelehnt wird. Die Durchsetzung hängt komplett an CON-0204, das noch fehlt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Durchsetzung liegt bewusst in CON-0204; die ReviewPipeline wird durch SPEC-0058 entfernt",
+        "resolved_at": "2026-09-25T14:01:07Z"
+      }
+    },
+    {
+      "id": "CF-0053-028",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0204",
+      "conflicting_contract": "CON-0024",
+      "detail": "CON-0204 sagt: Provider enthalten keine eigenen Pfadregeln, und das Ergebnis hängt nie vom Provider ab (INV-03). CON-0024 schreibt aber genau solche Regeln im Provider vor. OpenAICompatCodeGenProvider darf nicht nach .sdd/, specs/, contracts/ und tests/ schreiben, beide Provider lehnen '../'-Pfade mit ValueError ab. ClaudeCliCodeGenProvider schreibt dagegen ohne Einschränkung direkt auf Disk (--dangerously-skip-permissions, INV-01: generate() schreibt immer vor der Rückgabe). Damit gibt es keinen Schreibvorgang, den der Mediator vorher abfangen kann. Die Regeln widersprechen sich auch inhaltlich: CON-0024 sperrt tests/ komplett, CON-0204 lässt den test_author die test_file des Tasks schreiben (Regel 5).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0204 Durchsetzungsort: in der Pipeline liefern Provider nur Inhalte, Mediator schreibt nach PathPolicy; CON-0024 gilt nur fuer Altpfade bis SPEC-0058",
+        "resolved_at": "2026-09-25T14:00:52Z"
+      }
+    },
+    {
+      "id": "CF-0053-029",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0204",
+      "conflicting_contract": "CON-0024",
+      "detail": "CON-0204 prüft Schreibvorgänge vorab und führt abgelehnte nicht aus (INV-02). CON-0024 legt aber fest, dass der Provider Dateien schreibt, bevor er zurückkehrt. Es fehlt eine Festlegung, dass Provider im SPEC-0053-Kontext nur noch Dateiinhalte zurückgeben und der Mediator schreibt. Alternativ könnte CON-0024 für den Rollenpfad als abgelöst markiert werden. Sonst ist offen, welcher Contract gilt, wenn ein Provider sowohl unter der alten Pipeline als auch unter dem neuen Mediator läuft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0204 Durchsetzungsort: Provider schreiben im Rollenpfad nicht selbst",
+        "resolved_at": "2026-09-25T14:00:53Z"
+      }
+    },
+    {
+      "id": "CF-0053-030",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0204",
+      "conflicting_contract": "CON-0064",
+      "detail": "CON-0064 isoliert .sdd/holdout/ beim Lesen vor dem Implementierungs-Agenten. CON-0204 regelt nur das Schreiben; Regel 3 deckt .sdd/** mit ab. Einen Widerspruch gibt es nicht. Offen bleibt aber, ob der Mediator die Holdout-Isolation auch für Lesezugriffe der Rollen test_author und implementer durchsetzt. Das sollte ausdrücklich abgegrenzt werden, damit die Lese-Isolation nicht stillschweigend der PathPolicy zugeschrieben wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0204 Durchsetzungsort: Lese-Isolation ueber SPEC-0053 FR-03 und CON-0064, nicht PathPolicy",
+        "resolved_at": "2026-09-25T14:00:54Z"
+      }
+    },
+    {
+      "id": "CF-0053-031",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (`sdd orchestrate`) und CON-0205 (`sdd pipeline run`) beschreiben beide einen autonomen Spec→Code→Finalize-Lauf mit Retry-Grenze und `--dry-run`. Die Abgrenzung fehlt: CON-0012 hat `--max-retries` (Default 3) auf Evaluator-Ebene, CON-0205 `max_attempts` (Default 3) je Task plus `max_revisions` (Default 2). Unklar bleibt, ob `pipeline run` `orchestrate` ersetzt, darauf aufsetzt oder daneben besteht. INV-07 schützt nur Befehle ohne `llm.roles`.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "orchestrate (CON-0012) wird in SPEC-0058 auf pipeline run --auto abgebildet",
+        "resolved_at": "2026-09-25T14:01:07Z"
+      }
+    },
+    {
+      "id": "CF-0053-032",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0012",
+      "detail": "Die Bedeutung von `--dry-run` weicht ab. In CON-0012 zeigt es generierten Code an und schreibt, committet und pusht nichts. In CON-0205 endet der Lauf nach S1 (Zerlegung und Supervisor-Freigabe) mit Exit 0, und token_usage-Datensätze sowie state.json werden trotzdem geschrieben. Dasselbe Flag bedeutet damit im Pipeline-Umfeld zweierlei.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0205 INV-10: abweichende dry-run-Semantik bewusst festgelegt",
+        "resolved_at": "2026-09-25T14:00:55Z"
+      }
+    },
+    {
+      "id": "CF-0053-033",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 legt den Pipeline-Zustand als `.sdd/pipeline/{timestamp}-{SPEC-ID}.json` mit `pipeline_phase` fest. Das Repo hat daneben `.sdd/pipeline/SPEC-0053-gate.json`. CON-0205 führt `state.json` (Status `halted`/`awaiting_supervisor`, Task-Zustände `done`/`reassigned`/`green`) und `decisions.jsonl` ein, nennt aber weder Ablageort noch Schema. Damit ist nicht geregelt, dass sich beide Zustandsformate unter `.sdd/pipeline/` nicht überschneiden, und es fehlt ein Data-Contract für state.json. INV-05 (`--resume`) hängt direkt daran.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0202 INV-08: Ablage und Schema des Run-Zustands festgelegt, Gate-File unveraendert",
+        "resolved_at": "2026-09-25T14:00:55Z"
+      }
+    },
+    {
+      "id": "CF-0053-034",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0025",
+      "detail": "Für den Start verlangt CON-0205 nur Spec-Status `approved` (sonst Exit 2). Die Execution-Gate-Phasenmaschine aus CON-0025 und CON-0021 fordert vor einer Ausführung zusätzlich `pipeline_phase == execute-unlocked`, mit `force` und `override_reason` als Ausnahme. CON-0205 sagt nicht, ob `sdd pipeline run` dieses Gate prüft oder bewusst umgeht. Der Begriff „Gate“ ist in CON-0205 nur als SPEC-0054-Projektgate definiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0205 INV-09: pipeline run prueft execute-unlocked",
+        "resolved_at": "2026-09-25T14:00:56Z"
+      }
+    },
+    {
+      "id": "CF-0053-035",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 und CON-0055 kennen `run_id`, einen Status-Abruf (`GET /api/pipeline/{run_id}`) und Status-Werte wie `labeled`/`failed`. CON-0205 führt mit `sdd pipeline status RUN` eine eigene Run-ID und die Zustände `halted`/`awaiting_supervisor` ein. Unklar bleibt, ob die Web-API bzw. die Extension diese Runs anzeigen soll. Der Namensraum „pipeline run“ ist doppelt belegt, eine Abbildung der Status-Werte fehlt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Web-API-Runs (CON-0021): Anzeige der Pipeline-Runs regelt SPEC-0058 (Web-UI liest events.jsonl)",
+        "resolved_at": "2026-09-25T14:01:08Z"
+      }
+    },
+    {
+      "id": "CF-0053-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-04",
+      "conflicting_contract": "SPEC-0008:FR-01",
+      "detail": "`llm.roles.<rolle>` extends the same provider factory that SPEC-0008 defines, and SPEC-0053 explicitly states it adds no second way to choose a model, so the provider-resolution logic must stay in one place.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:04Z"
+      }
+    },
+    {
+      "id": "CF-0053-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0004:FR-01",
+      "detail": "Both specs define an autonomous spec-to-merged-code run (`sdd orchestrate` vs. `sdd pipeline run` from Decompose to Finalize), so two parallel execution paths exist until SPEC-0058 maps the orchestrator onto the pipeline.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:05Z"
+      }
+    },
+    {
+      "id": "CF-0053-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0007:FR-01",
+      "detail": "The Execute button and `POST /api/orchestrate` start the old orchestrator cycle rather than `sdd pipeline run`, and the mapping is delegated to SPEC-0058.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:06Z"
+      }
+    },
+    {
+      "id": "CF-0053-R004",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0014:FR-01",
+      "detail": "The staged execution gate blocks execution until its phases pass, while `sdd pipeline run` also controls the flow from Decompose to Finalize, so it is unclear which component checks the gate conditions before a pipeline run and whether it does so only once.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:07Z"
+      }
+    },
+    {
+      "id": "CF-0053-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0011:FR-01",
+      "detail": "Token recording for cost estimation overlaps with the role context (role, run, attempt, outcome) that SPEC-0053 adds to `token_usage`; the recording itself is split out to SPEC-0060, and with `claude-cli` both stay without usage data.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:08Z"
+      }
+    },
+    {
+      "id": "CF-0053-R006",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "The pipeline's RED/GREEN steps and the reviewer run tests, which overlaps with `sdd test-run SPEC-XXXX`; the pipeline should reuse that command instead of starting tests its own way.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geregelt: CON-0205 INV-09 (Gate-Pruefung durch pipeline run), SPEC-0054 FR-03 (Tests ueber den Test-Runner aus SPEC-0006), SPEC-0060 (Usage fuer claude-cli), SPEC-0058 (orchestrate/Web-Execute auf pipeline)",
+        "resolved_at": "2026-09-25T14:02:08Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 35,
+    "high": 5,
+    "medium": 17,
+    "low": 13,
+    "affected_specs_count": 0
+  }
+}

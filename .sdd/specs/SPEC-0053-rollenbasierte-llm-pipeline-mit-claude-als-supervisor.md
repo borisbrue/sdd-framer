@@ -2,21 +2,38 @@
 id: SPEC-0053
 title: "Rollenbasierte LLM-Pipeline mit Claude als Supervisor"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.4.0
+version: 0.7.0
 priority: high
-tags: [llm, roles, pipeline, local-llm, supervisor, token-tracking]
-depends_on: [SPEC-0008, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054]
-contracts: []
-tests: []
+tags: [llm, roles, pipeline, local-llm, supervisor]
+depends_on: [SPEC-0008, SPEC-0011, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054, SPEC-0060]
+contracts: [CON-0199, CON-0200, CON-0201, CON-0202, CON-0203, CON-0204, CON-0205]
+tests: [TST-0228, TST-0229, TST-0230, TST-0231, TST-0232, TST-0233, TST-0234]
+fr_test_map:
+  FR-01: [TST-0228]
+  FR-02: [TST-0228]
+  FR-03: [TST-0228]
+  FR-04: [TST-0234]
+  FR-05: [TST-0229, TST-0232, TST-0234]
+  FR-06: [TST-0234]
+  FR-07: [TST-0233]
+  FR-08: [TST-0230, TST-0234]
+  FR-09: [TST-0233]
+  FR-10: [TST-0234]
+  FR-11: [TST-0229, TST-0234]
+  FR-12: [TST-0231, TST-0234]
+  FR-13: [TST-0234]
+  FR-14: [TST-0234]
+  FR-15: [TST-0231, TST-0234]
+  FR-16: [TST-0234]
 ---
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.4.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.7.0
 
 ## 1. Kontext & Motivation
 
@@ -32,10 +49,24 @@ eingesetzt werden, wo Urteilsvermögen gebraucht wird: Freigaben, Eskalationsent
 Abnahme der Anforderungen.
 
 Gleichzeitig sind die Rollen heute implizit: Prompts liegen als Inline-Strings in sieben Modulen
-verteilt, Ein- und Ausgaben sind nicht als Vertrag definiert, und der Tokenverbrauch pro Rolle wird
-nicht erfasst (Code-Gen liefert gar keine Usage, `claude-cli` liefert `None`, obwohl das JSON-Envelope
-Usage enthält). Damit lässt sich weder sagen, welches Modell welche Rolle gut erfüllt, noch eine
-Rolle gezielt verbessern (→ SPEC-0055) oder vergleichen (→ SPEC-0056).
+verteilt, Ein- und Ausgaben sind nicht als Vertrag definiert, und Schreibrechte hängen an einem
+einzelnen Provider (`openai_compat.py`). Damit lässt sich weder sagen, welches Modell welche Rolle
+gut erfüllt, noch eine Rolle gezielt verbessern (→ SPEC-0055) oder vergleichen (→ SPEC-0056).
+
+### Abgrenzung zu bestehenden Specs
+- **SPEC-0008/SPEC-0050 (Provider-Factory):** Rollen führen keinen zweiten Weg zur Modellwahl ein.
+  `llm.roles.<rolle>` ist ein weiterer Schlüssel derselben Factory (FR-04).
+- **SPEC-0011 und SPEC-0060 (Tokenverbrauch):** Die Usage-Erfassung aller Provider regelt SPEC-0060
+  und schreibt in die bestehende Tabelle `token_usage`. Diese Spec liefert nur den Rollenkontext
+  (Rolle, Run, Versuch, Ergebnis, Rollenversion).
+- **SPEC-0004 und SPEC-0007 (Orchestrator, Execute-Button der Web-UI) sowie SPEC-0045
+  (`task-loop`):** Wie diese Pfade auf `sdd pipeline` abgebildet werden, regelt SPEC-0058.
+- **SPEC-0005 (Analyzer):** Der Analyzer ist keine Rolle der Implementierungs-Pipeline und bleibt
+  eine Provider-Komponente.
+- **Nachzuziehen bei der Umsetzung:** additive Erweiterungen der Artefakte von CON-0023 und CON-0016
+  (`llm.roles`) sowie CON-0096 (`fr_ids`, `allowed_paths`). Überschneidungen mit der
+  Distribution-Engine (CON-0095..0100, CON-0124..0126), `orchestrate` (CON-0012) und der Web-API
+  (CON-0021) löst SPEC-0058 auf.
 
 ## 2. Zielsetzung
 
@@ -48,8 +79,9 @@ eigenem Modell und Messung; Claude ist ausschließlich Supervisor und schreibt k
       alle Datei-Schreibvorgänge stammen aus Rollen ≠ `supervisor`).
 - [ ] `decomposer`, `test_author`, `implementer`, `reviewer` und `supervisor` sind je auf ein
       beliebiges konfiguriertes Modell setzbar, inklusive Thinking-Modus und Reasoning-Budget.
-- [ ] Für jeden LLM-Aufruf der Pipeline existiert ein Usage-Datensatz mit Rolle, Modell, Input-,
-      Output- und Reasoning-Tokens, Dauer, Versuch und Ergebnis.
+- [ ] Jeder Rollenaufruf erzeugt einen Usage-Datensatz (SPEC-0060) mit Rollenkontext.
+- [ ] Ein Run lässt sich an jedem Entscheidungspunkt und nach jedem abgeschlossenen Task abbrechen
+      und mit `--resume` ohne Verlust fortsetzen.
 - [ ] Claude-Tokens pro umgesetzter Spec sinken gegenüber `/sdd-implement` auf der Benchmark-Suite
       (SPEC-0056) um ≥ 70 % bei nicht schlechterem Qualitätsscore (SPEC-0054).
 - [ ] Ohne `llm.roles`-Block verhält sich sdd-framer exakt wie bisher (Rückwärtskompatibilität).
@@ -58,6 +90,9 @@ eigenem Modell und Messung; Claude ist ausschließlich Supervisor und schreibt k
 - Kein Ersatz von `/sdd-implement`; der interaktive Weg bleibt bestehen.
 - Kein automatisches Hosting, Laden oder Umschalten von Modellen auf dem LLM-Server.
 - Keine Parallelisierung über `task_routing.max_concurrent` hinaus.
+- Keine Korrektur der Usage-Erfassung der Provider (→ SPEC-0060).
+- Keine Ablösung von `task-loop`, `orchestrate`, `distribute` oder des Web-Execute-Buttons
+  (→ SPEC-0058).
 - Die Evals (SPEC-0055) und der Benchmark (SPEC-0056) sind eigene Specs.
 
 ## 3. Architektur & Design Patterns
@@ -75,158 +110,196 @@ inputs: [spec, contracts, agents_md, repo_map]      # geschlossene Liste, s. FR-
 output_schema: contracts/data/role-decomposer-output.schema.json
 defaults: { thinking: true, max_output_tokens: 16000, temperature: 0.6 }
 checks: [json_schema, fr_coverage, acyclic, deps_resolvable, test_file_per_code_task]
+legacy_component: completion                          # Fallback ohne llm.roles.<rolle>
 ---
 <System-Prompt>
 ```
 
 Welches Modell eine Rolle spielt, steht nicht in der Rollendatei, sondern in `config.yaml`
-(`llm.roles.<rolle>`). Der Provider wird per Strategy aufgelöst (bestehende Factory, erweitert).
-Damit sind Rollendefinition (trainierbar, SPEC-0055) und Modellwahl (benchmarkbar, SPEC-0056)
-unabhängig voneinander.
+(`llm.roles.<rolle>`). Der Provider wird per Strategy über die bestehende Factory (SPEC-0008)
+aufgelöst. Auch der Fallback auf einen alten Komponentenblock ist Teil der Rollendaten
+(`legacy_component`), sodass eine neue Rolle keine Codeänderung an der Auflösung braucht.
 
 → [Refactoring Guru: Strategy](https://refactoring.guru/design-patterns/strategy)
 
 ### Template Method: `RoleRunner`
-Jeder Rollenaufruf durchläuft dieselben Schritte: Kontext zusammenstellen → Prompt rendern → LLM
-aufrufen → Ausgabe extrahieren → gegen `output_schema` validieren → deterministische `checks`
-ausführen → Usage persistieren. Rollen überschreiben nur Kontextaufbau und Ergebnisanwendung.
-Ungültige Ausgaben sind ein gezählter Fehlversuch, kein Absturz.
+Jeder Rollenaufruf durchläuft dieselben Schritte: Kontext zusammenstellen → Prompt rendern (mit
+Nonce) → LLM aufrufen → Ausgabe extrahieren → gegen `output_schema` validieren → Rollen-`checks`
+ausführen → Usage mit Rollenkontext an SPEC-0060 übergeben. Rollen überschreiben nur Kontextaufbau
+und Ergebnisanwendung. Ungültige Ausgaben sind ein gezählter Fehlversuch, kein Absturz.
+
+**Grenze Rollen-Checks ↔ Gates:** Rollen-`checks` prüfen ausschließlich die *Ausgabe* der Rolle
+(Schema, Struktur, Vollständigkeit gegenüber ihrer Eingabe, z. B. `fr_coverage` der Zerlegung).
+Gates (SPEC-0054) prüfen den *Projektzustand* nach dem Anwenden (Tests, Lint, Architektur). Rollen-
+Checks laufen im `RoleRunner`, Gates im Mediator.
 
 → [Refactoring Guru: Template Method](https://refactoring.guru/design-patterns/template-method)
 
 ### Mediator: `PipelineSupervisor`
-Die Rollen kennen einander nicht. Der Mediator steuert den Ablauf, reicht Artefakte weiter und ruft
-die Rolle `supervisor` nur an definierten Entscheidungspunkten (FR-08) auf.
+Die Rollen kennen einander nicht. Der Mediator steuert den Ablauf, reicht Artefakte weiter, wendet
+die `PathPolicy` auf jeden Schreibvorgang an und holt an den Entscheidungspunkten S1–S3 eine
+Entscheidung ein.
 
 → [Refactoring Guru: Mediator](https://refactoring.guru/design-patterns/mediator)
 
-### Chain of Responsibility: deterministische Gates vor jedem Urteil
-Zwischen den Rollen laufen Gates aus SPEC-0054 (Tests, Lint, Architekturregeln, Pfadschutz). Der
-Supervisor bekommt Fakten (Gate-Ergebnisse, Diffs, Fehlerausgaben), keine Selbstauskünfte der Modelle.
+### Command: Supervisor-Entscheidungen
+Jede Entscheidung ist ein serialisierbares Objekt (`approve`, `revise`, `retry_with_hint`,
+`reassign`, `redecompose`, `halt`, `accept_frs`), validiert gegen
+`supervisor-decision.schema.json`. Der Supervisor führt nichts aus; der Mediator führt das Command
+aus und protokolliert es in `decisions.jsonl`. Dadurch funktionieren der Dialogmodus, `--resume`
+und die Protokollierung über denselben Mechanismus, egal wer entscheidet.
+
+→ [Refactoring Guru: Command](https://refactoring.guru/design-patterns/command)
+
+### Entscheidungsquelle und fortsetzbarer Zustandsautomat
+Der Run ist ein Zustandsautomat, dessen Zustand nach jedem Übergang in `state.json` gespeichert
+wird. An jedem Entscheidungspunkt wird zuerst die Anfrage persistiert
+(`pending-decision.json`), dann eine `DecisionSource` gefragt. Jede Quelle erfüllt denselben
+Vertrag: Sie liefert entweder ein Command oder `Pending(request)`.
+
+| Modus (`llm.roles.supervisor.mode`) | Quelle | Verhalten |
+|-------------------------------------|--------|-----------|
+| `inline` (Default) | Supervisor-Rolle über ihren Provider | liefert sofort ein Command |
+| `session` | Claude Code im Dialog | liefert `Pending`; der Run hält mit Exit 3 an und wird mit `sdd pipeline decide` fortgesetzt |
+
+Der Provider der Supervisor-Rolle wird nur im Modus `inline` gebraucht.
+
+### PathPolicy
+Eine anbieterunabhängige Regel entscheidet für jeden Schreibvorgang anhand von Rolle, Task und
+erlaubten Pfaden, ob er zulässig ist. Der Mediator wendet sie an; Provider (auch
+`openai_compat.py`) nutzen sie nur und enthalten keine eigenen Pfadregeln mehr.
 
 ### State: Task-Lebenszyklus
 `pending → red → green → reviewed → done`, Nebenpfade `retry`, `reassigned`, `redecompose`, `halted`.
-Jeder Übergang wird mit Rolle und Grund im Run-Protokoll festgehalten.
+Jeder Übergang wird mit Rolle und Grund in `events.jsonl` und `state.json` festgehalten.
 
 ### Ablauf
 
 ```
-decomposer ──► [Gates: Schema, FR-Abdeckung, Zyklen] ──► supervisor: Freigabe Zerlegung (S1)
-   ▲                                                             │
-   └──────────── Überarbeitung mit Supervisor-Begründung ◄──────┤ (max. n Runden)
-                                                                 ▼
+decomposer ──► [Rollen-Checks: Schema, FR-Abdeckung, Zyklen] ──► S1 Freigabe Zerlegung
+   ▲                                                                   │
+   └──────────── Überarbeitung mit Begründung (revise) ◄──────────────┤ (max. n Runden)
+                                                                       ▼
 für jeden Task in Abhängigkeitswellen:
-  test_author ─► [Gate: Test ist RED] ─► implementer ─► [Gates: GREEN, Lint, Architektur, Pfade]
-       ─► reviewer ─► pass: done
-                    └► fail/Gate-Fehler nach k Versuchen ─► supervisor: Eskalation (S2)
+  test_author ─► [Gate: Test ist RED] ─► implementer ─► [Gates: GREEN, Lint, Architektur]
+       ─► reviewer ─► pass: done                         (jeder Schreibvorgang: PathPolicy)
+                    └► fail/Gate-Fehler nach k Versuchen ─► S2 Eskalation
                            retry_with_hint | reassign(model) | redecompose | halt
-Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► supervisor: Abnahme (S3) ─► finalize
+Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► S3 Abnahme ─► finalize
 ```
 
 ## 4. Funktionale Anforderungen
 
 - **FR-01:** Es gibt die Rollen `decomposer`, `test_author`, `implementer`, `reviewer` und
   `supervisor`. Jede ist als Datei `.sdd/roles/<rolle>.md` definiert, mit Frontmatter nach dem
-  Schema `contracts/data/role-definition.schema.json` und dem System-Prompt als Body.
+  Schema `contracts/data/role-definition.schema.json` (inklusive `legacy_component`) und dem
+  System-Prompt als Body.
 - **FR-02:** `sdd init` und `sdd upgrade` installieren die Default-Rollen aus dem Blueprint.
   `sdd upgrade` überschreibt eine lokal geänderte Rolle nicht, sondern legt die neue Version als
-  `<rolle>.md.new` daneben und meldet das (gleiches Verhalten wie bei Skills mit `--force-skills`).
+  `<rolle>.md.new` daneben und meldet das.
 - **FR-03:** Die Eingaben einer Rolle stammen aus einer geschlossenen Liste von Kontextquellen
   (`spec`, `contracts`, `agents_md`, `repo_map`, `task`, `test_file`, `test_output`, `diff`,
   `gate_results`, `review`, `history`). Jede Quelle hat ein konfigurierbares Tokenbudget. Unbekannte
   Quellen sind ein Validierungsfehler. `.sdd/holdout/` ist nie eine Quelle.
-- **FR-04:** `llm.roles.<rolle>` in `config.yaml` akzeptiert `provider`, `model`, `base_url`,
-  `api_key`, `temperature`, `top_p`, `max_output_tokens`, `thinking` (bool),
-  `reasoning_effort` (`low|medium|high`, falls vom Server unterstützt) und `timeout_seconds`.
-  Auflösung: `llm.roles.<rolle>` → bisheriger Komponentenblock (`decomposer`→`completion`,
-  `implementer`/`test_author`→`orchestrator`, `reviewer`/`supervisor`→`evaluator`) → Builtin
-  `claude-cli`. `sdd config validate` (SPEC-0052) prüft den Block.
+- **FR-04:** `llm.roles.<rolle>` ist ein Schlüssel der Provider-Factory (SPEC-0008) und akzeptiert
+  `provider`, `model`, `base_url`, `api_key`, `temperature`, `top_p`, `max_output_tokens`,
+  `thinking`, `reasoning_effort` (`low|medium|high`) und `timeout_seconds`, für den Supervisor
+  zusätzlich `mode` (FR-15). Auflösung: `llm.roles.<rolle>` → Komponentenblock aus
+  `legacy_component` der Rollendatei → Builtin `claude-cli`. `sdd config validate` prüft den Block
+  und warnt:
+  - bei Parametern, die der gewählte Provider ignoriert (z. B. `base_url` bei `claude-cli`);
+  - wenn `reviewer` dasselbe Modell (Endpunkt und Modellname) nutzt wie `implementer` oder
+    `test_author` („Modell reviewt seine eigene Arbeit“). Diese Warnung erscheint auch beim Start
+    von `sdd pipeline run`, in `run.json` und im Report; sie blockiert nicht. Bei
+    `by_complexity`-Belegungen (SPEC-0058) wird je Stufe verglichen.
 - **FR-05:** `TaskDecomposer` holt seinen Provider über die Rolle `decomposer` statt fest über
   `ClaudeCliCompletionProvider`. Der Prompt kommt aus `.sdd/roles/decomposer.md`. Jeder Task
   bekommt das neue Feld `fr_ids` (Liste der abgedeckten FRs). Tasks ohne `fr_ids` sind nur für
   `type: config|doc` zulässig.
-- **FR-06:** Alle Rollenaufrufe liefern ein `RoleResult` mit Ausgabe, `UsageMetadata` und
-  Metadaten. `UsageMetadata` bekommt `reasoning_tokens`, `finish_reason` und `latency_ms`.
-  - `openai-compat` liest `usage.completion_tokens_details.reasoning_tokens`, falls vorhanden.
-  - `CodeGenProvider.generate` gibt Usage zurück.
-  - `claude-cli` parst die Usage aus dem `--output-format json`-Envelope; `usage: None` entfällt
-    damit für den keyfreien Betrieb.
-- **FR-07:** Jeder Rollenaufruf schreibt einen Datensatz in `token_usage` mit den neuen Spalten
-  `role`, `run_id`, `attempt`, `reasoning_tokens`, `outcome` (`ok|invalid_output|gate_failed|
-  rejected|error`) und `role_version`. Die Migration ist additiv; bestehende Auswertungen
-  (`token-history`, `estimate`) funktionieren unverändert.
-- **FR-08:** Die Rolle `supervisor` entscheidet ausschließlich an drei Punkten und antwortet mit
-  einem Entscheidungsobjekt nach `contracts/data/supervisor-decision.schema.json`:
+- **FR-06:** Der `RoleRunner` liefert für jeden Aufruf ein `RoleResult` (Ausgabe, Usage,
+  Metadaten). Er setzt für jeden Aufruf den Aufrufkontext aus SPEC-0060 (`usage_context`) mit
+  `run_id`, `role`, `attempt`, `role_version` und einer eindeutigen `call_id`; die Usage-Zeile
+  trägt diesen Kontext. Das Ergebnis des Aufrufs (`outcome`: `ok|invalid_output|gate_failed|
+  rejected|error`) steht im Ereignis `role_call` in `events.jsonl` mit derselben `call_id`. Bei `finish_reason=length` ohne verwertbaren Inhalt wiederholt er einmalig mit
+  dem 1,5-fachen Ausgabebudget. Jeder Prompt trägt einen Nonce gegen Proxy-Caches.
+- **FR-07:** **PathPolicy.** Jeder Schreibvorgang einer Rolle läuft über eine anbieterunabhängige
+  `PathPolicy` (CON-0204, Default deny). Schreiben dürfen nur `test_author` (ausschließlich die
+  `test_file` seines Tasks) und `implementer`. Abgelehnt werden:
+  - jeder Schreibvorgang von `supervisor`, `reviewer`, `decomposer` und unbekannten Rollen;
+  - Schreibvorgänge nach `.sdd/**` (inklusive `.sdd/holdout/**`), `specs/**`, `contracts/**` und
+    nach den projekteigenen Globs aus `pipeline.protected_paths`;
+  - Änderungen des `implementer` an der `test_file` seines Tasks;
+  - Pfade außerhalb der `allowed_paths` des Tasks.
+
+  Abgelehnte Schreibvorgänge zählen als `gate_failed`. `openai_compat.py` nutzt dieselbe Policy
+  und behält keine eigene Pfadregel.
+- **FR-08:** Die Supervisor-Entscheidungen sind Commands nach
+  `contracts/data/supervisor-decision.schema.json`, die der Mediator ausführt:
   - **S1 Zerlegung:** `approve` oder `revise(begründung)`. Nach `max_revisions` (Default 2)
     Runden ohne Freigabe hält die Pipeline an.
   - **S2 Eskalation:** Ein Task scheitert nach `max_attempts` (Default 3) an Gates oder Review.
     Antworten: `retry_with_hint(text)`, `reassign(rolle, modell)`, `redecompose(begründung)`
     oder `halt(begründung)`.
-  - **S3 Abnahme:** Nach allen Tasks und Abschluss-Gates gibt der Supervisor pro FR `erfüllt`,
-    `teilweise` oder `fehlt` mit Beleg (Datei/Test) an. Ein `fehlt` blockiert Finalize.
-- **FR-09:** Der Supervisor schreibt keine Dateien. Seine Ausgabe ist ausschließlich das
-  Entscheidungsobjekt; `hint`-Texte werden dem nächsten Rollenaufruf als Kontextquelle `history`
-  übergeben. Der Pfadschutz lehnt jeden Schreibversuch mit Rolle `supervisor` ab.
-  Die bisherige Claude-Code-Eskalation (`claude (escalated)`) ist nur mit
+  - **S3 Abnahme:** `accept_frs` mit je FR `erfüllt`, `teilweise` oder `fehlt` samt Beleg
+    (Datei/Test). Ein `fehlt` blockiert Finalize.
+
+  Eine ungültige Entscheidung wird einmal neu angefragt, danach hält der Run mit `halt` an.
+- **FR-09:** Der Supervisor schreibt keine Dateien (durchgesetzt über FR-07). `hint`-Texte werden
+  dem nächsten Rollenaufruf als Kontextquelle `history` übergeben. Die bisherige
+  Claude-Code-Eskalation (`claude (escalated)`) ist nur mit
   `pipeline.allow_supervisor_implementation: true` erreichbar (Default `false`) und wird im Report
   gesondert ausgewiesen.
 - **FR-10:** `test_author` erzeugt pro Code-Task den Test. Das Gate prüft, dass der Test vor der
   Implementierung **fehlschlägt**, und zwar aus dem erwarteten Grund. Das Gate ist sprachneutral:
   Es führt die Testsonde aus SPEC-0054 aus und wertet das JUnit-Ergebnis aus. Der neue Test muss
-  vorhanden sein und `failure` oder `error` melden. Bricht die Sonde ohne JUnit-Ergebnis ab (z. B.
-  Syntax- oder Compilefehler im Test selbst), gilt der Test als ungültig. Danach darf `implementer`
-  die Testdatei nicht mehr ändern (Pfadschutz auf `test_file`).
+  vorhanden sein und `failure` oder `error` melden. Bricht die Sonde ohne JUnit-Ergebnis ab, gilt
+  der Test als ungültig.
 - **FR-11:** `reviewer` bekommt Diff, Task, betroffene FRs, Contracts, AGENTS.md-Regeln und die
   Gate-Ergebnisse aus SPEC-0054. Er antwortet mit `pass` oder `fail` und je Befund Kategorie
   (`requirement|architecture|quality|test`), Datei, Zeile und Begründung.
-- **FR-11a:** Ist für `reviewer` dasselbe Modell (gleicher Endpunkt und Modellname) konfiguriert
-  wie für `implementer` oder `test_author`, warnen `sdd config validate` und der Start von
-  `sdd pipeline run`: „Modell reviewt seine eigene Arbeit“. Die Warnung steht auch in `run.json`
-  und im Report. Sie blockiert nicht. Bei `by_complexity`-Belegungen (SPEC-0058) wird je Stufe
-  verglichen.
 - **FR-12:** `sdd pipeline run SPEC-XXXX [--dry-run] [--resume RUN_ID] [--max-tasks N]` führt den
-  Ablauf aus Abschnitt 3 aus. Voraussetzung ist Status `approved`; der Befehl ruft `sdd start` bzw.
-  dessen Logik auf. Das Run-Protokoll liegt unter `.sdd/runs/<SPEC>/<run_id>/`: `run.json`
-  (Konfiguration inkl. Modell und Rollenversion je Rolle), `events.jsonl` (jeder Übergang, jeder
-  Rollenaufruf) und `decisions.jsonl` (Supervisor-Entscheidungen mit Begründung).
-- **FR-12a:** `sdd pipeline run` ist der einzige Implementierungspfad für Specs mit Tasks und
-  ersetzt `sdd task-loop` (SPEC-0045) vollständig, ohne Alias. `task-loop` wird wie andere
-  abgelöste Befehle zu einem versteckten Befehl, der nur auf `sdd pipeline run` verweist. Die
-  lokale Task-Ausführung aus SPEC-0045 (TDD-Schleife, Retry, Eskalation) geht in den Rollen
-  `test_author`/`implementer` und im Entscheidungspunkt S2 auf.
+  Ablauf aus Abschnitt 3 aus. Voraussetzung ist Status `approved`. Unter
+  `.sdd/runs/<SPEC>/<run_id>/` liegen:
+  - `run.json`: Konfiguration inklusive Modell und Rollenversion je Rolle;
+  - `state.json`: aktueller Zustand des Automaten, nach jedem Übergang geschrieben;
+  - `events.jsonl`: jeder Übergang und jeder Rollenaufruf;
+  - `decisions.jsonl`: jede Supervisor-Entscheidung mit Begründung;
+  - `pending-decision.json`: die offene Entscheidungsanfrage mit `request_id`; beantwortete
+    Anfragen wandern nach `requests/<request_id>.json`, jede Entscheidung nennt ihre `request_id`.
+
+  `--resume` setzt am gespeicherten Zustand fort, auch nach Abbruch mitten in einem Task (der Task
+  beginnt dann mit dem nächsten Versuch neu).
 - **FR-13:** `--dry-run` führt nur `decomposer` und S1 aus und gibt Tasks, Tokenverbrauch und die
   geschätzte Rollenverteilung aus, ohne Code zu schreiben.
 - **FR-14:** `sdd pipeline report RUN_ID` zeigt pro Rolle Aufrufe, Tokens (in/out/reasoning),
   Dauer, Fehlversuche und Supervisor-Eingriffe sowie den Anteil der Claude-Tokens am Gesamtverbrauch.
-- **FR-15:** `llm.roles.supervisor.provider` akzeptiert zusätzlich `session`: Claude Code im Dialog
-  ist der Supervisor. An jedem Entscheidungspunkt S1–S3 schreibt die Pipeline eine
-  Entscheidungsanfrage nach `.sdd/runs/<SPEC>/<run_id>/pending-decision.json`. Sie enthält Punkt,
-  Fakten (Gate-Ergebnisse, Diffs, Fehlerausgaben, Tokenstand) und die zulässigen Antworten. Danach
-  wartet die Pipeline mit Status `awaiting_supervisor` und beendet sich mit Exit-Code 3.
-  `sdd pipeline decide RUN_ID --json '<entscheidung>'` validiert die Antwort gegen
-  `supervisor-decision.schema.json`, protokolliert sie in `decisions.jsonl` und setzt den Run fort.
-  `sdd pipeline status RUN_ID` zeigt die offene Anfrage an.
+- **FR-15:** **Entscheidungsquelle.** `llm.roles.supervisor.mode` ist `inline` (Default) oder
+  `session`. Vor jeder Entscheidung schreibt der Mediator `pending-decision.json` mit Punkt, Fakten
+  (Gate-Ergebnisse, Diffs, Fehlerausgaben, Tokenstand) und zulässigen Commands.
+  - `inline`: Die Supervisor-Rolle antwortet über ihren Provider; der Run läuft weiter.
+  - `session`: Der Run speichert `state.json`, setzt den Status `awaiting_supervisor` und endet mit
+    Exit-Code 3. `sdd pipeline decide RUN_ID --json '<command>'` validiert das Command,
+    protokolliert es und setzt den Run fort. `sdd pipeline status RUN_ID` zeigt die offene Anfrage.
 - **FR-16:** Ein neuer Skill `/sdd-supervise SPEC-XXXX` startet den Run mit
-  `supervisor.provider: session` und führt Claude Code durch die Schleife „Run fortsetzen →
-  Anfrage lesen → entscheiden → `sdd pipeline decide`“. Der Skill legt Claudes Rolle ausdrücklich
-  fest:
+  `supervisor.mode: session` und führt Claude Code durch die Schleife „Run fortsetzen → Anfrage
+  lesen → entscheiden → `sdd pipeline decide`“. Der Skill legt Claudes Rolle ausdrücklich fest:
   - keine Edits an Code, Tests, Specs oder Contracts;
   - Entscheidungen nur auf Basis der Fakten aus der Anfrage, bei Bedarf ergänzt um lesenden Zugriff
     auf das Repo;
   - jede Entscheidung mit Begründung und Beleg;
   - dem Nutzer vorgelegt werden `halt` sowie jede S3-Abnahme mit `teilweise` oder `fehlt`.
 
-  Für headless Läufe (CI, Benchmark) bleibt `claude-cli` der Default.
+  Für headless Läufe (CI, Benchmark) bleibt `inline` mit `claude-cli` der Default.
 
 ## 5. Nicht-funktionale Anforderungen
 
 | Kategorie       | Anforderung                                                                      |
 |-----------------|----------------------------------------------------------------------------------|
 | Nachvollziehbarkeit | Jeder Rollenaufruf ist aus `events.jsonl` mit Prompt-Hash, Rollenversion, Modell und Usage rekonstruierbar. |
-| Robustheit      | Ein nicht erreichbarer Modellserver führt zu `outcome: error` und S2, nicht zum Abbruch des Runs. `--resume` setzt nach dem letzten abgeschlossenen Task fort. |
-| Sicherheit      | Kein Rollen-Output schreibt nach `.sdd/`, `specs/`, `contracts/` oder `.sdd/holdout/` (bestehender Pfadschutz aus `openai_compat.py` gilt für alle Provider). API-Keys erscheinen nicht in Logs oder `run.json`. |
-| Keyfreiheit     | Default-Supervisor ist `claude-cli`; kein Default verlangt `ANTHROPIC_API_KEY`.   |
-| Performance     | Der Overhead von Gates und Protokoll liegt pro Task unter 5 s, Testlaufzeit nicht eingerechnet. |
+| Robustheit      | Ein nicht erreichbarer Modellserver führt zu `outcome: error` und S2, nicht zum Abbruch des Runs. Nach jedem Übergang ist `state.json` konsistent (atomar geschrieben). |
+| Sicherheit      | Die PathPolicy gilt für alle Rollen und Provider (FR-07). API-Keys erscheinen nicht in Logs, `run.json` oder `state.json`. |
+| Keyfreiheit     | Default-Supervisor ist `inline` mit `claude-cli`; kein Default verlangt `ANTHROPIC_API_KEY`. |
+| Performance     | Der Overhead von Gates, Policy und Protokoll liegt pro Task unter 5 s, Testlaufzeit nicht eingerechnet. |
 
 ## 6. Akzeptanzkriterien (Gherkin)
 
@@ -237,14 +310,14 @@ Feature: Rollenbasierte Pipeline
     Given llm.roles.decomposer zeigt auf ein openai-compat-Modell mit thinking: true
     When ich "sdd pipeline run SPEC-0900 --dry-run" ausführe
     Then enthält .sdd/tasks/SPEC-0900.json Tasks mit fr_ids
-    And token_usage enthält einen Datensatz mit role=decomposer und reasoning_tokens > 0
+    And token_usage enthält einen Datensatz mit role=decomposer
     And es wurde kein claude-Prozess für die Zerlegung gestartet
 
-  Scenario: Supervisor verlangt Überarbeitung
+  Scenario: Überarbeitung vor der Freigabe
     Given der decomposer liefert Tasks, die FR-03 nicht abdecken
-    When das Gate fr_coverage fehlschlägt
-    Then ruft die Pipeline den decomposer erneut mit der Gate-Meldung auf
-    And ruft den supervisor erst auf, wenn alle Gates grün sind
+    When der Rollen-Check fr_coverage fehlschlägt
+    Then ruft die Pipeline den decomposer erneut mit der Check-Meldung auf
+    And fragt S1 erst an, wenn alle Rollen-Checks grün sind
 
   Scenario: Supervisor schreibt keinen Code
     Given ein Task scheitert dreimal am Review
@@ -252,6 +325,13 @@ Feature: Rollenbasierte Pipeline
     Then bearbeitet das Modell qwen3.8-27b den Task in der Rolle implementer
     And decisions.jsonl enthält die Entscheidung mit Begründung
     And kein Datei-Schreibvorgang des Runs trägt role=supervisor
+
+  Scenario: Supervisor im Dialog
+    Given llm.roles.supervisor.mode ist session
+    When der Run S1 erreicht
+    Then existiert pending-decision.json und der Exit-Code ist 3
+    When ich "sdd pipeline decide <run> --json '{\"command\": \"approve\"}'" ausführe
+    Then läuft der Run ab dem gespeicherten Zustand weiter
 
   Scenario: Rückwärtskompatibilität
     Given config.yaml enthält keinen Block llm.roles
@@ -262,54 +342,54 @@ Feature: Rollenbasierte Pipeline
 ## 7. Edge Cases & Fehlerfälle
 
 - Das Thinking-Modell schöpft `max_output_tokens` im Reasoning aus und liefert leeren Content
-  (`finish_reason=length`, bekannt vom MLX-Server): `outcome: invalid_output`, der Retry läuft mit
-  erhöhtem Budget (×1,5, einmalig), danach S2.
+  (`finish_reason=length`, bekannt vom MLX-Server): `outcome: invalid_output`, einmalige
+  Wiederholung mit ×1,5, danach S2.
 - Server ignoriert `enable_thinking` (MLX): Die Rollenkonfiguration erlaubt einen alternativen
   Modellnamen (z. B. `:no-think`); `sdd config test-llm --role <rolle>` meldet, ob Reasoning-Tokens
   zurückkommen.
-- Der decomposer erzeugt einen Test-Task für einen Contract, der nicht existiert: Das Gate
+- Der decomposer erzeugt einen Test-Task für einen Contract, der nicht existiert: Der Rollen-Check
   `deps_resolvable` schlägt fehl.
 - `test_author` schreibt einen Test, der schon ohne Implementierung grün ist: Das RED-Gate schlägt
   fehl, und der Test wird verworfen.
-- `implementer` ändert eine Datei außerhalb der erlaubten Pfade des Tasks: Der Schreibvorgang wird
-  abgelehnt und als `gate_failed` gewertet.
-- Der Supervisor liefert eine ungültige Entscheidung: Nach einer Wiederholung hält der Run mit
-  `halt` an. Der Supervisor wird nie „erraten“.
-- LiteLLM- oder Proxy-Response-Cache: Jeder Aufruf trägt einen Nonce im System-Prompt-Kommentar.
+- `implementer` ändert eine Datei außerhalb der erlaubten Pfade: Die PathPolicy lehnt ab,
+  `gate_failed`.
+- Abbruch während `session` wartet: `state.json` und `pending-decision.json` bleiben erhalten;
+  `sdd pipeline decide` funktioniert auch in einer neuen Shell.
+- `sdd pipeline decide` für einen Run ohne offene Anfrage: Exit 2 mit Hinweis.
 
 ## 8. Contracts (was wird garantiert)
 
 | Contract-ID | Typ      | Was wird garantiert?                                                  |
 |-------------|----------|-----------------------------------------------------------------------|
-| CON-XXXX    | data     | `role-definition.schema.json`: Frontmatter einer Rollendatei          |
-| CON-XXXX    | data     | Ausgabeschemata je Rolle (decomposer, test_author, implementer, reviewer) |
-| CON-XXXX    | data     | `supervisor-decision.schema.json` für S1–S3                           |
-| CON-XXXX    | data     | Run-Protokoll: `run.json`, `events.jsonl`, `decisions.jsonl`          |
-| CON-XXXX    | data     | `token_usage`-Erweiterung (Spalten, Migration)                        |
-| CON-XXXX    | behavior | Pipeline-Ablauf und Entscheidungspunkte (Gherkin aus Abschnitt 6)     |
-| CON-0096    | data     | Task-Schema 0.3.0: Feld `fr_ids`                                      |
+| CON-0199    | data     | `role-definition.schema.json`: Frontmatter einer Rollendatei          |
+| CON-0200    | data     | Ausgabeschemata je Rolle (decomposer, test_author, implementer, reviewer) |
+| CON-0201    | data     | `supervisor-decision.schema.json`: Commands für S1–S3                 |
+| CON-0202    | data     | Run-Verzeichnis: `run.json`, `state.json`, `events.jsonl`, `decisions.jsonl`, `pending-decision.json` |
+| CON-0204    | behavior | PathPolicy: Regeln je Rolle, Task und Pfad                            |
+| CON-0205    | behavior | Pipeline-Ablauf, Entscheidungsquelle (`inline`/`session`), `--resume` |
+| CON-0203    | data     | Erweiterung von CON-0096: `fr_ids`, `allowed_paths`                   |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test?                                                   |
 |----------|-------------|-----------------------------------------------------------------------|
-| TST-XXXX | unit        | Provider-Auflösung je Rolle inkl. Fallback-Kette (FR-04)              |
-| TST-XXXX | unit        | `RoleRunner`: Schema-Validierung, `invalid_output`, Usage-Persistenz  |
-| TST-XXXX | unit        | Usage-Parsing: reasoning_tokens (openai-compat), claude-cli-Envelope  |
-| TST-XXXX | integration | Pipeline mit Fake-Providern: S1/S2/S3, Pfadschutz Supervisor, RED-Gate |
-| TST-XXXX | acceptance  | Gherkin-Szenarien aus Abschnitt 6                                     |
+| TST-0228 | unit        | Rollendefinition, Installation der Default-Rollen (CON-0199) |
+| TST-0229 | unit        | Ausgabeschemata der Arbeitsrollen (CON-0200)                 |
+| TST-0230 | unit        | Supervisor-Commands je Punkt (CON-0201)                      |
+| TST-0231 | unit        | Run-Verzeichnis (CON-0202)                                   |
+| TST-0232 | unit        | Task-Erweiterung `fr_ids`/`allowed_paths` (CON-0203)         |
+| TST-0233 | acceptance  | PathPolicy, 13 Szenarien (CON-0204)                          |
+| TST-0234 | acceptance  | Pipeline gegen Fake-Server: 17 Szenarien, Report, Skill (CON-0205) |
 
 ## 10. Offene Fragen
 
-- [x] Claude Code im Dialog als Supervisor → ja, in dieser Spec (FR-15, FR-16; entschieden
-      2026-09-25).
-- [x] `task-loop` → wird von `pipeline run` abgelöst, ohne Alias (FR-12a; entschieden 2026-09-25).
-- [x] Überschneidende Pfade (`task-exec`, `distribute`, `orchestrate`, `sub_agent.py`,
-      `local_agent.py` …) → eigene Konsolidierungs-Spec SPEC-0058 (entschieden 2026-09-25).
-- [x] Warnung bei gleichem Modell für Reviewer und Implementierer → ja, als Warnung (FR-11a;
-      entschieden 2026-09-25).
-- [ ] Die uncommittete Arbeit an SPEC-0045 (`Task.executor`, Eskalation im `loop_controller`)
-      muss vor der Umsetzung gemergt sein.
+- [x] Claude Code im Dialog als Supervisor → ja (FR-15, FR-16; entschieden 2026-09-25).
+- [x] `task-loop` → wird von `pipeline run` abgelöst; geregelt in SPEC-0058 (entschieden 2026-09-25).
+- [x] Überschneidende Pfade → SPEC-0058 (entschieden 2026-09-25).
+- [x] Warnung bei gleichem Modell für Reviewer und Implementierer → ja (FR-04; entschieden 2026-09-25).
+- [x] Usage-Erfassung der Provider → eigene SPEC-0060 (entschieden 2026-09-25).
+- [ ] SPEC-0045 (`Task.executor`, Eskalation im `loop_controller`) liegt in PR #143 und muss vor
+      der Umsetzung gemergt sein.
 
 ## 11. Änderungshistorie
 
@@ -319,3 +399,6 @@ Feature: Rollenbasierte Pipeline
 | 2026-09-25 | 0.2.0   | Boris, Claude | Supervisor im Dialog (`session`, `/sdd-supervise`) verbindlich; RED-Gate sprachneutral über JUnit |
 | 2026-09-25 | 0.3.0   | Boris, Claude | `pipeline run` löst `task-loop` ohne Alias ab |
 | 2026-09-25 | 0.4.0   | Boris, Claude | Warnung bei gleichem Modell für Reviewer und Implementierer |
+| 2026-09-25 | 0.5.0   | Boris, Claude | Review: Patterns Template Method/Strategy/Mediator/Command; `supervisor.mode` + fortsetzbarer Zustandsautomat statt `provider: session` (LSP); PathPolicy (DIP); Grenze Rollen-Checks ↔ Gates; `legacy_component` in Rollendatei (OCP); Warnung bei wirkungslosen Parametern (ISP); Usage-Erfassung → SPEC-0060, `task-loop`-Ablösung → SPEC-0058; Abgrenzung zu SPEC-0004/0005/0007/0008/0011; FRs neu nummeriert |
+| 2026-09-25 | 0.6.0   | Boris, Claude | Contract-Review: PathPolicy mit Default deny und `pipeline.protected_paths`; Anfragen mit `request_id` und Archiv statt Löschen |
+| 2026-09-25 | 0.7.0   | Boris, Claude | Anpassung an SPEC-0060 0.2.0: Rollenkontext über `usage_context`, `outcome` in `events.jsonl` (Verknüpfung über `call_id`) |

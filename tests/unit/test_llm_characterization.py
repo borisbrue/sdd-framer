@@ -322,7 +322,7 @@ class TestAiRoutesCall:
 
         with patch("routes.ai.get_config"), \
              patch("sdd_cli.llm.factory.get_completion_provider", return_value=provider), \
-             patch("usage_store.record_usage", return_value=usage_entry):
+             patch("usage_store.cost_entry", return_value=usage_entry):
             import routes.ai as ai_module
             ai_module._provider = provider
             text, entry = ai_module._call("generate-spec", "Write a spec about X")
@@ -330,8 +330,8 @@ class TestAiRoutesCall:
         assert text == "generated spec text"
         assert isinstance(entry, dict)
 
-    def test_usage_store_record_usage_called_when_usage_available(self):
-        """usage_store.record_usage() wird aufgerufen wenn result.usage nicht None."""
+    def test_usage_store_cost_entry_called_when_usage_available(self):
+        """usage_store.cost_entry() liefert den Eintrag; gespeichert hat die Factory (SPEC-0060 FR-08)."""
         self._reset_ai_module_provider()
 
         mock_usage = UsageMetadata(
@@ -342,7 +342,7 @@ class TestAiRoutesCall:
         provider = _make_provider("text", usage=mock_usage)
         usage_entry = {"ts": "2026-01-01", "cost_usd": 0.05}
 
-        with patch("usage_store.record_usage", return_value=usage_entry) as mock_record:
+        with patch("usage_store.cost_entry", return_value=usage_entry) as mock_record:
             import routes.ai as ai_module
             ai_module._provider = provider
             _, entry = ai_module._call("improve-spec", "improve this")
@@ -358,12 +358,12 @@ class TestAiRoutesCall:
         assert entry == usage_entry
 
     def test_usage_store_not_called_when_usage_is_none(self):
-        """usage_store.record_usage() wird NICHT aufgerufen wenn result.usage None."""
+        """usage_store.cost_entry() wird NICHT aufgerufen wenn result.usage None."""
         self._reset_ai_module_provider()
 
         provider = _make_provider("text", usage=None)
 
-        with patch("usage_store.record_usage") as mock_record:
+        with patch("usage_store.cost_entry") as mock_record:
             import routes.ai as ai_module
             ai_module._provider = provider
             _, entry = ai_module._call("suggest-contracts", "suggest contracts")
@@ -392,7 +392,7 @@ class TestAiRoutesCall:
 
         provider = _make_provider("spec text")
 
-        with patch("usage_store.record_usage", return_value={}):
+        with patch("usage_store.cost_entry", return_value={}):
             import routes.ai as ai_module
             ai_module._provider = provider
             ai_module._call("generate-spec", "write it")

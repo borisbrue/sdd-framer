@@ -80,3 +80,28 @@ def _repository_bleibt_unveraendert():
             + "\n  Zuruecknehmen mit: git checkout -- .sdd/",
             pytrace=False,
         )
+
+
+# ─── Wächter: LLM-Aufrufe in Tests schreiben keine Usage ins Repository ──────
+#
+# Seit SPEC-0060 erfasst die Factory jeden Aufruf in token_usage des Projekts.
+# Tests, die eine Konfiguration des Repos laden, würden sonst in dessen
+# .sdd/evaluations.db schreiben (gitignored, der Wächter oben sähe es nicht).
+
+@_pytest.fixture(autouse=True)
+def _keine_usage_im_repository(monkeypatch):
+    try:
+        from sdd_cli.llm import usage
+    except ImportError:
+        yield
+        return
+    original = usage.SqliteUsageSink.root_for
+
+    def root_for(self, record):
+        root = original(self, record)
+        if root is not None and root.resolve() == _REPO_ROOT:
+            return None
+        return root
+
+    monkeypatch.setattr(usage.SqliteUsageSink, "root_for", root_for)
+    yield

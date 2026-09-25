@@ -26,13 +26,30 @@ REAL_SPEC = "SPEC-0015"
 # solid SPEC-0015` fand die Spec nicht mehr (#94).
 REPO = Path(__file__).resolve().parents[2]
 
+# Seit SPEC-0060 erfasst jeder LLM-Aufruf seine Usage in .sdd/evaluations.db des
+# Projekts. Die Fälle mit REAL_SPEC laufen deshalb gegen eine Kopie von .sdd/,
+# sonst wüchse die versionierte Datenbank des Repos mit jedem Testlauf.
+_KOPIE: list[Path] = []
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _projektkopie(tmp_path_factory):
+    import shutil
+
+    ziel = tmp_path_factory.mktemp("con0048")
+    shutil.copytree(REPO / ".sdd", ziel / ".sdd",
+                    ignore=shutil.ignore_patterns("holdout", "runs"))
+    _KOPIE[:] = [ziel]
+    yield
+    _KOPIE.clear()
+
 
 def _run(args: list[str], cwd: str | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         [SDD] + args,
         capture_output=True,
         text=True,
-        cwd=cwd or str(REPO),
+        cwd=cwd or str(_KOPIE[0] if _KOPIE else REPO),
     )
 
 

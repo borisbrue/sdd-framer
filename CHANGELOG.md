@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased] – SPEC-0060: Usage-Erfassung aller LLM-Provider
+
+### Changed
+
+- Jeder Provider aus `get_completion_provider`/`get_code_gen_provider` ist vom Usage-Decorator
+  umhüllt (`sdd_cli.llm.usage`): jeder Aufruf erzeugt genau einen Datensatz in `token_usage`,
+  auch bei Fehlern. Den ursprünglichen Provider liefert `sdd_cli.llm.usage.unwrap()`.
+- `claude-cli` liest Tokens, Cache, Thinking-Tokens, Modell und `stop_reason` aus dem
+  JSON-Envelope; `openai-compat` zusätzlich Reasoning-Tokens, `finish_reason` und Servermodell.
+  `CompletionResult.usage` ist nie mehr `None`, `UsageMetadata.source` sagt `reported`,
+  `estimated` oder `unavailable`.
+- `CodeGenProvider.generate()` liefert `CodeGenResult` (weiter als `(files, explanation)`
+  entpackbar, plus `.usage`).
+- `token_usage` bekommt die Spalten `reasoning_tokens`, `finish_reason`, `server_model`,
+  `source`, `run_id`, `context_json` (additive Migration). `sdd token-history` zeigt
+  Reasoning-Tokens, `--export` alle neuen Spalten.
+- `sdd estimate`, `sdd calibrate`, `token-history` und die Web-Zusammenfassung zählen Aufrufe
+  ohne Usage (`source: unavailable`) nicht mit und nennen ihre Anzahl.
+- Die Web-API speichert Usage in `token_usage` statt in `.sdd/ai_usage.json`.
+  Migration: `sdd upgrade` übernimmt `ai_usage.json` einmalig (Kontext `origin: web`) und
+  benennt die Datei in `ai_usage.json.migrated` um.
+
 ## [Unreleased] – SPEC-0044: CLI & Skill Consolidation
 
 ### Removed

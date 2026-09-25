@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0053",
+  "generated_at": "2026-09-25T13:36:38Z",
+  "patterns": [
+    {
+      "pattern_name": "Template Method",
+      "status": "accepted",
+      "decided_at": "2026-09-25T13:36:38Z",
+      "acceptance_reason": "RoleRunner-Geruest: Kontext, Aufruf, Ausgabevalidierung, Rollen-Checks, Usage; Retry bei finish_reason=length an einer Stelle",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    },
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-09-25T13:36:39Z",
+      "acceptance_reason": "Provider je Rolle aus der Config ueber die Factory aus SPEC-0008; reassign ist ein Strategiewechsel",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Mediator",
+      "status": "accepted",
+      "decided_at": "2026-09-25T13:36:40Z",
+      "acceptance_reason": "PipelineSupervisor steuert Rollen, PathPolicy und Entscheidungspunkte S1-S3; Rollen kennen einander nicht",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/mediator"
+    },
+    {
+      "pattern_name": "Command",
+      "status": "accepted",
+      "decided_at": "2026-09-25T13:36:41Z",
+      "acceptance_reason": "Supervisor-Entscheidungen als serialisierbare, schema-validierte Objekte; Grundlage fuer session-Modus, --resume und decisions.jsonl",
+      "rejection_reason": null,
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/command"
+    }
+  ]
+}

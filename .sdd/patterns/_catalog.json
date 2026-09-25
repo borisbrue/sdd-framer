@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-25T08:07:40Z",
+  "last_updated": "2026-09-25T15:07:00Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -161,6 +161,62 @@
       "accepted_at": "2026-09-25T08:07:40Z",
       "acceptance_reason": "Gemeinsames Geruest je Sonde: Ausfuehren, Timeout, einheitliches n/a, Protokoll, Holdout-Sperre; measure und doctor ueberschreiben nur variable Schritte",
       "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0053",
+      "accepted_at": "2026-09-25T13:36:38Z",
+      "acceptance_reason": "RoleRunner-Geruest: Kontext, Aufruf, Ausgabevalidierung, Rollen-Checks, Usage; Retry bei finish_reason=length an einer Stelle",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/template-method"
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0053",
+      "accepted_at": "2026-09-25T13:36:39Z",
+      "acceptance_reason": "Provider je Rolle aus der Config ueber die Factory aus SPEC-0008; reassign ist ein Strategiewechsel",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/strategy"
+    },
+    {
+      "pattern_name": "Mediator",
+      "spec_id": "SPEC-0053",
+      "accepted_at": "2026-09-25T13:36:40Z",
+      "acceptance_reason": "PipelineSupervisor steuert Rollen, PathPolicy und Entscheidungspunkte S1-S3; Rollen kennen einander nicht",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/mediator"
+    },
+    {
+      "pattern_name": "Command",
+      "spec_id": "SPEC-0053",
+      "accepted_at": "2026-09-25T13:36:41Z",
+      "acceptance_reason": "Supervisor-Entscheidungen als serialisierbare, schema-validierte Objekte; Grundlage fuer session-Modus, --resume und decisions.jsonl",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/command"
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0060",
+      "accepted_at": "2026-09-25T15:06:57Z",
+      "acceptance_reason": "RecordingCompletionProvider/RecordingCodeGenProvider mit derselben Schnittstelle wie der umhuellte Provider; kein Aufruf ohne Datensatz",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/decorator"
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0060",
+      "accepted_at": "2026-09-25T15:06:58Z",
+      "acceptance_reason": "Usage je Provider (claude-cli-Envelope, OpenAI-usage, Anthropic, Schaetzung) auf ein einheitliches UsageMetadata",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/adapter"
+    },
+    {
+      "pattern_name": "Factory Method",
+      "spec_id": "SPEC-0060",
+      "accepted_at": "2026-09-25T15:06:59Z",
+      "acceptance_reason": "Nur die Factory erzeugt Provider und umhuellt sie; direkte Instanziierungen entfallen",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/factory-method"
+    },
+    {
+      "pattern_name": "Observer",
+      "spec_id": "SPEC-0060",
+      "accepted_at": "2026-09-25T15:07:00Z",
+      "acceptance_reason": "UsageSink-Abstraktion: Decorator meldet an registrierte Senken (SQLite als Default, Fakes in Tests)",
+      "refactoring_guru_url": "https://refactoring.guru/design-patterns/observer"
     }
   ]
 }

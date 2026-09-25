@@ -73,7 +73,7 @@ Unterschiede zwischen den bisherigen Pfaden werden zu Konfiguration:
 | `sdd orchestrate` (Dark Factory) | alle Rollen headless, `supervisor: claude-cli`, Abschluss-Schritte `finalize`, `holdout`, `automerge` aktiv |
 | Web-UI | startet `sdd pipeline run` und liest `events.jsonl` (DAG-Monitor) |
 
-Dafür akzeptiert jede Rolle (nicht nur `supervisor`) den Provider `session` mit dem Anfrage- und
+Dafür akzeptiert jede Rolle (nicht nur `supervisor`) den Modus `session` mit dem Anfrage- und
 Antwortmechanismus aus SPEC-0053 FR-15. Bei Arbeitsrollen schreibt die Session die Dateien selbst,
 und die Pipeline prüft danach die Gates.
 
@@ -95,10 +95,11 @@ hat. `sdd upgrade` migriert die Config.
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Jede Rolle akzeptiert `provider: session`. Arbeitsrollen mit `session` erhalten statt
-  eines LLM-Aufrufs eine Anfrage (Task, Kontext, erlaubte Pfade). Die Session schreibt die Dateien
-  und bestätigt mit `sdd pipeline decide RUN_ID --done TASK_ID`. Die Pipeline wertet danach die Gates
-  aus, wie bei jedem anderen Provider.
+- **FR-01:** Jede Rolle akzeptiert `mode: session` (analog zum Supervisor-Modus aus SPEC-0053).
+  Arbeitsrollen im Modus `session` erhalten statt eines LLM-Aufrufs eine persistierte Anfrage
+  (Task, Kontext, erlaubte Pfade laut PathPolicy). Die Session schreibt die Dateien und bestätigt mit
+  `sdd pipeline decide RUN_ID --done TASK_ID`. Die Pipeline wertet danach die Gates aus, wie bei
+  jedem anderen Modus.
 - **FR-02:** `llm.roles.<rolle>.by_complexity` ordnet `low|medium|high` je ein Modellprofil zu. Die
   Komplexität kommt aus der Task-Klassifikation des `decomposer`.
 - **FR-03:** `/sdd-implement` wird auf `sdd pipeline run` mit der Belegung aus Abschnitt 3
@@ -149,9 +150,9 @@ Feature: Ein Ausführungspfad
     And es wird kein LLM aufgerufen
 
   Scenario: sdd-implement nutzt die Pipeline
-    Given llm.roles.implementer.provider ist session
+    Given llm.roles.implementer.mode ist session
     When /sdd-implement SPEC-0900 einen Task bearbeitet
-    Then enthält .sdd/runs/SPEC-0900/<run>/events.jsonl den Task mit role=implementer und provider=session
+    Then enthält .sdd/runs/SPEC-0900/<run>/events.jsonl den Task mit role=implementer und mode=session
     And die Gates aus SPEC-0054 wurden nach der Bearbeitung ausgewertet
 
   Scenario: Config-Migration
@@ -176,7 +177,7 @@ Feature: Ein Ausführungspfad
 |-------------|----------|---------------------------------------------------------------|
 | CON-XXXX    | behavior | Verweise der abgelösten Befehle                               |
 | CON-XXXX    | data     | Config-Migration `task_routing`/`llm_pool`/`local_agent` → `llm.roles`/`llm.profiles` |
-| CON-XXXX    | behavior | Provider `session` für Arbeitsrollen                          |
+| CON-XXXX    | behavior | Modus `session` für Arbeitsrollen                             |
 
 ## 9. Tests (wie wird verifiziert)
 

@@ -30,7 +30,20 @@ SCHEMAS = {
     "architecture": _DATA / "architekturregeln-und-baseline.schema.json",
     "report": _DATA / "quality-report.schema.json",
     "baseline": _DATA / "architektur-baseline.schema.json",
+    # SPEC-0053
+    "role_definition": _DATA / "rollendefinition-frontmatter-von-sdd-roles-rolle-md.schema.json",
+    "role_outputs": _DATA / "rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json",
+    "supervisor_command": _DATA / "supervisor-commands-fuer-s1-bis-s3.schema.json",
+    "pipeline_run": _DATA / "run-verzeichnis-run-json-state-json-events-decisions-pending-decision.schema.json",
+    "task_extension": _DATA / "task-schema-erweiterung-fr-ids-und-allowed-paths.schema.json",
 }
+
+
+def def_errors(name: str, definition: str, instance: object) -> list[str]:
+    """Fehler gegen `$defs/<definition>` eines Contract-Schemas."""
+    schema = json.loads(SCHEMAS[name].read_text(encoding="utf-8"))
+    sub = {"$ref": f"#/$defs/{definition}", "$defs": schema["$defs"]}
+    return [e.message for e in Draft202012Validator(sub).iter_errors(instance)]
 
 
 def schema_validator(name: str) -> Draft202012Validator:

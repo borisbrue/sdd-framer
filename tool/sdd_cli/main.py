@@ -2696,6 +2696,9 @@ def _print_estimate_table(results: list, cfg: object) -> None:
         f"[bold]{total_usd:.4f}[/]", "[dim](Schätzung)[/]",
     )
     console.print(table)
+    ohne_usage = max((r.unavailable_rows for r in results), default=0)
+    if ohne_usage:
+        console.print(f"  [dim]{ohne_usage} Aufruf(e) ohne Usage fließen nicht in die Schätzung ein.[/]")
 
     if results:
         budget_limit = results[0].budget_limit_usd
@@ -2717,7 +2720,7 @@ def _print_estimate_table(results: list, cfg: object) -> None:
 @click.option("--export", "export_csv", default=None,
               help="Exportiert alle Datenpunkte als CSV (Pfad zur Ausgabedatei).")
 def token_history_cmd(spec_id: str | None, export_csv: str | None) -> None:
-    from .estimation import export_token_history_csv, token_history
+    from .estimation import export_token_history_csv, token_history, unavailable_count
 
     cfg = _ensure_project()
 
@@ -2747,6 +2750,7 @@ def token_history_cmd(spec_id: str | None, export_csv: str | None) -> None:
     table.add_column("Input-T", justify="right")
     table.add_column("Output-T", justify="right")
     table.add_column("Cache-R", justify="right")
+    table.add_column("Reasoning-T", justify="right")
     table.add_column("Dauer (ms)", justify="right")
 
     for r in rows:
@@ -2759,9 +2763,18 @@ def token_history_cmd(spec_id: str | None, export_csv: str | None) -> None:
             f"{r.input_tokens:,}",
             f"{r.output_tokens:,}",
             f"{r.cache_read_tokens:,}" if r.cache_read_tokens else "—",
+            f"{r.reasoning_tokens:,}" if r.reasoning_tokens is not None else "—",
             f"{r.duration_ms:,}" if r.duration_ms else "—",
         )
     console.print(table)
+    # SPEC-0060 FR-11: Zeilen ohne Usage zählen nicht in Summen; ihre Anzahl wird genannt.
+    ohne_usage = unavailable_count(rows)
+    gezaehlt = [r for r in rows if r.source != "unavailable"]
+    console.print(
+        f"  Summe: {sum(r.input_tokens for r in gezaehlt):,} Input-T, "
+        f"{sum(r.output_tokens for r in gezaehlt):,} Output-T"
+        + (f"  ·  {ohne_usage} Aufruf(e) ohne Usage nicht gezählt" if ohne_usage else "")
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2784,6 +2797,8 @@ def calibrate_cmd(spec_id: str) -> None:
     console.print(f"  Input-Tokens:  {summary['input_tokens']:,}")
     console.print(f"  Output-Tokens: {summary['output_tokens']:,}")
     console.print(f"  Einträge:      {summary['n_entries']}")
+    if summary.get("unavailable_rows"):
+        console.print(f"  Ohne Usage:    {summary['unavailable_rows']} (nicht gezählt)")
     if summary.get("tasks"):
         console.print("\n  [bold]Per-Task-Aufschlüsselung:[/]")
         for t in summary["tasks"]:
