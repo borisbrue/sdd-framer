@@ -242,17 +242,19 @@ def _git_benutzername(target: Path) -> str | None:
 
 
 # Rechnerlokale Dateien, die nie in die Versionierung gehören: die lokale Konfiguration mit
-# Geheimnissen (#103) und die Usage-Datenbank, in die jeder LLM-Aufruf schreibt (SPEC-0060).
-LOCAL_IGNORES = (".sdd/config.local.yaml", ".sdd/evaluations.db")
+# Geheimnissen (#103), die Usage-Datenbank, in die jeder LLM-Aufruf schreibt (SPEC-0060), und die
+# Laufzeitartefakte von Testsonde (SPEC-0006) und Qualitätsmessung (SPEC-0054).
+LOCAL_IGNORES = (".sdd/config.local.yaml", ".sdd/evaluations.db", ".sdd/test-runs/",
+                 ".sdd/quality/runs/")
 
 
 def ignore_local_config(target: Path) -> bool:
     """Traegt die rechnerlokalen Dateien (LOCAL_IGNORES) in die .gitignore des Projekts ein.
 
     Die lokale Konfiguration nimmt auf, was nicht in die Versionierung gehoert — zuerst den
-    PWA-Token (#103); die Usage-Datenbank waechst mit jedem LLM-Aufruf. Ohne die Eintraege
-    waeren beide beim ersten `git add -A` (etwa in `sdd finalize`) genau dort, wo sie nicht
-    hin sollen. Anders als settings.local.json gilt das fuer jedes Projekt, nicht nur im
+    PWA-Token (#103); die Usage-Datenbank waechst mit jedem LLM-Aufruf, Test- und Messlaeufe
+    legen bei jedem Lauf neue Berichte ab. Ohne die Eintraege waeren sie beim ersten
+    `git add -A` (etwa in `sdd finalize`) genau dort, wo sie nicht hin sollen. Anders als settings.local.json gilt das fuer jedes Projekt, nicht nur im
     autonomen Modus.
 
     Gibt True zurueck, wenn mindestens ein Eintrag neu hinzukam.
