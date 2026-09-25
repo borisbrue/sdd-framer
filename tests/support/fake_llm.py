@@ -22,6 +22,7 @@ class Antwort:
     prompt_tokens: int = 100
     completion_tokens: int = 50
     reasoning_tokens: int | None = None
+    mit_usage: bool = True
 
 
 @dataclass
@@ -74,13 +75,15 @@ class FakeLLM:
                          "total_tokens": a.prompt_tokens + a.completion_tokens}
                 if a.reasoning_tokens is not None:
                     usage["completion_tokens_details"] = {"reasoning_tokens": a.reasoning_tokens}
-                body = json.dumps({
+                antwort = {
                     "id": f"fake-{len(fake.anfragen)}", "object": "chat.completion",
                     "created": int(time.time()), "model": anfrage.get("model"),
                     "choices": [{"index": 0, "finish_reason": a.finish_reason,
                                  "message": {"role": "assistant", "content": inhalt}}],
-                    "usage": usage,
-                }).encode()
+                }
+                if a.mit_usage:
+                    antwort["usage"] = usage
+                body = json.dumps(antwort).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))

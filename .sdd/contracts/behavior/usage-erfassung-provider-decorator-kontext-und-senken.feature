@@ -88,11 +88,11 @@ Feature: Usage-Erfassung
     Then existieren die neuen Spalten
     And die alte Zeile ist unverändert und bleibt schema-gültig
 
-  Scenario: Nicht verfügbare Usage verfälscht keine Mittelwerte
-    Given token_usage enthält zwei Zeilen mit source reported (1000 und 3000 input_tokens) und eine mit source unavailable
-    When sdd estimate die Mittelwerte bildet
-    Then beträgt der Mittelwert 2000 input_tokens
-    And die Ausgabe nennt 1 Zeile ohne Usage
+  Scenario: Nicht verfügbare Usage verfälscht keine Auswertung
+    Given token_usage enthält für SPEC-0900 zwei Zeilen mit source reported (1000 und 3000 input_tokens) und eine mit source unavailable
+    When sdd calibrate SPEC-0900 summiert
+    Then ergibt die Summe 4000 input_tokens aus 2 Zeilen
+    And das Ergebnis nennt 1 Zeile ohne Usage
 
   Scenario: Dauerhaft registrierte Senke
     Given eine Senke wurde mit register_sink registriert
