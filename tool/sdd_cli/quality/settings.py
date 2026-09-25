@@ -22,6 +22,8 @@ class QualitySettings:
         default_factory=lambda: dict(DEFAULT_SEVERITY_WEIGHTS))
     gates: list[str] = field(default_factory=list)
     finalize: str = "warn"
+    # SPEC-0059 FR-06 / CON-0209 INV-06: `sdd arch check` im Pre-Commit-Hook.
+    arch_pre_commit: object = True
 
     def metric_weight(self, name: str) -> float:
         return float(self.metric_weights.get(name, 1.0))
@@ -47,6 +49,7 @@ class QualitySettings:
                               **{k: float(v) for k, v in (arch.get("severity_weights") or {}).items()}},
             gates=[str(g) for g in (q.get("gates") or [])],
             finalize=str(q.get("finalize", "warn")),
+            arch_pre_commit=q.get("arch_pre_commit", True),
         )
 
 
@@ -63,6 +66,8 @@ def settings_problems(settings: QualitySettings) -> list[ConfigProblem]:
                                       "Wert in [0, 1] erwartet"))
     if settings.architecture_threshold <= 0:
         probleme.append(ConfigProblem("quality.architecture.threshold", "muss größer 0 sein"))
+    if not isinstance(settings.arch_pre_commit, bool):
+        probleme.append(ConfigProblem("quality.arch_pre_commit", "true oder false erwartet"))
     if settings.finalize not in FINALIZE_MODES:
         probleme.append(ConfigProblem("quality.finalize",
                                       f"erlaubt: {', '.join(FINALIZE_MODES)}"))

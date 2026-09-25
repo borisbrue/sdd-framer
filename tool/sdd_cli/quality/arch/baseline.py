@@ -43,12 +43,14 @@ class Baseline:
 
     def apply(self, violations: list) -> list:
         keys = self._keys()
+        behebt = {_schluessel(e["rule"], e["file"], e["symbol"]): e.get("fixed_by")
+                  for e in self.entries}
         ergebnis, getroffen = [], set()
         for v in violations:
             k = _schluessel(v.rule, v.file, v.symbol)
             if k in keys:
                 getroffen.add(k)
-                v = replace(v, severity="warn", baselined=True)
+                v = replace(v, severity="warn", baselined=True, fixed_by=behebt.get(k))
             ergebnis.append(v)
         self.stale = len(keys - getroffen)
         return ergebnis

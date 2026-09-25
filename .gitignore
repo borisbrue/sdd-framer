@@ -28,3 +28,7 @@ node_modules/
 
 # Usage-Datenbank: jeder LLM-Aufruf schreibt hinein (SPEC-0060), rechnerlokal
 .sdd/evaluations.db
+
+# Laufzeitartefakte von Testsonde und Qualitätsmessung (SPEC-0006, SPEC-0054), rechnerlokal
+.sdd/test-runs/
+.sdd/quality/runs/

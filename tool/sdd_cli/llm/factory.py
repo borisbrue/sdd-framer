@@ -231,3 +231,52 @@ def _build_code_gen_provider(config: SddConfig) -> CodeGenProvider:
         model=model,
         api_key=cfg["api_key"] or "lm-studio",
     )
+
+
+ROLE_PROVIDERS = ("claude-cli", "anthropic", "openai-compat")
+
+
+def get_role_provider(
+    config: SddConfig,
+    *,
+    role: str,
+    provider: str,
+    model: str = "",
+    base_url: str | None = None,
+    api_key: str | None = None,
+    params: dict | None = None,
+) -> CompletionProvider:
+    """CompletionProvider für eine Rolle der Pipeline (SPEC-0053 FR-04, SPEC-0059 FR-08).
+
+    Die Pipeline löst die Belegung auf (`llm.roles.<rolle>` → legacy_component → Builtin) und
+    übergibt sie hier; gebaut wird ausschließlich in der Factory (ARCH-03). Unbekannter Provider
+    oder fehlende Pflichtwerte → ValueError. Der Provider ist vom Usage-Decorator umhüllt.
+    """
+    from .usage import RecordingCompletionProvider
+
+    params = params or {}
+    if provider == "claude-cli":
+        from .providers.claude_cli import ClaudeCliCompletionProvider
+        inner: CompletionProvider = ClaudeCliCompletionProvider(
+            timeout=params.get("timeout_seconds") or config.llm_timeout())
+    elif provider == "anthropic":
+        from .providers.anthropic import AnthropicCompletionProvider
+        inner = AnthropicCompletionProvider(model=model or _DEFAULT_ANTHROPIC_MODEL,
+                                            api_key=api_key,
+                                            temperature=float(params.get("temperature") or 0.0))
+    elif provider == "openai-compat":
+        if not base_url or not model:
+            raise ValueError(
+                f"llm.roles.{role}: base_url und model sind Pflicht für openai-compat.")
+        from .providers.openai_compat import OpenAICompatCompletionProvider
+        inner = OpenAICompatCompletionProvider(
+            base_url=base_url, model=model, api_key=api_key or "lm-studio",
+            temperature=float(params.get("temperature") or 0.0),
+            enable_thinking=bool(params.get("thinking", True)),
+            top_p=params.get("top_p"), reasoning_effort=params.get("reasoning_effort"))
+    else:
+        raise ValueError(f"llm.roles.{role}: Provider {provider!r} wird für Rollen nicht "
+                         f"unterstützt (erlaubt: {', '.join(ROLE_PROVIDERS)}).")
+    return RecordingCompletionProvider(inner, component=f"role:{role}", model=model,
+                                       root=config.root)
+

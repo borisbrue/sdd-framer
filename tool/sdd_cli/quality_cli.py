@@ -239,7 +239,8 @@ def arch_check(as_json, write_baseline) -> None:
         click.echo(json.dumps(result.to_dict(), indent=2, ensure_ascii=False))
     else:
         for v in result.violations:
-            art = "warn (Baseline)" if v.baselined else v.severity
+            art = (f"warn (Baseline, {v.fixed_by})" if v.fixed_by else "warn (Baseline)") \
+                if v.baselined else v.severity
             farbe = "yellow" if v.severity == "warn" else "red"
             console.print(f"[{farbe}]{art}[/] {v.rule} {v.file}:{v.line} {v.symbol} – "
                           f"{v.adr} {v.adr_title or ''}".rstrip(), soft_wrap=True)

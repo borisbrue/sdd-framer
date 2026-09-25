@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/write-ownership-unresolved.schema.json",
+  "title": "write_ownership mit unresolved (Erweiterung von CON-0194)",
+  "description": "SPEC-0059 / CON-0208. Beschreibt nur die Differenz zu CON-0194 für Regeln der Art write_ownership; eine Regel ist gültig, wenn sie CON-0194 und diesem Schema genügt.",
+  "type": "object",
+  "required": [
+    "kind"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "unresolved": {
+      "enum": [
+        "skip",
+        "violation"
+      ],
+      "default": "skip",
+      "description": "skip: Schreibzugriffe mit unaufgelöstem Ziel werden ignoriert (bisheriges Verhalten). violation: jeder solche Schreibzugriff aus einer Schicht außerhalb von owners ist ein Verstoß."
+    }
+  },
+  "if": {
+    "properties": {
+      "kind": {
+        "not": {
+          "const": "write_ownership"
+        }
+      }
+    },
+    "required": [
+      "kind"
+    ]
+  },
+  "then": {
+    "not": {
+      "required": [
+        "unresolved"
+      ]
+    }
+  }
+}

@@ -9,6 +9,8 @@ Zwei Aufgaben, in dieser Reihenfolge:
 2. Regressions-Gate (SPEC-0041 FR-08, CON-0155): liest git diff --cached, prüft
    ob main.py/routes/*.py/App.tsx betroffen sind, ermittelt betroffene Spec-IDs
    und führt deren Tests aus.
+3. Architekturprüfung (SPEC-0059 FR-06, CON-0209): `sdd arch check`, wenn
+   .sdd/architecture.yaml existiert und .py-Dateien gestaged sind.
 """
 from __future__ import annotations
 
@@ -22,6 +24,10 @@ _TRIGGER_PATTERNS = [
     re.compile(r"/routes/[^/]+\.py$"),
     re.compile(r"(^|/)App\.tsx$"),
 ]
+
+
+# CON-0209 INV-03: eigenes Zeitlimit wie das Regressions-Gate (CON-0155).
+_ARCH_TIMEOUT = 60
 
 
 def _matches_trigger(path: str) -> bool:
@@ -52,11 +58,18 @@ class PreCommitHook:
         self._cfg = cfg_raw
 
     def run(self) -> int:
+        """Regressions-Gate (CON-0155), danach die Architekturprüfung (CON-0209 INV-03).
+
+        Beide laufen, beide Ergebnisse werden ausgegeben; blockiert eine, endet der Hook mit 1.
+        """
+        staged = self._get_staged_files()
+        return max(self._regression_gate(staged), self._arch_gate(staged))
+
+    def _regression_gate(self, staged: list[str]) -> int:
         compliance = self._cfg.get("compliance") or {}
         if not compliance.get("post_commit_hook", True):
             return 0
 
-        staged = self._get_staged_files()
         triggered = [f for f in staged if _matches_trigger(f)]
         if not triggered:
             return 0
@@ -67,6 +80,51 @@ class PreCommitHook:
             return 0
 
         return self._run_tests(spec_ids)
+
+    def _arch_gate(self, staged: list[str]) -> int:
+        """`sdd arch check`, wenn Regeln existieren und .py-Dateien gestaged sind (SPEC-0059 FR-06).
+
+        Nur Exit 1 (neue Verstöße) blockiert. Exit 2 (nicht messbar) und ein Zeitüberlauf melden
+        sich sichtbar, lassen den Commit aber durch – wie beim Regressions-Gate.
+        """
+        import sys
+
+        if (self._cfg.get("quality") or {}).get("arch_pre_commit", True) is False:
+            return 0
+        if not (self._root / ".sdd" / "architecture.yaml").is_file():
+            return 0
+        if not any(f.endswith(".py") for f in staged):
+            return 0
+        try:
+            ergebnis = subprocess.run(
+                [sys.executable, "-c", "from sdd_cli.main import cli; cli()", "arch", "check",
+                 "--json"],
+                capture_output=True, text=True, cwd=self._root, timeout=_ARCH_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            print(f"[sdd pre-commit] Architekturprüfung nach {_ARCH_TIMEOUT} s abgebrochen "
+                  "— nicht gewertet.")
+            return 0
+        try:
+            bericht = json.loads(ergebnis.stdout)
+        except json.JSONDecodeError:
+            bericht = None
+        # Nur ein gültiger Bericht zählt; ein Absturz endet auch mit Exit 1 und darf den Commit
+        # nicht blockieren.
+        if ergebnis.returncode not in (0, 1) or not isinstance(bericht, dict):
+            print(f"[sdd pre-commit] Architekturprüfung nicht auswertbar "
+                  f"(Exit {ergebnis.returncode}) — nicht gewertet.")
+            fehler = (ergebnis.stderr or ergebnis.stdout).strip().splitlines()
+            if fehler:
+                print(f"    {fehler[-1][:200]}")
+            return 0
+        neu = [v for v in bericht.get("violations", []) if v.get("severity") == "error"]
+        if ergebnis.returncode == 1 and neu:
+            print(f"[sdd pre-commit] {len(neu)} Architekturverstoß/-verstöße (sdd arch check):")
+            for v in neu:
+                print(f"    {v['rule']} {v['file']}:{v['line']} {v['symbol']} – {v['adr']}")
+            return 1
+        print("[sdd pre-commit] Architekturprüfung grün.")
+        return 0
 
     def _get_staged_files(self) -> list[str]:
         result = subprocess.run(

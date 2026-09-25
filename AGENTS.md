@@ -31,7 +31,18 @@ Filesystem           .sdd/
                        templates/
 ```
 
-Die CLI ist der einzige Schreiber auf dem Filesystem. Architekturregeln, die das maschinell prüfen, stehen in `.sdd/architecture.yaml` und verweisen auf ADRs unter `docs/adr/` (SPEC-0054, SPEC-0059); `sdd arch check` wertet sie aus. Web API und Extension delegieren alle Operationen an die CLI-Module. Keine Datenbank – alle Daten liegen als Markdown-Dateien mit YAML-Frontmatter vor.
+Die CLI ist der einzige Schreiber auf dem Filesystem. Web API und Extension delegieren alle Operationen an die CLI-Module. Keine Datenbank – alle Daten liegen als Markdown-Dateien mit YAML-Frontmatter vor.
+
+Architekturentscheidungen mit maschineller Folge stehen als ADR unter `docs/adr/`, ihre Regeln in `.sdd/architecture.yaml` (SPEC-0054, SPEC-0059):
+
+| ADR | Entscheidung | Regel |
+|-----|--------------|-------|
+| ADR-0002 | CLI ist einziger Schreiber für SDD-Artefakte | ARCH-01 |
+| ADR-0003 | Schichtrichtung Einstieg → Web/UI/PWA/Hub → CLI → LLM → Core | ARCH-02 |
+| ADR-0004 | LLM-Zugriff nur über die Provider-Factory (`tool/sdd_cli/llm/factory.py`) | ARCH-03 |
+| ADR-0005 | Claude-CLI wird nur im Provider `claude_cli` aufgelöst | ARCH-04 |
+
+`sdd arch check` wertet sie aus; bekannte Altlasten stehen mit Grund in `.sdd/quality/arch-baseline.json`. **Ein Commit kann am Pre-Commit-Hook scheitern** (`sdd install-hooks`), sobald eine gestagte `.py`-Datei eine Regel neu verletzt. Neue Architekturentscheidung = ADR und Regel im selben PR.
 
 ## Verzeichnisstruktur
 
@@ -171,7 +182,7 @@ Diese Regeln gelten für alle Code-Änderungen im gesamten Repo und werden von
   Behebbe die Ursache — unterdrücke nicht den Fehler.
 - **Kein manuelles Vergeben von IDs:** Dokument-IDs (SPEC-XXXX, CON-XXXX, TST-XXXX)
   werden ausschließlich von der CLI vergeben. Niemals manuell nummerieren oder korrigieren.
-- **CLI als einziger Filesystem-Schreiber:** Web API und Extension delegieren alle
+- **CLI als einziger Filesystem-Schreiber [ARCH-01]:** Web API und Extension delegieren alle
   Schreiboperationen an CLI-Module. Kein direktes Schreiben in `.sdd/` aus Web- oder
   Extension-Code.
 

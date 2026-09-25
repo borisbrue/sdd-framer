@@ -237,6 +237,14 @@
               },
               "owners": {
                 "$ref": "#/$defs/layerOrLayers"
+              },
+              "unresolved": {
+                "enum": [
+                  "skip",
+                  "violation"
+                ],
+                "default": "skip",
+                "description": "SPEC-0059 / CON-0208: violation macht jeden Schreibzugriff mit unaufgelöstem Ziel außerhalb von owners zum Verstoß."
               }
             },
             "additionalProperties": false
