@@ -150,9 +150,9 @@ Feature: Ein Ausführungspfad
     And es wird kein LLM aufgerufen
 
   Scenario: sdd-implement nutzt die Pipeline
-    Given llm.roles.implementer.provider ist session
+    Given llm.roles.implementer.mode ist session
     When /sdd-implement SPEC-0900 einen Task bearbeitet
-    Then enthält .sdd/runs/SPEC-0900/<run>/events.jsonl den Task mit role=implementer und provider=session
+    Then enthält .sdd/runs/SPEC-0900/<run>/events.jsonl den Task mit role=implementer und mode=session
     And die Gates aus SPEC-0054 wurden nach der Bearbeitung ausgewertet
 
   Scenario: Config-Migration

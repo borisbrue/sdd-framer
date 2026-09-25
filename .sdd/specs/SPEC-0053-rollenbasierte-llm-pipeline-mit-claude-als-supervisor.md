@@ -10,7 +10,7 @@ version: 0.5.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor]
 depends_on: [SPEC-0008, SPEC-0011, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054, SPEC-0060]
-contracts: []
+contracts: [CON-0199, CON-0200, CON-0201, CON-0202, CON-0203, CON-0204, CON-0205]
 tests: []
 ---
 
@@ -336,13 +336,13 @@ Feature: Rollenbasierte Pipeline
 
 | Contract-ID | Typ      | Was wird garantiert?                                                  |
 |-------------|----------|-----------------------------------------------------------------------|
-| CON-XXXX    | data     | `role-definition.schema.json`: Frontmatter einer Rollendatei          |
-| CON-XXXX    | data     | Ausgabeschemata je Rolle (decomposer, test_author, implementer, reviewer) |
-| CON-XXXX    | data     | `supervisor-decision.schema.json`: Commands für S1–S3                 |
-| CON-XXXX    | data     | Run-Verzeichnis: `run.json`, `state.json`, `events.jsonl`, `decisions.jsonl`, `pending-decision.json` |
-| CON-XXXX    | behavior | PathPolicy: Regeln je Rolle, Task und Pfad                            |
-| CON-XXXX    | behavior | Pipeline-Ablauf, Entscheidungsquelle (`inline`/`session`), `--resume` |
-| CON-0096    | data     | Task-Schema 0.3.0: Feld `fr_ids`                                      |
+| CON-0199    | data     | `role-definition.schema.json`: Frontmatter einer Rollendatei          |
+| CON-0200    | data     | Ausgabeschemata je Rolle (decomposer, test_author, implementer, reviewer) |
+| CON-0201    | data     | `supervisor-decision.schema.json`: Commands für S1–S3                 |
+| CON-0202    | data     | Run-Verzeichnis: `run.json`, `state.json`, `events.jsonl`, `decisions.jsonl`, `pending-decision.json` |
+| CON-0204    | behavior | PathPolicy: Regeln je Rolle, Task und Pfad                            |
+| CON-0205    | behavior | Pipeline-Ablauf, Entscheidungsquelle (`inline`/`session`), `--resume` |
+| CON-0203    | data     | Erweiterung von CON-0096: `fr_ids`, `allowed_paths`                   |
 
 ## 9. Tests (wie wird verifiziert)
 

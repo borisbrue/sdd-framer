@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/role-outputs.schema.json",
+  "title": "SDD Rollenausgaben",
+  "description": "SPEC-0053 / CON-0200. Ausgabe je Arbeitsrolle; die Rollendatei verweist per output_schema auf $defs/<rolle>.",
+  "$defs": {
+    "decomposer": {
+      "type": "object",
+      "required": [
+        "tasks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "title",
+              "description",
+              "type",
+              "complexity",
+              "fr_ids",
+              "dependencies",
+              "allowed_paths"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "type": {
+                "enum": [
+                  "code",
+                  "test",
+                  "config",
+                  "doc"
+                ]
+              },
+              "complexity": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "fr_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^FR-[0-9]+[a-z]?$"
+                }
+              },
+              "dependencies": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Titel anderer Tasks derselben Zerlegung"
+              },
+              "test_file": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+              },
+              "test_command": {
+                "type": "string",
+                "minLength": 1
+              },
+              "allowed_paths": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": "Globs, die der Task schreiben darf (PathPolicy, CON-0204)"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "code"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "test_file",
+                    "test_command"
+                  ],
+                  "properties": {
+                    "fr_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "type": {
+                      "const": "test"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "fr_ids": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "test_author": {
+      "type": "object",
+      "required": [
+        "test_file",
+        "content",
+        "fr_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "test_file": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fr_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^FR-[0-9]+[a-z]?$"
+          }
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    },
+    "implementer": {
+      "type": "object",
+      "required": [
+        "files",
+        "explanation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "content"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+              },
+              "content": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "required": [
+        "verdict",
+        "findings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "verdict": {
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "category",
+              "file",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "category": {
+                "enum": [
+                  "requirement",
+                  "architecture",
+                  "quality",
+                  "test"
+                ]
+              },
+              "file": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "verdict": {
+            "const": "fail"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/decomposer"
+    },
+    {
+      "$ref": "#/$defs/test_author"
+    },
+    {
+      "$ref": "#/$defs/implementer"
+    },
+    {
+      "$ref": "#/$defs/reviewer"
+    }
+  ]
+}

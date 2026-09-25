@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/task-fr-ids-extension.schema.json",
+  "title": "SDD Task-Erweiterung fr_ids und allowed_paths",
+  "description": "SPEC-0053 / CON-0203. Erweitert CON-0096 (task.schema.json) um zwei optionale Felder; alle Invarianten von CON-0096 bleiben gültig.",
+  "type": "object",
+  "properties": {
+    "fr_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^FR-[0-9]+[a-z]?$"
+      }
+    },
+    "allowed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "type": {
+      "enum": [
+        "code",
+        "test",
+        "config",
+        "doc"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "code",
+              "test"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "fr_ids"
+        ]
+      },
+      "then": {
+        "properties": {
+          "fr_ids": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}
