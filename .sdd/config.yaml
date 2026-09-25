@@ -128,20 +128,24 @@ llm:
     provider: claude-cli
   orchestrator:
     provider: claude-cli
-  # LM Studio auf 192.168.0.149 ist aktuell nicht erreichbar – deshalb keyfrei
-  # über die Claude-Code-CLI. Zum Reaktivieren: provider auf openai-compat
-  # zurücksetzen (base_url http://192.168.0.149:1234/v1, model qwen3.6-35b-a3b)
-  # und task_routing.enabled wieder auf true.
-  # local_llm:
-  #   provider: openai-compat
-  #   base_url: http://192.168.0.149:1234/v1
-  #   model: qwen3.6-35b-a3b
-  #   api_key: lm-studio
-  #   temperature: 0.0
-  #   enable_thinking: false
+  # Lokaler MLX-Server (Qwen3.5-35B-A3B) auf 192.168.0.149:8080. Nutzt die
+  # ":no-think"-Modellvariante, da dieser Server extra_body.enable_thinking
+  # (anders als LM Studio) ignoriert — ohne den Suffix denkt das Modell und
+  # content bleibt bei knappem max_tokens leer (finish_reason=length).
+  local_llm:
+    provider: openai-compat
+    base_url: http://192.168.0.149:8080/v1
+    model: mlx-community/Qwen3.5-35B-A3B-OptiQ-4bit:no-think
+    api_key: sk-optiq-local  # Server verlangt Bearer-Token im Format "sk-optiq-*"
+    temperature: 0.0
 task_routing:
-  enabled: false
-  complexity_threshold: 30
+  enabled: true
+  # 50 statt Default 30: decide_routing() mappt complexity-Label auf Score
+  # low=15, medium=50, high=80 (task_exec.py). Mit 30 liefe nur "low" lokal;
+  # 50 nimmt zusätzlich "medium" mit (inklusiver Vergleich score<=threshold),
+  # "high" bleibt bei Claude. Kostet im Worst Case 2 verlorene lokale Versuche
+  # vor Eskalation (task-exec Retry-Grenze in /sdd-implement Schritt 4c).
+  complexity_threshold: 50
   max_concurrent: 3
   max_retries: 3
 solid_gate:

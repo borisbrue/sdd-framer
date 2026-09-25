@@ -13,9 +13,11 @@ from typing import Literal
 
 from .config import SddConfig
 from .frontmatter import parse_safe
+from .test_languages import PYTHON, TestLanguage, bekannte_suffixe, language_for_path
 
-# Dateierweiterungen, die nicht via pytest ausgeführt werden können
-_UNSUPPORTED_EXTENSIONS = {".feature", ".js", ".ts", ".spec.ts"}
+# Artefakte, die kein ausfuehrbarer Testcode sind. Sprachdateien stehen hier nicht mehr:
+# welche Endung wie laeuft, sagt test_languages (HF-0010).
+_UNSUPPORTED_EXTENSIONS = {".feature"}
 _PLACEHOLDER_ARTIFACT = "tests/<level>/"
 
 MAX_RUNS_PER_SPEC = 50
@@ -87,6 +89,15 @@ def _resolve_artifact(config: SddConfig, tst_id: str) -> tuple[str, TestStatus, 
     if suffix in _UNSUPPORTED_EXTENSIONS:
         return (artifact, "skipped", f"Runner für {suffix}-Artefakte nicht unterstützt.")
 
+    if language_for_path(artifact) is None:
+        return (
+            artifact,
+            "skipped",
+            f"Kein Sprachprofil für {suffix}-Testdateien. Bekannt: "
+            f"{', '.join(bekannte_suffixe())}. Ergänze ein Profil in test_languages.py "
+            f"oder deklariere im TST-Dokument ein artifact mit bekannter Endung.",
+        )
+
     return (artifact, "passed", "")  # status wird nach Ausführung überschrieben
 
 
@@ -98,7 +109,9 @@ def _ist_uv_projekt(project_root: Path) -> bool:
     return (project_root / "uv.lock").exists()
 
 
-def _resolve_runner(runner: str, project_root: Path | None = None) -> list[str]:
+def _resolve_runner(
+    runner: str, project_root: Path | None = None, language: TestLanguage | None = None
+) -> list[str]:
     """Bestimmt das aufrufbare Runner-Kommando. Wirft RuntimeError, wenn keins passt.
 
     `sys.executable -m pytest` nutzt die Umgebung des aufrufenden Prozesses. Das ist
@@ -120,7 +133,8 @@ def _resolve_runner(runner: str, project_root: Path | None = None) -> list[str]:
     sonst kostet jeder Testlauf einen zusaetzlichen --version-Aufruf.
     """
     root = Path(project_root) if project_root is not None else Path.cwd()
-    key = (runner, str(root))
+    lang = language or PYTHON
+    key = (runner, f"{root}|{lang.name}")
     if key in _RUNNER_CACHE:
         return _RUNNER_CACHE[key]
 
@@ -131,22 +145,38 @@ def _resolve_runner(runner: str, project_root: Path | None = None) -> list[str]:
         parts = shlex.split(runner)
         if parts and shutil.which(parts[0]):
             candidates.append(parts)
-    else:
+    elif lang is PYTHON:
         if _ist_uv_projekt(root) and shutil.which("uv"):
             candidates.append(["uv", "run", "pytest"])
         candidates.append([sys.executable, "-m", "pytest"])
         if shutil.which("pytest"):
             candidates.append(["pytest"])
+    else:
+        # Der Blueprint-Default `pytest` steht in einem Projekt anderer Sprache. Statt
+        # pytest auf eine .rs-Datei zu werfen, gilt das Standardkommando der Sprache.
+        if lang.default_runner and shutil.which(lang.default_runner[0]):
+            candidates.append(list(lang.default_runner))
 
     for cand in candidates:
+        # Fremde Testkommandos vertragen kein `--version` hinter ihrem Unterbefehl
+        # (`cargo test --version`), deshalb wird dort nur das Programm geprobt.
+        probe_cmd = [*cand, "--version"] if lang is PYTHON else [cand[0], "--version"]
         try:
-            probe = subprocess.run([*cand, "--version"], capture_output=True,
+            probe = subprocess.run(probe_cmd, capture_output=True,
                                    timeout=60, cwd=str(root))
         except (OSError, subprocess.SubprocessError):
             continue
         if probe.returncode == 0:
             _RUNNER_CACHE[key] = cand
             return cand
+
+    if lang is not PYTHON:
+        beispiel = " ".join(lang.default_runner)
+        raise RuntimeError(
+            f"Kein lauffaehiger Test-Runner fuer {lang.name} gefunden "
+            f"(konfiguriert: {runner!r}). Setze test_runner.command in .sdd/config.yaml, "
+            f"z.B. auf {beispiel!r}."
+        )
 
     raise RuntimeError(
         f"Kein lauffaehiger Test-Runner gefunden (konfiguriert: {runner!r}). "
@@ -155,15 +185,22 @@ def _resolve_runner(runner: str, project_root: Path | None = None) -> list[str]:
     )
 
 
-def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[TestStatus, float, str]:
-    """Führt pytest für ein einzelnes Artefakt aus. Gibt (status, duration_s, message) zurück."""
+def _run_artifact_tests(
+    config: SddConfig, artifact_path: str, timeout: int
+) -> tuple[TestStatus, float, str]:
+    """Führt die Tests eines Artefakts aus. Gibt (status, duration_s, message) zurück.
+
+    Das Kommando baut das Sprachprofil der Datei (HF-0010): pytest bekommt den Pfad,
+    cargo den Testnamen, npm den Pfad hinter `--`.
+    """
     runner = config.runner_command()
 
     abs_path = config.root / artifact_path
     if not abs_path.exists():
         return ("missing", 0.0, f"Artefakt-Datei nicht gefunden: {artifact_path}")
 
-    cmd = [*_resolve_runner(runner, config.root), str(abs_path), "--tb=short", "-q"]
+    lang = language_for_path(artifact_path) or PYTHON
+    cmd = lang.run_argv(_resolve_runner(runner, config.root, lang), abs_path, config.root)
     cmd += config.runner_extra_args()
     start = datetime.now(timezone.utc).timestamp()
     try:
@@ -181,10 +218,11 @@ def _run_pytest(config: SddConfig, artifact_path: str, timeout: int) -> tuple[Te
     duration = round(datetime.now(timezone.utc).timestamp() - start, 3)
     if result.returncode == 0:
         return ("passed", duration, "")
-    if result.returncode == 5:
+    if result.returncode in lang.empty_run_exit_codes:
         # pytest-Exitcode 5 = keine Tests gesammelt. Das ist kein Fehlschlag,
         # sondern ein leerer Lauf – und muss davon unterscheidbar bleiben,
-        # statt als rotes Ergebnis durchgereicht zu werden.
+        # statt als rotes Ergebnis durchgereicht zu werden. Welche Codes das je
+        # Sprache sind, sagt das Profil.
         return ("skipped", duration, f"Keine Tests gesammelt in {artifact_path}.")
     output = (result.stdout + result.stderr).strip()
     # Kurze Fehlermeldung: letzte 20 non-leer Zeilen
@@ -271,7 +309,7 @@ def run(config: SddConfig, spec_id: str) -> RunReport:
             results.append(TestResult(tst_id, artifact, pre_status, message=pre_msg))
             continue
 
-        status, duration, message = _run_pytest(config, artifact, timeout)
+        status, duration, message = _run_artifact_tests(config, artifact, timeout)
         results.append(TestResult(tst_id, artifact, status, duration, message))
 
     total_duration = round(datetime.now(timezone.utc).timestamp() - wall_start, 3)

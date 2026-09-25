@@ -292,6 +292,39 @@ class TestOpenAICompatCompletionProvider:
         call_kwargs = mock_client.chat.completions.create.call_args[1]
         assert call_kwargs["temperature"] == 0.7
 
+    def test_disabled_thinking_sends_chat_template_kwargs(self):
+        """HF-0011: enable_thinking=False erreicht auch vLLM-Server.
+
+        vLLM ignoriert das flache extra_body.enable_thinking, Qwen-Modelle denken dort
+        nur mit chat_template_kwargs.enable_thinking=False nicht. Das flache Feld bleibt
+        für LM Studio erhalten.
+        """
+        from sdd_cli.llm.providers.openai_compat import OpenAICompatCompletionProvider
+        provider = OpenAICompatCompletionProvider(
+            base_url="http://localhost:1234/v1", model="test-model", enable_thinking=False,
+        )
+        mock_openai, _ = self._make_mock_openai_module("ok")
+
+        with patch.dict("sys.modules", {"openai": mock_openai}):
+            provider.complete("prompt")
+
+        call_kwargs = mock_openai.OpenAI.return_value.chat.completions.create.call_args[1]
+        assert call_kwargs["extra_body"] == {
+            "enable_thinking": False,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }
+
+    def test_enabled_thinking_sends_no_extra_body(self):
+        """Default enable_thinking=True lässt das Server-Verhalten unverändert."""
+        provider = self._make_provider()
+        mock_openai, _ = self._make_mock_openai_module("ok")
+
+        with patch.dict("sys.modules", {"openai": mock_openai}):
+            provider.complete("prompt")
+
+        call_kwargs = mock_openai.OpenAI.return_value.chat.completions.create.call_args[1]
+        assert "extra_body" not in call_kwargs
+
     def test_missing_openai_raises_runtime_error(self):
         """Fehlendes openai-Paket → RuntimeError mit install-Hinweis (FR-11)."""
         provider = self._make_provider()

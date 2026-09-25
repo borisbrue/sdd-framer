@@ -67,8 +67,13 @@ class OpenAICompatCompletionProvider:
         if timeout is not None:
             create_kwargs["timeout"] = timeout
         if not self._enable_thinking:
-            # Disables Qwen3/DeepSeek extended thinking mode in LM Studio
-            create_kwargs["extra_body"] = {"enable_thinking": False}
+            # Disables Qwen3/DeepSeek extended thinking mode. LM Studio reads the flat
+            # flag; vLLM (and LiteLLM in front of it) ignores it and only honours
+            # chat_template_kwargs. Servers ignore the variant they don't know.
+            create_kwargs["extra_body"] = {
+                "enable_thinking": False,
+                "chat_template_kwargs": {"enable_thinking": False},
+            }
 
         response = client.chat.completions.create(**create_kwargs)
         raw_usage = response.usage

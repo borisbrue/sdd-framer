@@ -198,3 +198,68 @@ class TestAsyncTDDLoop:
         assert "timeout" in result.error.lower()
         test_file = tmp_workspace / "tests" / "unit" / "test_TSK-007.py"
         assert not test_file.exists(), "Bei LLM-Timeout darf keine Testdatei geschrieben werden"
+
+    @pytest.mark.asyncio
+    async def test_retry_sends_error_context_to_impl_prompt(self, tmp_workspace):
+        """CON-0173 INV-03: error_context einer vorigen Iteration fließt in den
+        Implementierungs-Prompt des nächsten Versuchs ein."""
+        prompts: list[str] = []
+
+        def fake_complete(prompt: str, **kwargs):
+            prompts.append(prompt)
+            return MagicMock(text="def test_x(): pass" if "Write a pytest test" in prompt
+                              else "def x(): return 1")
+
+        mock_provider = MagicMock()
+        mock_provider.complete.side_effect = fake_complete
+
+        with patch(
+            "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
+            return_value=mock_provider,
+        ), patch(
+            "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor._run_pytest",
+            new_callable=AsyncMock, return_value=(0, "1 passed"),
+        ):
+            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
+            executor = LocalLLMExecutor()
+            task = TaskContext(id="TSK-008", description="Implement w()")
+            await executor.execute(
+                task, workspace=tmp_workspace, iteration=1,
+            )
+            prompts.clear()
+            await executor.execute(
+                task, workspace=tmp_workspace, iteration=2,
+                error_context="Iteration 1 — pytest fail:\nAssertionError: w() == 2",
+            )
+
+        assert len(prompts) == 1, "Retry darf die Testdatei nicht neu generieren, nur die Impl"
+        assert "AssertionError: w() == 2" in prompts[0]
+
+    @pytest.mark.asyncio
+    async def test_retry_keeps_existing_test_file_unchanged(self, tmp_workspace):
+        """Ein Retry darf die RED-Zieldefinition (Test) nicht verändern."""
+        mock_provider = MagicMock()
+        mock_provider.complete.side_effect = [
+            MagicMock(text="ORIGINAL_TEST"), MagicMock(text="impl v1"),
+            MagicMock(text="impl v2"),
+        ]
+
+        with patch(
+            "tool.sdd_cli.task_routing.local_llm.get_completion_provider",
+            return_value=mock_provider,
+        ), patch(
+            "tool.sdd_cli.task_routing.local_llm.LocalLLMExecutor._run_pytest",
+            new_callable=AsyncMock, return_value=(1, "FAILED"),
+        ):
+            from tool.sdd_cli.task_routing.local_llm import LocalLLMExecutor
+            executor = LocalLLMExecutor()
+            task = TaskContext(id="TSK-009", description="Implement v()")
+            await executor.execute(task, workspace=tmp_workspace, iteration=1)
+            result = await executor.execute(
+                task, workspace=tmp_workspace, iteration=2, error_context="Fehler 1"
+            )
+
+        test_file = tmp_workspace / "tests" / "unit" / "test_TSK-009.py"
+        assert test_file.read_text() == "ORIGINAL_TEST"
+        assert result.test_code == "ORIGINAL_TEST"
+        assert result.impl_code == "impl v2"
