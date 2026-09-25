@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-25T15:07:00Z",
+  "last_updated": "2026-09-25T19:55:00Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -217,6 +217,34 @@
       "accepted_at": "2026-09-25T15:07:00Z",
       "acceptance_reason": "UsageSink-Abstraktion: Decorator meldet an registrierte Senken (SQLite als Default, Fakes in Tests)",
       "refactoring_guru_url": "https://refactoring.guru/design-patterns/observer"
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0059",
+      "accepted_at": "2026-09-25T19:54:56Z",
+      "acceptance_reason": "Wiederverwendung aus SPEC-0054: je Regelart eine Strategie; jede ARCH-Regel bildet über kind auf eine bestehende Strategie ab.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Factory Method",
+      "spec_id": "SPEC-0059",
+      "accepted_at": "2026-09-25T19:54:58Z",
+      "acceptance_reason": "ARCH-03/ARCH-04 sichern die Factory Method aus SPEC-0060 ab: nur die Factory erzeugt Provider.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0059",
+      "accepted_at": "2026-09-25T19:54:59Z",
+      "acceptance_reason": "Sonden-Skelett aus SPEC-0054; SPEC-0059 passt nur Pfade und Ausschlüsse im Preset an.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0059",
+      "accepted_at": "2026-09-25T19:55:00Z",
+      "acceptance_reason": "Baseline als Schicht um das Regelergebnis (SPEC-0054 FR-07): bekannte Verstöße werden zu warn, neue bleiben error.",
+      "refactoring_guru_url": null
     }
   ]
 }
