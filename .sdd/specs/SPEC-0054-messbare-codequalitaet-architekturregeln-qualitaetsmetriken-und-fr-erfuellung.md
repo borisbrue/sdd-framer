@@ -10,7 +10,7 @@ version: 0.5.0
 priority: high
 tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
 depends_on: [SPEC-0006, SPEC-0008, SPEC-0014, SPEC-0015, SPEC-0041]
-contracts: []
+contracts: [CON-0192, CON-0193, CON-0194, CON-0195, CON-0196, CON-0197]
 tests: []
 ---
 
@@ -372,12 +372,12 @@ Feature: Qualitätsmessung
 
 | Contract-ID | Typ      | Was wird garantiert?                                            |
 |-------------|----------|-----------------------------------------------------------------|
-| CON-XXXX    | data     | `quality-config.schema.json` (`.sdd/quality.yaml`: Sonden, Normierung, Suppressions) |
-| CON-XXXX    | data     | Austauschformate `sdd-deps`, `sdd-metrics`, `sdd-findings`      |
-| CON-XXXX    | data     | `architecture-rules.schema.json` inkl. Pflichtfeld `adr`, `arch-baseline.json` |
-| CON-XXXX    | data     | `quality-report.schema.json`                                    |
-| CON-XXXX    | behavior | Score-Berechnung: Normierung, Gewichtung, einheitliche `n/a`-Semantik, fail-closed Gates |
-| CON-XXXX    | behavior | CLI `sdd quality measure|doctor|init`, `sdd arch check|init`, Erweiterung `sdd test run` |
+| CON-0192    | data     | `quality-config.schema.json` (`.sdd/quality.yaml`: Sonden, Normierung, Suppressions) |
+| CON-0193    | data     | Austauschformate `sdd-deps`, `sdd-metrics`, `sdd-findings`      |
+| CON-0194    | data     | `architecture-rules.schema.json` inkl. Pflichtfeld `adr`, `arch-baseline.json` |
+| CON-0195    | data     | `quality-report.schema.json`                                    |
+| CON-0196    | behavior | Score-Berechnung: Normierung, Gewichtung, einheitliche `n/a`-Semantik, fail-closed Gates |
+| CON-0197    | behavior | CLI `sdd quality measure|doctor|init`, `sdd arch check|init`, Erweiterung `sdd test run`, ADR-Prüfung in `sdd validate` |
 
 ## 9. Tests (wie wird verifiziert)
 

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/quality-config.schema.json",
+  "title": "SDD Quality-Config (.sdd/quality.yaml)",
+  "description": "SPEC-0054 / CON-0192. Beschreibt die Sonden eines Projekts, ihre Normierung und Unterdrückungsmuster. Änderungen erfordern Versions-Bump gemäß SemVer.",
+  "type": "object",
+  "required": ["version", "probes"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "preset": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Herkunft der Datei (z. B. python). Rein informativ; die Datei gehört dem Projekt."
+    },
+    "probes": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_-]*$" },
+      "additionalProperties": { "$ref": "#/$defs/probe" },
+      "properties": {
+        "tests": {
+          "allOf": [
+            { "$ref": "#/$defs/probe" },
+            { "properties": { "format": { "const": "junit" } }, "required": ["fr_marker"] }
+          ]
+        }
+      }
+    },
+    "suppressions": {
+      "type": "object",
+      "description": "Glob-Muster → Liste regulärer Ausdrücke; jeder Treffer zählt als Unterdrückung.",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/normalization" }
+    },
+    "test_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Glob-Muster für Testdateien (Metrik test_ratio)."
+    },
+    "exclude": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Glob-Muster, deren Befunde ignoriert und als ausgeschlossen gezählt werden."
+    }
+  },
+  "$defs": {
+    "probe": {
+      "type": "object",
+      "required": ["command", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "pattern": "\\{out\\}",
+          "description": "Shell-Befehl. Platzhalter: {out} (Pflicht, Ausgabedatei), {paths} (gemessene Dateien)."
+        },
+        "format": {
+          "enum": ["junit", "sarif", "cobertura", "lcov", "sdd-deps", "sdd-metrics", "sdd-findings"]
+        },
+        "metric": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Name der Metrik, die diese Sonde speist (z. B. lint_per_kloc, type_errors)."
+        },
+        "fr_marker": {
+          "enum": ["property", "name"],
+          "description": "Nur bei format junit: FR-Zuordnung über <property name=\"fr\"> oder FR-ID im Testnamen."
+        },
+        "diff_scoped": { "type": "boolean", "default": false },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "default": 600 },
+        "version_command": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Befehl, dessen erste Ausgabezeile als Werkzeugversion im Report erscheint."
+        }
+      },
+      "if": { "required": ["fr_marker"] },
+      "then": { "properties": { "format": { "const": "junit" } } }
+    },
+    "normalization": {
+      "type": "object",
+      "required": ["good", "bad"],
+      "additionalProperties": false,
+      "properties": {
+        "good": { "type": "number" },
+        "bad": { "type": "number" }
+      }
+    }
+  }
+}
