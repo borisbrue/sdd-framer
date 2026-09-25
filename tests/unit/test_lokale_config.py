@@ -148,6 +148,26 @@ class TestGitignore:
         init_project(tmp_path, title="Probe")
         assert ".sdd/evaluations.db" in (tmp_path / ".gitignore").read_text(encoding="utf-8")
 
+    def test_init_ignoriert_laufzeitartefakte(self, tmp_path):
+        """Test-Runs (SPEC-0006) und Messläufe (SPEC-0054) sind rechnerlokal."""
+        from sdd_cli.init import init_project
+
+        init_project(tmp_path, title="Probe")
+        text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
+        assert ".sdd/test-runs/" in text and ".sdd/quality/runs/" in text
+
+    def test_ignorierte_laufzeitartefakte_greifen_in_git(self, tmp_path):
+        """Die Einträge wirken wirklich: git ignoriert Dateien in beiden Verzeichnissen."""
+        from sdd_cli.init import ignore_local_config
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        ignore_local_config(tmp_path)
+        for pfad in (".sdd/test-runs/SPEC-0001/run.json", ".sdd/quality/runs/r1/report.json"):
+            ziel = tmp_path / pfad
+            ziel.parent.mkdir(parents=True)
+            ziel.write_text("{}", encoding="utf-8")
+            assert subprocess.run(["git", "check-ignore", "-q", pfad], cwd=tmp_path).returncode == 0
+
     def test_upgrade_ergaenzt_die_usage_datenbank(self, tmp_path):
         """Bestehende Projekte bekommen den Eintrag beim nächsten `sdd upgrade`."""
         from sdd_cli.init import init_project
@@ -157,7 +177,8 @@ class TestGitignore:
         gitignore = tmp_path / ".gitignore"
         gitignore.write_text(".sdd/config.local.yaml\n", encoding="utf-8")
         upgrade_project(tmp_path)
-        assert ".sdd/evaluations.db" in gitignore.read_text(encoding="utf-8")
+        text = gitignore.read_text(encoding="utf-8")
+        assert ".sdd/evaluations.db" in text and ".sdd/test-runs/" in text
 
     def test_eintrag_wird_nicht_verdoppelt(self, tmp_path):
         from sdd_cli.init import ignore_local_config
@@ -167,6 +188,7 @@ class TestGitignore:
         text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
         assert text.count(".sdd/config.local.yaml") == 1
         assert text.count(".sdd/evaluations.db") == 1
+        assert text.count(".sdd/test-runs/") == 1
 
     def test_dieses_repo_ignoriert_die_datei(self):
         ergebnis = subprocess.run(
