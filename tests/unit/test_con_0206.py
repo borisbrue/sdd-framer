@@ -50,6 +50,22 @@ def test_inv05_reasoning_null_heisst_nicht_gemeldet():
     assert _fehler({**NEU, "reasoning_tokens": -1})
 
 
+def test_spec_id_praefix_ist_projektabhaengig():
+    """CON-0041 kennt kein festes Muster; Präfixe sind konfigurierbar."""
+    assert _fehler({**NEU, "spec_id": "FEAT-0001"}) == []
+
+
+def test_inv07_model_nicht_leer_bei_agent_type():
+    assert _fehler({**NEU, "model": "", "agent_type": "cloud"})
+    assert _fehler({**ALT, "model": ""}) == []
+
+
+def test_inv08_task_id_verlangt_task_label():
+    assert _fehler({**NEU, "task_id": "T1", "task_label": None})
+    assert _fehler({**NEU, "task_id": "T1", "task_label": ""})
+    assert _fehler({**NEU, "task_id": "T1", "task_label": "Parser"}) == []
+
+
 @requires_usage_capture
 def test_inv03_sqlite_senke_schreibt_kontext_als_objekt(tmp_path):
     import sqlite3
@@ -64,10 +80,13 @@ def test_inv03_sqlite_senke_schreibt_kontext_als_objekt(tmp_path):
     senke.record(UsageRecord(component="completion", model="m",
                              usage=UsageMetadata(input_tokens=3, output_tokens=2, source="reported"),
                              duration_ms=5,
-                             context={"spec_id": "SPEC-0900", "run_id": "r1", "role": "x"}))
+                             context={"spec_id": "SPEC-0900", "run_id": "r1", "role": "x",
+                                      "task_id": "T1", "task_label": "Parser",
+                                      "agent_type": "local"}))
     with sqlite3.connect(tmp_path / ".sdd/evaluations.db") as con:
         con.row_factory = sqlite3.Row
         [zeile] = [dict(r) for r in con.execute("SELECT * FROM token_usage")]
     assert json.loads(zeile["context_json"]) == {"role": "x"}
     assert zeile["spec_id"] == "SPEC-0900" and zeile["run_id"] == "r1"
+    assert (zeile["task_id"], zeile["task_label"], zeile["agent_type"]) == ("T1", "Parser", "local")
     assert _fehler(zeile) == []
