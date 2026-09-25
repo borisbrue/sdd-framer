@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.3.0
+version: 0.4.0
 priority: high
 tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
 depends_on: [SPEC-0015, SPEC-0041]
@@ -16,7 +16,7 @@ tests: []
 
 # Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.4.0
 
 ## 1. Kontext & Motivation
 
@@ -227,7 +227,8 @@ Schwellen sind in `config.yaml` unter `quality:` überschreibbar.
   Rubrik `.sdd/roles/judge.md` (Lesbarkeit, Idiomatik, Passung zum bestehenden Code,
   Fehlerbehandlung; je 1–5 mit Ankerbeschreibungen). Das Ergebnis erscheint als eigener Knoten
   `judge` mit Modell und Rubrikversion und fließt nur in den Gesamtscore ein, wenn
-  `quality.weights.judge > 0` gesetzt ist.
+  `quality.weights.judge > 0` gesetzt ist. Default-Gutachter ist `claude-cli`
+  (`llm.roles.judge`), damit kein lokal getestetes Modell seine eigene Arbeit bewertet.
 - **FR-09:** Der Report folgt `contracts/data/quality-report.schema.json`. Er enthält Metriken,
   Normierung, Teilscores, Gesamtscore, alle Befunde (Datei, Zeile, Regel), die ausgeführten
   Sondenbefehle mit den gemeldeten Werkzeugversionen (`version_command`), Git-SHA und Laufzeit.
@@ -245,6 +246,21 @@ Schwellen sind in `config.yaml` unter `quality:` überschreibbar.
   SARIF), einen AST-basierten Abhängigkeitsextraktor `sdd arch extract-python` (Kanten `import`,
   `call`, `write`) und lizard (Komplexität, Konverter nach `sdd-metrics`). Presets liegen im
   Blueprint unter `presets/quality/<name>/` und sind die Keimzelle der Stack-Vorlagen (SPEC-0057).
+- **FR-14:** **Dogfooding.** sdd-framer bekommt selbst `.sdd/quality.yaml` (Preset `python`) und
+  `.sdd/architecture.yaml`. Die Startregeln leiten sich aus AGENTS.md ab, und jede bekommt ein ADR
+  (`sdd new adr`; `docs/adr/` enthält bisher nur das Blueprint-Beispiel ADR-0001):
+  - **CLI als einziger Schreiber:** `write_ownership` für `.sdd/**`, `specs/**`, `contracts/**`,
+    `tests/**`, `docs/**` mit Owner `cli`; `web` und `ui` schreiben nicht.
+  - **Schichtrichtung:** `allowed_dependencies` web/ui/pwa → cli → llm; die CLI-Schicht importiert
+    nichts aus `web`.
+  - **LLM-Zugriff nur über die Factory:** `forbidden_dependency` auf `tool/sdd_cli/llm/providers/**`
+    von außerhalb von `tool/sdd_cli/llm/**`; `forbidden_call` von `subprocess`-Aufrufen des
+    `claude`-Binaries außerhalb von `llm/providers/claude_cli.py`.
+
+  Bekannte Verstöße beim Einführen (z. B. `decompose.py` erzeugt `ClaudeCliCompletionProvider`
+  direkt, `local_agent.py` ruft `claude` selbst auf) werden als Baseline
+  `.sdd/quality/arch-baseline.json` festgehalten. Sie zählen als `warn`, bis SPEC-0053/SPEC-0058
+  sie beheben. Neue Verstöße sind `error`.
 
 ## 5. Nicht-funktionale Anforderungen
 
@@ -328,8 +344,8 @@ Feature: Qualitätsmessung
       2026-09-25).
 - [x] Rust-Adapter → nicht in dieser Spec. Weitere Sprachen kommen über Sonden bzw.
       Stack-Vorlagen (SPEC-0057) (entschieden 2026-09-25).
-- [ ] Soll sdd-framer selbst eine `architecture.yaml` und `quality.yaml` bekommen (Dogfooding),
-      und welche AGENTS.md-Invarianten sollen zuerst maschinell werden?
+- [x] Dogfooding → ja, sdd-framer bekommt `architecture.yaml` und `quality.yaml` (FR-14;
+      entschieden 2026-09-25).
 - [ ] Soll die bestehende Suche nach Unterdrückungen in `validate.py` (`noqa`/`type: ignore`) auf
       die Muster aus `quality.yaml` umgestellt werden, damit auch sie sprachneutral wird?
 
@@ -340,3 +356,4 @@ Feature: Qualitätsmessung
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung                                          |
 | 2026-09-25 | 0.2.0   | Boris, Claude | Sprachneutral: Sonden und Austauschformate statt Sprachadapter; Python als Preset; Gewichte festgelegt |
 | 2026-09-25 | 0.3.0   | Boris, Claude | Regeln sind an ADRs gebunden (`adr`/`enforced_by`) |
+| 2026-09-25 | 0.4.0   | Boris, Claude | Dogfooding (FR-14) mit Baseline; Claude als Default-Gutachter |

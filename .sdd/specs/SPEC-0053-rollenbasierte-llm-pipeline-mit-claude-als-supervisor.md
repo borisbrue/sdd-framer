@@ -299,11 +299,8 @@ Feature: Rollenbasierte Pipeline
 - [x] Claude Code im Dialog als Supervisor → ja, in dieser Spec (FR-15, FR-16; entschieden
       2026-09-25).
 - [x] `task-loop` → wird von `pipeline run` abgelöst, ohne Alias (FR-12a; entschieden 2026-09-25).
-- [ ] Weitere Pfade überschneiden sich mit der Pipeline: `sdd task-exec` (Einzeltask lokal, von
-      `/sdd-implement` genutzt), `sdd distribute` (SPEC-0026, erzeugt keinen Code), `sdd orchestrate`
-      (Dark Factory, Code in einem Schritt), dazu nie verdrahtete Module (`sub_agent.py`,
-      `local_agent.py`). Vorschlag: eine eigene Konsolidierungs-Spec nach SPEC-0053, die jeden Pfad
-      auf die Pipeline abbildet oder entfernt.
+- [x] Überschneidende Pfade (`task-exec`, `distribute`, `orchestrate`, `sub_agent.py`,
+      `local_agent.py` …) → eigene Konsolidierungs-Spec SPEC-0058 (entschieden 2026-09-25).
 - [ ] Soll der `reviewer` bei Modellgleichheit mit dem `implementer` gewarnt werden, damit kein
       Modell sich selbst reviewt?
 - [ ] Die uncommittete Arbeit an SPEC-0045 (`Task.executor`, Eskalation im `loop_controller`)

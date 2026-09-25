@@ -217,8 +217,7 @@ Feature: Rollen-Evals
 - [ ] Sollen die Golden Cases im Blueprint an jedes neue Projekt ausgeliefert werden, oder nur in
       sdd-framer liegen und projektspezifische Fälle über `capture` entstehen? Vorschlag: Blueprint
       liefert sie, weil ohne Startmenge kein Tuning möglich ist.
-- [ ] Welches Modell ist der Default-Judge? Vorschlag: `claude-cli`, weil der Judge unabhängig von
-      den getesteten lokalen Modellen sein soll.
+- [x] Default-Judge → `claude-cli` (entschieden 2026-09-25).
 
 ## 11. Änderungshistorie
 
