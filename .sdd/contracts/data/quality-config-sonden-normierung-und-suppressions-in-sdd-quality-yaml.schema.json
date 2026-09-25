@@ -62,6 +62,15 @@
         "minLength": 1
       },
       "description": "Glob-Muster, deren Befunde ignoriert und als ausgeschlossen gezählt werden."
+    },
+    "paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Glob-Muster der gemessenen Dateien (Wert von {paths}, Basis für Kennzahlen je 1000 Zeilen). Default: alle Dateien außer .sdd/**, .git/** und exclude."
     }
   },
   "$defs": {

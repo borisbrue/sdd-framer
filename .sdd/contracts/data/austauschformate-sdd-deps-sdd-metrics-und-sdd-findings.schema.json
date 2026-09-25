@@ -209,7 +209,7 @@
               },
               "scope": {
                 "description": "'project' (Default) oder ein Dateipfad.",
-                "oneOf": [
+                "anyOf": [
                   {
                     "const": "project"
                   },

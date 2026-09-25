@@ -47,8 +47,12 @@ diesem Schema genügen.
 - **INV-06:** `sdd-metrics`-Namen sind `snake_case`. Derselbe Name mit `scope: project` darf je Datei
   nur einmal vorkommen. Mehrere dateibezogene Werte desselben Namens werden nicht aggregiert; das
   Projekt liefert die gewünschte Aggregation als `scope: project` (z. B. `complexity_max`).
-- **INV-07:** `sdd-findings.severity` ist `error`, `warning` oder `note`. Wie Befunde gezählt
-  werden, regelt CON-0196, nicht dieses Format.
+- **INV-07:** `sdd-findings.severity` ist `error`, `warning` oder `note` (SARIF-Vokabular). Wie
+  Befunde gezählt werden, regelt CON-0196, nicht dieses Format. Das Vokabular ist bewusst ein
+  anderes als `low|medium|high` bei Konflikt-Befunden (CON-0029): Code-Befunde und
+  Spec-Konflikte sind getrennte Domänen und werden nicht gemeinsam gewertet.
+- **INV-09 (JUnit):** Der JUnit-Parser ist genau einer und wird von `sdd quality measure` und
+  `sdd test run` gemeinsam genutzt (CON-0197 INV-04). Es gibt keine zweite Pass/Fail-Semantik.
 - **INV-08 (Gleichwertigkeit mit SARIF):** Der SARIF-Parser bildet jedes `result` auf genau einen
   Befund dieses Formats ab. `sdd-findings` und SARIF sind damit für alle Verbraucher austauschbar:
   | `sdd-findings` | aus SARIF |

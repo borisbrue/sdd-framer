@@ -2,21 +2,36 @@
 id: SPEC-0054
 title: "Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.6.0
+version: 0.7.0
 priority: high
 tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
 depends_on: [SPEC-0006, SPEC-0008, SPEC-0014, SPEC-0015, SPEC-0041]
 contracts: [CON-0192, CON-0193, CON-0194, CON-0195, CON-0196, CON-0197, CON-0198]
-tests: []
+tests: [TST-0221, TST-0222, TST-0223, TST-0224, TST-0225, TST-0226, TST-0227]
+fr_test_map:
+  FR-01: [TST-0221, TST-0226]
+  FR-02: [TST-0221, TST-0222]
+  FR-03: [TST-0225, TST-0226]
+  FR-04: [TST-0225]
+  FR-05: [TST-0223, TST-0225]
+  FR-06: [TST-0226]
+  FR-07: [TST-0223, TST-0226, TST-0227]
+  FR-08: [TST-0222, TST-0225]
+  FR-09: [TST-0224, TST-0225]
+  FR-10: [TST-0225]
+  FR-11: [TST-0221, TST-0225]
+  FR-12: [TST-0224]
+  FR-13: [TST-0221, TST-0226]
+  FR-14: [TST-0226]
 ---
 
 # Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.6.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.7.0
 
 ## 1. Kontext & Motivation
 
@@ -52,6 +67,11 @@ von `sdd`.
   `quality.gates` als zusätzliche Stufe des Qualitäts-Gates aus SPEC-0014 und im `--auto`-Modus
   als Merge-Voraussetzung neben der Holdout-Pass-Rate aus SPEC-0004 genutzt (FR-10).
 - Die Einführung im eigenen Repo (Dogfooding) regelt SPEC-0059.
+- **Nachzuziehen bei der Umsetzung:** Die bestehenden Specs bekommen je einen Verweis auf
+  SPEC-0054: SPEC-0006 und CON-0017/CON-0018 (Testsonde, erweitertes Run-Report-Format,
+  CON-0197 INV-05a/05b), SPEC-0014 (`quality.gates` als zusätzliche, blockierende Stufe nach den
+  bestehenden Stufen), SPEC-0004 und CON-0010 (Auto-Merge verlangt zusätzlich alle
+  `quality.gates`, CON-0196) sowie CON-0190/CON-0191 (Regelgruppe `quality`, CON-0196 INV-07).
 
 ## 2. Zielsetzung
 
@@ -189,7 +209,14 @@ AGENTS.md können eine Regel ebenfalls referenzieren (`[ARCH-01]`).
 `QualityScore` besteht aus `requirements` (Gewicht 0,5), `architecture` (0,25) und `code_quality`
 (0,25), optional `judge` (Gewicht 0). Blätter sind Metriken, innere Knoten Teilscores. Jeder Knoten
 bietet `score()`; Gewichtung und Renormierung bei `n/a` liegen einmal im inneren Knoten und gelten
-rekursiv. Der Report ist die Serialisierung dieses Baums. Gewichte und Schwellen sind in
+rekursiv. Jeder innere Knoten trägt eine benannte **n/a-Regel** als Parameter. Die Auswertung ist
+für alle Knoten dieselbe, nur der Parameter unterscheidet sich:
+
+| n/a-Regel | Bedeutung | Default für |
+|-----------|-----------|-------------|
+| `renormalize` | über vorhandene Kinder renormieren; `n/a` nur, wenn alle Kinder `n/a` sind | Wurzel, `code_quality` |
+| `strict` | `n/a`, sobald ein Kind `n/a` ist | `requirements` (ein FR `unbekannt` → `n/a`) |
+| `quorum(q)` | `n/a`, wenn der Anteil der `n/a`-Kinder größer als `q` ist, sonst renormieren | `architecture` mit `q = 0,5` (Regeln) | Der Report ist die Serialisierung dieses Baums. Gewichte und Schwellen sind in
 `config.yaml` unter `quality:` überschreibbar.
 
 → [Refactoring Guru: Composite](https://refactoring.guru/design-patterns/composite)
@@ -281,8 +308,8 @@ rekursiv. Der Report ist die Serialisierung dieses Baums. Gewichte und Schwellen
   mit Grund, gleich welche Sonde es ist. Folgen:
   - Metriken der Sonde sind `n/a`.
   - Bei der Testsonde werden die betroffenen FRs `unbekannt` (FR-03).
-  - Innere Knoten renormieren über ihre vorhandenen Kinder. Ein Teilscore, dessen Kinder alle
-    `n/a` sind, ist selbst `n/a`.
+  - Innere Knoten wenden ihre n/a-Regel an (Abschnitt 3, Composite): `renormalize`, `strict` oder
+    `quorum(q)`.
   - Der Gesamtscore wird über die vorhandenen Teilscores renormiert und als `incomplete` markiert.
 
   Ein Exit-Code ≠ 0 **mit** gültiger Ausgabe (z. B. Linter mit Befunden, Tests mit Fehlschlägen)
@@ -388,12 +415,13 @@ Feature: Qualitätsmessung
 
 | Test-ID  | Level       | Was prüft der Test?                                                 |
 |----------|-------------|---------------------------------------------------------------------|
-| TST-XXXX | unit        | Parser je Format (JUnit, SARIF, Cobertura, LCOV, sdd-deps, sdd-metrics, sdd-findings) |
-| TST-XXXX | unit        | Jede Regelart-Strategie auf synthetischen Kanten, Positiv-, Negativ- und `n/a`-Fall |
-| TST-XXXX | unit        | Score-Baum: Normierung, Gewichtung, Renormierung, `incomplete`, fail-closed |
-| TST-XXXX | unit        | Kern und CLI nennen keine Sprach- oder Werkzeugnamen                 |
-| TST-XXXX | integration | Shell-Fixture-Projekt (sprachfremd) und Python-Fixture → Report-Snapshot |
-| TST-XXXX | acceptance  | Gherkin-Szenarien aus Abschnitt 6                                   |
+| TST-0221 | unit        | quality.yaml: Schema, Sonden-Rollen, Ausfallgründe (CON-0192) |
+| TST-0222 | unit        | Austauschformate, Gleichwertigkeit SARIF ↔ sdd-findings (CON-0193) |
+| TST-0223 | unit        | Jede Regelart-Strategie auf synthetischen Kanten, Positiv-, Negativ- und `n/a`-Fall (CON-0194) |
+| TST-0224 | unit        | Report-Schema und Querbeziehungen (CON-0195) |
+| TST-0227 | unit        | Baseline: Herabstufung, veraltete Einträge, Fortschreiben (CON-0198) |
+| TST-0225 | acceptance  | Score-Berechnung, n/a-Regeln, Gates – 17 Szenarien (CON-0196) |
+| TST-0226 | acceptance  | CLI-Verhalten inkl. „keine sprachspezifischen Befehle“ – 25 Szenarien (CON-0197) |
 
 ## 10. Offene Fragen
 
@@ -415,3 +443,4 @@ Feature: Qualitätsmessung
 | 2026-09-25 | 0.4.0   | Boris, Claude | Dogfooding mit Baseline; Claude als Default-Gutachter        |
 | 2026-09-25 | 0.5.0   | Boris, Claude | Review: Patterns Template Method/Adapter/Strategy/Composite; einheitliche `n/a`-Semantik und fail-closed Gates; `sdd-findings`; Preset-Skripte statt CLI-Befehle; Tests über `sdd test run` (SPEC-0006); Abgrenzung zu SPEC-0004/0008/0014/0015; Dogfooding → SPEC-0059 |
 | 2026-09-25 | 0.6.0   | Boris, Claude | Contract-Review: Sonden-Rollen statt reservierter Namen, typisierte Gates (`count.…`), konfigurierbare Holdout-/Severity-Gewichte, `to_layers`/`to_paths`, Baseline als CON-0198 |
+| 2026-09-25 | 0.7.0   | Boris, Claude | n/a-Regel als benannter Knotenparameter (`renormalize`/`strict`/`quorum`) statt Sonderfällen je Dimension |

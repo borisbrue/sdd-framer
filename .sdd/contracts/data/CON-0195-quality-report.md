@@ -4,7 +4,7 @@ title: "Quality-Report"
 type: data
 format: json-schema
 spec: SPEC-0054
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/quality-report.schema.json"
 tests: ["TST-0224"]
@@ -26,6 +26,23 @@ des Composite; wie die Werte berechnet werden, regelt CON-0196.
 Der Report ist bewusst **ein** Dokument für alle Verbraucher. `tree` trägt die Bewertung,
 `requirements`, `architecture` und `probes` tragen die Belege dazu. Eine neue Qualitätsdimension ist
 eine Spec-Änderung und erhöht `schema_version`.
+
+## Abgrenzung zur Compliance-Kette (CON-0152/CON-0153)
+
+Die Compliance-Kette beantwortet: *Ist jedem FR ein Test zugeordnet?* (Abdeckung, binär, schon vor
+der Umsetzung prüfbar). Der Report beantwortet: *Sind die zugeordneten Tests grün?* (Erfüllung,
+vier Status, nur nach einem Testlauf). Beide gelten nebeneinander: Die Kette blockiert
+`sdd spec approve` und `sdd finalize` weiter bei fehlender Abdeckung, der Report wirkt über
+`quality.gates` (CON-0196). Ein FR kann abgedeckt, aber nicht erfüllt sein, nie umgekehrt.
+Beide lesen die FR-IDs mit demselben Parser. Hat die Spec keinen FR-Abschnitt, ist
+`requirements` `null` mit Grund „Spec ohne FR“.
+
+## Test-Status
+
+| Status im Report | Herkunft |
+|------------------|----------|
+| `passed`, `failed`, `error`, `skipped` | Testfall im JUnit-Ergebnis (`<failure>` → `failed`, `<error>` → `error`, `<skipped>` → `skipped`) |
+| `not_run` | Test ist dem FR über `fr_test_map` oder `Task.fr_ids` zugeordnet, kommt im JUnit-Ergebnis aber nicht vor |
 
 ## Invarianten
 

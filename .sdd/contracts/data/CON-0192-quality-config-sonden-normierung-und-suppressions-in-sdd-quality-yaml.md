@@ -61,7 +61,7 @@ seine Qualität messen (SPEC-0054 FR-01, FR-02, FR-08, FR-13). sdd liest die Dat
 | Platzhalter | Wert |
 |-------------|------|
 | `{out}`     | Absoluter Pfad einer temporären Ergebnisdatei je Sondenaufruf |
-| `{paths}`   | Leerzeichengetrennte, shell-quotierte Liste der gemessenen Dateien. Ohne `--diff` oder bei `diff_scoped: false` sind das alle Projektdateien nach `exclude`. |
+| `{paths}`   | Leerzeichengetrennte, shell-quotierte Liste der gemessenen Dateien: alle Dateien, die auf `paths` passen (Default: alle außer `.sdd/**`, `.git/**`), abzüglich `exclude`. Mit `--diff` und `diff_scoped: true` nur die geänderten davon. Dieselbe Dateimenge ist die Basis für Kennzahlen je 1000 Zeilen. |
 
 ## Beispiele
 
