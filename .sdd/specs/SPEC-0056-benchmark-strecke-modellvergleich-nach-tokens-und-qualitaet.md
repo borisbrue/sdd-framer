@@ -228,8 +228,9 @@ Feature: Benchmark-Strecke
 ## 10. Offene Fragen
 
 - [ ] Welches Fixture-Projekt ist realistisch genug? Vorschlag: `todo-service` (Python, FastAPI,
-      Schichten Domain/Service/API/Persistenz) plus die Suite `regen` auf sdd-framer. Optional
-      später sddit (Rust) als zweites e2e-Fixture, wenn der Rust-Adapter aus SPEC-0054 existiert.
+      Schichten Domain/Service/API/Persistenz) plus die Suite `regen` auf sdd-framer. Weil die
+      Messung sprachneutral über Sonden läuft (SPEC-0054), kann später jedes Projekt mit einer
+      Stack-Vorlage (SPEC-0057) als weiteres Fixture dienen.
 - [ ] Wo laufen die Benchmarks dauerhaft: lokal gegen den MLX-Server (192.168.0.149) und/oder gegen
       mittwald (LiteLLM → vLLM)? Beides ist über Profile möglich; Default-Profile im Blueprint
       bleiben leer.

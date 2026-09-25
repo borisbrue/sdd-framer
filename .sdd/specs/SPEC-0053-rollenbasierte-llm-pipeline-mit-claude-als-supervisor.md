@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.1.0
+version: 0.2.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor, token-tracking]
 depends_on: [SPEC-0008, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054]
@@ -16,7 +16,7 @@ tests: []
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
@@ -171,9 +171,11 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► supervisor: Abnah
   `pipeline.allow_supervisor_implementation: true` erreichbar (Default `false`) und wird im Report
   gesondert ausgewiesen.
 - **FR-10:** `test_author` erzeugt pro Code-Task den Test. Das Gate prüft, dass der Test vor der
-  Implementierung **fehlschlägt**, und zwar aus dem erwarteten Grund (Assertion- oder Importfehler
-  der Zielmodule, kein Syntaxfehler im Test). Danach darf `implementer` die Testdatei nicht mehr
-  ändern (Pfadschutz auf `test_file`).
+  Implementierung **fehlschlägt**, und zwar aus dem erwarteten Grund. Das Gate ist sprachneutral:
+  Es führt die Testsonde aus SPEC-0054 aus und wertet das JUnit-Ergebnis aus. Der neue Test muss
+  vorhanden sein und `failure` oder `error` melden. Bricht die Sonde ohne JUnit-Ergebnis ab (z. B.
+  Syntax- oder Compilefehler im Test selbst), gilt der Test als ungültig. Danach darf `implementer`
+  die Testdatei nicht mehr ändern (Pfadschutz auf `test_file`).
 - **FR-11:** `reviewer` bekommt Diff, Task, betroffene FRs, Contracts, AGENTS.md-Regeln und die
   Gate-Ergebnisse aus SPEC-0054. Er antwortet mit `pass` oder `fail` und je Befund Kategorie
   (`requirement|architecture|quality|test`), Datei, Zeile und Begründung.
@@ -186,10 +188,25 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► supervisor: Abnah
   geschätzte Rollenverteilung aus, ohne Code zu schreiben.
 - **FR-14:** `sdd pipeline report RUN_ID` zeigt pro Rolle Aufrufe, Tokens (in/out/reasoning),
   Dauer, Fehlversuche und Supervisor-Eingriffe sowie den Anteil der Claude-Tokens am Gesamtverbrauch.
-- **FR-15:** Ein neuer Skill `/sdd-supervise SPEC-XXXX` startet `sdd pipeline run` aus Claude Code
-  heraus. Er beschreibt Claudes Rolle ausdrücklich als Supervisor: keine Datei-Edits, Eingriffe nur
-  über `sdd pipeline decide RUN_ID <entscheidung>`, wenn der Run in einem Entscheidungspunkt mit
-  `supervisor.provider: session` wartet.
+- **FR-15:** `llm.roles.supervisor.provider` akzeptiert zusätzlich `session`: Claude Code im Dialog
+  ist der Supervisor. An jedem Entscheidungspunkt S1–S3 schreibt die Pipeline eine
+  Entscheidungsanfrage nach `.sdd/runs/<SPEC>/<run_id>/pending-decision.json`. Sie enthält Punkt,
+  Fakten (Gate-Ergebnisse, Diffs, Fehlerausgaben, Tokenstand) und die zulässigen Antworten. Danach
+  wartet die Pipeline mit Status `awaiting_supervisor` und beendet sich mit Exit-Code 3.
+  `sdd pipeline decide RUN_ID --json '<entscheidung>'` validiert die Antwort gegen
+  `supervisor-decision.schema.json`, protokolliert sie in `decisions.jsonl` und setzt den Run fort.
+  `sdd pipeline status RUN_ID` zeigt die offene Anfrage an.
+- **FR-16:** Ein neuer Skill `/sdd-supervise SPEC-XXXX` startet den Run mit
+  `supervisor.provider: session` und führt Claude Code durch die Schleife „Run fortsetzen →
+  Anfrage lesen → entscheiden → `sdd pipeline decide`“. Der Skill legt Claudes Rolle ausdrücklich
+  fest:
+  - keine Edits an Code, Tests, Specs oder Contracts;
+  - Entscheidungen nur auf Basis der Fakten aus der Anfrage, bei Bedarf ergänzt um lesenden Zugriff
+    auf das Repo;
+  - jede Entscheidung mit Begründung und Beleg;
+  - dem Nutzer vorgelegt werden `halt` sowie jede S3-Abnahme mit `teilweise` oder `fehlt`.
+
+  Für headless Läufe (CI, Benchmark) bleibt `claude-cli` der Default.
 
 ## 5. Nicht-funktionale Anforderungen
 
@@ -274,9 +291,8 @@ Feature: Rollenbasierte Pipeline
 
 ## 10. Offene Fragen
 
-- [ ] Soll `supervisor.provider: session`, also Claude Code im Dialog als Supervisor per
-      `sdd pipeline decide`, schon in dieser Spec enthalten sein oder erst in einer Folgespec?
-      Vorschlag: in dieser Spec, weil es den Abo-Betrieb ohne `claude --print` im Kreis ermöglicht.
+- [x] Claude Code im Dialog als Supervisor → ja, in dieser Spec (FR-15, FR-16; entschieden
+      2026-09-25).
 - [ ] Ersetzt `sdd pipeline run` den Befehl `sdd task-loop` (SPEC-0045), oder bleibt `task-loop`
       als schlanker Pfad bestehen? Vorschlag: `task-loop` wird zu `pipeline run` mit
       Default-Rollenbelegung und bleibt als Alias.
@@ -290,3 +306,4 @@ Feature: Rollenbasierte Pipeline
 | Datum      | Version | Autor         | Änderung            |
 |------------|---------|---------------|---------------------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
+| 2026-09-25 | 0.2.0   | Boris, Claude | Supervisor im Dialog (`session`, `/sdd-supervise`) verbindlich; RED-Gate sprachneutral über JUnit |
