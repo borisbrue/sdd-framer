@@ -4,7 +4,7 @@ title: "write_ownership: unaufgelöste Schreibziele"
 type: data
 format: json-schema
 spec: SPEC-0059
-version: 0.1.0
+version: 0.2.0
 status: approved
 artifact: ".sdd/contracts/data/write-ownership-unaufgeloeste-schreibziele.schema.json"
 tests: ["TST-0237"]
@@ -35,7 +35,15 @@ nicht auflösen kann (variable Pfade, CON-0193 `unresolved: true`). Ohne diese O
   (CON-0198) festhalten.
 - **INV-05:** Dieses Schema beschreibt nur die Differenz. Die Umsetzung nimmt `unresolved` additiv in
   das Artefakt von CON-0194 (`architekturregeln-und-baseline.schema.json`) und dessen Paketkopie
-  auf; eine Regel ist gültig, wenn sie beiden Schemas genügt.
+  auf; eine Regel ist gültig, wenn sie beiden Schemas genügt. CON-0194 INV-03 („keine fremden
+  Felder“) gilt damit mit `unresolved` als zusätzlichem optionalem Feld von `write_ownership`.
+- **INV-06:** CON-0193 INV-04 („unaufgelöste Kanten sind nie ein Verstoß“) gilt weiter, außer eine
+  Regel mit `unresolved: violation` verlangt es. Solche Kanten zählen zusätzlich wie bisher in
+  `architecture.unresolved_edges` (Messgröße des Extraktors, keine Doppelzählung von Verstößen).
+- **INV-07 (bewusste Grenze):** Weil `symbol` nur die Schreibfunktion ist, teilen sich mehrere
+  unaufgelöste Schreibzugriffe derselben Funktion in einer Datei einen Verstoß-Schlüssel. Ein
+  weiterer solcher Zugriff in einer bereits eingetragenen Datei fällt deshalb nicht als neuer Verstoß
+  auf; die Baseline ist für diesen Fall dateigenau, nicht zeilengenau.
 
 ## Beispiele
 

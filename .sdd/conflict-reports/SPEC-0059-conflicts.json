@@ -1,0 +1,139 @@
+{
+  "spec_id": "SPEC-0059",
+  "generated_at": "2026-09-25T20:07:44Z",
+  "new_contracts": [
+    "CON-0208",
+    "CON-0209"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0059-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0208",
+      "conflicting_contract": "CON-0193",
+      "detail": "CON-0193 INV-04 says: 'Unaufgelöste Kanten sind nie ein Verstoß, werden aber gezählt (architecture.unresolved_edges)'. CON-0208 INV-03 makes every unresolved write edge a violation when unresolved: violation is set. CON-0193 INV-04 has to be relaxed (e.g. 'nie ein Verstoß, außer eine write_ownership-Regel mit unresolved: violation verlangt es'), or the two contracts contradict each other. It's also unclear whether an edge that is now a violation still counts in unresolved_edges (double counting in the report, CON-0195).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0208 INV-06: CON-0193 INV-04 gilt außer bei unresolved: violation; unresolved_edges zählt weiter, keine Doppelzählung.",
+        "resolved_at": "2026-09-25T20:10:16Z"
+      }
+    },
+    {
+      "id": "CF-0059-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0208",
+      "conflicting_contract": "CON-0194",
+      "detail": "CON-0194 INV-03 requires each rule to contain 'genau die Felder ihrer Art, keine fremden' and lists only paths and owners for write_ownership. Its schema architekturregeln-und-baseline.schema.json enforces this with additionalProperties: false. As long as CON-0194 (table, schema, and the package copy) is not bumped at the same time, a rule with unresolved fails the CON-0194 schema. That breaks CON-0208 INV-05 ('gültig, wenn sie beiden Schemas genügt'). CON-0194 needs a new version with unresolved as an optional field for write_ownership.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0208 INV-05: unresolved wird additiv ins Artefakt von CON-0194 und dessen Paketkopie aufgenommen; INV-03 gilt mit dem Zusatzfeld.",
+        "resolved_at": "2026-09-25T20:10:17Z"
+      }
+    },
+    {
+      "id": "CF-0059-003",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0208",
+      "conflicting_contract": "CON-0198",
+      "detail": "CON-0208 INV-04 uses the key (rule, file, symbol) from CON-0194 INV-09 for baselining. For unresolved writes, symbol is only the write function (e.g. pathlib.Path.write_text), not the target. So several unresolved writes of the same kind in one file collapse into one baseline entry. A newly added unresolved write in a file that is already baselined gets baselined silently instead of being reported as a new error. CON-0198 doesn't specify how this collision is handled (e.g. key extension or counting per key).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusste Grenze, in CON-0208 INV-07 dokumentiert: Baseline für unaufgelöste Schreibzugriffe ist dateigenau. Eine Schlüsselerweiterung wäre eine Änderung von CON-0193/0198 und lohnt erst, wenn die Web-Altlast behoben ist.",
+        "resolved_at": "2026-09-25T20:10:18Z"
+      }
+    },
+    {
+      "id": "CF-0059-004",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0209",
+      "conflicting_contract": "CON-0155",
+      "detail": "Beide Contracts legen das Exit-Verhalten desselben pre-commit-Hooks fest (installiert von `sdd install-hooks`). CON-0155 sagt: Wenn keine betroffenen Spec-IDs gefunden werden oder pytest Exit 0 liefert, gibt der Hook Exit 0 zurück und der Commit läuft durch. CON-0209 INV-03 sagt: Wenn `.py`-Dateien gestagt sind, blockiert Exit 1 von `sdd arch check` den Commit, auch ohne betroffene Spec-IDs. Das widerspricht der Exit-0-Zusage in CON-0155. Offen ist außerdem, in welcher Reihenfolge die beiden Prüfungen laufen, ob die Architekturprüfung noch läuft, wenn das Regressions-Gate schon blockiert hat, und wie Exit 2 (wird gemeldet, blockiert nicht) in das Gesamtergebnis des Hooks eingeht. CON-0155 sollte die Architekturprüfung als zusätzliche Blockierbedingung aufnehmen, oder CON-0209 sollte ausdrücklich sagen, dass es CON-0155 erweitert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0209 INV-03 erweitert CON-0155 ausdrücklich: Reihenfolge Regression → Architektur, beide laufen, Exit 1 wenn eine blockiert, Exit 2 blockiert nicht.",
+        "resolved_at": "2026-09-25T20:10:18Z"
+      }
+    },
+    {
+      "id": "CF-0059-005",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0209",
+      "conflicting_contract": "CON-0155",
+      "detail": "CON-0209 INV-04 („Ohne `.sdd/architecture.yaml` verhält sich der Hook wie vor SPEC-0059“) verweist nur indirekt auf CON-0155 und nennt es nicht. Beide Contracts beschreiben denselben Hook, einmal aus Sicht von SPEC-0041 und einmal aus Sicht von SPEC-0059. Nur CON-0155 nennt ein Zeitbudget (kein Timeout über 60 s). Das Ziel von < 10 s in CON-0209 INV-05 betrifft nur `sdd arch check` allein, und ein Gesamtbudget für beide Prüfungen gibt es nicht. Außerdem umgeht `--no-verify` auch die Architekturprüfung. Nach CON-0155 schreibt der post-commit-Hook den Bypass dann in `.sdd/audit.log`, aber CON-0209 regelt das nicht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0209 INV-03/INV-04: eigenes 60-s-Limit wie CON-0155, --no-verify und Audit unverändert nach CON-0155.",
+        "resolved_at": "2026-09-25T20:10:19Z"
+      }
+    },
+    {
+      "id": "CF-0059-006",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0209",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0209 INV-03 führt den neuen Config-Schlüssel `quality.arch_pre_commit` ein (Standard: an, außer bei `false`). Das config.yaml-Schema in CON-0016 und die Validierungsregeln in CON-0190 kennen diesen Schlüssel nicht. Deshalb melden `sdd config validate` (CON-0191) und die Schemaprüfung ihn womöglich als unbekannt, oder sie prüfen seinen Typ nicht.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0209 INV-06: quality.arch_pre_commit wird Teil der Quality-Einstellungen (CON-0190) und von sdd config validate geprüft.",
+        "resolved_at": "2026-09-25T20:10:20Z"
+      }
+    },
+    {
+      "id": "CF-0059-007",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0209",
+      "conflicting_contract": "CON-0011",
+      "detail": "CON-0209 setzt voraus, dass die Architekturregeln ARCH-01 bis ARCH-04 an ADRs gebunden sind. Diese Regeln stehen in `.sdd/architecture.yaml`, und `sdd arch check` wertet sie aus. CON-0011 (AGENTS.md-Struktur und Vollständigkeit) verlangt keinen Abschnitt zu Architekturregeln und zum Pre-Commit-Gate. Für Agenten ist deshalb nicht verbindlich dokumentiert, dass ein Commit an `sdd arch check` scheitern kann.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "SPEC-0059 FR-05: AGENTS.md bekommt den Hinweis, dass Commits am Pre-Commit-Hook (sdd arch check) scheitern können.",
+        "resolved_at": "2026-09-25T20:10:21Z"
+      }
+    },
+    {
+      "id": "CF-0059-008",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0209",
+      "conflicting_contract": "CON-0198",
+      "detail": "CON-0209 stützt sich ausdrücklich auf CON-0194 INV-08/09 (Aufbau einer Verstoßmeldung und Verstoß-Schlüssel), auf CON-0198 (Baseline-Schema, Treffer über `rule, file, symbol`) und auf CON-0197 (Exit-Codes 0/1/2 von `sdd arch check`). Keiner dieser drei Contracts steht in der mitgelieferten Workspace-Liste. Im Repo sind sie vorhanden und stimmen mit CON-0209 überein. Die Konfliktprüfung anhand der Liste ist deshalb unvollständig: Die Baseline-Semantik aus INV-01 kann gegen die Liste nicht geprüft werden. CON-0208 aus demselben Commit fehlt ebenfalls.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Hinweis auf unvollständige Workspace-Liste; CON-0194/0197/0198 und CON-0208 stimmen laut Analyse mit CON-0209 überein.",
+        "resolved_at": "2026-09-25T20:10:22Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 8,
+    "high": 2,
+    "medium": 4,
+    "low": 2,
+    "affected_specs_count": 0
+  }
+}

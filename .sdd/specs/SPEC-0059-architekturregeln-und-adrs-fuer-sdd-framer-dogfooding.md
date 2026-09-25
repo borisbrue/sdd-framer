@@ -112,10 +112,12 @@ Angenommene Patterns (Wiederverwendung, keine neuen Mechanismen):
   SPEC-0058; `llm/usage.py → estimation` → SPEC-0058). Direkte Schreibzugriffe der Web-API bleiben
   ohne `fixed_by` mit dem Grund „Web-API schreibt direkt; Behebung offen“.
 - **FR-05:** Die Taste Invariant „CLI als einziger Filesystem-Schreiber“ in AGENTS.md verweist auf
-  `[ARCH-01]`. AGENTS.md bekommt im Abschnitt „Architektur“ einen Verweis auf die vier ADRs.
+  `[ARCH-01]`. AGENTS.md bekommt im Abschnitt „Architektur“ einen Verweis auf die vier ADRs und den
+  Hinweis, dass ein Commit am Pre-Commit-Hook (`sdd arch check`) scheitern kann.
 - **FR-06:** Der Pre-Commit-Hook (`sdd install-hooks`) führt `sdd arch check` aus, wenn
   `.sdd/architecture.yaml` existiert und `.py`-Dateien gestaged sind; Exit 1 blockiert den Commit.
-  `quality.arch_pre_commit: false` schaltet das ab.
+  `quality.arch_pre_commit: false` schaltet das ab. Der Hook erweitert CON-0155 (Reihenfolge und
+  Exit-Verhalten in CON-0209).
 - **FR-07:** Erweiterung von SPEC-0054 (CON-0194): Eine Regel `write_ownership` akzeptiert
   `unresolved: skip | violation` (Default `skip`, bisheriges Verhalten). Bei `violation` ist jeder
   Schreibzugriff mit unaufgelöstem Ziel aus einer Schicht außerhalb von `owners` ein Verstoß; das
