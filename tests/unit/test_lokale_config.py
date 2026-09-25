@@ -141,6 +141,24 @@ class TestGitignore:
         init_project(tmp_path, title="Probe")
         assert ".sdd/config.local.yaml" in (tmp_path / ".gitignore").read_text(encoding="utf-8")
 
+    def test_init_ignoriert_die_usage_datenbank(self, tmp_path):
+        """Die lokale Usage-DB (SPEC-0060) gehört nicht in die Versionierung."""
+        from sdd_cli.init import init_project
+
+        init_project(tmp_path, title="Probe")
+        assert ".sdd/evaluations.db" in (tmp_path / ".gitignore").read_text(encoding="utf-8")
+
+    def test_upgrade_ergaenzt_die_usage_datenbank(self, tmp_path):
+        """Bestehende Projekte bekommen den Eintrag beim nächsten `sdd upgrade`."""
+        from sdd_cli.init import init_project
+        from sdd_cli.upgrade import upgrade_project
+
+        init_project(tmp_path, title="Probe")
+        gitignore = tmp_path / ".gitignore"
+        gitignore.write_text(".sdd/config.local.yaml\n", encoding="utf-8")
+        upgrade_project(tmp_path)
+        assert ".sdd/evaluations.db" in gitignore.read_text(encoding="utf-8")
+
     def test_eintrag_wird_nicht_verdoppelt(self, tmp_path):
         from sdd_cli.init import ignore_local_config
 
@@ -148,6 +166,7 @@ class TestGitignore:
         assert ignore_local_config(tmp_path) is False
         text = (tmp_path / ".gitignore").read_text(encoding="utf-8")
         assert text.count(".sdd/config.local.yaml") == 1
+        assert text.count(".sdd/evaluations.db") == 1
 
     def test_dieses_repo_ignoriert_die_datei(self):
         ergebnis = subprocess.run(
@@ -155,6 +174,14 @@ class TestGitignore:
             cwd=_ROOT, capture_output=True,
         )
         assert ergebnis.returncode == 0, ".sdd/config.local.yaml ist nicht gitignored"
+
+    def test_dieses_repo_versioniert_die_usage_datenbank_nicht(self):
+        ignoriert = subprocess.run(["git", "check-ignore", "-q", ".sdd/evaluations.db"],
+                                   cwd=_ROOT, capture_output=True)
+        versioniert = subprocess.run(["git", "ls-files", "--error-unmatch", ".sdd/evaluations.db"],
+                                     cwd=_ROOT, capture_output=True)
+        assert ignoriert.returncode == 0, ".sdd/evaluations.db ist nicht gitignored"
+        assert versioniert.returncode != 0, ".sdd/evaluations.db ist noch versioniert"
 
 
 class TestDiesesRepo:

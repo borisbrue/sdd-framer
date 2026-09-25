@@ -25,3 +25,6 @@ node_modules/
 
 # Lokale Ergaenzung zur SDD-Konfiguration — Geheimnisse, rechnerspezifisch (#103)
 .sdd/config.local.yaml
+
+# Usage-Datenbank: jeder LLM-Aufruf schreibt hinein (SPEC-0060), rechnerlokal
+.sdd/evaluations.db
