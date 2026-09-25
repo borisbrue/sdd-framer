@@ -62,13 +62,17 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
     """Call LLM provider with cached system prompt. Returns (text, usage_entry)."""
     provider = _get_provider()
     log.info("AI-Call gestartet: operation=%s provider=%s", operation, type(provider).__name__)
+    from sdd_cli.llm.usage import usage_context
+
     try:
-        result = provider.complete(
-            user_message,
-            max_tokens=2048,
-            system_prompt=SDD_SYSTEM_PROMPT,
-            timeout=300,
-        )
+        # Die Factory erfasst den Aufruf; hier nur der Kontext (SPEC-0060 FR-08).
+        with usage_context(origin="web", operation=operation):
+            result = provider.complete(
+                user_message,
+                max_tokens=2048,
+                system_prompt=SDD_SYSTEM_PROMPT,
+                timeout=300,
+            )
     except RuntimeError as exc:
         log.error("AI-Call Fehler (%s): %s", operation, exc)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -77,7 +81,7 @@ def _call(operation: str, user_message: str) -> tuple[str, dict[str, Any]]:
 
     text = result.text
     if result.usage:
-        entry = usage_store.record_usage(
+        entry = usage_store.cost_entry(
             operation=operation,
             input_tokens=result.usage.input_tokens,
             output_tokens=result.usage.output_tokens,

@@ -7,6 +7,7 @@ from sdd_cli.config import SddConfig
 from sdd_cli.llm.factory import get_completion_provider
 from sdd_cli.llm.providers.anthropic import AnthropicCompletionProvider
 from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
+from sdd_cli.llm.usage import unwrap
 
 
 def _cfg(raw: dict) -> SddConfig:
@@ -17,28 +18,28 @@ class TestTST0212:
     def test_completion_defaults_to_claude_cli(self) -> None:
         # FR-01 / INV-01: ohne llm-Konfiguration -> claude-cli (kein anthropic, kein Key)
         provider = get_completion_provider(_cfg({}), "completion")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_anthropic_optin_honored(self) -> None:
         # FR-05 / INV-02: explizit konfigurierter anthropic-Provider wird verwendet
         raw = {"llm": {"completion": {"provider": "anthropic", "api_key": "sk-test"}}}
         with patch.object(AnthropicCompletionProvider, "__init__", return_value=None):
             provider = get_completion_provider(_cfg(raw), "completion")
-        assert isinstance(provider, AnthropicCompletionProvider)
+        assert isinstance(unwrap(provider), AnthropicCompletionProvider)
 
     def test_no_silent_fallback_to_claude_cli(self) -> None:
         # FR-02 / INV-03: explizit anthropic bleibt anthropic - kein stiller Wechsel
         raw = {"llm": {"completion": {"provider": "anthropic"}}}
         with patch.object(AnthropicCompletionProvider, "__init__", return_value=None):
             provider = get_completion_provider(_cfg(raw), "completion")
-        assert not isinstance(provider, ClaudeCliCompletionProvider)
-        assert isinstance(provider, AnthropicCompletionProvider)
+        assert not isinstance(unwrap(provider), ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), AnthropicCompletionProvider)
 
     def test_evaluator_stays_claude_cli(self) -> None:
         # INV-04: Holdout-Gate-Regression - evaluator auf claude-cli bleibt claude-cli
         raw = {"llm": {"evaluator": {"provider": "claude-cli"}}}
         provider = get_completion_provider(_cfg(raw), "evaluator")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_blueprint_config_is_keyless(self) -> None:
         # FR-06: das Blueprint darf den keyfreien Builtin nicht wieder ueberschreiben.
@@ -76,15 +77,15 @@ class TestTST0212:
         # FR-07: der Builtin stand auf anthropic — das Holdout-Gate lief ohne Key nicht.
         # FR-01 deckte nur `completion` ab, diese Luecke blieb dadurch offen.
         provider = get_completion_provider(_cfg({}), "evaluator")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_ai_routes_builtin_is_keyless(self) -> None:
         # FR-07: analog fuer ai_routes.
         provider = get_completion_provider(_cfg({}), "ai_routes")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_component_without_builtin_falls_back_keyless(self) -> None:
         # FR-07: local_llm hat keinen _COMPLETION_BUILTIN-Eintrag. Ohne Konfiguration
         # greift der Fallback in get_completion_provider — der zeigte auf anthropic.
         provider = get_completion_provider(_cfg({}), "local_llm")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)

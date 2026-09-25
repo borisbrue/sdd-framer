@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -9,7 +10,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from ..base import CompletionResult
+from ..base import CodeGenResult, CompletionResult, UsageMetadata
+
+log = logging.getLogger(__name__)
 
 # 600 statt 120: der Regression-Check brauchte fuer reale Specs mehrere Minuten
 # und lief systematisch in den alten Wert. Solange ein Skip die Gate-Phase noch
@@ -28,6 +31,35 @@ def _find_claude() -> str | None:
     return shutil.which("claude") or shutil.which("claude", path=_EXTRA_SEARCH_PATH)
 
 
+def _int(value: Any) -> int | None:
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def usage_from_envelope(envelope: Any) -> UsageMetadata:
+    """Usage aus dem JSON-Envelope von `claude --print --output-format json` (SPEC-0060 FR-02).
+
+    Fehlt der Usage-Block, ist `source: unavailable` und ein Hinweis wird geloggt.
+    """
+    usage = envelope.get("usage") if isinstance(envelope, dict) else None
+    if not isinstance(usage, dict) or _int(usage.get("input_tokens")) is None:
+        log.info("claude-cli: Envelope ohne Usage – Aufruf wird als 'unavailable' erfasst")
+        return UsageMetadata.unavailable()
+    details = usage.get("output_tokens_details") or {}
+    model_usage = envelope.get("modelUsage")
+    server_model = next(iter(model_usage), None) if isinstance(model_usage, dict) else None
+    return UsageMetadata(
+        input_tokens=_int(usage.get("input_tokens")) or 0,
+        output_tokens=_int(usage.get("output_tokens")) or 0,
+        cache_creation_tokens=_int(usage.get("cache_creation_input_tokens")) or 0,
+        cache_read_tokens=_int(usage.get("cache_read_input_tokens")) or 0,
+        model=server_model or "",
+        reasoning_tokens=_int(details.get("thinking_tokens")) if isinstance(details, dict) else None,
+        finish_reason=envelope.get("stop_reason"),
+        server_model=server_model,
+        source="reported",
+    )
+
+
 class ClaudeCliCompletionProvider:
     """Ruft `claude --print --output-format json` auf und gibt den inneren Text zurück.
 
@@ -35,7 +67,7 @@ class ClaudeCliCompletionProvider:
     system_prompt: als Präfix <system>\\n...\\n</system>\\n\\n eingefügt.
     timeout: an subprocess.run weitergereicht. Reihenfolge: Argument, sonst der
     beim Erzeugen gesetzte Wert (aus llm.timeout_seconds), sonst 600s.
-    usage: immer None (CLI liefert keine Token-Counts).
+    usage: aus dem Envelope (SPEC-0060 FR-02); ohne Usage-Block `source: unavailable`.
     """
 
     def __init__(self, timeout: int | None = None) -> None:
@@ -81,11 +113,12 @@ class ClaudeCliCompletionProvider:
         # Strip outer JSON envelope: {"type":"result","result":"<text>",...}
         try:
             outer = json.loads(raw)
-            if isinstance(outer, dict) and "result" in outer:
-                return CompletionResult(text=str(outer["result"]), usage=None)
         except (json.JSONDecodeError, ValueError):
-            pass
-        return CompletionResult(text=raw, usage=None)
+            outer = None
+        if isinstance(outer, dict) and "result" in outer:
+            return CompletionResult(text=str(outer["result"]), usage=usage_from_envelope(outer))
+        log.info("claude-cli: Ausgabe ist kein JSON-Envelope – Usage 'unavailable'")
+        return CompletionResult(text=raw, usage=UsageMetadata.unavailable())
 
 
 class ClaudeCliCodeGenProvider:
@@ -102,7 +135,7 @@ class ClaudeCliCodeGenProvider:
         *,
         timeout: int = 600,
         on_proc: Callable[[Any], None] | None = None,
-    ) -> tuple[list[dict[str, Any]], str]:
+    ) -> CodeGenResult:
         claude = _find_claude()
         if not claude:
             raise RuntimeError(
@@ -152,4 +185,5 @@ class ClaudeCliCodeGenProvider:
 
         lines = [ln for ln in stdout.strip().splitlines() if ln.strip()]
         explanation = lines[-1][:200] if lines else "implement via claude-cli"
-        return files, explanation
+        # Textausgabe ohne Envelope: die Usage ist nicht verfügbar (CON-0207 INV-07).
+        return CodeGenResult(files, explanation, UsageMetadata.unavailable())

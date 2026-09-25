@@ -36,7 +36,29 @@ def _db_path(config: SddConfig) -> Path:
 
 def init_token_usage_table(config: SddConfig) -> None:
     """Erstellt token_usage-Tabelle in evaluations.db, falls nicht vorhanden."""
-    db = _db_path(config)
+    init_token_usage_table_at(config.sdd_dir)
+
+
+# Additive Migrationen: CON-0121 (task_*), CON-0129 (agent_type), SPEC-0060 FR-05 (Rest).
+_MIGRATION_COLUMNS = (
+    ("task_id", "TEXT"),
+    ("task_label", "TEXT"),
+    ("agent_type", "TEXT"),  # CON-0129: "local" | "cloud" | NULL
+    ("reasoning_tokens", "INTEGER"),
+    ("finish_reason", "TEXT"),
+    ("server_model", "TEXT"),
+    ("source", "TEXT"),  # CON-0206 INV-02: reported | estimated | unavailable | NULL (Altzeile)
+    ("run_id", "TEXT"),
+    ("context_json", "TEXT"),
+)
+
+# Filter für Summen und Mittelwerte (SPEC-0060 FR-11, CON-0206 INV-06).
+_COUNTED = "(source IS NULL OR source != 'unavailable')"
+
+
+def init_token_usage_table_at(sdd_dir: Path) -> Path:
+    """Legt token_usage in `sdd_dir/evaluations.db` an bzw. migriert sie; gibt den DB-Pfad zurück."""
+    db = sdd_dir / "evaluations.db"
     db.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db) as conn:
         conn.execute(f"""
@@ -56,15 +78,11 @@ def init_token_usage_table(config: SddConfig) -> None:
                 task_label         TEXT
             )
         """)
-        # Migration: add columns to existing tables
         existing = {row[1] for row in conn.execute("PRAGMA table_info(token_usage)")}
-        for col, typedef in (
-            ("task_id", "TEXT"),
-            ("task_label", "TEXT"),
-            ("agent_type", "TEXT"),  # CON-0129: "local" | "cloud" | NULL
-        ):
+        for col, typedef in _MIGRATION_COLUMNS:
             if col not in existing:
                 conn.execute(f"ALTER TABLE {TOKEN_USAGE_TABLE} ADD COLUMN {col} {typedef}")
+    return db
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -181,6 +199,7 @@ def _load_historical(config: SddConfig) -> list[HistoricalPoint]:
     if not db.exists():
         return []
     try:
+        init_token_usage_table(config)
         with sqlite3.connect(db) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(f"""
@@ -190,7 +209,7 @@ def _load_historical(config: SddConfig) -> list[HistoricalPoint]:
                        SUM(cache_read_tokens)  AS cache_read_tokens,
                        SUM(cache_write_tokens) AS cache_write_tokens
                 FROM {TOKEN_USAGE_TABLE}
-                WHERE spec_id IS NOT NULL
+                WHERE spec_id IS NOT NULL AND {_COUNTED}
                 GROUP BY spec_id
             """).fetchall()
         return [
@@ -337,6 +356,7 @@ class EstimateResult:
     n_data_points: int = 0
     budget_exceeded: bool = False
     budget_limit_usd: float = 0.0
+    unavailable_rows: int = 0  # SPEC-0060 FR-11: nicht gezählte Aufrufe ohne Usage
 
     def to_dict(self) -> dict:
         return {
@@ -352,6 +372,7 @@ class EstimateResult:
             "n_data_points": self.n_data_points,
             "budget_exceeded": self.budget_exceeded,
             "budget_limit_usd": self.budget_limit_usd,
+            "unavailable_rows": self.unavailable_rows,
             "neighbors": [
                 {
                     "spec_id": n.spec_id,
@@ -422,7 +443,19 @@ def estimate(
         n_data_points=n_points,
         budget_exceeded=budget_exceeded,
         budget_limit_usd=budget_limit,
+        unavailable_rows=_count_unavailable(config),
     )
+
+
+def _count_unavailable(config: SddConfig) -> int:
+    db = _db_path(config)
+    if not db.exists():
+        return 0
+    init_token_usage_table(config)
+    with sqlite3.connect(db) as conn:
+        return conn.execute(
+            f"SELECT COUNT(*) FROM {TOKEN_USAGE_TABLE} WHERE NOT {_COUNTED}"
+        ).fetchone()[0]
 
 
 def _find_spec(config: SddConfig, spec_id: str) -> Path | None:
@@ -454,6 +487,16 @@ class TokenHistoryRow:
     task_id: str | None = None
     task_label: str | None = None
     agent_type: str | None = None  # CON-0129: "local" | "cloud" | None
+    reasoning_tokens: int | None = None
+    finish_reason: str | None = None
+    server_model: str | None = None
+    source: str | None = None
+    run_id: str | None = None
+    context_json: str | None = None
+
+
+_OPTIONAL_HISTORY_COLUMNS = ("task_id", "task_label", "agent_type", "reasoning_tokens",
+                             "finish_reason", "server_model", "source", "run_id", "context_json")
 
 
 def token_history(
@@ -495,14 +538,21 @@ def token_history(
                 cache_read_tokens=r["cache_read_tokens"],
                 cache_write_tokens=r["cache_write_tokens"],
                 duration_ms=r["duration_ms"],
-                task_id=r["task_id"] if "task_id" in spalten else None,
-                task_label=r["task_label"] if "task_label" in spalten else None,
-                agent_type=r["agent_type"] if "agent_type" in spalten else None,
+                **{k: r[k] for k in _OPTIONAL_HISTORY_COLUMNS if k in spalten},
             )
             for r in rows
         ]
     except Exception:
         return []
+
+
+_CSV_EXTRA_COLUMNS = ("task_id", "task_label", "agent_type", "reasoning_tokens",
+                      "finish_reason", "server_model", "source", "run_id", "context_json")
+
+
+def unavailable_count(rows: list[TokenHistoryRow]) -> int:
+    """Anzahl der Zeilen ohne verfügbare Usage (SPEC-0060 FR-11)."""
+    return sum(1 for r in rows if r.source == "unavailable")
 
 
 def export_token_history_csv(config: SddConfig, csv_path: Path) -> int:
@@ -513,13 +563,14 @@ def export_token_history_csv(config: SddConfig, csv_path: Path) -> int:
         writer.writerow([
             "id", "timestamp", "spec_id", "component", "model",
             "input_tokens", "output_tokens", "cache_read_tokens",
-            "cache_write_tokens", "duration_ms",
+            "cache_write_tokens", "duration_ms", *_CSV_EXTRA_COLUMNS,
         ])
         for r in rows:
             writer.writerow([
                 r.id, r.timestamp, r.spec_id or "", r.component, r.model,
                 r.input_tokens, r.output_tokens, r.cache_read_tokens,
                 r.cache_write_tokens, r.duration_ms,
+                *("" if getattr(r, k) is None else getattr(r, k) for k in _CSV_EXTRA_COLUMNS),
             ])
     return len(rows)
 
@@ -533,6 +584,7 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
     db = _db_path(config)
     if not db.exists():
         raise FileNotFoundError("evaluations.db nicht gefunden.")
+    init_token_usage_table(config)
     with sqlite3.connect(db) as conn:
         conn.row_factory = sqlite3.Row
         row = conn.execute(f"""
@@ -542,8 +594,12 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
                    SUM(cache_write_tokens) AS cache_write_tokens,
                    COUNT(*)               AS n
             FROM {TOKEN_USAGE_TABLE}
-            WHERE spec_id = ?
+            WHERE spec_id = ? AND {_COUNTED}
         """, (spec_id,)).fetchone()
+        unavailable = conn.execute(
+            f"SELECT COUNT(*) FROM {TOKEN_USAGE_TABLE} WHERE spec_id = ? AND NOT {_COUNTED}",
+            (spec_id,),
+        ).fetchone()[0]
         conn.execute(
             f"UPDATE {TOKEN_USAGE_TABLE} SET calibrated = 1 WHERE spec_id = ?",
             (spec_id,),
@@ -555,7 +611,7 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
                    SUM(cache_read_tokens) AS cache_read_tokens,
                    COUNT(*)              AS n
             FROM {TOKEN_USAGE_TABLE}
-            WHERE spec_id = ? AND task_id IS NOT NULL
+            WHERE spec_id = ? AND task_id IS NOT NULL AND {_COUNTED}
             GROUP BY task_id, task_label
             ORDER BY MIN(id)
         """, (spec_id,)).fetchall()
@@ -577,5 +633,7 @@ def calibrate(config: SddConfig, spec_id: str) -> dict:
         "cache_read_tokens": row["cache_read_tokens"] or 0,
         "cache_write_tokens": row["cache_write_tokens"] or 0,
         "n_entries": row["n"] or 0,
+        "rows": row["n"] or 0,
+        "unavailable_rows": unavailable,
         "tasks": tasks,
     }

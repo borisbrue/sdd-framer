@@ -131,7 +131,72 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in erstellt:
             print(f"  + {datei.relative_to(target)}")
 
+    # 6. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
+    migriert = migrate_ai_usage_json(target)
+    if migriert is not None:
+        result["updated"].append(migriert)
+        if verbose:
+            print(f"  ↺ {migriert.relative_to(target)} → token_usage")
+
     return result
+
+
+def migrate_ai_usage_json(target: Path) -> Path | None:
+    """Übernimmt `.sdd/ai_usage.json` einmalig in `token_usage` und benennt die Datei um.
+
+    Die Einträge bekommen den Kontext `origin: web`; die Datei heißt danach
+    `ai_usage.json.migrated`, damit ein zweites Upgrade nichts doppelt übernimmt.
+    Gibt den Pfad der umbenannten Datei zurück oder None, wenn es nichts zu tun gab.
+    """
+    import json
+    import sqlite3
+    from datetime import datetime, timezone
+
+    from .estimation import TOKEN_USAGE_TABLE, init_token_usage_table_at
+
+    quelle = target / ".sdd" / "ai_usage.json"
+    if not quelle.is_file():
+        return None
+    try:
+        eintraege = json.loads(quelle.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(eintraege, list):
+        return None
+
+    def _zeit(wert: object) -> str:
+        try:
+            ts = datetime.fromisoformat(str(wert))
+        except ValueError:
+            ts = datetime.now(timezone.utc)
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return ts.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _n(e: dict, k: str) -> int:
+        wert = e.get(k)
+        return wert if isinstance(wert, int) and wert >= 0 else 0
+
+    db = init_token_usage_table_at(target / ".sdd")
+    with sqlite3.connect(db) as conn:
+        for e in eintraege:
+            if not isinstance(e, dict):
+                continue
+            kontext = {"origin": "web", "operation": e.get("operation"),
+                       "provider": e.get("provider", "claude")}
+            conn.execute(
+                f"""INSERT INTO {TOKEN_USAGE_TABLE}
+                    (timestamp, component, model, input_tokens, output_tokens,
+                     cache_read_tokens, cache_write_tokens, source, context_json)
+                    VALUES (?, 'ai_routes', ?, ?, ?, ?, ?, 'reported', ?)""",
+                (_zeit(e.get("ts")), str(e.get("model") or ""), _n(e, "input_tokens"),
+                 _n(e, "output_tokens"), _n(e, "cache_read_tokens"),
+                 _n(e, "cache_creation_tokens"),
+                 json.dumps({k: v for k, v in kontext.items() if v is not None})),
+            )
+    ziel = quelle.with_name("ai_usage.json.migrated")
+    quelle.replace(ziel)
+    return ziel
 
 
 def _sync_dir(

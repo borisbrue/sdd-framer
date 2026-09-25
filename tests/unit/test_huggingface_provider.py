@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from sdd_cli.llm.usage import unwrap
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.llm.base import CompletionResult
@@ -337,8 +339,8 @@ class TestHuggingFaceFactory:
         with patch.dict("sys.modules", {"huggingface_hub": mock_hf_hub}):
             provider = get_completion_provider(config, "completion")
 
-        assert isinstance(provider, HuggingFaceCompletionProvider)
-        assert provider._hf_token == "hf_secret"
+        assert isinstance(unwrap(provider), HuggingFaceCompletionProvider)
+        assert unwrap(provider)._hf_token == "hf_secret"
 
     def test_factory_dedicated_initializes_with_endpoint_url(self, monkeypatch):
         """Factory: dedicated-Modus mit endpoint_url → HuggingFaceCompletionProvider."""
@@ -359,9 +361,9 @@ class TestHuggingFaceFactory:
         with patch.dict("sys.modules", {"huggingface_hub": mock_hf_hub}):
             provider = get_completion_provider(config, "completion")
 
-        assert isinstance(provider, HuggingFaceCompletionProvider)
-        assert provider._endpoint_url == "https://xyz.endpoints.huggingface.cloud"
-        assert provider._hf_mode == "dedicated"
+        assert isinstance(unwrap(provider), HuggingFaceCompletionProvider)
+        assert unwrap(provider)._endpoint_url == "https://xyz.endpoints.huggingface.cloud"
+        assert unwrap(provider)._hf_mode == "dedicated"
 
     def test_factory_dedicated_without_endpoint_url_raises_value_error(self, monkeypatch):
         """dedicated ohne endpoint_url → ValueError (FR-03)."""
@@ -420,9 +422,9 @@ class TestHuggingFaceFactory:
         ):
             provider = get_completion_provider(config, "completion")
 
-        assert isinstance(provider, AnthropicCompletionProvider)
+        assert isinstance(unwrap(provider), AnthropicCompletionProvider)
         from sdd_cli.llm.providers.huggingface import HuggingFaceCompletionProvider
-        assert not isinstance(provider, HuggingFaceCompletionProvider)
+        assert not isinstance(unwrap(provider), HuggingFaceCompletionProvider)
 
     def test_factory_serverless_missing_hf_token_raises_runtime_error(self):
         """serverless ohne hf_token → RuntimeError (FR-10)."""

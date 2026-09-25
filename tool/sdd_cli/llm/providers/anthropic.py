@@ -65,5 +65,8 @@ class AnthropicCompletionProvider:
                 cache_creation_tokens=getattr(usage, "cache_creation_input_tokens", 0) or 0,
                 cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) or 0,
                 model=self._model,
+                finish_reason=getattr(message, "stop_reason", None),
+                server_model=getattr(message, "model", None) or None,
+                source="reported",
             ),
         )

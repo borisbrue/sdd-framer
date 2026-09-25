@@ -228,25 +228,12 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
             artifact_text = artifact_path.read_text(encoding="utf-8")
     prompt = _build_review_prompt(contract_text, spec_text, artifact_text)
 
-    provider = get_completion_provider(config, "completion")
-    import time as _time
-    _t0 = _time.monotonic()
-    result = provider.complete(prompt, max_tokens=6144)
-    _duration_ms = int((_time.monotonic() - _t0) * 1000)
+    from .llm.usage import usage_context
 
-    if result.usage:
-        from .estimation import persist_token_usage
-        persist_token_usage(
-            config,
-            component="review-contract",
-            model=result.usage.model or "",
-            input_tokens=result.usage.input_tokens,
-            output_tokens=result.usage.output_tokens,
-            cache_read_tokens=result.usage.cache_read_tokens,
-            cache_write_tokens=result.usage.cache_creation_tokens,
-            duration_ms=_duration_ms,
-            spec_id=spec_id or None,
-        )
+    provider = get_completion_provider(config, "completion")
+    # Die Factory erfasst den Aufruf (SPEC-0060 FR-06); hier nur der Kontext.
+    with usage_context(spec_id=spec_id or None, operation="review-contract"):
+        result = provider.complete(prompt, max_tokens=6144)
 
     verdict, notes, _ = _parse_review_output(result.text)
 

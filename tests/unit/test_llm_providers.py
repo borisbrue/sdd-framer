@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from sdd_cli.llm.usage import unwrap
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.llm.base import CompletionResult
@@ -29,14 +31,14 @@ class TestFactory:
         config = _make_config({})
         from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
         provider = get_completion_provider(config, "evaluator")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_no_llm_section_ai_routes_defaults_to_claude_cli(self):
         """ai_routes Default ist claude-cli – keyfreier Betrieb ohne ANTHROPIC_API_KEY."""
         config = _make_config({})
         from sdd_cli.llm.providers.claude_cli import ClaudeCliCompletionProvider
         provider = get_completion_provider(config, "ai_routes")
-        assert isinstance(provider, ClaudeCliCompletionProvider)
+        assert isinstance(unwrap(provider), ClaudeCliCompletionProvider)
 
     def test_explicit_anthropic_still_wins_over_keyless_default(self):
         """Explizites provider: anthropic überschreibt den claude-cli-Default."""
@@ -47,7 +49,7 @@ class TestFactory:
             from sdd_cli.llm.providers.anthropic import AnthropicCompletionProvider
             provider = get_completion_provider(config, "evaluator")
             _, kwargs = mock_init.call_args
-        assert isinstance(provider, AnthropicCompletionProvider)
+        assert isinstance(unwrap(provider), AnthropicCompletionProvider)
         assert kwargs.get("model") == "claude-sonnet-4-6"
 
     def test_component_override_inherits_model_from_global_default(self):
@@ -434,7 +436,8 @@ class TestClaudeCliCompletionProvider:
             result = provider.complete("prompt")
 
         assert result.text == "inner text"
-        assert result.usage is None
+        # SPEC-0060 FR-02: ohne Usage-Block im Envelope ist die Usage 'unavailable', nie None.
+        assert result.usage is not None and result.usage.source == "unavailable"
 
     def test_complete_system_prompt_prepended_as_xml(self):
         """system_prompt wird als <system>...</system>\\n\\n vorangestellt."""
@@ -462,8 +465,8 @@ class TestClaudeCliCompletionProvider:
         call_kwargs = mock_run.call_args[1]
         assert call_kwargs.get("timeout") == 45
 
-    def test_complete_usage_is_none(self):
-        """usage ist immer None (CLI liefert keine Token-Counts)."""
+    def test_complete_usage_unavailable_without_usage_block(self):
+        """Envelope ohne Usage → UsageMetadata mit source 'unavailable' (SPEC-0060 FR-01/FR-02)."""
         provider = self._make_provider()
         outer = json.dumps({"type": "result", "result": "ok"})
 
@@ -471,7 +474,8 @@ class TestClaudeCliCompletionProvider:
              patch("subprocess.run", return_value=self._make_proc_result(outer)):
             result = provider.complete("prompt")
 
-        assert result.usage is None
+        assert result.usage.source == "unavailable"
+        assert (result.usage.input_tokens, result.usage.output_tokens) == (0, 0)
 
     def test_claude_cli_not_found_raises_runtime_error(self):
         """claude CLI nicht gefunden → RuntimeError (FR-12)."""

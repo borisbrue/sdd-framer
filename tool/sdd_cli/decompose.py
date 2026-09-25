@@ -106,20 +106,24 @@ def detect_circular_dependencies(tasks: list[Task]) -> set[str]:
 
 class TaskDecomposer:
     def __init__(self, provider=None) -> None:
-        if provider is None:
-            from .llm.providers.claude_cli import ClaudeCliCompletionProvider
-            provider = ClaudeCliCompletionProvider()
+        # Ohne expliziten Provider kommt er beim Zerlegen aus der Factory (SPEC-0060 FR-06).
         self._provider = provider
 
     def decompose(self, spec_id: str, config: SddConfig) -> list[Task]:
+        from .llm.usage import usage_context
+
         spec_text = self._load_spec(spec_id, config)
         prompt = f"Spec:\n\n{spec_text}\n\nZerlege dieses Spec in atomare Tasks."
-        result = self._provider.complete(
-            prompt,
-            system_prompt=_SYSTEM_PROMPT,
-            max_tokens=4096,
-            timeout=180,
-        )
+        if self._provider is None:
+            from .llm.factory import get_completion_provider
+            self._provider = get_completion_provider(config, "completion")
+        with usage_context(spec_id=spec_id, operation="decompose"):
+            result = self._provider.complete(
+                prompt,
+                system_prompt=_SYSTEM_PROMPT,
+                max_tokens=4096,
+                timeout=180,
+            )
         raw = result.text.strip()
         # LLM wraps JSON in code block sometimes — extract array directly
         m = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", raw, re.DOTALL)
