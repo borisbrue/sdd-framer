@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0053
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json"
 tests: ["TST-0229"]
 ---
 
 # Contract: Rollenausgaben: decomposer, test_author, implementer, reviewer
 
-> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 

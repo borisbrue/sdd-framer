@@ -4,15 +4,15 @@ title: "Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen"
 type: behavior
 format: gherkin
 spec: SPEC-0053
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: approved
 artifact: ".sdd/contracts/behavior/pipeline-ablauf-entscheidungsquelle-und-fortsetzen.feature"
 tests: ["TST-0234"]
 ---
 
 # Contract: Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen
 
-> **Spec:** SPEC-0053 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0053 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 
@@ -47,8 +47,10 @@ Fake-Providern abgedeckt sein.
   Anfrage, Validierung, Ausführung und Protokoll sind identisch (CON-0201, CON-0202).
 - **INV-05:** `--resume` setzt am Zustand aus `state.json` fort; Tasks im Zustand `done` werden
   nicht erneut bearbeitet, ein unterbrochener Task beginnt mit dem nächsten Versuch.
-- **INV-06:** Ein Längenabbruch (`finish_reason: length` ohne verwertbaren Inhalt) wird genau einmal
-  mit dem 1,5-fachen Budget wiederholt; danach zählt er als Fehlversuch.
+- **INV-06:** Ein Längenabbruch (`finish_reason: length` ohne verwertbaren Inhalt) wird im
+  `RoleRunner` genau einmal mit dem 1,5-fachen Budget wiederholt; danach zählt er als Fehlversuch.
+  Die Pipeline sieht nur das Ergebnis des Rollenaufrufs.
+- **INV-08:** Jede Entscheidung lässt sich über `request_id` ihrer Anfrage zuordnen (CON-0202).
 - **INV-07:** Ohne `llm.roles` verhält sich jeder bestehende Befehl wie vor SPEC-0053.
 
 ## Begriffe

@@ -4,7 +4,7 @@ title: "Rollendefinition: Frontmatter von .sdd/roles/<rolle>.md"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: ".sdd/contracts/data/rollendefinition-frontmatter-von-sdd-roles-rolle-md.schema.json"
 tests: ["TST-0228"]
@@ -25,8 +25,9 @@ System-Prompt. Die Modellwahl steht nicht hier, sondern in `llm.roles.<rolle>`.
 - **INV-01:** `inputs` stammt aus der geschlossenen Liste `spec`, `contracts`, `agents_md`,
   `repo_map`, `task`, `test_file`, `test_output`, `diff`, `gate_results`, `review`, `history`.
   `.sdd/holdout/` ist nie eine Quelle.
-- **INV-02:** `output_schema` zeigt auf ein Schema in CON-0200 (`…#/$defs/<rolle>`). Nur die Rolle
-  `supervisor` hat `output_schema: null`; ihre Ausgabe regelt CON-0201.
+- **INV-02:** `output_schema` zeigt für jede Rolle auf ein Schema: Arbeitsrollen auf CON-0200
+  (`…#/$defs/<rolle>`), `supervisor` auf das Command-Schema aus CON-0201. Es gibt keinen Sonderfall;
+  der Check `json_schema` gilt für alle Rollen gleich.
 - **INV-03:** `checks` nennt nur Rollen-Checks, die die **Ausgabe** der Rolle prüfen (Schema,
   Struktur, Vollständigkeit gegenüber der Eingabe). Prüfungen des Projektzustands sind Gates
   (SPEC-0054) und stehen hier nicht.

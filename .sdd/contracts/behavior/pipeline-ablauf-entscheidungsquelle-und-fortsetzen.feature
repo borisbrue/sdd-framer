@@ -61,11 +61,13 @@ Feature: Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen
     And pending-decision.json enthält point S1 und allowed_commands approve, revise, halt
     And state.json hat den status awaiting_supervisor
     When ich "sdd pipeline decide <run> --json {\"point\":\"S1\",\"command\":\"approve\",\"reason\":\"ok\"}" ausführe
-    Then existiert pending-decision.json nicht mehr
+    Then ist state.pending_request_id leer
+    And die Anfrage liegt unter requests/<request_id>.json
+    And die Zeile in decisions.jsonl nennt dieselbe request_id
     And der Run läuft ab der Phase tasks weiter
 
   Scenario: decide ohne offene Anfrage
-    Given ein Run ohne pending-decision.json
+    Given ein Run ohne offene Anfrage
     When ich "sdd pipeline decide <run> --json {...}" ausführe
     Then ist der Exit-Code 2
 

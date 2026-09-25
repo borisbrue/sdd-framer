@@ -63,3 +63,22 @@ Feature: PathPolicy
       | provider      |
       | openai-compat |
       | claude-cli    |
+
+  Scenario Outline: Nicht schreibende Rollen werden abgelehnt
+    When die Rolle <rolle> "tool/app/a.py" schreiben will
+    Then lehnt die PathPolicy mit Grund "Rolle <rolle> schreibt nicht" ab
+
+    Examples:
+      | rolle       |
+      | reviewer    |
+      | decomposer  |
+      | doc_writer  |
+
+  Scenario: test_author schreibt nur die Testdatei
+    When die Rolle test_author "tool/app/a.py" schreiben will
+    Then lehnt die PathPolicy mit Grund "test_author schreibt nur die Testdatei" ab
+
+  Scenario: Projekteigene geschützte Pfade
+    Given pipeline.protected_paths enthält "docs/adr/**"
+    When die Rolle implementer "docs/adr/ADR-0001.md" schreiben will
+    Then lehnt die PathPolicy mit Grund "geschützter Pfad" ab

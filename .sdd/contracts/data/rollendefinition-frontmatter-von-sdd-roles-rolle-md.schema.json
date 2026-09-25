@@ -70,11 +70,9 @@
       "description": "Tokenbudget je Kontextquelle; fehlende Quellen nutzen den Default der Pipeline."
     },
     "output_schema": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "Pfad zum Ausgabeschema; null nur für supervisor (Commands, CON-0201)."
+      "type": "string",
+      "minLength": 1,
+      "description": "Pfad zum Ausgabeschema; für supervisor das Command-Schema aus CON-0201."
     },
     "defaults": {
       "type": "object",

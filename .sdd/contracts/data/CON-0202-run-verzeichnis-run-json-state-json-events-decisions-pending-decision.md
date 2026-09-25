@@ -4,15 +4,15 @@ title: "Run-Verzeichnis: run.json, state.json, events, decisions, pending-decisi
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: approved
 artifact: ".sdd/contracts/data/run-verzeichnis-run-json-state-json-events-decisions-pending-decision.schema.json"
 tests: ["TST-0231"]
 ---
 
 # Contract: Run-Verzeichnis: run.json, state.json, events, decisions, pending-decision
 
-> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -26,16 +26,22 @@ und Schnittstelle für den Dialogmodus.
 | `state.json` | `$defs/state` | aktueller Zustand des Automaten und aller Tasks |
 | `events.jsonl` | `$defs/event` je Zeile | jeder Übergang, Rollenaufruf, Gate, abgelehnte Schreibvorgang |
 | `decisions.jsonl` | `$defs/decision` je Zeile | jede Entscheidung mit Quelle und Gültigkeit |
-| `pending-decision.json` | `$defs/pending_decision` | offene Anfrage; existiert genau solange eine offen ist |
+| `pending-decision.json` | `$defs/pending_decision` | offene Anfrage mit `request_id` |
+| `requests/<request_id>.json` | `$defs/pending_decision` | beantwortete Anfragen (Archiv) |
 
 ## Invarianten
 
 - **INV-01:** `state.json` wird nach jedem Übergang atomar geschrieben (temporäre Datei +
   Umbenennen). Nach einem Abbruch ist sie immer lesbar und konsistent.
-- **INV-02:** Vor jeder Entscheidung wird `pending-decision.json` geschrieben; erst danach wird die
-  Entscheidungsquelle gefragt. Nach einer gültigen Entscheidung wird die Datei gelöscht.
-- **INV-03:** `status: awaiting_supervisor` tritt genau dann auf, wenn `pending-decision.json`
-  existiert und der Modus `session` ist.
+- **INV-02:** Vor jeder Entscheidung wird die Anfrage mit eindeutiger `request_id` als
+  `pending-decision.json` geschrieben und `state.pending_request_id` gesetzt; erst danach wird die
+  Entscheidungsquelle gefragt. Nach einer gültigen Entscheidung wird die Anfrage nach
+  `requests/<request_id>.json` verschoben und `pending_request_id` geleert. Jede Zeile in
+  `decisions.jsonl` nennt ihre `request_id`; die Zuordnung Anfrage ↔ Entscheidung bleibt so
+  vollständig erhalten.
+- **INV-03:** Ob eine Anfrage offen ist, bestimmt `state.pending_request_id`, nicht die Existenz
+  einer Datei. `status: awaiting_supervisor` tritt genau dann auf, wenn eine Anfrage offen ist und
+  die Entscheidungsquelle `Pending` gemeldet hat.
 - **INV-04:** `events.jsonl` und `decisions.jsonl` werden nur angehängt, nie umgeschrieben.
 - **INV-05:** Keine Datei enthält API-Keys, Prompts oder Modellantworten im Klartext; Prompts
   erscheinen nur als `prompt_hash`.

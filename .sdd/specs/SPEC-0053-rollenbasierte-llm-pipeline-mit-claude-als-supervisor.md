@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.5.0
+version: 0.6.0
 priority: high
 tags: [llm, roles, pipeline, local-llm, supervisor]
 depends_on: [SPEC-0008, SPEC-0011, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054, SPEC-0060]
@@ -16,7 +16,7 @@ tests: []
 
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.5.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.6.0
 
 ## 1. Kontext & Motivation
 
@@ -201,11 +201,13 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► S3 Abnahme ─►
   `role_version`. Bei `finish_reason=length` ohne verwertbaren Inhalt wiederholt er einmalig mit
   dem 1,5-fachen Ausgabebudget. Jeder Prompt trägt einen Nonce gegen Proxy-Caches.
 - **FR-07:** **PathPolicy.** Jeder Schreibvorgang einer Rolle läuft über eine anbieterunabhängige
-  `PathPolicy` (eigener Contract). Sie lehnt ab:
-  - jeden Schreibvorgang der Rolle `supervisor`;
-  - Schreibvorgänge nach `.sdd/**`, `specs/**`, `contracts/**` und `.sdd/holdout/**`;
+  `PathPolicy` (CON-0204, Default deny). Schreiben dürfen nur `test_author` (ausschließlich die
+  `test_file` seines Tasks) und `implementer`. Abgelehnt werden:
+  - jeder Schreibvorgang von `supervisor`, `reviewer`, `decomposer` und unbekannten Rollen;
+  - Schreibvorgänge nach `.sdd/**` (inklusive `.sdd/holdout/**`), `specs/**`, `contracts/**` und
+    nach den projekteigenen Globs aus `pipeline.protected_paths`;
   - Änderungen des `implementer` an der `test_file` seines Tasks;
-  - Pfade außerhalb der für den Task erlaubten Pfade.
+  - Pfade außerhalb der `allowed_paths` des Tasks.
 
   Abgelehnte Schreibvorgänge zählen als `gate_failed`. `openai_compat.py` nutzt dieselbe Policy
   und behält keine eigene Pfadregel.
@@ -240,7 +242,8 @@ Abschluss: [Gates: Regression, Holdouts, FR-Erfüllung] ─► S3 Abnahme ─►
   - `state.json`: aktueller Zustand des Automaten, nach jedem Übergang geschrieben;
   - `events.jsonl`: jeder Übergang und jeder Rollenaufruf;
   - `decisions.jsonl`: jede Supervisor-Entscheidung mit Begründung;
-  - `pending-decision.json`: die offene Entscheidungsanfrage, solange eine besteht.
+  - `pending-decision.json`: die offene Entscheidungsanfrage mit `request_id`; beantwortete
+    Anfragen wandern nach `requests/<request_id>.json`, jede Entscheidung nennt ihre `request_id`.
 
   `--resume` setzt am gespeicherten Zustand fort, auch nach Abbruch mitten in einem Task (der Task
   beginnt dann mit dem nächsten Versuch neu).
@@ -373,3 +376,4 @@ Feature: Rollenbasierte Pipeline
 | 2026-09-25 | 0.3.0   | Boris, Claude | `pipeline run` löst `task-loop` ohne Alias ab |
 | 2026-09-25 | 0.4.0   | Boris, Claude | Warnung bei gleichem Modell für Reviewer und Implementierer |
 | 2026-09-25 | 0.5.0   | Boris, Claude | Review: Patterns Template Method/Strategy/Mediator/Command; `supervisor.mode` + fortsetzbarer Zustandsautomat statt `provider: session` (LSP); PathPolicy (DIP); Grenze Rollen-Checks ↔ Gates; `legacy_component` in Rollendatei (OCP); Warnung bei wirkungslosen Parametern (ISP); Usage-Erfassung → SPEC-0060, `task-loop`-Ablösung → SPEC-0058; Abgrenzung zu SPEC-0004/0005/0007/0008/0011; FRs neu nummeriert |
+| 2026-09-25 | 0.6.0   | Boris, Claude | Contract-Review: PathPolicy mit Default deny und `pipeline.protected_paths`; Anfragen mit `request_id` und Archiv statt Löschen |

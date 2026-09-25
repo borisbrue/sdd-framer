@@ -4,15 +4,15 @@ title: "Supervisor-Commands fuer S1 bis S3"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: approved
 artifact: ".sdd/contracts/data/supervisor-commands-fuer-s1-bis-s3.schema.json"
 tests: ["TST-0230"]
 ---
 
 # Contract: Supervisor-Commands für S1 bis S3
 
-> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0053 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
@@ -32,9 +32,10 @@ und protokolliert es in `decisions.jsonl`. Dasselbe Format gilt für `inline` un
 - **INV-03:** `reassign` nennt Task, Arbeitsrolle (`test_author|implementer|reviewer`, nie
   `supervisor`) und ein Modellprofil bzw. einen Modellnamen.
 - **INV-04:** `accept_frs` nennt je FR `erfüllt|teilweise|fehlt` mit Beleg (Datei oder Test).
-- **INV-05:** Ein Command, das dem Schema oder den `allowed_commands` der offenen Anfrage
-  (CON-0202) widerspricht, ist ungültig; es wird einmal neu angefragt, danach `halt`
-  (CON-0205).
+- **INV-05:** Die Tabelle aus INV-02 ist die Obergrenze. Die offene Anfrage (CON-0202) nennt mit
+  `allowed_commands` die in der konkreten Situation wirksame Teilmenge (z. B. kein `revise` mehr
+  nach `max_revisions`). Ein Command ist nur gültig, wenn es dem Schema entspricht und in dieser
+  Teilmenge liegt. Wie auf ungültige Commands reagiert wird, regelt CON-0205.
 
 ## Beispiele
 

@@ -148,6 +148,12 @@
         "updated_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "pending_request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -204,6 +210,7 @@
       "type": "object",
       "required": [
         "ts",
+        "request_id",
         "point",
         "source",
         "valid",
@@ -237,12 +244,17 @@
         },
         "error": {
           "type": "string"
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
     "pending_decision": {
       "type": "object",
       "required": [
+        "request_id",
         "point",
         "created_at",
         "allowed_commands",
@@ -298,6 +310,10 @@
               "type": "object"
             }
           }
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
