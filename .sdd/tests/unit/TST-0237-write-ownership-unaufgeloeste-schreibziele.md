@@ -1,48 +1,31 @@
 ---
 id: TST-0237
-project: ""                # PRJ-XXXX
 title: "write_ownership: unaufgelöste Schreibziele"
-level: unit            # unit | integration | contract | acceptance | performance | property
+level: unit
 spec: SPEC-0059
 contract: CON-0208
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/unit/test_con_0208.py"
+tags: [architecture, dogfooding]
 ---
 
 # Test: write_ownership: unaufgelöste Schreibziele
 
-> **Level:** {{level}} · **Spec:** SPEC-0059 · **Contract:** CON-0208 · **Status:** draft
+> **Level:** unit · **Spec:** SPEC-0059 · **Contract:** CON-0208 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Schema-Erweiterung `unresolved` und Strategie `write_ownership` mit synthetischen Kanten.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0208:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-07

@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0059",
-  "generated_at": "2026-09-25T20:07:44Z",
+  "generated_at": "2026-09-25T20:12:55Z",
   "new_contracts": [
     "CON-0208",
     "CON-0209"
@@ -126,6 +126,66 @@
         "action": "acknowledged",
         "reason": "Hinweis auf unvollständige Workspace-Liste; CON-0194/0197/0198 und CON-0208 stimmen laut Analyse mit CON-0209 überein.",
         "resolved_at": "2026-09-25T20:10:22Z"
+      }
+    },
+    {
+      "id": "CF-0059-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Zielsetzung",
+      "conflicting_contract": "SPEC-0015:Zielsetzung",
+      "detail": "SPEC-0015 plant bereits eine architektonische Qualitätsprüfung mit ADR-artiger Pattern-Dokumentation im Spec-Workflow, und SPEC-0059 schafft über ADRs mit `enforced_by` plus `sdd arch check` eine zweite Architektur-Qualitätsebene, ohne beide abzugrenzen (LLM-gestützte SOLID-Bewertung gegen deterministische Regelprüfung).",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgrenzung: SPEC-0015 bewertet Specs LLM-gestützt (SOLID/Patterns) vor der Umsetzung; SPEC-0059 prüft Code deterministisch gegen ADR-gebundene Regeln. Zwei Ebenen, kein Überlapp.",
+        "resolved_at": "2026-09-25T20:13:11Z"
+      }
+    },
+    {
+      "id": "CF-0059-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-08",
+      "conflicting_contract": "SPEC-0008:Kontext & Motivation",
+      "detail": "SPEC-0008 schreibt vor, dass alle LLM-Zugriffe über die Provider-Abstraktion und die Factory laufen, und SPEC-0059 setzt dieselbe Regel als ARCH-03 maschinell durch und behebt dazu die Verstöße in `pipeline/providers.py` und `openai_compat.py`. Diese Invariante sollte in genau einem ADR verankert sein, auf das beide Specs verweisen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Genau so umgesetzt: ADR-0004 verankert die Factory-Regel aus SPEC-0008/SPEC-0060, ARCH-03 verweist darauf.",
+        "resolved_at": "2026-09-25T20:13:12Z"
+      }
+    },
+    {
+      "id": "CF-0059-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "Nicht-Ziele",
+      "conflicting_contract": "SPEC-0003:REST-API (FastAPI, web/api/)",
+      "detail": "Laut SPEC-0003 schreibt die Web-API über `POST /specs`, `/contracts` und `/tests` selbst auf das Filesystem, was der Regel „nur die CLI schreibt“ aus SPEC-0059 widerspricht. SPEC-0059 nimmt diesen Konflikt nur als Baseline-Altlast auf und verweist die Lösung auf eine künftige Spec.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst als Baseline-Altlast aufgenommen (SPEC-0059 Nicht-Ziele, offene Frage in Abschnitt 10); die Delegation an die CLI braucht eine eigene Spec.",
+        "resolved_at": "2026-09-25T20:13:13Z"
+      }
+    },
+    {
+      "id": "CF-0059-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Zielsetzung",
+      "conflicting_contract": "SPEC-0014:Kontext & Motivation",
+      "detail": "SPEC-0014 definiert ein verpflichtendes Gate vor `sdd execute`, und `sdd arch check` samt Pre-Commit-Hook aus SPEC-0059 ist ein weiteres blockierendes Gate (Exit 1 bei neuen Verstößen). Es ist nicht festgelegt, ob die Architekturprüfung eine Stufe des Execution Gates werden soll.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Architekturprüfung ist ein Commit-Gate (Pre-Commit-Hook, CON-0209), keine Phase des Execution Gates; SPEC-0014 bleibt unverändert.",
+        "resolved_at": "2026-09-25T20:13:14Z"
       }
     }
   ],

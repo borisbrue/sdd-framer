@@ -1,48 +1,32 @@
 ---
 id: TST-0238
-project: ""                # PRJ-XXXX
 title: "Architekturprüfung für sdd-framer und Pre-Commit-Hook"
-level: acceptance            # unit | integration | contract | acceptance | performance | property
+level: acceptance
 spec: SPEC-0059
 contract: CON-0209
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/acceptance/test_con_0209.py"
+tags: [architecture, dogfooding]
 ---
 
 # Test: Architekturprüfung für sdd-framer und Pre-Commit-Hook
 
-> **Level:** {{level}} · **Spec:** SPEC-0059 · **Contract:** CON-0209 · **Status:** draft
+> **Level:** acceptance · **Spec:** SPEC-0059 · **Contract:** CON-0209 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+`sdd arch check` auf dem Repo-Stand und auf einer Kopie mit eingebautem Verstoß; Pre-Commit-Hook in einem temporären Git-Projekt.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0209:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-08
