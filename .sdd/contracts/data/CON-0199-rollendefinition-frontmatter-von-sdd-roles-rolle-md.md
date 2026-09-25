@@ -4,7 +4,7 @@ title: "Rollendefinition: Frontmatter von .sdd/roles/<rolle>.md"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/rollendefinition-frontmatter-von-sdd-roles-rolle-md.schema.json"
 tests: ["TST-0228"]
@@ -31,8 +31,12 @@ System-Prompt. Die Modellwahl steht nicht hier, sondern in `llm.roles.<rolle>`.
 - **INV-03:** `checks` nennt nur Rollen-Checks, die die **Ausgabe** der Rolle prüfen (Schema,
   Struktur, Vollständigkeit gegenüber der Eingabe). Prüfungen des Projektzustands sind Gates
   (SPEC-0054) und stehen hier nicht.
-- **INV-04:** `legacy_component` ist der Komponentenblock, auf den die Provider-Auflösung
-  zurückfällt, wenn `llm.roles.<rolle>` fehlt (SPEC-0053 FR-04).
+- **INV-04:** `legacy_component` ist eine Komponente aus CON-0023 (`completion`, `orchestrator`,
+  `evaluator`, `analyzer`, `ai_routes`). Fehlt `llm.roles.<rolle>`, wird der Provider genau so
+  aufgelöst, wie CON-0023 G-02 es für diese Komponente festlegt (Komponentenblock → Default-Block
+  → Builtin). Die Rolle führt keine eigene Rückfallkette ein. Der Block `llm.roles` ergänzt das
+  llm-Schema aus CON-0023 und das Gesamtschema aus CON-0016; beide Artefakte werden bei der
+  Umsetzung additiv erweitert.
 - **INV-05:** `version` folgt SemVer. Eine Änderung des Prompts erhöht mindestens Minor, eine
   Änderung nur der Defaults Patch (SPEC-0055 FR-07).
 - **INV-06:** Unbekannte Felder sind nicht erlaubt; ein Rollen-Check, der der Registry unbekannt ist,

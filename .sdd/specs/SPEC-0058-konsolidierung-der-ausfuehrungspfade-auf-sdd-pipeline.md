@@ -95,7 +95,7 @@ hat. `sdd upgrade` migriert die Config.
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Jede Rolle akzeptiert `mode: session` (analog zum Supervisor, SPEC-0053 FR-15).
+- **FR-01:** Jede Rolle akzeptiert `mode: session` (analog zum Supervisor-Modus aus SPEC-0053).
   Arbeitsrollen im Modus `session` erhalten statt eines LLM-Aufrufs eine persistierte Anfrage
   (Task, Kontext, erlaubte Pfade laut PathPolicy). Die Session schreibt die Dateien und bestätigt mit
   `sdd pipeline decide RUN_ID --done TASK_ID`. Die Pipeline wertet danach die Gates aus, wie bei

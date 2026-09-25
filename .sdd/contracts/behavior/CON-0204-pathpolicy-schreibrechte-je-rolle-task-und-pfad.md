@@ -4,7 +4,7 @@ title: "PathPolicy: Schreibrechte je Rolle, Task und Pfad"
 type: behavior
 format: gherkin
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/behavior/pathpolicy-schreibrechte-je-rolle-task-und-pfad.feature"
 tests: ["TST-0233"]
@@ -42,6 +42,15 @@ abgedeckt sein.
 Schreibende Rollen sind abschließend `test_author` und `implementer` (sichere Basis: eine neue Rolle
 darf nichts, bis sie ausdrücklich aufgenommen wird). `pipeline.protected_paths` ergänzt die
 geschützten Pfade um projekteigene Globs (z. B. `docs/adr/**`), ohne diesen Contract zu ändern.
+
+## Durchsetzungsort
+
+In der Pipeline liefern Provider für Arbeitsrollen nur Dateiinhalte (CON-0200, `implementer.files`,
+`test_author.content`) und schreiben selbst nichts. Der Mediator prüft jeden Pfad mit der PathPolicy
+und schreibt erst danach. Das Schreibverhalten der Code-Gen-Provider aus CON-0024 gilt nur für die
+bisherigen Pfade (`orchestrate`, `task-loop`) bis zu ihrer Ablösung durch SPEC-0058. Lesen ist nicht
+Teil dieser Policy: Dass `.sdd/holdout/` nie in einen Rollenkontext gelangt, sichern SPEC-0053 FR-03
+und CON-0064.
 
 ## Invarianten
 

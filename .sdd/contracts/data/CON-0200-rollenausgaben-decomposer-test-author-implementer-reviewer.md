@@ -4,7 +4,7 @@ title: "Rollenausgaben: decomposer, test_author, implementer, reviewer"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.1.0
+version: 0.2.0
 status: approved
 artifact: ".sdd/contracts/data/rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json"
 tests: ["TST-0229"]
@@ -32,6 +32,19 @@ und ein gezählter Fehlversuch.
   erlaubt ist, entscheidet die PathPolicy, nicht dieses Schema.
 - **INV-05 (reviewer):** `verdict: fail` verlangt mindestens einen Befund mit Kategorie
   `requirement|architecture|quality|test`, Datei und Begründung.
+- **INV-06 (Übernahme in das Task-Modell):** Der Mediator macht aus jeder decomposer-Task genau
+  eine Task nach CON-0096 (+ CON-0203):
+  | CON-0096-Feld | Herkunft |
+  |---------------|----------|
+  | `id` | neue UUID4 |
+  | `dependencies` | IDs der Tasks, deren Titel in `dependencies` steht; Titel müssen innerhalb der Zerlegung eindeutig sein (Rollen-Check `unique_titles`), jeder Verweis muss existieren (`deps_resolvable`), der Graph ist zyklenfrei (`acyclic`) |
+  | `context_size` | aus `complexity`: low → S, medium → M, high → L |
+  | `estimated_tokens` | aus `complexity`: low 2000, medium 6000, high 15000 (überschreibbar über `pipeline.estimates`) |
+  | `test_ids` | TST-IDs der Spec, deren `artifact` gleich `test_file` ist; leer, wenn es keine gibt |
+  | `status`, `retry_count`, `llm_id`, … | Startwerte aus CON-0096 |
+
+  Die Tasks laufen danach durch den Task-Lebenszyklus aus CON-0095; `test_ids` erfüllt die
+  Bedingung des Completion-Gates aus CON-0124.
 
 ## Beispiele
 

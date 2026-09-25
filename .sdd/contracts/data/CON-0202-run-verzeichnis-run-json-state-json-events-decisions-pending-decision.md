@@ -4,7 +4,7 @@ title: "Run-Verzeichnis: run.json, state.json, events, decisions, pending-decisi
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/run-verzeichnis-run-json-state-json-events-decisions-pending-decision.schema.json"
 tests: ["TST-0231"]
@@ -45,6 +45,13 @@ und Schnittstelle für den Dialogmodus.
 - **INV-04:** `events.jsonl` und `decisions.jsonl` werden nur angehängt, nie umgeschrieben.
 - **INV-05:** Keine Datei enthält API-Keys, Prompts oder Modellantworten im Klartext; Prompts
   erscheinen nur als `prompt_hash`.
+- **INV-07:** `run_id` hat die Form `<SPEC-ID>-<YYYYMMDDTHHMMSS>-<suffix>` und ist damit
+  projektweit eindeutig.
+- **INV-08:** Die Phasen der Spec (CON-0025/CON-0030) bleiben in `.sdd/pipeline/<SPEC>-gate.json`.
+  Das Run-Verzeichnis hält nur den Zustand eines Runs; `state.tasks[].task_id` verweist auf Tasks
+  nach CON-0096 in `.sdd/tasks/<SPEC>.json`, deren Status weiter nach CON-0095 gepflegt wird.
+- **INV-09:** `events.jsonl` enthält keine Tokenzahlen; der Verbrauch steht ausschließlich in
+  `token_usage` (SPEC-0060) und wird über `run_id` verknüpft.
 - **INV-06:** `run.json` nennt je Rolle `role_version`; `warnings` enthält u. a. die Warnung bei
   gleichem Modell für Reviewer und Implementierer (SPEC-0053 FR-04).
 
@@ -52,7 +59,7 @@ und Schnittstelle für den Dialogmodus.
 
 **Gültig (`state.json`):**
 ```json
-{ "run_id": "20260925-101500-a1", "status": "awaiting_supervisor", "phase": "decompose",
+{ "run_id": "SPEC-0900-20260925T101500-a1", "status": "awaiting_supervisor", "phase": "decompose",
   "revisions": 0, "tasks": [], "updated_at": "2026-09-25T10:15:03Z" }
 ```
 

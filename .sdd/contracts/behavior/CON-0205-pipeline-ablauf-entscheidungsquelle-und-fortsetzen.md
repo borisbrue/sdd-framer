@@ -4,7 +4,7 @@ title: "Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen"
 type: behavior
 format: gherkin
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/behavior/pipeline-ablauf-entscheidungsquelle-und-fortsetzen.feature"
 tests: ["TST-0234"]
@@ -51,6 +51,13 @@ Fake-Providern abgedeckt sein.
   `RoleRunner` genau einmal mit dem 1,5-fachen Budget wiederholt; danach zählt er als Fehlversuch.
   Die Pipeline sieht nur das Ergebnis des Rollenaufrufs.
 - **INV-08:** Jede Entscheidung lässt sich über `request_id` ihrer Anfrage zuordnen (CON-0202).
+- **INV-09:** `pipeline run` verlangt Spec-Status `approved` **und** die Gate-Phase
+  `execute-unlocked` (CON-0025); sonst Exit 2. S1 und S3 ändern keine Gate-Phasen; nach S3 mit
+  vollständiger Abnahme läuft Finalize wie bisher und setzt `implemented`.
+- **INV-10:** `--dry-run` bedeutet hier: Zerlegung und S1, keine Arbeitsrollen, kein Code. Run-
+  Verzeichnis und `token_usage` werden trotzdem geschrieben. Das weicht bewusst von
+  `orchestrate --dry-run` (CON-0012) ab; SPEC-0058 bildet `orchestrate` auf `pipeline run --auto`
+  ab.
 - **INV-07:** Ohne `llm.roles` verhält sich jeder bestehende Befehl wie vor SPEC-0053.
 
 ## Begriffe

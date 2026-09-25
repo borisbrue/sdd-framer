@@ -2,7 +2,7 @@
 id: SPEC-0053
 title: "Rollenbasierte LLM-Pipeline mit Claude als Supervisor"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
@@ -63,6 +63,10 @@ gut erfüllt, noch eine Rolle gezielt verbessern (→ SPEC-0055) oder vergleiche
   (`task-loop`):** Wie diese Pfade auf `sdd pipeline` abgebildet werden, regelt SPEC-0058.
 - **SPEC-0005 (Analyzer):** Der Analyzer ist keine Rolle der Implementierungs-Pipeline und bleibt
   eine Provider-Komponente.
+- **Nachzuziehen bei der Umsetzung:** additive Erweiterungen der Artefakte von CON-0023 und CON-0016
+  (`llm.roles`) sowie CON-0096 (`fr_ids`, `allowed_paths`). Überschneidungen mit der
+  Distribution-Engine (CON-0095..0100, CON-0124..0126), `orchestrate` (CON-0012) und der Web-API
+  (CON-0021) löst SPEC-0058 auf.
 
 ## 2. Zielsetzung
 

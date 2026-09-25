@@ -4,7 +4,7 @@ title: "Supervisor-Commands fuer S1 bis S3"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/supervisor-commands-fuer-s1-bis-s3.schema.json"
 tests: ["TST-0230"]
@@ -32,6 +32,12 @@ und protokolliert es in `decisions.jsonl`. Dasselbe Format gilt für `inline` un
 - **INV-03:** `reassign` nennt Task, Arbeitsrolle (`test_author|implementer|reviewer`, nie
   `supervisor`) und ein Modellprofil bzw. einen Modellnamen.
 - **INV-04:** `accept_frs` nennt je FR `erfüllt|teilweise|fehlt` mit Beleg (Datei oder Test).
+- **INV-06:** `task_id` ist die ID einer Task nach CON-0096 aus `.sdd/tasks/<SPEC>.json`.
+  `reassign.model` ist ein Modellprofil aus `llm.profiles` oder ein Modellname für den Provider der
+  Rolle. `reassign` übersteuert für diesen Task jede Routing-Regel.
+- **INV-07:** `redecompose` ruft den decomposer erneut für die ganze Spec auf. Er bekommt als
+  Kontextquelle `history` die Begründung und die Liste der bereits erledigten Tasks; erledigte
+  Tasks bleiben erhalten, offene werden durch die neue Zerlegung ersetzt.
 - **INV-05:** Die Tabelle aus INV-02 ist die Obergrenze. Die offene Anfrage (CON-0202) nennt mit
   `allowed_commands` die in der konkreten Situation wirksame Teilmenge (z. B. kein `revise` mehr
   nach `max_revisions`). Ein Command ist nur gültig, wenn es dem Schema entspricht und in dieser

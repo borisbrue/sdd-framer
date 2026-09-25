@@ -4,7 +4,7 @@ title: "Task-Schema-Erweiterung: fr_ids und allowed_paths"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/task-schema-erweiterung-fr-ids-und-allowed-paths.schema.json"
 tests: ["TST-0232"]
@@ -27,7 +27,9 @@ additiv, bestehende `.sdd/tasks/<SPEC>.json` ohne die Felder bleiben gültig.
 - **INV-02:** `allowed_paths` ist optional; fehlt es, gilt für den Task nur die allgemeine
   PathPolicy (CON-0204) ohne Task-Einschränkung.
 - **INV-03:** Dieses Schema beschreibt nur die Differenz zu CON-0096. Eine Task-Instanz ist gültig,
-  wenn sie CON-0096 **und** diesem Schema genügt; beide Schemas werden gemeinsam angewendet.
+  wenn sie CON-0096 **und** diesem Schema genügt. Weil das Artefakt von CON-0096 zusätzliche Felder
+  verbietet, nimmt die Umsetzung `fr_ids` und `allowed_paths` als optionale Properties in
+  `contracts/data/task.schema.json` auf (additiv, wie zuvor `executor`).
 
 ## Beispiele
 
