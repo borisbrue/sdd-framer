@@ -1,0 +1,399 @@
+{
+  "spec_id": "SPEC-0054",
+  "generated_at": "2026-09-25T10:45:32Z",
+  "new_contracts": [
+    "CON-0192",
+    "CON-0193",
+    "CON-0194",
+    "CON-0195",
+    "CON-0196",
+    "CON-0197",
+    "CON-0198"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0054-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0192",
+      "conflicting_contract": "CON-0018",
+      "detail": "CON-0192 sagt, dass `sdd test run` die Sonde mit `role: tests` aus .sdd/quality.yaml nutzt (werkzeugneutral, JUnit-Ergebnis unter {out}, FR-Zuordnung über fr_marker). CON-0018 legt dagegen fest: 'konfigurierter pytest-Runner', die Tests laufen 'via pytest', und Artefakte, die nicht von pytest stammen, werden mit 'runner: unsupported' als skipped markiert. Ist eine Nicht-pytest-Sonde konfiguriert (z. B. behave, jest mit JUnit-Ausgabe), fordern beide Contracts unterschiedliches Verhalten. Außerdem heißt der Befehl in CON-0018 `sdd test-run`, in CON-0192 `sdd test run`. CON-0018 muss auf die Sonde umgestellt oder für den Fall ohne quality.yaml ausdrücklich als Fallback festgelegt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05b: CON-0018 gilt ohne Testsonde; mit Sonde ersetzt sie den pytest-Runner, kein runner: unsupported, Altname test-run ist Verweis",
+        "resolved_at": "2026-09-25T10:43:40Z"
+      }
+    },
+    {
+      "id": "CF-0054-002",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0192",
+      "conflicting_contract": "CON-0017",
+      "detail": "Die Test-Run-Results-API (CON-0017) und CON-0018 speichern Ergebnisse als .sdd/test-runs/SPEC-*.json mit Pass/Fail/Skip je TST-Dokument. CON-0192 legt als Rohergebnis JUnit fest und ordnet die Ergebnisse über fr_marker FRs zu, nicht TST-IDs. Wie JUnit/FR-Ergebnisse in das bestehende Test-Run-JSON abgebildet werden und ob die API FR-Erfüllung ausliefert, ist nirgends festgelegt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05a: Run-Report additiv um junit, testcases, git_sha erweitert; TST-Zaehlung aus Testfaellen abgeleitet",
+        "resolved_at": "2026-09-25T10:43:40Z"
+      }
+    },
+    {
+      "id": "CF-0054-003",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0192",
+      "conflicting_contract": "CON-0016",
+      "detail": "`orchestrator.build_command` in config.yaml ist als 'Shell-Befehl für Build + Tests' definiert. CON-0192 führt mit der Sonde `role: tests` in quality.yaml eine zweite Stelle für den Testbefehl ein und nennt sich 'die einzige Stelle', an der die Messwerkzeuge festgelegt werden. Dann liegen zwei Testbefehle nebeneinander (Orchestrator vs. quality/test run), und es ist ungeklärt, welcher gilt oder ob build_command die Sonde nutzen soll.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "build_command bleibt fuer finalize zustaendig (CON-0197 INV-05c); Zusammenfuehrung mit der Testsonde ist Gegenstand von SPEC-0058",
+        "resolved_at": "2026-09-25T10:43:41Z"
+      }
+    },
+    {
+      "id": "CF-0054-004",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0192",
+      "conflicting_contract": "CON-0191",
+      "detail": "`sdd config validate` (CON-0190/CON-0191) prüft nur config.yaml. Für quality.yaml prüft `sdd quality doctor` das Schema und die Laufzeit-Invarianten (INV-03, INV-05..09). Damit gibt es zwei Validierungspfade mit eigenen Exit-Codes und JSON-Ausgaben. Offen ist, ob `sdd config validate` bzw. `sdd validate --strict` quality.yaml mitprüfen soll. Sonst ist eine ungültige quality.yaml für das CI-Gate unsichtbar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196 INV-07: sdd config validate prueft quality.* und quality.yaml (Regelgruppe quality)",
+        "resolved_at": "2026-09-25T10:43:42Z"
+      }
+    },
+    {
+      "id": "CF-0054-005",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0193",
+      "conflicting_contract": "CON-0029",
+      "detail": "CON-0193 INV-07 sets `sdd-findings.severity` to `error | warning | note`, following SARIF. CON-0029 INV-02 uses `severity` with `low | medium | high` for conflict findings. Both are sdd-framer's own finding formats and use the same field name with different value sets. They cover separate areas, code findings and contract conflicts, so they don't clash technically. But anything that shows both kinds of finding in one view, such as a quality report, the Web UI or the VS Code extension, has to translate between them. Either name the difference explicitly in CON-0193 or CON-0195, or define a mapping.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0193 INV-07: getrennte Domaenen, Vokabular-Unterschied ausdruecklich benannt",
+        "resolved_at": "2026-09-25T10:43:43Z"
+      }
+    },
+    {
+      "id": "CF-0054-006",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0193",
+      "conflicting_contract": "CON-0017",
+      "detail": "CON-0193 treats JUnit as a standard input the core reads through an adapter. The Test Run Results API (CON-0017/CON-0018) also handles test results. Neither contract says whether the JUnit adapter from SPEC-0054 and the existing test-run path share the same parser and data model, or run side by side. Without that, test results can be parsed twice and come out with different pass/fail semantics. CON-0193 or CON-0197 (the `sdd test-run` extension) should state how they relate.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0193 INV-09: ein gemeinsamer JUnit-Parser fuer measure und test run",
+        "resolved_at": "2026-09-25T10:43:44Z"
+      }
+    },
+    {
+      "id": "CF-0054-007",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0162",
+      "detail": "Laut INV-09 stammt requirements.holdout_pass_rate nur aus Ergebnisdateien. CON-0195 legt aber nicht fest, welche Datei das ist. Naheliegend ist der JSON-Output von `sdd evaluate --output-json` (CON-0162). Offen bleibt auch, wie die Rate aus dessen Zählern gebildet wird. CON-0162 kennt pro Tier passed, failed und skipped, wobei skipped per fail-fast übersprungene Holdouts zählt. Zählt skipped in den Nenner, sinkt die Rate. Zählt es nicht, steigt sie. Ungeklärt ist außerdem, ob Tiers (critical/normal/edge-case) gewichtet werden und wann der Wert null (n/a) ist, etwa ohne Ergebnisdatei oder bei 0 aktiven Holdouts.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196 Formeln: Quelldatei, Zaehlung ohne skipped, keine Tier-Gewichtung, null ohne gueltige Datei",
+        "resolved_at": "2026-09-25T10:43:45Z"
+      }
+    },
+    {
+      "id": "CF-0054-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0152",
+      "detail": "CON-0152 ordnet FRs Tests über zwei Wege zu: über Task-description mit nicht leeren test_ids oder über fr_test_map. Das Ergebnis ist binär, covered oder uncovered. CON-0195 kennt vier Status (erfüllt/teilweise/fehlt/unbekannt) und vier Quellen, darunter junit_property und junit_name. Beide zählen damit dieselben FRs unterschiedlich: `sdd finalize` kann ein FR über die Compliance-Kette als covered werten, während der Quality-Report es als fehlt meldet, und umgekehrt. Dazu kommt ein Grenzfall: Fehlt der Abschnitt 'Funktionale Anforderungen', liefert CON-0152 bewusst 'nicht anwendbar' (leere Listen). CON-0195 legt für diesen Fall weder fest, ob der Knoten requirements null (n/a) ist, noch welchen reason er trägt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0195 Abgrenzung: Abdeckung (Compliance) vs. Erfuellung (Report), gleicher FR-Parser, Spec ohne FR -> null",
+        "resolved_at": "2026-09-25T10:43:45Z"
+      }
+    },
+    {
+      "id": "CF-0054-009",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0153",
+      "detail": "`sdd finalize` gehört laut CON-0195 zu den Verbrauchern des Reports. Gleichzeitig blockiert die ComplianceChecker-Kette aus CON-0153 finalize bei fehlender FR-Abdeckung. Damit gibt es zwei FR-Gates im selben Befehl mit unterschiedlicher Logik (siehe CON-0152). Kein Contract regelt, welches Urteil gilt oder ob die Compliance-Kette künftig den Report nutzt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0195 Abgrenzung: Compliance-Kette blockiert weiter, Report wirkt ueber quality.gates; beide gelten",
+        "resolved_at": "2026-09-25T10:43:46Z"
+      }
+    },
+    {
+      "id": "CF-0054-010",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0018",
+      "detail": "Die Test-Status im Report sind passed/failed/error/skipped/not_run, dazu kommt requirements.test_run als Pfad auf den Test-Run-Report (SPEC-0006). Der Contract definiert keine Abbildung vom Status-Vokabular der Test-Run-Results (CON-0017/CON-0018) auf dieses Enum. Das betrifft vor allem not_run und error. Nicht erfüllbare Status würden sonst an der Schemavalidierung scheitern oder stillschweigend umgedeutet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0195 Test-Status-Tabelle: Herkunft aller Status inkl. not_run",
+        "resolved_at": "2026-09-25T10:43:47Z"
+      }
+    },
+    {
+      "id": "CF-0054-011",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0030",
+      "detail": "Laut CON-0195 sind Pipeline-Gates Verbraucher des Reports (SPEC-0053). Das Pipeline-Phase-State-Schema (CON-0030) und die Gate-Dateien unter .sdd/pipeline/*-gate.json haben aber kein Feld, das auf den Report verweist (Pfad, git_sha oder schema_version). Ein Gate kann also nicht belegen, gegen welchen Report es entschieden hat. Fehlt eine Versionsprüfung, bricht ein neues schema_version bestehende Gates unbemerkt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196 INV-08: Gate-Eintrag belegt report_path, git_sha, schema_version; unbekannte Version = nicht bestanden",
+        "resolved_at": "2026-09-25T10:43:48Z"
+      }
+    },
+    {
+      "id": "CF-0054-012",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0195",
+      "conflicting_contract": "CON-0196",
+      "detail": "CON-0195 verweist für die Score-Berechnung auf CON-0196, für Verstoß-Schlüssel auf CON-0194 INV-09 und für die Sonden auf quality.yaml (CON-0192). Keiner dieser Contracts steht in der übergebenen Workspace-Liste, obwohl die Dateien im Repo liegen. Der Konfliktabgleich war deshalb unvollständig, und die Querverweise (INV-07, INV-08) ließen sich nicht gegenprüfen. Der Contract-Index sollte neu erzeugt und die Analyse wiederholt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Werkzeugbefund: die Analyse kannte die neuen Contracts nicht; Querverweise manuell geprueft und in TST-0221..0227 abgedeckt",
+        "resolved_at": "2026-09-25T10:43:49Z"
+      }
+    },
+    {
+      "id": "CF-0054-013",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0196",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0196 INV-04 und das Szenario 'Ungültige Gates sind Konfigurationsfehler' verlangen, dass `sdd config validate` Gates mit unbekanntem Pfad, unzulässigem Operator oder falschem Zahlentyp als Fehler meldet. Score-Pfade erwarten eine Zahl in [0, 1], `count.*`-Pfade eine nicht negative ganze Zahl. CON-0190 regelt aber nur Pflichtfelder, das Provider-Enum und die Provider-Konsistenz der `llm.*`-Blöcke. Regeln für `quality.gates`, `quality.weights.*` und `quality.architecture.*` fehlen dort, ebenso das Level (error oder warning). Ohne Nachtrag in CON-0190 oder einen eigenen Contract ist das Szenario in CON-0196 nicht erfüllbar.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196 INV-07: Regelgruppe quality mit Level error fuer gates, weights, architecture",
+        "resolved_at": "2026-09-25T10:43:49Z"
+      }
+    },
+    {
+      "id": "CF-0054-014",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0196",
+      "conflicting_contract": "CON-0191",
+      "detail": "CON-0196 verlässt sich darauf, dass ungültige Gates über `sdd config validate` gemeldet werden und zu Exit-Code 1 führen. CON-0191 legt Exit-Code und JSON-Ausgabe fest, prüft aber nur die LLM-Konfiguration. Offen bleibt, ob `sdd config validate` auch `quality.yaml` bzw. die `quality.*`-Keys liest und wie Gate-Fehler im JSON erscheinen (Feldpfad, Level).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196 INV-07: Ausgabe im Format von CON-0191, Exit 1",
+        "resolved_at": "2026-09-25T10:43:50Z"
+      }
+    },
+    {
+      "id": "CF-0054-015",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0196",
+      "conflicting_contract": "CON-0010",
+      "detail": "CON-0196 nimmt `holdout_pass_rate` aus der jüngsten Datei unter `.sdd/evaluations/`, gefiltert auf Szenarien mit einem `contract` der Spec. Das Format passt zu CON-0010 G-06 (`scenarios[].contract` und `passed` sind vorhanden). Daneben gibt es aber zwei Schwellen: CON-0010 G-05 hat eine feste 90-%-Auto-Merge-Schwelle über den globalen `summary.pass_rate` aller Szenarien, CON-0196 konfigurierbare Gates über einen pro Spec gefilterten und mit Gewicht h gemischten Wert. Der Evaluator kann also Auto-Merge freigeben, während das `requirements`-Gate derselben Spec fehlschlägt, oder umgekehrt. Welches Gate vorrangig ist, ist nicht festgelegt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196: im --auto-Modus muessen CON-0010 G-05 und alle quality.gates erfuellt sein",
+        "resolved_at": "2026-09-25T10:43:51Z"
+      }
+    },
+    {
+      "id": "CF-0054-016",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0196",
+      "conflicting_contract": "CON-0010",
+      "detail": "CON-0010 G-07 schreibt bei einem Abbruch (zum Beispiel fehlendem `ANTHROPIC_API_KEY`) einen Fehler-Report. Ob er ebenfalls unter `.sdd/evaluations/` landet und ob er `scenarios` enthält, ist nicht geregelt. CON-0196 fängt nur ab, dass keine Datei mit passenden Szenarien existiert (dann entfällt der Holdout-Anteil). Enthält ein Fehler- oder Teil-Report passende Szenarien mit `passed: false`, sinkt `holdout_pass_rate` fälschlich, und ein Ausfall zählt als Misserfolg. Das widerspricht dem Geist von INV-01 (n/a ist nie 0). Außerdem hängt der Evaluator laut G-07 zwingend an `ANTHROPIC_API_KEY`, was im keyfreien Betrieb dazu führt, dass es nie Holdout-Daten gibt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0196: Fehler-Reports und Dateien nur mit uebersprungenen Szenarien werden ignoriert; nie 0",
+        "resolved_at": "2026-09-25T10:43:52Z"
+      }
+    },
+    {
+      "id": "CF-0054-017",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0197",
+      "conflicting_contract": "CON-0018",
+      "detail": "CON-0018 describes `sdd test run` as fixed to pytest. Its background step says 'konfigurierter pytest-Runner', and the scenario 'Nicht-pytest-Artefakt wird übersprungen' marks .feature artifacts as skipped with 'runner: unsupported'. CON-0197 says that when quality.yaml defines a probe with `role: tests`, that probe's command runs (INV-03, language-neutral), and there is only one test runner (INV-04). With the probe active, it is unclear whether non-pytest artifacts are still skipped or run by the probe. CON-0018 needs a precondition such as 'ohne quality.yaml', or CON-0197 has to state which CON-0018 scenarios stop applying when the probe is active.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05b: Verhalten mit Testsonde festgelegt",
+        "resolved_at": "2026-09-25T10:43:53Z"
+      }
+    },
+    {
+      "id": "CF-0054-018",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0197",
+      "conflicting_contract": "CON-0017",
+      "detail": "Two CON-0197 scenarios need fields that CON-0017's schema lacks. 'test run nutzt die Testsonde' requires the run report to contain name, status and FR marker per test case, plus a JUnit file next to it. 'measure nutzt vorhandenen Test-Run' requires finding a run report by the current Git SHA. The run report schema in test-run-results-api.openapi.yaml (CON-0017) has only per-TST entries (test_id, artifact, status) and no git_sha, no test-case list, no FR marker and no JUnit reference. CON-0017 has to be extended, or CON-0197 has to name the schema that governs the extended report.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05a: erweiterte Felder benannt, CON-0017-Artefakt wird additiv ergaenzt",
+        "resolved_at": "2026-09-25T10:43:54Z"
+      }
+    },
+    {
+      "id": "CF-0054-019",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0197",
+      "conflicting_contract": "CON-0017",
+      "detail": "CON-0017 restricts `runner` in the run report and assumes one runner per run. With the test probe, the runner is whatever command quality.yaml defines. It is unclear which value goes into `runner` and whether that field is an enum or free text. CON-0197 says nothing about this.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05b: runner = probe:<name>, freier Text",
+        "resolved_at": "2026-09-25T10:43:54Z"
+      }
+    },
+    {
+      "id": "CF-0054-020",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0197",
+      "conflicting_contract": "CON-0018",
+      "detail": "CON-0018 and CON-0197 both specify the exit codes of `sdd test run` (0/1/2). CON-0197 only says 'unverändert' and does not define what happens when the probe fails or quality.yaml is invalid during `sdd test run`: is that exit 2, as for `quality measure`, or the CON-0018 semantics (2 = spec without tests)? The two contracts could end up with different meanings for exit 2.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 INV-05b: Exit-Codes von test run mit Sonde festgelegt",
+        "resolved_at": "2026-09-25T10:43:55Z"
+      }
+    },
+    {
+      "id": "CF-0054-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-03",
+      "conflicting_contract": "SPEC-0006:FR-01",
+      "detail": "`sdd quality measure` braucht Testergebnisse pro FR und erweitert dafür den Test-Runner von `sdd test-run` aus SPEC-0006; Ergebnisformat und Exit-Code-Semantik müssen abgestimmt werden, damit kein zweiter Ausführungsweg und kein abweichendes Ergebnisformat entsteht.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Umsetzungspflicht in SPEC-0054 Abschnitt 1 (Nachzuziehen bei der Umsetzung) festgehalten; Semantik in CON-0196/CON-0197 geregelt",
+        "resolved_at": "2026-09-25T10:45:46Z"
+      }
+    },
+    {
+      "id": "CF-0054-R002",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-10",
+      "conflicting_contract": "SPEC-0014:FR-01",
+      "detail": "`quality.gates` hängt eine zusätzliche Stufe an das gestufte Execution Gate aus SPEC-0014; Reihenfolge und Blockiersemantik dieser Stufe fehlen in SPEC-0014 und müssen dort ergänzt werden, damit es keine zwei konkurrierenden Gate-Definitionen gibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Umsetzungspflicht in SPEC-0054 Abschnitt 1 (Nachzuziehen bei der Umsetzung) festgehalten; Semantik in CON-0196/CON-0197 geregelt",
+        "resolved_at": "2026-09-25T10:45:47Z"
+      }
+    },
+    {
+      "id": "CF-0054-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-10",
+      "conflicting_contract": "SPEC-0004:FR-03",
+      "detail": "Im `--auto`-Modus wird der Qualitätsscore zur weiteren Merge-Voraussetzung neben der Holdout-Pass-Rate (≥ 90 %) aus SPEC-0004; das ändert die Auto-Merge-Bedingung des Dark-Factory-Laufs und muss in SPEC-0004 nachgezogen werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Umsetzungspflicht in SPEC-0054 Abschnitt 1 (Nachzuziehen bei der Umsetzung) festgehalten; Semantik in CON-0196/CON-0197 geregelt",
+        "resolved_at": "2026-09-25T10:45:48Z"
+      }
+    },
+    {
+      "id": "CF-0054-R004",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "FR-05",
+      "conflicting_contract": "SPEC-0015:FR-01",
+      "detail": "Beide Specs betreffen Architekturqualität; laut SPEC-0054 bleibt die LLM-gestützte SOLID-Bewertung von Spec-Texten aus SPEC-0015 bewusst außerhalb des deterministischen Architekturtreue-Scores aus `architecture.yaml`, trotzdem kann die doppelte Begrifflichkeit Nutzer verwirren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Umsetzungspflicht in SPEC-0054 Abschnitt 1 (Nachzuziehen bei der Umsetzung) festgehalten; Semantik in CON-0196/CON-0197 geregelt",
+        "resolved_at": "2026-09-25T10:45:49Z"
+      }
+    },
+    {
+      "id": "CF-0054-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "FR-09",
+      "conflicting_contract": "SPEC-0014:FR-01",
+      "detail": "Die FR-Erfüllung aus grünen, zugeordneten Tests überschneidet sich mit der Prüfung auf fehlende Tests im Execution Gate aus SPEC-0014; die Zuordnung FR→Test sollte dieselbe Quelle nutzen (`fr_test_map`).",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Umsetzungspflicht in SPEC-0054 Abschnitt 1 (Nachzuziehen bei der Umsetzung) festgehalten; Semantik in CON-0196/CON-0197 geregelt",
+        "resolved_at": "2026-09-25T10:45:50Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 20,
+    "high": 1,
+    "medium": 9,
+    "low": 10,
+    "affected_specs_count": 0
+  }
+}

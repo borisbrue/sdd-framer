@@ -313,7 +313,20 @@ def validate(config: SddConfig) -> Report:
     # 6) FR-Coverage-Compliance (SPEC-0041 FR-07)
     _check_fr_compliance(report, specs, config)
 
+    # 7) Architekturregeln ↔ ADRs (SPEC-0054 FR-06, CON-0197 INV-07/INV-08)
+    _check_architecture_links(config, report)
+
     return report
+
+
+def _check_architecture_links(config: SddConfig, report: Report) -> None:
+    from .quality.arch.adr_links import check_adr_links
+
+    adr_dir = str((config.raw.get("adr") or {}).get("output_dir") or "docs/adr")
+    for fund in check_adr_links(config.root, adr_dir):
+        datei = config.root / fund.path.split(":", 1)[0]
+        report.add(fund.level, datei, fund.message,
+                   instruction="Regel oder ADR anpassen, sodass adr und enforced_by zueinander passen.")
 
 
 AGENTS_MD_REQUIRED_SECTIONS = [

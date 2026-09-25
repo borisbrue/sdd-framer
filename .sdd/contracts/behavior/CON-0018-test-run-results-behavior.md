@@ -35,3 +35,9 @@ Jedes Szenario MUSS durch einen automatisierten Test (z.B. Cucumber, behave, Spe
 | Begriff   | Definition |
 |-----------|------------|
 | ...       | ...        |
+
+## Erweiterung durch SPEC-0054
+
+Die Szenarien dieses Contracts gelten **ohne** Testsonde unverändert. Mit Testsonde ersetzt die
+Sonde den pytest-Runner, es gibt kein `runner: unsupported`, und Exit 2 steht zusätzlich für eine
+ausgefallene Sonde oder eine ungültige `quality.yaml` (CON-0197 INV-05b).

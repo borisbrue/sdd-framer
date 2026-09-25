@@ -46,3 +46,10 @@ Der eigentliche Schema-Artifact liegt unter `contracts/api/test-run-results-api.
 
 - Schema-Linting (z.B. `spectral lint`)
 - Contract-Tests gegen die Implementierung (z.B. `schemathesis`, `dredd`, `pact`)
+
+## Erweiterung durch SPEC-0054
+
+Mit einer Testsonde (`role: tests` in `.sdd/quality.yaml`) bekommt der Run-Report additiv die
+optionalen Felder `junit`, `testcases` und `git_sha`; `runner` ist dann `probe:<name>`
+(CON-0197 INV-05a/05b). Das OpenAPI-Artefakt dieses Contracts fehlt im Repo; bei seiner Erstellung
+sind diese Felder aufzunehmen.

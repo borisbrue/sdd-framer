@@ -21,6 +21,7 @@ _UNSUPPORTED_EXTENSIONS = {".feature"}
 _PLACEHOLDER_ARTIFACT = "tests/<level>/"
 
 MAX_RUNS_PER_SPEC = 50
+PROBE_RUNNER_PREFIX = "probe:"
 
 TestStatus = Literal["passed", "failed", "error", "missing", "skipped"]
 
@@ -43,6 +44,10 @@ class RunReport:
     exit_code: int
     tests: list[TestResult] = field(default_factory=list)
     contract_coverage: dict[str, bool] = field(default_factory=dict)
+    # SPEC-0054 CON-0197 INV-05a: nur mit Testsonde gesetzt, sonst nicht im JSON.
+    junit: str | None = None
+    testcases: list[dict] | None = None
+    git_sha: str | None = None
 
     @property
     def passed(self) -> int:
@@ -58,6 +63,9 @@ class RunReport:
 
     def to_json(self) -> dict:
         d = asdict(self)
+        for key in ("junit", "testcases", "git_sha"):
+            if d[key] is None and not self.runner.startswith(PROBE_RUNNER_PREFIX):
+                del d[key]
         d["passed"] = self.passed
         d["failed"] = self.failed
         d["skipped"] = self.skipped
@@ -297,6 +305,11 @@ def run(config: SddConfig, spec_id: str) -> RunReport:
     if not tst_ids:
         raise ValueError(f"Spec {spec_id} hat keine Tests im Frontmatter (tests: []).")
 
+    probe_setup = _test_probe(config)
+    if probe_setup is not None:
+        report, _ = _run_with_probe(config, spec_id, tst_ids, *probe_setup)
+        return report
+
     runner = config.runner_command()
     timeout = config.runner_timeout()
     started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -376,3 +389,107 @@ def latest_report(config: SddConfig, spec_id: str) -> RunReport | None:
         tests=tests,
         contract_coverage=data.get("contract_coverage", {}),
     )
+
+
+# ── SPEC-0054: Testsonde aus .sdd/quality.yaml (CON-0197 INV-05a/05b) ──────────
+
+def _test_probe(config: SddConfig):
+    """(QualityConfig, Probe) der Sonde mit role tests, oder None ohne quality.yaml."""
+    from .quality.config import QualityConfigError, load_quality_config
+
+    try:
+        qcfg = load_quality_config(config.root)
+    except FileNotFoundError:
+        return None
+    except QualityConfigError as exc:
+        raise RuntimeError(f".sdd/quality.yaml ungültig: {exc}") from exc
+    probe = qcfg.probe_for_role("tests")
+    return (qcfg, probe) if probe is not None else None
+
+
+def _in_artifact(case: dict, artifact: str) -> bool:
+    if case.get("file"):
+        return case["file"] == artifact
+    modul = artifact.removesuffix(".py").replace("/", ".")
+    return case["classname"] == modul or case["classname"].startswith(modul + ".")
+
+
+def _tst_status(cases: list[dict]) -> TestStatus:
+    if not cases:
+        return "missing"
+    stati = {c["status"] for c in cases}
+    if stati & {"failed", "error"}:
+        return "failed"
+    return "skipped" if stati == {"skipped"} else "passed"
+
+
+def run_probe(config: SddConfig, qcfg, probe, keep_output: Path | None = None):
+    """Führt die Testsonde aus – derselbe Pfad für `sdd test run` und `sdd quality measure`."""
+    from .quality.files import collect_files
+    from .quality.probe import ProbeRun
+
+    dateien = collect_files(config.root, qcfg.paths, qcfg.exclude)
+    return ProbeRun(config.root, dateien).execute(probe, keep_output=keep_output)
+
+
+def run_with_probe(config: SddConfig, spec_id: str, qcfg, probe):
+    """(RunReport, ProbeOutcome) für `sdd quality measure --spec`; ValueError ohne TST-Tests."""
+    spec_doc = next((d for d in (parse_safe(md) for md in config.specs_dir.rglob("*.md"))
+                     if d and d.frontmatter.get("id") == spec_id), None)
+    tst_ids = (spec_doc.frontmatter.get("tests") or []) if spec_doc else []
+    if not tst_ids:
+        raise ValueError(f"Spec {spec_id} hat keine Tests im Frontmatter (tests: []).")
+    return _run_with_probe(config, spec_id, tst_ids, qcfg, probe)
+
+
+def _run_with_probe(config: SddConfig, spec_id: str, tst_ids: list[str], qcfg, probe):
+    from .quality.diff import current_sha
+
+    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    wall_start = datetime.now(timezone.utc).timestamp()
+    stem = f"{spec_id}-{started_at.replace(':', '-').replace('.', '-')}"
+    junit_pfad = config.test_runs_dir / f"{stem}.junit.xml"
+    outcome = run_probe(config, qcfg, probe, keep_output=junit_pfad)
+    if not outcome.ok:
+        raise RuntimeError(f"Testsonde {probe.name}: {outcome.reason}")
+
+    faelle = [{"name": c.name, "classname": c.classname, "status": c.status,
+               "frs": list(c.frs), **({"file": c.file} if c.file else {})}
+              for c in outcome.result.cases]
+    results = []
+    for tst_id in tst_ids:
+        artifact, pre_status, pre_msg = _resolve_artifact(config, tst_id)
+        passende = [c for c in faelle if artifact and _in_artifact(c, artifact)]
+        results.append(TestResult(tst_id, artifact, _tst_status(passende),
+                                  message=pre_msg if not passende else ""))
+    report = RunReport(
+        spec_id=spec_id,
+        runner=f"{PROBE_RUNNER_PREFIX}{probe.name}",
+        started_at=started_at,
+        duration_s=round(datetime.now(timezone.utc).timestamp() - wall_start, 3),
+        exit_code=1 if any(c["status"] in ("failed", "error") for c in faelle) else 0,
+        tests=results,
+        contract_coverage=_compute_contract_coverage(config, spec_id, results),
+        junit=junit_pfad.relative_to(config.root).as_posix(),
+        testcases=[{k: v for k, v in c.items() if k != "file"} for c in faelle],
+        git_sha=current_sha(config.root),
+    )
+    _persist(config, report)
+    return report, outcome
+
+
+def latest_probe_run(config: SddConfig, spec_id: str, sha: str | None):
+    """(Testfälle, Pfad) des jüngsten Laufs mit Testsonde auf demselben Git-Stand."""
+    from .quality.parsers import TestCase
+
+    runs_dir = config.test_runs_dir
+    for pfad in sorted(runs_dir.glob(f"{spec_id}-*.json"), reverse=True) if runs_dir.exists() else []:
+        try:
+            daten = json.loads(pfad.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if daten.get("testcases") is None or daten.get("git_sha") != sha:
+            continue
+        return [TestCase(c["name"], c.get("classname", ""), c["status"], tuple(c.get("frs") or ()),
+                         c.get("file")) for c in daten["testcases"]], pfad
+    return None

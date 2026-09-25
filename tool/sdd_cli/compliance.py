@@ -94,6 +94,12 @@ def _extract_fr_ids(body: str) -> list[str]:
     return list(dict.fromkeys(ids))  # dedupliziert, reihenfolgestabil
 
 
+def extract_fr_ids(body: str) -> list[str]:
+    """Oeffentlicher Zugang zum FR-Parser; der Quality-Report (SPEC-0054, CON-0195)
+    muss dieselben FR-IDs sehen wie die Compliance-Kette."""
+    return _extract_fr_ids(body)
+
+
 # ── FrCoverageSpecification ───────────────────────────────────────────────────
 
 class FrCoverageSpecification:

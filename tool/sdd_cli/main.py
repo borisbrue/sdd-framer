@@ -44,6 +44,16 @@ def cli() -> None:
     pass
 
 
+def _register_quality_commands() -> None:
+    from .quality_cli import arch_group, quality_group
+
+    cli.add_command(quality_group)
+    cli.add_command(arch_group)
+
+
+_register_quality_commands()
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd init – Hilfsfunktionen
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3640,7 +3650,7 @@ def config_validate_cmd(output_json: bool) -> None:
             console.print(f"[red]✗[/] YAML Parse-Fehler: {exc}")
         sys.exit(1)
 
-    issues = ConfigValidator(raw).validate()
+    issues = ConfigValidator(raw, root=_Path(root)).validate()
     has_errors = any(i.level == "error" for i in issues)
 
     if output_json:

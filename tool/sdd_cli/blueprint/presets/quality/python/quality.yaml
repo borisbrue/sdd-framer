@@ -1,0 +1,42 @@
+# sdd-Preset `python` (SPEC-0054). Nach `sdd quality init` gehört die Datei dem Projekt:
+# Befehle, Pfade und Normierungen dürfen und sollen angepasst werden.
+version: 1
+preset: python
+paths: ["**/*.py"]
+exclude: [".venv/**", "venv/**", "build/**", "dist/**", "**/__pycache__/**"]
+test_paths: ["tests/**"]
+probes:
+  tests:
+    command: "PYTHONPATH=.sdd/quality${PYTHONPATH:+:$PYTHONPATH} python3 -m pytest -q -p sdd_fr_marker --junitxml={out}"
+    format: junit
+    role: tests
+    fr_marker: property
+    timeout_seconds: 1800
+    version_command: "python3 -m pytest --version"
+  lint:
+    command: "command -v ruff >/dev/null || exit 127; ruff check --exit-zero --output-format sarif --output-file {out} {paths}"
+    format: sarif
+    metric: lint_per_kloc
+    diff_scoped: true
+    version_command: "ruff --version"
+  types:
+    command: "command -v mypy >/dev/null || exit 127; mypy --output json {paths} | python3 .sdd/quality/mypy_to_sarif.py > {out}"
+    format: sarif
+    metric: type_errors
+    diff_scoped: true
+    version_command: "mypy --version"
+  imports:
+    command: "python3 .sdd/quality/extract_deps.py {paths} > {out}"
+    format: sdd-deps
+    role: deps
+  complexity:
+    command: "command -v lizard >/dev/null || exit 127; lizard --csv {paths} | python3 .sdd/quality/lizard_to_metrics.py > {out}"
+    format: sdd-metrics
+    version_command: "lizard --version"
+normalization:
+  complexity_mean: {good: 2, bad: 10}
+  complexity_max: {good: 10, bad: 40}
+  complex_function_share: {good: 0, bad: 0.2}
+  long_function_share: {good: 0, bad: 0.2}
+suppressions:
+  "**/*.py": ['#\s*noqa', '#\s*type:\s*ignore', 'pragma:\s*no cover']

@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+import yaml
 
 _ALLOWED_PROVIDERS = ("anthropic", "claude-cli", "openai-compat", "huggingface")
 _LLM_COMPONENTS = (
@@ -114,6 +117,34 @@ class AnthropicCheck(ConfigCheck):
                     "Keyfreier Betrieb via claude-cli bleibt möglich."))
 
 
+class QualityCheck(ConfigCheck):
+    """SPEC-0054 CON-0196 INV-07: Regelgruppe `quality` und `.sdd/quality.yaml`."""
+
+    def __init__(self, root: Path | None = None) -> None:
+        self._root = root
+
+    def run(self, raw: dict, issues: list[ConfigIssue]) -> None:
+        from .quality.config import check_quality_config
+        from .quality.settings import QualitySettings, settings_problems
+
+        try:
+            settings = QualitySettings.from_raw(raw)
+        except (TypeError, ValueError, AttributeError) as exc:
+            issues.append(ConfigIssue("error", "quality", f"Einstellungen unlesbar: {exc}"))
+            return
+        issues.extend(ConfigIssue("error", p.path, p.message) for p in settings_problems(settings))
+        pfad = self._root / ".sdd" / "quality.yaml" if self._root else None
+        if pfad is None or not pfad.is_file():
+            return
+        try:
+            daten = yaml.safe_load(pfad.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            issues.append(ConfigIssue("error", "quality.yaml", f"kein gültiges YAML: {exc}"))
+            return
+        issues.extend(ConfigIssue("error", f"quality.yaml:{p.path}", p.message)
+                      for p in check_quality_config(daten))
+
+
 class ConfigValidator:
     _CHECKS: list[ConfigCheck] = [
         RequiredFieldsCheck(),
@@ -123,11 +154,12 @@ class ConfigValidator:
         AnthropicCheck(),
     ]
 
-    def __init__(self, raw: dict) -> None:
+    def __init__(self, raw: dict, root: Path | None = None) -> None:
         self._raw = raw
+        self._root = root
 
     def validate(self) -> list[ConfigIssue]:
         issues: list[ConfigIssue] = []
-        for check in self._CHECKS:
+        for check in [*self._CHECKS, QualityCheck(self._root)]:
             check.run(self._raw, issues)
         return issues

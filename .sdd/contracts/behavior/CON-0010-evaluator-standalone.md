@@ -106,3 +106,9 @@ Der Evaluator bricht ab und gibt einen Fehler-Report zurück, wenn:
 | Run         | Ein einzelner Durchlauf eines Holdout-Szenarios (max. 3 pro Szenario) |
 | Pass-Rate   | Anteil bestandener Szenarien an der Gesamtanzahl                  |
 | base_url    | Konfigurierbare Basis-URL des zu testenden Services               |
+
+## Erweiterung durch SPEC-0054
+
+Im `--auto`-Modus verlangt der Auto-Merge zusätzlich zur Schwelle aus G-05, dass alle
+`quality.gates` bestanden sind (CON-0196). Für `holdout_pass_rate` im Quality-Report zählen
+Szenarien mit `llm_verdict: "skip"` oder nur `error`-Läufen nicht (CON-0196, Formeltabelle).

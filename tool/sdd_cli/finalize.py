@@ -161,6 +161,19 @@ class SpecFinalizer:
             head = _git(["rev-parse", "HEAD"], cwd=root)
             commit_hash = head.stdout.strip() or None
 
+        quality = self._quality_gates(spec_id)
+        if quality is not None and quality.passed is False and quality.mode == "block":
+            return FinalizeReport(
+                spec_id=spec_id,
+                branch=effective_branch,
+                commit_hash=commit_hash,
+                tests_passed=False,
+                test_output=quality.message,
+                pr_url=None,
+                pr_path=None,
+                error=quality.message,
+            )
+
         if self._dry_run:
             return FinalizeReport(
                 spec_id=spec_id,
@@ -357,6 +370,15 @@ class SpecFinalizer:
             if issue.hint:
                 lines.append(f"    → {issue.hint}")
         return "\n".join(lines)
+
+    def _quality_gates(self, spec_id: str):
+        """SPEC-0054 FR-10: quality.finalize warn|block|off; warn nur als Hinweis."""
+        from .quality import gate_integration
+
+        entscheidung = gate_integration.check_quality_gates(self._cfg.root, spec_id, self._cfg.raw)
+        if entscheidung.passed is False and entscheidung.mode == "warn":
+            print(f"⚠ {entscheidung.message}", file=sys.stderr)
+        return entscheidung
 
     def _create_pr(
         self, spec_id: str, branch: str, commit_hash: str | None
