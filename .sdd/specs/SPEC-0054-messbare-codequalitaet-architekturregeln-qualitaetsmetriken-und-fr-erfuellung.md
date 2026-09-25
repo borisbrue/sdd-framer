@@ -2,7 +2,7 @@
 id: SPEC-0054
 title: 'Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung'
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-09-25
 updated: '2026-09-25'
