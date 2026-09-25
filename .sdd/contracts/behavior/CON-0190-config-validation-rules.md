@@ -42,3 +42,9 @@ pytest-behave-Test abgedeckt sein.
 | Provider-Block  | `llm.<component>`-Eintrag in config.yaml                               |
 | error           | Validierungsergebnis das Exit-Code 1 erzwingt                           |
 | warning         | Validierungsergebnis das nur als Hinweis erscheint (Exit-Code 0 möglich)|
+
+## Erweiterung durch SPEC-0054
+
+Neue Regelgruppe `quality` (Level `error`): ungültige `quality.gates`, negative Gewichte,
+`quality.architecture.threshold ≤ 0`, unbekannter `quality.finalize`-Modus sowie Schemaverstöße
+einer vorhandenen `.sdd/quality.yaml` (Pfad `quality.yaml:<feldpfad>`) – CON-0196 INV-07.

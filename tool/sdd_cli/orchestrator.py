@@ -436,6 +436,13 @@ def run_pipeline(
 
         # 7. Ergebnis auswerten
         passed = (eval_pass_rate is None) or (eval_pass_rate >= 0.9)
+        # SPEC-0054 CON-0196: im Auto-Modus zusätzlich alle quality.gates (unabhängig von quality.finalize)
+        if passed:
+            from .quality.gate_integration import check_quality_gates
+            quality = check_quality_gates(config.root, spec_id, config.raw, respect_mode=False)
+            if quality.passed is False:
+                passed = False
+                eval_context = quality.message
         report.attempts.append(PipelineAttempt(
             attempt=attempt_num, branch=branch,
             build_passed=build_passed, eval_pass_rate=eval_pass_rate,

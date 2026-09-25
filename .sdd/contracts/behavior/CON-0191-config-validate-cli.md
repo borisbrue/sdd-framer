@@ -39,3 +39,7 @@ Szenarien sind **ausführbare Spezifikation**.
 | Exit-Code 1   | Mindestens ein Eintrag mit level "error" im Ergebnis              |
 | Issue-Objekt  | JSON-Objekt `{level, path, message}` im `--json`-Array            |
 
+## Erweiterung durch SPEC-0054
+
+`sdd config validate` meldet die Befunde der Regelgruppe `quality` im selben Format
+(`{level, path, message}`) und endet bei Fehlern mit Exit 1 (CON-0196 INV-07).

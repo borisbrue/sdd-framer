@@ -31,7 +31,7 @@ Filesystem           .sdd/
                        templates/
 ```
 
-Die CLI ist der einzige Schreiber auf dem Filesystem. Web API und Extension delegieren alle Operationen an die CLI-Module. Keine Datenbank – alle Daten liegen als Markdown-Dateien mit YAML-Frontmatter vor.
+Die CLI ist der einzige Schreiber auf dem Filesystem. Architekturregeln, die das maschinell prüfen, stehen in `.sdd/architecture.yaml` und verweisen auf ADRs unter `docs/adr/` (SPEC-0054, SPEC-0059); `sdd arch check` wertet sie aus. Web API und Extension delegieren alle Operationen an die CLI-Module. Keine Datenbank – alle Daten liegen als Markdown-Dateien mit YAML-Frontmatter vor.
 
 ## Verzeichnisstruktur
 
@@ -129,6 +129,12 @@ sdd new adr "Architekturentscheidung"
 
 # Traceability-Matrix erzeugen
 sdd trace
+
+# Qualität messen (SPEC-0054)
+sdd quality init --preset python   # Sonden ins Projekt kopieren
+sdd quality doctor                  # Sonden prüfen
+sdd quality measure --spec SPEC-0054 --json
+sdd arch check                      # Architekturregeln
 
 # Web API starten
 cd web && uvicorn main:app --reload

@@ -1,34 +1,83 @@
 ---
 id: SPEC-0054
-title: "Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung"
+title: 'Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung'
 type: feature
-status: approved
-owner: "Boris"
+status: in-progress
+owner: Boris
 created: 2026-09-25
-updated: 2026-09-25
+updated: '2026-09-25'
 version: 0.7.0
 priority: high
-tags: [quality, architecture, metrics, compliance, gate, language-agnostic]
-depends_on: [SPEC-0006, SPEC-0008, SPEC-0014, SPEC-0015, SPEC-0041]
-contracts: [CON-0192, CON-0193, CON-0194, CON-0195, CON-0196, CON-0197, CON-0198]
-tests: [TST-0221, TST-0222, TST-0223, TST-0224, TST-0225, TST-0226, TST-0227]
+tags:
+- quality
+- architecture
+- metrics
+- compliance
+- gate
+- language-agnostic
+depends_on:
+- SPEC-0006
+- SPEC-0008
+- SPEC-0014
+- SPEC-0015
+- SPEC-0041
+contracts:
+- CON-0192
+- CON-0193
+- CON-0194
+- CON-0195
+- CON-0196
+- CON-0197
+- CON-0198
+tests:
+- TST-0221
+- TST-0222
+- TST-0223
+- TST-0224
+- TST-0225
+- TST-0226
+- TST-0227
 fr_test_map:
-  FR-01: [TST-0221, TST-0226]
-  FR-02: [TST-0221, TST-0222]
-  FR-03: [TST-0225, TST-0226]
-  FR-04: [TST-0225]
-  FR-05: [TST-0223, TST-0225]
-  FR-06: [TST-0226]
-  FR-07: [TST-0223, TST-0226, TST-0227]
-  FR-08: [TST-0222, TST-0225]
-  FR-09: [TST-0224, TST-0225]
-  FR-10: [TST-0225]
-  FR-11: [TST-0221, TST-0225]
-  FR-12: [TST-0224]
-  FR-13: [TST-0221, TST-0226]
-  FR-14: [TST-0226]
+  FR-01:
+  - TST-0221
+  - TST-0226
+  FR-02:
+  - TST-0221
+  - TST-0222
+  FR-03:
+  - TST-0225
+  - TST-0226
+  FR-04:
+  - TST-0225
+  FR-05:
+  - TST-0223
+  - TST-0225
+  FR-06:
+  - TST-0226
+  FR-07:
+  - TST-0223
+  - TST-0226
+  - TST-0227
+  FR-08:
+  - TST-0222
+  - TST-0225
+  FR-09:
+  - TST-0224
+  - TST-0225
+  FR-10:
+  - TST-0225
+  FR-11:
+  - TST-0221
+  - TST-0225
+  FR-12:
+  - TST-0224
+  FR-13:
+  - TST-0221
+  - TST-0226
+  FR-14:
+  - TST-0226
+started_at: '2026-09-25T11:24:41Z'
 ---
-
 # Messbare Codequalität: Architekturregeln, Qualitätsmetriken und FR-Erfüllung
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.7.0
@@ -227,7 +276,8 @@ für alle Knoten dieselbe, nur der Parameter unterscheidet sich:
   führt die in `.sdd/quality.yaml` definierten Sonden aus, parst ihre Ausgaben und berechnet den
   Report. Mit `--diff` fließen nur Befunde in geänderten und neuen Dateien in Code- und
   Architekturmetriken ein (`{paths}` wird auf diese Dateien gesetzt, sofern die Sonde
-  `diff_scoped: true` erlaubt), und der Report enthält das Delta gegenüber `BASE_REF`.
+  `diff_scoped: true` erlaubt), und der Report nennt `base_ref`. Den Vergleich zweier Reports
+  (Delta) übernimmt `sdd bench compare` (SPEC-0056); der Report selbst bleibt ein Einzelstand.
 - **FR-02:** Der Kern unterstützt die Formate `junit`, `sarif`, `cobertura`, `lcov`, `sdd-deps`,
   `sdd-metrics` und `sdd-findings`. Die drei `sdd-*`-Formate sind als JSON-Schema im Contract
   festgelegt. Sprach- oder Werkzeugwissen enthält der Kern nicht.
@@ -302,7 +352,7 @@ für alle Knoten dieselbe, nur der Parameter unterscheidet sich:
   - als Gate-Handler für SPEC-0053 (nach `implementer` und zum Abschluss);
   - als zusätzliche Stufe des Qualitäts-Gates aus SPEC-0014;
   - im `--auto`-Modus der Pipeline als Merge-Voraussetzung neben der Holdout-Pass-Rate aus SPEC-0004;
-  - optional in `sdd finalize` (`quality.gates.on_finalize: warn|block|off`, Default `warn`).
+  - optional in `sdd finalize` (`quality.finalize: warn|block|off`, Default `warn`).
 - **FR-11:** **Einheitliche Fehlersemantik für alle Sonden.** Fällt eine Sonde aus (Befehl fehlt,
   Timeout, Exit-Code ≠ 0 ohne verwertbare Ausgabe, Ausgabe nicht parsebar), ist ihr Ergebnis `n/a`
   mit Grund, gleich welche Sonde es ist. Folgen:

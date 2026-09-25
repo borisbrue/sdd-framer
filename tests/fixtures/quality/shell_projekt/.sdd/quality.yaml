@@ -1,0 +1,17 @@
+# Fixture für SPEC-0054: ein Projekt ohne Python. Sonden sind Shell-Skripte.
+version: 1
+paths: ["app/**", "lib/**"]
+probes:
+  tests:
+    command: "sh probes/tests.sh > {out}"
+    format: junit
+    role: tests
+    fr_marker: name
+  lint:
+    command: "sh probes/lint.sh > {out}"
+    format: sdd-findings
+    metric: lint_per_kloc
+  deps:
+    command: "sh probes/deps.sh > {out}"
+    format: sdd-deps
+    role: deps

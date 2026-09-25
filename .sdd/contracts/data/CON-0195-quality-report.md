@@ -62,8 +62,9 @@ Beide lesen die FR-IDs mit demselben Parser. Hat die Spec keinen FR-Abschnitt, i
 - **INV-07:** Jeder Verstoß nennt `rule`, `adr` und `symbol` (Verstoß-Schlüssel, CON-0194 INV-09).
   `baselined: true` impliziert `severity: "warn"`.
 - **INV-08:** Die Liste `probes` enthält jede in `quality.yaml` definierte Sonde genau einmal, in
-  Deklarationsreihenfolge, mit dem **gerenderten** Befehl ohne Geheimnisse (Umgebungsvariablen
-  werden nicht expandiert).
+  Deklarationsreihenfolge, mit dem Befehl **wie in `quality.yaml` deklariert** (Platzhalter
+  `{paths}`/`{out}` nicht eingesetzt, Umgebungsvariablen nicht expandiert), damit der Report
+  auch bei großen Dateimengen lesbar bleibt und keine Geheimnisse enthält.
 - **INV-09:** Der Report enthält keine Inhalte aus `.sdd/holdout/`; `holdout_pass_rate` stammt nur
   aus Ergebnisdateien.
 

@@ -126,7 +126,7 @@ class TestLaufzeitInvarianten:
         [
             ("gibt-es-nicht-4711 > {out}", "Befehl nicht gefunden"),
             ("sleep 5; echo > {out}", "Zeitlimit überschritten"),
-            ("true", "keine Ausgabe"),
+            ("true {out}", "keine Ausgabe"),
             ("echo kaputt > {out}", "Ausgabe nicht parsebar"),
             ("cat .sdd/holdout/x > {out}", "Holdout-Pfad verboten"),
         ],

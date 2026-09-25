@@ -176,7 +176,8 @@ class QualityProject:
              contracts: tuple[str, ...] = ()) -> None:
         fm = {"id": SPEC_ID, "title": "Testspec", "type": "feature", "status": "approved",
               "owner": "Test", "created": "2026-09-25", "updated": "2026-09-25",
-              "version": "0.1.0", "priority": "low", "contracts": list(contracts), "tests": []}
+              "version": "0.1.0", "priority": "low", "contracts": list(contracts),
+              "tests": ["TST-9001"]}
         if fr_test_map:
             fm["fr_test_map"] = fr_test_map
         body = "\n".join(f"- **{fr}:** Anforderung {fr}." for fr in frs)

@@ -1,0 +1,15 @@
+---
+id: SPEC-0901
+title: "Shell-Dienst"
+status: approved
+owner: Test
+version: 0.1.0
+tests: [TST-9001]
+---
+
+# Shell-Dienst
+
+## 4. Funktionale Anforderungen
+
+- **FR-01:** Der Dienst startet.
+- **FR-02:** Der Dienst stoppt.

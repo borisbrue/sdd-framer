@@ -56,6 +56,8 @@ sdd_cli = [
     "blueprint/templates/*",
     "blueprint/templates/**/*",
     "blueprint/schemas/*",
+    "blueprint/presets/**/*",
+    "quality/schemas/*",
     "blueprint/container/*",
     "web/api/*.py",
     "web/api/routes/*.py",

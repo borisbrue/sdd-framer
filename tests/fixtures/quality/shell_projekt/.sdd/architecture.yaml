@@ -1,0 +1,11 @@
+version: 1
+layers:
+  app: ["app/**"]
+  lib: ["lib/**"]
+rules:
+  - id: ARCH-01
+    adr: ADR-0001
+    description: "Bibliothek hängt nicht von der Anwendung ab"
+    kind: forbidden_dependency
+    from: lib
+    to_layers: [app]

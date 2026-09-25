@@ -1,0 +1,9 @@
+---
+id: ADR-0001
+title: "Bibliothek hängt nicht von der Anwendung ab"
+status: accepted
+date: 2026-09-25
+enforced_by: [ARCH-01]
+---
+
+# ADR-0001: Bibliothek hängt nicht von der Anwendung ab
