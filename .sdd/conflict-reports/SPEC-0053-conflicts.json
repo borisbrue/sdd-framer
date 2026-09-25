@@ -1,0 +1,63 @@
+{
+  "spec_id": "SPEC-0053",
+  "new_contracts": [],
+  "conflicts": [
+    {
+      "id": "CF-0053-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "3. Architektur & Design Patterns",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "SPEC-0008 führt bereits eine austauschbare Provider-Schicht mit Modellwahl pro Komponente ein; die rollenbasierte Modellzuordnung in SPEC-0053 (`llm.roles`, Strategy für den Provider) muss auf dieser Abstraktion aufbauen, sonst entsteht ein zweiter Mechanismus zur Modellauswahl.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0053-R002",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0011:1. Kontext & Motivation",
+      "detail": "SPEC-0011 speichert den Tokenverbrauch bereits in `.sdd/evaluations.db` bzw. im `usage_store`; der neue Usage-Datensatz pro Rolle und Aufruf in SPEC-0053 sollte diesen Speicher erweitern, statt ein paralleles Usage-Protokoll anzulegen.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0053-R003",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0004:2. Zielsetzung",
+      "detail": "SPEC-0004 definiert mit `sdd orchestrate` schon eine autonome Pipeline von der Spec bis zum Merge; `sdd pipeline run SPEC-XXXX` in SPEC-0053 deckt denselben Weg von Decompose bis Finalize ab, ohne festzulegen, wie es sich zum Orchestrator abgrenzt oder ihn ersetzt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0053-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0007:2. Zielsetzung",
+      "detail": "Der Execute-Button in der Web UI startet den Orchestrator aus SPEC-0004; ob er künftig die rollenbasierte Pipeline aus SPEC-0053 auslösen soll, ist in keiner der beiden Specs geregelt.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    },
+    {
+      "id": "CF-0053-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0005:1. Kontext & Motivation",
+      "detail": "Der Analyzer aus SPEC-0005 ist ein weiterer Claude-CLI-Aufruf mit Inline-Prompt; in der Rollenliste von SPEC-0053 fehlt er, obwohl die Spec gerade die verstreuten Inline-Prompts in Rollen-Dateien überführen will.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {},
+  "generated_at": "2026-09-25T13:28:31Z"
+}
