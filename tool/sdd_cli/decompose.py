@@ -1,11 +1,11 @@
 """TaskDecomposer – zerlegt ein Spec via LLM in klassifizierte Tasks (CON-0097).
 
-Nutzt ClaudeCliCompletionProvider (kein API-Key nötig) als Default.
+Provider und Prompt kommen aus der Rolle `decomposer` (SPEC-0053 FR-05): `llm.roles.decomposer`
+→ `llm.completion` → Builtin `claude-cli`, Prompt aus `.sdd/roles/decomposer.md`.
 """
 from __future__ import annotations
 
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -104,40 +104,49 @@ def detect_circular_dependencies(tasks: list[Task]) -> set[str]:
     return circular
 
 
+def _parse_items(text: str) -> list[dict]:
+    """Tasks aus der Antwort: Objekt `{"tasks": [...]}` (Rolle, CON-0200) oder JSON-Array."""
+    from .pipeline.runner import extract_json
+
+    daten = extract_json(text.strip())
+    if isinstance(daten, dict) and isinstance(daten.get("tasks"), list):
+        return daten["tasks"]
+    if isinstance(daten, list):
+        return daten
+    raise ValueError(f"LLM lieferte kein valides JSON:\n{text.strip()[:200]}")
+
+
 class TaskDecomposer:
     def __init__(self, provider=None) -> None:
-        # Ohne expliziten Provider kommt er beim Zerlegen aus der Factory (SPEC-0060 FR-06).
+        # Ohne expliziten Provider kommt er beim Zerlegen aus der Rolle decomposer (FR-05).
         self._provider = provider
 
     def decompose(self, spec_id: str, config: SddConfig) -> list[Task]:
         from .llm.usage import usage_context
+        from .pipeline.roles import RoleError, load_role
 
         spec_text = self._load_spec(spec_id, config)
         prompt = f"Spec:\n\n{spec_text}\n\nZerlege dieses Spec in atomare Tasks."
+        system_prompt, max_tokens = _SYSTEM_PROMPT, 4096
+        rolle = None
+        if isinstance(getattr(config, "root", None), Path):
+            try:
+                rolle = load_role(config.root, "decomposer")
+            except RoleError:
+                rolle = None
+        if rolle is not None:
+            system_prompt = rolle.prompt
+            max_tokens = int(rolle.defaults.get("max_output_tokens") or max_tokens)
         if self._provider is None:
-            from .llm.factory import get_completion_provider
-            self._provider = get_completion_provider(config, "completion")
-        with usage_context(spec_id=spec_id, operation="decompose"):
+            self._provider = self._role_provider(config, rolle)
+        with usage_context(spec_id=spec_id, operation="decompose", role="decomposer"):
             result = self._provider.complete(
                 prompt,
-                system_prompt=_SYSTEM_PROMPT,
-                max_tokens=4096,
+                system_prompt=system_prompt,
+                max_tokens=max_tokens,
                 timeout=180,
             )
-        raw = result.text.strip()
-        # LLM wraps JSON in code block sometimes — extract array directly
-        m = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", raw, re.DOTALL)
-        if m:
-            raw = m.group(1)
-        else:
-            m = re.search(r"\[.*\]", raw, re.DOTALL)
-            if m:
-                raw = m.group(0)
-        try:
-            items: list[dict] = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"LLM lieferte kein valides JSON: {exc}\n{raw[:200]}") from exc
-
+        items = _parse_items(result.text)
         if not items:
             print("Keine Tasks ableitbar", file=sys.stderr)
             sys.exit(1)
@@ -167,6 +176,8 @@ class TaskDecomposer:
                 test_file=item.get("test_file") or None,
                 test_command=item.get("test_command") or None,
                 test_framework=item.get("test_framework") or None,
+                fr_ids=list(item["fr_ids"]) if "fr_ids" in item else None,
+                allowed_paths=list(item["allowed_paths"]) if item.get("allowed_paths") else None,
             ))
 
         if not tasks:
@@ -182,6 +193,14 @@ class TaskDecomposer:
                     task.error_context.append("circular dependency detected")
 
         return tasks
+
+    @staticmethod
+    def _role_provider(config: SddConfig, rolle):
+        if rolle is None:
+            from .llm.factory import get_completion_provider
+            return get_completion_provider(config, "completion")
+        from .pipeline.providers import build_provider, resolve_binding
+        return build_provider(config, resolve_binding(config, rolle), rolle)
 
     def _load_spec(self, spec_id: str, config: SddConfig) -> str:
         for md in config.specs_dir.rglob("*.md"):

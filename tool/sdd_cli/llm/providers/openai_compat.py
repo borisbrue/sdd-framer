@@ -11,8 +11,6 @@ from typing import Any
 
 from ..base import CodeGenResult, CompletionResult, UsageMetadata
 
-_PROTECTED_PREFIXES = ("specs/", "contracts/", "tests/", ".sdd/")
-
 _CODE_GEN_SUFFIX = (
     "\n\nReturn ONLY a JSON object — no markdown fences, no prose:\n"
     '{"files":[{"path":"relative/path","content":"..."}],"explanation":"<one line>"}'
@@ -52,12 +50,16 @@ class OpenAICompatCompletionProvider:
         api_key: str = "lm-studio",
         temperature: float = 0.0,
         enable_thinking: bool = True,
+        top_p: float | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
         self._base_url = base_url
         self._model = model
         self._api_key = api_key or "lm-studio"
         self._temperature = temperature
         self._enable_thinking = enable_thinking
+        self._top_p = top_p
+        self._reasoning_effort = reasoning_effort
 
     def complete(
         self,
@@ -91,14 +93,22 @@ class OpenAICompatCompletionProvider:
         }
         if timeout is not None:
             create_kwargs["timeout"] = timeout
+        if self._top_p is not None:
+            create_kwargs["top_p"] = self._top_p
+        extra_body: dict[str, Any] = {}
         if not self._enable_thinking:
             # Disables Qwen3/DeepSeek extended thinking mode. LM Studio reads the flat
             # flag; vLLM (and LiteLLM in front of it) ignores it and only honours
             # chat_template_kwargs. Servers ignore the variant they don't know.
-            create_kwargs["extra_body"] = {
+            extra_body.update({
                 "enable_thinking": False,
                 "chat_template_kwargs": {"enable_thinking": False},
-            }
+            })
+        if self._reasoning_effort:
+            # SPEC-0053 FR-04; als extra_body, damit Server ohne Unterstützung ihn ignorieren.
+            extra_body["reasoning_effort"] = self._reasoning_effort
+        if extra_body:
+            create_kwargs["extra_body"] = extra_body
 
         response = client.chat.completions.create(**create_kwargs)
         return CompletionResult(
@@ -126,6 +136,8 @@ class OpenAICompatCodeGenProvider:
         timeout: int = 600,
         on_proc: Callable[[Any], None] | None = None,
     ) -> CodeGenResult:
+        from ...pipeline.path_policy import PathPolicy
+
         try:
             import openai
         except ImportError as exc:
@@ -163,9 +175,12 @@ class OpenAICompatCodeGenProvider:
                 full.relative_to(workspace_resolved)
             except ValueError as exc:
                 raise ValueError(f"Unsicherer Pfad (Workspace-Escape): {rel_path!r}") from exc
-            if any(rel_path.startswith(p) for p in _PROTECTED_PREFIXES):
+            # SPEC-0053 FR-07: dieselbe PathPolicy wie die Pipeline, keine eigene Pfadregel.
+            entscheidung = PathPolicy(workspace).check("implementer", rel_path, {})
+            if not entscheidung.allowed:
                 raise ValueError(
-                    f"SDD-Artefakt darf nicht überschrieben werden: {rel_path!r}"
+                    f"SDD-Artefakt darf nicht überschrieben werden: {rel_path!r} "
+                    f"({entscheidung.reason})"
                 )
             full.parent.mkdir(parents=True, exist_ok=True)
             content: str = entry.get("content", "")

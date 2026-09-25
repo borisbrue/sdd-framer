@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/role-definition.schema.json",
+  "title": "SDD Rollendefinition (Frontmatter von .sdd/roles/<rolle>.md)",
+  "description": "SPEC-0053 / CON-0199. Vertrag einer Rolle; der Body der Datei ist der System-Prompt.",
+  "type": "object",
+  "required": [
+    "role",
+    "version",
+    "purpose",
+    "inputs",
+    "output_schema",
+    "checks",
+    "legacy_component"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "spec",
+          "contracts",
+          "agents_md",
+          "repo_map",
+          "task",
+          "test_file",
+          "test_output",
+          "diff",
+          "gate_results",
+          "review",
+          "history"
+        ]
+      }
+    },
+    "input_budgets": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "spec",
+          "contracts",
+          "agents_md",
+          "repo_map",
+          "task",
+          "test_file",
+          "test_output",
+          "diff",
+          "gate_results",
+          "review",
+          "history"
+        ]
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "description": "Tokenbudget je Kontextquelle; fehlende Quellen nutzen den Default der Pipeline."
+    },
+    "output_schema": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pfad zum Ausgabeschema; für supervisor das Command-Schema aus CON-0201."
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "thinking": {
+          "type": "boolean"
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "top_p": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "reasoning_effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    },
+    "legacy_component": {
+      "enum": [
+        "completion",
+        "orchestrator",
+        "evaluator",
+        "analyzer",
+        "ai_routes"
+      ]
+    }
+  }
+}

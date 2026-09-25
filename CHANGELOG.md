@@ -1,5 +1,31 @@
 # Changelog
 
+## [Unreleased] – SPEC-0053: Rollenbasierte Pipeline mit Claude als Supervisor
+
+### Added
+
+- **`sdd pipeline run SPEC [--dry-run] [--resume RUN] [--max-tasks N]`**, **`decide`**,
+  **`status`**, **`report`**: Rollen `decomposer`, `test_author`, `implementer`, `reviewer` arbeiten
+  über ihre Modelle; der Supervisor entscheidet nur an S1 (Zerlegung), S2 (Eskalation) und S3
+  (Abnahme). Run-Verzeichnis `.sdd/runs/<SPEC>/<run_id>/` mit `run.json`, `state.json`,
+  `events.jsonl`, `decisions.jsonl`, `pending-decision.json`.
+- Rollen als Dateien `.sdd/roles/<rolle>.md` (Frontmatter nach CON-0199, Body = System-Prompt);
+  `sdd init` legt sie an, `sdd upgrade` ergänzt fehlende und legt bei lokal geänderten
+  `<rolle>.md.new` daneben.
+- `llm.roles.<rolle>` wählt das Modell je Rolle (Fallback: `legacy_component` der Rolle, dann
+  `claude-cli`); `llm.roles.supervisor.mode: inline|session`. `sdd config validate` warnt bei
+  ignorierten Parametern und wenn der Reviewer dasselbe Modell nutzt wie Implementer/Test-Autor.
+- PathPolicy (CON-0204): Default deny; nur `test_author` (Testdatei) und `implementer`
+  (`allowed_paths`) schreiben. Auch der CodeGen-Pfad von `openai-compat` nutzt sie.
+- Skill **`/sdd-supervise`**: Claude Code als Supervisor im Dialog (`mode: session`).
+
+### Changed
+
+- `sdd decompose` holt Provider und Prompt aus der Rolle `decomposer`; Tasks tragen `fr_ids` und
+  `allowed_paths` (Task-Schema additiv erweitert, CON-0203).
+- `openai-compat` schützt `tests/` im CodeGen-Pfad nicht mehr pauschal; maßgeblich ist die
+  PathPolicy (`.sdd/`, `specs/`, `contracts/`, `pipeline.protected_paths`).
+
 ## [Unreleased] – SPEC-0060: Usage-Erfassung aller LLM-Provider
 
 ### Changed

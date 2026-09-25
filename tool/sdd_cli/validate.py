@@ -316,7 +316,31 @@ def validate(config: SddConfig) -> Report:
     # 7) Architekturregeln ↔ ADRs (SPEC-0054 FR-06, CON-0197 INV-07/INV-08)
     _check_architecture_links(config, report)
 
+    # 8) Rollendateien der Pipeline (SPEC-0053 FR-01, CON-0199 INV-06)
+    _check_roles(config, report)
+
     return report
+
+
+def _check_roles(config: SddConfig, report: Report) -> None:
+    """Jede `.sdd/roles/<rolle>.md` erfüllt CON-0199 und nennt nur bekannte Rollen-Checks."""
+    from .pipeline.roles import RoleError, load_role
+    from .pipeline.runner import unknown_checks
+
+    ordner = config.root / ".sdd" / "roles"
+    if not ordner.is_dir():
+        return
+    for datei in sorted(ordner.glob("*.md")):
+        try:
+            rolle = load_role(config.root, datei.stem)
+        except RoleError as exc:
+            report.add("error", datei, str(exc),
+                       instruction="Frontmatter nach CON-0199 korrigieren (sdd upgrade liefert "
+                                   "die Default-Rolle als .md.new).")
+            continue
+        for check in unknown_checks(rolle):
+            report.add("error", datei, f"unbekannter Rollen-Check {check!r}",
+                       instruction="Nur registrierte Rollen-Checks verwenden.")
 
 
 def _check_architecture_links(config: SddConfig, report: Report) -> None:

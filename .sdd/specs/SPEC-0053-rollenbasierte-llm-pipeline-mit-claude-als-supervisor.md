@@ -1,36 +1,84 @@
 ---
 id: SPEC-0053
-title: "Rollenbasierte LLM-Pipeline mit Claude als Supervisor"
+title: Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 type: feature
-status: approved
-owner: "Boris"
+status: implemented
+owner: Boris
 created: 2026-09-25
-updated: 2026-09-25
+updated: '2026-09-25'
 version: 0.7.0
 priority: high
-tags: [llm, roles, pipeline, local-llm, supervisor]
-depends_on: [SPEC-0008, SPEC-0011, SPEC-0026, SPEC-0045, SPEC-0050, SPEC-0054, SPEC-0060]
-contracts: [CON-0199, CON-0200, CON-0201, CON-0202, CON-0203, CON-0204, CON-0205]
-tests: [TST-0228, TST-0229, TST-0230, TST-0231, TST-0232, TST-0233, TST-0234]
+tags:
+- llm
+- roles
+- pipeline
+- local-llm
+- supervisor
+depends_on:
+- SPEC-0008
+- SPEC-0011
+- SPEC-0026
+- SPEC-0045
+- SPEC-0050
+- SPEC-0054
+- SPEC-0060
+contracts:
+- CON-0199
+- CON-0200
+- CON-0201
+- CON-0202
+- CON-0203
+- CON-0204
+- CON-0205
+tests:
+- TST-0228
+- TST-0229
+- TST-0230
+- TST-0231
+- TST-0232
+- TST-0233
+- TST-0234
 fr_test_map:
-  FR-01: [TST-0228]
-  FR-02: [TST-0228]
-  FR-03: [TST-0228]
-  FR-04: [TST-0234]
-  FR-05: [TST-0229, TST-0232, TST-0234]
-  FR-06: [TST-0234]
-  FR-07: [TST-0233]
-  FR-08: [TST-0230, TST-0234]
-  FR-09: [TST-0233]
-  FR-10: [TST-0234]
-  FR-11: [TST-0229, TST-0234]
-  FR-12: [TST-0231, TST-0234]
-  FR-13: [TST-0234]
-  FR-14: [TST-0234]
-  FR-15: [TST-0231, TST-0234]
-  FR-16: [TST-0234]
+  FR-01:
+  - TST-0228
+  FR-02:
+  - TST-0228
+  FR-03:
+  - TST-0228
+  FR-04:
+  - TST-0234
+  FR-05:
+  - TST-0229
+  - TST-0232
+  - TST-0234
+  FR-06:
+  - TST-0234
+  FR-07:
+  - TST-0233
+  FR-08:
+  - TST-0230
+  - TST-0234
+  FR-09:
+  - TST-0233
+  FR-10:
+  - TST-0234
+  FR-11:
+  - TST-0229
+  - TST-0234
+  FR-12:
+  - TST-0231
+  - TST-0234
+  FR-13:
+  - TST-0234
+  FR-14:
+  - TST-0234
+  FR-15:
+  - TST-0231
+  - TST-0234
+  FR-16:
+  - TST-0234
+started_at: '2026-09-25T17:15:30Z'
 ---
-
 # Rollenbasierte LLM-Pipeline mit Claude als Supervisor
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.7.0

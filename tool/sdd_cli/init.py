@@ -290,7 +290,7 @@ def init_project(
 
     # Templates und Schemas kopieren
     src_root = _blueprint_root()
-    for sub in ["templates", "schemas"]:
+    for sub in ["templates", "schemas", "roles"]:
         src = src_root / sub
         if src.exists():
             for src_file in src.rglob("*"):

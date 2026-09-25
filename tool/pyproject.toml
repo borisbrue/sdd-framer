@@ -58,6 +58,8 @@ sdd_cli = [
     "blueprint/schemas/*",
     "blueprint/presets/**/*",
     "quality/schemas/*",
+    "pipeline/schemas/*",
+    "blueprint/roles/*",
     "blueprint/container/*",
     "web/api/*.py",
     "web/api/routes/*.py",

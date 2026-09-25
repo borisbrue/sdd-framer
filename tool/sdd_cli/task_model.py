@@ -68,9 +68,12 @@ class Task:
     test_framework: str | None = None
     # SPEC-0045 US-02: welcher Executor den Task tatsächlich bearbeitet hat.
     executor: str | None = None  # "local" | "claude" | "claude (escalated)"
+    # SPEC-0053 CON-0203: abgedeckte FRs und Schreibbereich (PathPolicy); optional.
+    fr_ids: list[str] | None = None
+    allowed_paths: list[str] | None = None
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "id": self.id,
             "spec_id": self.spec_id,
             "title": self.title,
@@ -96,6 +99,11 @@ class Task:
             "test_framework": self.test_framework,
             "executor": self.executor,
         }
+        if self.fr_ids is not None:
+            d["fr_ids"] = self.fr_ids
+        if self.allowed_paths is not None:
+            d["allowed_paths"] = self.allowed_paths
+        return d
 
     @classmethod
     def from_dict(cls, d: dict) -> Task:
@@ -124,4 +132,6 @@ class Task:
             test_command=d.get("test_command"),
             test_framework=d.get("test_framework"),
             executor=d.get("executor"),
+            fr_ids=d.get("fr_ids"),
+            allowed_paths=d.get("allowed_paths"),
         )

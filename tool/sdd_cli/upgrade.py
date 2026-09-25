@@ -60,7 +60,8 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
     """
     target = target.resolve()
     quelle = _quelle()
-    result: dict[str, list[Path]] = {"created": [], "updated": [], "skipped": [], "skills": []}
+    result: dict[str, list[Path]] = {"created": [], "updated": [], "skipped": [], "skills": [],
+                                     "roles_new": []}
 
     # Provider vor jeder Änderung prüfen: ein unbekannter Name bricht ab, bevor
     # etwas geschrieben ist, statt ein halbes Upgrade zu hinterlassen.
@@ -131,7 +132,18 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in erstellt:
             print(f"  + {datei.relative_to(target)}")
 
-    # 6. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
+    # 6. Rollen der Pipeline (SPEC-0053 FR-02): fehlende anlegen, lokal geänderte nicht
+    #    überschreiben, sondern die neue Version als <rolle>.md.new daneben legen.
+    from .pipeline.roles import install_roles
+    angelegt, neu, gleich = install_roles(target)
+    result["created"].extend(angelegt)
+    result["skipped"].extend(gleich)
+    result["roles_new"] = neu
+    if verbose:
+        for datei in [*angelegt, *neu]:
+            print(f"  + {datei.relative_to(target)}")
+
+    # 7. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
     migriert = migrate_ai_usage_json(target)
     if migriert is not None:
         result["updated"].append(migriert)

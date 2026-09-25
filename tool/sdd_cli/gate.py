@@ -264,6 +264,11 @@ class ExecutionGate:
         data["pipeline_phase"] = completed[-1] if completed else None
         self._save(spec_id, data)
 
+    def is_phase_complete(self, spec_id: str, phase: str) -> bool:
+        """Ob `phase` mit Ergebnis ok abgeschlossen ist (liest nur, schreibt nichts)."""
+        return any(e.get("phase") == phase and e.get("result") == "ok"
+                   for e in self._load(spec_id).get("phase_history", []))
+
     def mark_phase_complete(
         self, spec_id: str, phase: str, result: str = "ok", **extra: object
     ) -> None:
