@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-25
-version: 0.2.0
+version: 0.3.0
 priority: high
 tags: [llm, token-tracking, usage, keyless]
 depends_on: [SPEC-0003, SPEC-0005, SPEC-0008, SPEC-0011, SPEC-0013, SPEC-0035, SPEC-0050]
@@ -16,7 +16,7 @@ tests: []
 
 # Vollständige Usage-Erfassung aller LLM-Provider inkl. Reasoning-Tokens
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -105,7 +105,7 @@ indizierbare Spalten.
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** `UsageMetadata` bekommt die Felder `reasoning_tokens`, `finish_reason`, `latency_ms`,
+- **FR-01:** `UsageMetadata` bekommt die Felder `reasoning_tokens`, `finish_reason`, `latency_ms` (wird in `duration_ms` gespeichert),
   `server_model` (vom Server gemeldeter Modellname) und `source` (`reported|estimated|unavailable`).
   Jeder Provider liefert immer ein `UsageMetadata`-Objekt, nie `None`.
 - **FR-02:** `claude-cli` liest aus dem JSON-Envelope von `claude --print --output-format json`:
@@ -120,8 +120,8 @@ indizierbare Spalten.
   Usage. Bestehende Aufrufer, die ein Tupel `(files, explanation)` erwarten, funktionieren über
   eine Übergangs-Schnittstelle weiter, bis SPEC-0058 sie ablöst.
 - **FR-05:** Die SQLite-Senke persistiert in `token_usage` (`.sdd/evaluations.db`). Die Migration
-  ist additiv und fügt die nullable Spalten `reasoning_tokens`, `finish_reason`, `latency_ms`,
-  `server_model`, `source`, `run_id` und `context_json` hinzu. `context_json` enthält alle übrigen
+  ist additiv und fügt die nullable Spalten `reasoning_tokens`, `finish_reason`, `server_model`,
+  `source`, `run_id` und `context_json` hinzu; die Dauer steht weiter in `duration_ms`. `context_json` enthält alle übrigen
   Kontextschlüssel als JSON-Objekt.
 - **FR-06:** Die Provider-Factory umhüllt jeden Completion- und CodeGen-Provider mit dem passenden
   Decorator. `decompose.py` und `web/api/analyzer.py` holen ihren Provider über die Factory statt
@@ -137,6 +137,8 @@ indizierbare Spalten.
 - **FR-10:** Scheitert eine Senke (DB gesperrt, Datei nicht beschreibbar), wird ein Warnhinweis
   geloggt; der LLM-Aufruf selbst gilt nicht als gescheitert, und andere Senken erhalten den
   Datensatz trotzdem.
+- **FR-11:** `sdd estimate`, `calibrate`, die Summen von `token-history` und die Web-Zusammenfassung
+  schließen Zeilen mit `source: unavailable` aus Mittelwerten und Summen aus und nennen ihre Anzahl.
 
 ## 5. Nicht-funktionale Anforderungen
 
@@ -212,3 +214,4 @@ Feature: Usage-Erfassung
 |------------|---------|---------------|------------------------------------------------------------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Aus SPEC-0053 FR-06/FR-07 (0.4.0) ausgelagert und erweitert |
 | 2026-09-25 | 0.2.0   | Boris, Claude | Review: Patterns Decorator/Adapter/Factory Method/Observer; keine Rollen-Spalten, offener Kontext `context_json` + `run_id` (SRP, OCP); `UsageMetadata` immer vorhanden mit `source` (LSP); Kontext über Kontextvariable (ISP); `UsageSink`-Abstraktion (DIP); Abgrenzung zu SPEC-0003/0004/0005/0008/0011/0013 |
+| 2026-09-25 | 0.3.0   | Boris, Claude | Contract-Review: keine `latency_ms`-Spalte; `unavailable`-Zeilen aus Mittelwerten ausgeschlossen (FR-11); reservierte Kontextschlüssel; `register_sink` |

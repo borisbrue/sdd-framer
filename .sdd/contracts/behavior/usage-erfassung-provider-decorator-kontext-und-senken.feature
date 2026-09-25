@@ -87,3 +87,19 @@ Feature: Usage-Erfassung
     When die SQLite-Senke den ersten Datensatz schreibt
     Then existieren die neuen Spalten
     And die alte Zeile ist unverändert und bleibt schema-gültig
+
+  Scenario: Nicht verfügbare Usage verfälscht keine Mittelwerte
+    Given token_usage enthält zwei Zeilen mit source reported (1000 und 3000 input_tokens) und eine mit source unavailable
+    When sdd estimate die Mittelwerte bildet
+    Then beträgt der Mittelwert 2000 input_tokens
+    And die Ausgabe nennt 1 Zeile ohne Usage
+
+  Scenario: Dauerhaft registrierte Senke
+    Given eine Senke wurde mit register_sink registriert
+    When zwei Aufrufe erfolgen
+    Then erhalten die SQLite-Senke und die registrierte Senke je zwei Datensätze
+
+  Scenario: Nicht gemeldete Reasoning-Tokens
+    Given der Server meldet keine completion_tokens_details
+    When ein Aufruf über den openai-compat-Provider erfolgt
+    Then ist reasoning_tokens None und nicht 0

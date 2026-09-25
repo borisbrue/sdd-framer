@@ -86,20 +86,14 @@
         "integer",
         "null"
       ],
-      "minimum": 0
+      "minimum": 0,
+      "description": "null = nicht gemeldet; 0 = gemeldet, kein Reasoning"
     },
     "finish_reason": {
       "type": [
         "string",
         "null"
       ]
-    },
-    "latency_ms": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "minimum": 0
     },
     "server_model": {
       "type": [
