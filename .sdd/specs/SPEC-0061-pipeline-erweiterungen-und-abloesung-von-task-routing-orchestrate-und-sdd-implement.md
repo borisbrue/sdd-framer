@@ -1,8 +1,8 @@
 ---
 id: SPEC-0061
 title: "Pipeline-Fähigkeiten: Session-Arbeitsrollen, Routing nach Komplexität, Abschluss-Schritte"
-type: feature           # feature | bug-fix
-status: draft           # draft | review | approved | implemented | deprecated
+type: feature
+status: approved
 owner: "Boris"
 created: 2026-09-26
 updated: 2026-09-26
@@ -10,8 +10,19 @@ version: 0.2.0
 priority: medium
 tags: [pipeline, refactoring, session, routing]
 depends_on: [SPEC-0053, SPEC-0054, SPEC-0058]
-contracts: [CON-0212, CON-0213, CON-0214]           # z.B. ["CON-0001"] – MUSS mindestens einen Eintrag enthalten
-tests: [TST-0241, TST-0242, TST-0243]               # z.B. ["TST-0001"] – MUSS mindestens einen Eintrag enthalten
+contracts: [CON-0212, CON-0213, CON-0214]
+tests: [TST-0241, TST-0242, TST-0243]
+fr_test_map:
+  FR-01: [TST-0241, TST-0242]
+  FR-02: [TST-0242]
+  FR-03: [TST-0242]
+  FR-04: [TST-0241, TST-0242]
+  FR-05: [TST-0242]
+  FR-06: [TST-0242]
+  FR-07: [TST-0242]
+  FR-08: [TST-0243]
+  FR-09: [TST-0241, TST-0243]
+  FR-10: [TST-0243]
 ---
 
 # Pipeline-Fähigkeiten: Session-Arbeitsrollen, Routing nach Komplexität, Abschluss-Schritte

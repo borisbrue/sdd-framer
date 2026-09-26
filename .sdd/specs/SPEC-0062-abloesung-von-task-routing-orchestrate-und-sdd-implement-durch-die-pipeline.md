@@ -1,8 +1,8 @@
 ---
 id: SPEC-0062
 title: "Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline"
-type: feature           # feature | bug-fix
-status: draft           # draft | review | approved | implemented | deprecated
+type: feature
+status: draft
 owner: "Boris"
 created: 2026-09-26
 updated: 2026-09-26
@@ -10,8 +10,8 @@ version: 0.1.0
 priority: medium
 tags: [pipeline, refactoring, cleanup, skill]
 depends_on: [SPEC-0061, SPEC-0058, SPEC-0059]
-contracts: []           # z.B. ["CON-0001"] – MUSS mindestens einen Eintrag enthalten
-tests: []               # z.B. ["TST-0001"] – MUSS mindestens einen Eintrag enthalten
+contracts: []
+tests: []
 ---
 
 # Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline
