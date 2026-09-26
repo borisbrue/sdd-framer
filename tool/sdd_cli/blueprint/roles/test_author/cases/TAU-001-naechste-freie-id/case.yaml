@@ -1,0 +1,15 @@
+id: TAU-001
+role: test_author
+title: "Nächste freie Artefakt-ID"
+description: "next_id nach dem Vorbild von ids.py: Maximum statt Anzahl (Lücken), nur IDs mit passendem Präfix, numerischer statt lexikalischer Vergleich bei Alt-IDs ohne Nullen, Start bei 1, Validierung von padding."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - test_file_matches_task: {}
+    - fr_marker_present: {}
+    - red_against_stub: {}
+    - green_against_reference: {}
+    - mutation_kill_rate: {min: 0.75}

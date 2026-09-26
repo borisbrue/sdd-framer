@@ -1,0 +1,19 @@
+id: DEC-002
+role: decomposer
+title: "Log-Zusammenfassung als CLI mit Konfigurationsdatei"
+description: >-
+  CLI-Werkzeug `logsum`, das Logdateien nach Level zählt und über eine TOML-Datei konfiguriert
+  wird. Falle: FR-05 (Rangfolge CLI > Umgebungsvariable > Datei > Standard) steht erst am Ende
+  und nennt eine Umgebungsvariable, die leicht untergeht; FR-04 (Exit-Codes) wird gern als
+  Nebensatz eines anderen Tasks ohne FR-Zuordnung behandelt.
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 3, max: 7}
+    - max_complexity: {value: medium}

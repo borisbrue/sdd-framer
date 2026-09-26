@@ -72,3 +72,8 @@ Validierungsausgaben oder Reports zugänglich machen. HOL-Dokumente werden von
 | Holdout-Szenario   | Plain-English-Akzeptanztest, isoliert vom Code-generierenden Agenten |
 | Code-Agent         | LLM, das Sourcecode generiert und implementiert                   |
 | Evaluator          | Separater Prozess, der Holdout-Szenarien gegen einen Service ausführt |
+
+## Seit SPEC-0055
+
+`.sdd/holdout/roles/` ist ein eigener Namensraum für Holdout-Fälle der Rollen-Evals (CON-0217,
+CON-0219 INV-04). Die HOL-Regeln dieses Contracts gelten dort nicht; die Isolation gilt unverändert.

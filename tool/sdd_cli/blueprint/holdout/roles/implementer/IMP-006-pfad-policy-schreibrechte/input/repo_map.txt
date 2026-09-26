@@ -1,0 +1,4 @@
+sddlib/__init__.py
+sddlib/globs.py          # glob_match(path, pattern), matches_any(path, patterns)
+sddlib/path_policy.py    # Stub, T02
+tests/__init__.py

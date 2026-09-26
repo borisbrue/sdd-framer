@@ -1,0 +1,24 @@
+id: DEC-005
+role: decomposer
+title: "Zuverlässige Webhook-Zustellung mit Signatur, Retry und Dead Letter"
+description: >-
+  Ausgehende Webhooks für Bestellereignisse mit sechs FRs und einem Contract. Falle: FR-06
+  (Reihenfolge je Abonnement – ein Ereignis wartet, solange ein älteres noch in der
+  Wiederholung steckt) ist leicht übersehbar und kollidiert mit naiver Parallelzustellung;
+  FR-04 (Dead Letter) hängt fachlich an FR-03 (Retry). Eine Verwaltungsoberfläche und
+  eingehende Webhooks sind Nicht-Ziele.
+origin: blueprint
+timeout_seconds: 90
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 4, max: 10}
+    - ordered_before: {first: "(Signatur|HMAC|Signier)", then: "(Sender|Versand|Worker|Dispatcher|HTTP)"}
+  rubric:
+    - {id: granularity, question: "Sind Signatur (FR-02), Wiederholung mit Backoff (FR-03), Dead Letter (FR-04) und Reihenfolge je Abonnement (FR-06) so geschnitten, dass jede Regel in einem eigenen Task mit eigener Testdatei isoliert testbar ist, und steht Dead Letter in Abhängigkeit zur Wiederholungslogik? 5 = ja durchgehend, 1 = alles in einem Sammeltask."}
+    - {id: non_goals, question: "Enthält die Zerlegung keinen Task für die Nicht-Ziele (Verwaltungsoberfläche, eingehende Webhooks, andere Transportwege als HTTP)? 5 = keiner, 1 = mindestens ein Task dafür."}
+weights: {checks: 0.7, rubric: 0.3}

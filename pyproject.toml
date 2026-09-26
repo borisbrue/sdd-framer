@@ -43,6 +43,9 @@ asyncio_mode = "auto"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+# Golden Cases der Rollen-Evals sind Eval-Daten (bewusst auch fehlerhafter Code) und Holdout-Fälle
+# sollen in keiner Werkzeugausgabe auftauchen (SPEC-0055, CON-0219 INV-09).
+extend-exclude = ["tool/sdd_cli/blueprint/roles/*/cases", "tool/sdd_cli/blueprint/holdout"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

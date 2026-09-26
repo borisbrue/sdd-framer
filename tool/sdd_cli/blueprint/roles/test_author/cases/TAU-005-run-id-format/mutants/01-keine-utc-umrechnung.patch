@@ -1,0 +1,11 @@
+--- a/sddlib/run_id.py
++++ b/sddlib/run_id.py
+@@ -15,7 +15,7 @@
+         raise ValueError("Zeitpunkt braucht eine Zeitzone")
+     if not _SPEC_ID.match(spec_id):
+         raise ValueError(f"ungültige Spec-ID: {spec_id!r}")
+-    return f"{spec_id}-{when.astimezone(timezone.utc).strftime(_FORMAT)}"
++    return f"{spec_id}-{when.strftime(_FORMAT)}"
+ 
+ 
+ def parse_run_id(run_id: str) -> tuple[str, datetime]:

@@ -1,0 +1,11 @@
+id: SUP-007
+role: supervisor
+title: "S2: Task scheitert am Zuschnitt seiner allowed_paths"
+description: "Der Task soll die USt-ID in der Rechnungsfußzeile ausgeben, das Feld fehlt aber im Modell, und keine andere Aufgabe legt es an; allowed_paths erlaubt nur die Fußzeile. Ein Hinweis und ein Modellwechsel wurden schon versucht und scheiterten gleich (PathPolicy-Ablehnung). Richtige Entscheidung: redecompose."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - decision_matches: {}
+    - reason_mentions: {terms: ["allowed_paths", "models.py", "ust_id", "Modell", "Zuschnitt"], all: false}

@@ -1,0 +1,15 @@
+id: TAU-005
+role: test_author
+title: "Run-ID erzeugen und parsen"
+description: "new_run_id/parse_run_id: UTC-Umrechnung, 24-Stunden-Format mit Sekunden, naive Zeitstempel und ungültige Spec-IDs abgelehnt, Parse liefert zeitzonenbewussten Zeitpunkt. Falle: ein Test mit einem UTC-Zeitpunkt am Vormittag sieht keinen der Zeitfehler."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - test_file_matches_task: {}
+    - fr_marker_present: {}
+    - red_against_stub: {}
+    - green_against_reference: {}
+    - mutation_kill_rate: {min: 0.75}

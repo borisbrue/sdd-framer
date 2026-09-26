@@ -1,0 +1,95 @@
+diff --git a/tests/test_importer.py b/tests/test_importer.py
+new file mode 100644
+index 0000000..33d0be0
+--- /dev/null
++++ b/tests/test_importer.py
+@@ -0,0 +1,25 @@
++import unittest
++
++from userimport.importer import import_rows
++
++HEADER = "email,name,role\n"
++
++
++class ImportRowsTest(unittest.TestCase):
++    def test_fr02_normalizes_and_skips_duplicates(self):
++        report = import_rows([HEADER, " Ada@Example.org ,Ada,admin\n", "ada@example.org,Ada L.,editor\n"])
++        self.assertEqual([u.email for u in report.imported], ["ada@example.org"])
++        self.assertEqual(report.skipped_duplicates, 1)
++
++    def test_fr03_invalid_email_reported_with_line(self):
++        report = import_rows([HEADER, "kein-at,Bob,viewer\n", ",Eve,viewer\n"])
++        self.assertEqual(report.imported, [])
++        self.assertEqual([e.line for e in report.errors], [2, 3])
++
++    def test_fr04_default_role(self):
++        report = import_rows([HEADER, "c@example.org,Carl,\n"])
++        self.assertEqual(report.imported[0].role, "viewer")
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/userimport/importer.py b/userimport/importer.py
+new file mode 100644
+index 0000000..a7c4ee9
+--- /dev/null
++++ b/userimport/importer.py
+@@ -0,0 +1,29 @@
++"""Import von Benutzern aus CSV-Zeilen (SPEC-0007 FR-02..FR-04)."""
++
++import csv
++from collections.abc import Iterable
++
++from userimport.models import DEFAULT_ROLE, ImportReport, RowError, User
++
++
++def _normalize_email(raw: str) -> str:
++    return raw.strip().lower()
++
++
++def import_rows(lines: Iterable[str]) -> ImportReport:
++    """Liest CSV mit Kopfzeile ``email,name,role`` und baut den Importbericht."""
++    report = ImportReport()
++    seen: set[str] = set()
++    reader = csv.DictReader(lines)
++    for line_no, row in enumerate(reader, start=2):
++        email = _normalize_email(row.get("email") or "")
++        if not email or "@" not in email:
++            report.errors.append(RowError(line_no, "ungültige E-Mail"))
++            continue
++        if email in seen:
++            report.skipped_duplicates += 1
++            continue
++        role = (row.get("role") or "").strip().lower() or DEFAULT_ROLE
++        seen.add(email)
++        report.imported.append(User(email, (row.get("name") or "").strip(), role))
++    return report
+diff --git a/userimport/models.py b/userimport/models.py
+index 083bada..fbbc343 100644
+--- a/userimport/models.py
++++ b/userimport/models.py
+@@ -1,6 +1,6 @@
+ """Datenmodelle für den Benutzerimport."""
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ 
+ ALLOWED_ROLES = frozenset({"admin", "editor", "viewer"})
+ DEFAULT_ROLE = "viewer"
+@@ -11,3 +11,16 @@ class User:
+     email: str
+     name: str
+     role: str
++
++
++@dataclass(frozen=True)
++class RowError:
++    line: int
++    reason: str
++
++
++@dataclass
++class ImportReport:
++    imported: list[User] = field(default_factory=list)
++    skipped_duplicates: int = 0
++    errors: list[RowError] = field(default_factory=list)

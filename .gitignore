@@ -32,3 +32,4 @@ node_modules/
 # Laufzeitartefakte von Testsonde und Qualitätsmessung (SPEC-0006, SPEC-0054), rechnerlokal
 .sdd/test-runs/
 .sdd/quality/runs/
+.sdd/role-evals/

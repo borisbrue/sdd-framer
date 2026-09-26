@@ -1,0 +1,11 @@
+id: SUP-006
+role: supervisor
+title: "S1: Zerlegung eines Arbeitszeit-Exports mit Lücke"
+description: "Fünf Tasks decken FR-01, FR-02, FR-03 und FR-05 ab; FR-04 (Rundung auf Viertelstunden) hat keinen Task – ein Task erwähnt Rundung nur beiläufig in der Beschreibung, trägt FR-04 aber nicht. Richtige Entscheidung: revise mit Nennung von FR-04."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - decision_matches: {}
+    - reason_mentions: {terms: ["FR-04", "Rundung", "Viertelstunde"], all: false}

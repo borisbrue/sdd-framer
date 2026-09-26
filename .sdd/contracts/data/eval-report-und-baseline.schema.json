@@ -1,0 +1,391 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/role-eval-report.schema.json",
+  "title": "Rollen-Eval-Report und Baseline",
+  "description": "SPEC-0055 / CON-0218. Report: .sdd/role-evals/<ts>-<rolle>-<profil>.json. Baseline: .sdd/roles/<rolle>/baseline.json (Memento).",
+  "$defs": {
+    "usage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "reasoning_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens",
+        "reasoning_tokens"
+      ]
+    },
+    "check_result": {
+      "type": "object",
+      "required": [
+        "name",
+        "status",
+        "score"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "n/a"
+          ]
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "run",
+        "score",
+        "passed",
+        "checks",
+        "tokens",
+        "duration_ms"
+      ],
+      "properties": {
+        "run": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check_result"
+          }
+        },
+        "rubric": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "tokens": {
+          "$ref": "#/$defs/usage"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "case_result": {
+      "type": "object",
+      "required": [
+        "id",
+        "score",
+        "passed",
+        "pass_at_1",
+        "pass_all",
+        "runs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "std": {
+          "type": "number",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "pass_at_1": {
+          "type": "boolean"
+        },
+        "pass_all": {
+          "type": "boolean"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          }
+        }
+      }
+    },
+    "aggregate": {
+      "type": "object",
+      "required": [
+        "cases",
+        "mean",
+        "std",
+        "pass_at_1",
+        "pass_all"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "std": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pass_at_1": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "pass_all": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "required": [
+        "kind",
+        "role",
+        "role_version",
+        "prompt_hash",
+        "output_schema",
+        "profile",
+        "runs",
+        "sdd_version",
+        "created_at",
+        "visible",
+        "holdout",
+        "total"
+      ],
+      "properties": {
+        "kind": {
+          "const": "role-eval-report"
+        },
+        "role": {
+          "type": "string"
+        },
+        "role_version": {
+          "type": "string"
+        },
+        "prompt_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "output_schema": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "object",
+          "required": [
+            "name",
+            "provider"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            }
+          }
+        },
+        "judge": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "rubric_version": {
+              "type": "string"
+            }
+          }
+        },
+        "runs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sdd_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "include_holdout": {
+          "type": "boolean",
+          "default": false
+        },
+        "visible": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/case_result"
+          }
+        },
+        "holdout": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/aggregate"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/case_result"
+              }
+            }
+          ]
+        },
+        "total": {
+          "$ref": "#/$defs/aggregate"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "required": [
+        "kind",
+        "role",
+        "role_version",
+        "prompt_hash",
+        "output_schema",
+        "profile",
+        "accepted_at",
+        "cases",
+        "holdout",
+        "total"
+      ],
+      "properties": {
+        "kind": {
+          "const": "role-baseline"
+        },
+        "role": {
+          "type": "string"
+        },
+        "role_version": {
+          "type": "string"
+        },
+        "prompt_hash": {
+          "type": "string"
+        },
+        "output_schema": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "object"
+        },
+        "accepted_at": {
+          "type": "string"
+        },
+        "forced": {
+          "type": "object",
+          "properties": {
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "cases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "score",
+              "passed"
+            ],
+            "properties": {
+              "score": {
+                "type": "number"
+              },
+              "passed": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "holdout": {
+          "$ref": "#/$defs/aggregate"
+        },
+        "total": {
+          "$ref": "#/$defs/aggregate"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/report"
+    },
+    {
+      "$ref": "#/$defs/baseline"
+    }
+  ]
+}

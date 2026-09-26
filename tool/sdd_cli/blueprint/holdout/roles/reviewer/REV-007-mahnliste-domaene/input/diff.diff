@@ -1,0 +1,87 @@
+diff --git a/kasse/domain/mahnung.py b/kasse/domain/mahnung.py
+new file mode 100644
+index 0000000..0f24fdf
+--- /dev/null
++++ b/kasse/domain/mahnung.py
+@@ -0,0 +1,39 @@
++"""Mahnliste für überfällige Mitgliedsbeiträge (SPEC-0014 FR-01, FR-02)."""
++from __future__ import annotations
++
++import sqlite3
++from dataclasses import dataclass
++from datetime import date, timedelta
++from decimal import Decimal
++
++from kasse.domain.ports import Clock
++
++KULANZ = timedelta(days=30)
++
++
++@dataclass(frozen=True)
++class Mahnposten:
++    mitglied_id: int
++    name: str
++    offen: Decimal
++    aeltestes_faellig: date
++
++
++def mahnliste(db_pfad: str, clock: Clock) -> list[Mahnposten]:
++    """Mitglieder mit Beiträgen, die länger als die Kulanzfrist offen sind, ältester zuerst."""
++    grenze = clock.today() - KULANZ
++    with sqlite3.connect(db_pfad) as con:
++        zeilen = con.execute(
++            "SELECT m.id, m.name, b.betrag, b.faellig FROM beitrag b "
++            "JOIN mitglied m ON m.id = b.mitglied_id WHERE b.bezahlt_am IS NULL"
++        ).fetchall()
++    posten: dict[int, Mahnposten] = {}
++    for mitglied_id, name, betrag, faellig_text in zeilen:
++        faellig = date.fromisoformat(faellig_text)
++        if faellig >= grenze:
++            continue
++        alt = posten.get(mitglied_id)
++        offen = Decimal(betrag) + (alt.offen if alt else Decimal("0"))
++        aeltestes = min(faellig, alt.aeltestes_faellig) if alt else faellig
++        posten[mitglied_id] = Mahnposten(mitglied_id, name, offen, aeltestes)
++    return sorted(posten.values(), key=lambda p: (p.aeltestes_faellig, p.mitglied_id))
+diff --git a/tests/test_mahnung.py b/tests/test_mahnung.py
+new file mode 100644
+index 0000000..182d396
+--- /dev/null
++++ b/tests/test_mahnung.py
+@@ -0,0 +1,36 @@
++import sqlite3
++import tempfile
++import unittest
++from datetime import date
++from decimal import Decimal
++from pathlib import Path
++
++from kasse.domain.mahnung import mahnliste
++
++
++class FesteUhr:
++    def today(self):
++        return date(2026, 3, 31)
++
++
++class MahnlisteTest(unittest.TestCase):
++    def setUp(self):
++        self.tmp = tempfile.TemporaryDirectory()
++        self.db = str(Path(self.tmp.name) / "kasse.db")
++        with sqlite3.connect(self.db) as con:
++            con.executescript(Path("kasse/adapters/schema.sql").read_text())
++            con.executemany("INSERT INTO mitglied (id, name) VALUES (?, ?)",
++                            [(1, "Ada"), (2, "Bert")])
++            con.executemany(
++                "INSERT INTO beitrag (mitglied_id, betrag, faellig, bezahlt_am) VALUES (?,?,?,?)",
++                [(1, "24.00", "2026-01-15", None), (1, "24.00", "2026-02-15", None),
++                 (2, "24.00", "2026-03-15", None), (2, "24.00", "2026-01-01", "2026-01-03")])
++
++    def tearDown(self):
++        self.tmp.cleanup()
++
++    def test_fr01_fr02_ueberfaellige_summiert(self):
++        (posten,) = mahnliste(self.db, FesteUhr())
++        self.assertEqual(posten.mitglied_id, 1)
++        self.assertEqual(posten.offen, Decimal("48.00"))
++        self.assertEqual(posten.aeltestes_faellig, date(2026, 1, 15))

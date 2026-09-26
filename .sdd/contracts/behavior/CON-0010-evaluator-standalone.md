@@ -112,3 +112,8 @@ Der Evaluator bricht ab und gibt einen Fehler-Report zurück, wenn:
 Im `--auto`-Modus verlangt der Auto-Merge zusätzlich zur Schwelle aus G-05, dass alle
 `quality.gates` bestanden sind (CON-0196). Für `holdout_pass_rate` im Quality-Report zählen
 Szenarien mit `llm_verdict: "skip"` oder nur `error`-Läufen nicht (CON-0196, Formeltabelle).
+
+## Seit SPEC-0055
+
+Der Evaluator liest HOL-Szenarien aus `.sdd/holdout/` ohne den Unterbaum `roles/` (Rollen-Fälle,
+CON-0219 INV-04).

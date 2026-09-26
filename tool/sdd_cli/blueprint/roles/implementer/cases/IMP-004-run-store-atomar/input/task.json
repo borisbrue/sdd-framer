@@ -1,0 +1,12 @@
+{
+  "id": "T01",
+  "title": "RunStore: Run-ID, atomares Schreiben, Ereignisse",
+  "description": "Neues Modul sddlib/run_store.py mit RUN_ID_RE, now(), new_run_id(spec_id), atomic_write_json(path, data), RunNotFound und RunStore (create, open, write_state, read_state, event, read_jsonl) gemäß SPEC-0104 FR-01 bis FR-06.",
+  "type": "code",
+  "complexity": 3,
+  "fr_ids": ["FR-01", "FR-02", "FR-03", "FR-04", "FR-05", "FR-06"],
+  "dependencies": [],
+  "test_file": "tests/test_run_store.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": ["sddlib/run_store.py"]
+}

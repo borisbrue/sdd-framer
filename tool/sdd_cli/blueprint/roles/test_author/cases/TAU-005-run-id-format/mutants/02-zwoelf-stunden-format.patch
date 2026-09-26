@@ -1,0 +1,11 @@
+--- a/sddlib/run_id.py
++++ b/sddlib/run_id.py
+@@ -6,7 +6,7 @@
+ 
+ _SPEC_ID = re.compile(r"^[A-Z]+-\d+$")
+ _RUN_ID = re.compile(r"^(?P<spec>[A-Z]+-\d+)-(?P<ts>\d{8}T\d{6}Z)$")
+-_FORMAT = "%Y%m%dT%H%M%SZ"
++_FORMAT = "%Y%m%dT%I%M%SZ"
+ 
+ 
+ def new_run_id(spec_id: str, when: datetime) -> str:

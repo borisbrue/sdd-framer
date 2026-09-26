@@ -1,0 +1,10 @@
+id: REV-002
+role: reviewer
+title: "Paginierung: Seitenzahl bei glatter Teilung"
+description: "Grenzfall: total_pages = total // per_page + 1 ist bei ganzzahliger Teilung (20 Einträge, 10 pro Seite) eine Seite zu hoch, has_next dadurch falsch. Die Tests nutzen nur 25 Einträge und bleiben grün. Übrige Grenzfälle (leere Liste, Seite hinter dem Ende, per_page-Grenzen) sind korrekt."
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+    - json_schema: {}
+    - seeded_bug_recall: {min: 1.0, tolerance: 3}

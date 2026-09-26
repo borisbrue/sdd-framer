@@ -1,0 +1,20 @@
+id: SUP-001
+role: supervisor
+title: 'S1: vollständige, sauber geschnittene Zerlegung freigeben'
+description: Vier Code-Tasks decken FR-01 bis FR-04 ab, jeder mit Testdatei, engen
+  allowed_paths und schlüssigen Abhängigkeiten; Nicht-Ziele sind nicht als Tasks aufgenommen.
+  Richtig ist approve; ein übervorsichtiges Modell verlangt ohne Anlass eine Überarbeitung.
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+  - json_schema: {}
+  - decision_matches: {}
+  - reason_mentions:
+      terms:
+      - FR-01
+      - FR-04
+      - vollständig
+      - abgedeckt
+      - alle
+      all: false

@@ -1,0 +1,1 @@
+{"id": "T01", "title": "parse_dauer implementieren", "description": "tempo/zeit.py: parse_dauer nach FR-01/FR-02 inklusive Fehlerfällen und Obergrenze 24 h.", "type": "code", "complexity": "low", "fr_ids": ["FR-01", "FR-02"], "dependencies": [], "test_file": "tests/test_zeit.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["tempo/zeit.py"]}

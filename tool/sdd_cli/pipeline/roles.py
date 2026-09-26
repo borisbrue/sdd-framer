@@ -15,6 +15,8 @@ from .schemas import errors
 
 BLUEPRINT_ROLES = Path(__file__).resolve().parents[1] / "blueprint" / "roles"
 DEFAULT_ROLES = ("decomposer", "test_author", "implementer", "reviewer", "supervisor")
+# Rollen außerhalb des Pipeline-Ablaufs; `judge` bewertet Rubriken (SPEC-0055 FR-12).
+ALL_ROLES = (*DEFAULT_ROLES, "judge")
 
 # Geschlossene Liste der Kontextquellen (FR-03, CON-0199 INV-01); `.sdd/holdout/` ist keine.
 CONTEXT_SOURCES = ("spec", "contracts", "agents_md", "repo_map", "task", "test_file",
@@ -78,6 +80,15 @@ def load_role(root: Path, role: str) -> RoleDefinition:
     pfad = role_path(root, role)
     if not pfad.is_file():
         raise RoleError(f"Rolle {role!r} nicht gefunden (.sdd/roles/{role}.md)")
+    return load_role_file(pfad, role)
+
+
+def load_blueprint_role(role: str) -> RoleDefinition:
+    """Default-Rolle aus dem Blueprint, unabhängig vom Projekt (z. B. bei altem `judge.md`)."""
+    return load_role_file(BLUEPRINT_ROLES / f"{role}.md", role)
+
+
+def load_role_file(pfad: Path, role: str) -> RoleDefinition:
     daten, prompt = split_frontmatter(pfad.read_text(encoding="utf-8"))
     fehler = errors("role-definition", daten)
     if fehler:

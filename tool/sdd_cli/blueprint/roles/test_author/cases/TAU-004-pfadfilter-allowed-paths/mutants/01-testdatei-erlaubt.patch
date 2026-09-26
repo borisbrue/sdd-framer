@@ -1,0 +1,11 @@
+--- a/sddlib/paths.py
++++ b/sddlib/paths.py
+@@ -16,7 +16,7 @@
+     muster = list(allowed)
+     verstoesse = []
+     for pfad in paths:
+-        if (_unsafe(pfad) or pfad == test_file or pfad.startswith(".sdd/")
++        if (_unsafe(pfad) or pfad.startswith(".sdd/")
+                 or not any(fnmatch.fnmatchcase(pfad, m) for m in muster)):
+             verstoesse.append(pfad)
+     return verstoesse

@@ -1,0 +1,14 @@
+[
+  {
+    "probe": "tests",
+    "status": "pass",
+    "command": "python3 -m unittest discover -s tests -t .",
+    "output": "Ran 3 tests in 0.004s\n\nOK"
+  },
+  {
+    "probe": "lint",
+    "status": "pass",
+    "command": "ruff check .",
+    "output": "All checks passed!"
+  }
+]

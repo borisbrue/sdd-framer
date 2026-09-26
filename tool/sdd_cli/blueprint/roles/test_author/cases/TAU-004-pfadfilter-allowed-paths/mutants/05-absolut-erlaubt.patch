@@ -1,0 +1,11 @@
+--- a/sddlib/paths.py
++++ b/sddlib/paths.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def _unsafe(path: str) -> bool:
+-    return path.startswith("/") or ".." in PurePosixPath(path).parts
++    return ".." in PurePosixPath(path).parts
+ 
+ 
+ def path_violations(paths: Iterable[str], allowed: Iterable[str],

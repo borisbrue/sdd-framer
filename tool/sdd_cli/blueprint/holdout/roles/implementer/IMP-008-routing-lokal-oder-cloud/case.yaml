@@ -1,0 +1,12 @@
+id: IMP-008
+role: implementer
+title: "Routing lokal/Cloud nach Kontextgröße"
+description: "Strategie mit Kontextaufbau, Token-Schätzung und Schwellwert. Fallen: Gleichstand ist lokal, Aufrunden der Schätzung, leere Teile ohne doppelte Umbrüche, disabled ohne Zähleraufruf, eigene Default-Listen."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

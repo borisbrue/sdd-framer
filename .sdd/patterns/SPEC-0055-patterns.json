@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0055",
+  "generated_at": "2026-09-26T16:26:04Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-09-26T16:26:04Z",
+      "acceptance_reason": "Checks als benannte, austauschbare Algorithmen in einer Registry, gemeinsam für Gate und Eval; Kontexte je Check deklariert (LSP).",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Template Method",
+      "status": "accepted",
+      "decided_at": "2026-09-26T16:26:05Z",
+      "acceptance_reason": "Fester Eval-Ablauf (Isolation, Nonce, Ausführen, Checks, Rubrik, Aufräumen) mit rollenspezifischen Hooks.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "status": "accepted",
+      "decided_at": "2026-09-26T16:26:06Z",
+      "acceptance_reason": "Protection Proxy maskiert Holdout-Fälle zentral in Report, CLI, compare und Skill.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "status": "accepted",
+      "decided_at": "2026-09-26T16:26:07Z",
+      "acceptance_reason": "baseline.json als Schnappschuss des übernommenen Stands; compare und accept arbeiten dagegen.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}

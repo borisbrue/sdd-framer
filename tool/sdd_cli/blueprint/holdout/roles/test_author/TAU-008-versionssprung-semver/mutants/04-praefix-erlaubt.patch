@@ -1,0 +1,11 @@
+--- a/release/version.py
++++ b/release/version.py
+@@ -11,7 +11,7 @@
+     """Erhöht `part` in `version` und liefert die neue Version."""
+     if part not in PARTS:
+         raise ValueError(f"unbekannter Teil {part!r}")
+-    m = _SEMVER.fullmatch(version.strip())
++    m = _SEMVER.search(version.strip())
+     if not m:
+         raise ValueError(f"keine SemVer-Version: {version!r}")
+     major, minor, patch = (int(g) for g in m.groups())

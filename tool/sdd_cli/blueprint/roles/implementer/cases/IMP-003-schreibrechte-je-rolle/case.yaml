@@ -1,0 +1,18 @@
+id: IMP-003
+role: implementer
+title: "PathPolicy: Schreibrechte je Rolle, Task und Pfad"
+description: >-
+  Nach pipeline/path_policy.py aus sdd-framer. Regeln in fester Reihenfolge, Default deny.
+  Fallen: Pfadflucht und absolute Pfade (auch mit Backslash), Normalisierung ('./a/../b'),
+  die geschützten Verzeichnisse selbst ('.sdd' ohne Schrägstrich), die Testdatei ist für den
+  implementer tabu, test_author darf nur die Testdatei, leeres allowed_paths erlaubt alles
+  Ungeschützte, zusätzliche protected_paths aus der Konfiguration. Das Nachbarmodul
+  sddlib/globs.py ist vorhanden und soll genutzt werden.
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

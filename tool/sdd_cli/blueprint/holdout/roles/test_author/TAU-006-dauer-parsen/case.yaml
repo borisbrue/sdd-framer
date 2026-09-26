@@ -1,0 +1,15 @@
+id: TAU-006
+role: test_author
+title: "Dauerangaben parsen"
+description: "Parser für Dauerangaben mit vielen Ablehnungsfällen. Ein guter Test deckt Einheitenfaktoren, Reihenfolge-/Doppelprüfung, Resteingaben und Leerraum ab."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - test_file_matches_task: {}
+    - fr_marker_present: {}
+    - red_against_stub: {}
+    - green_against_reference: {}
+    - mutation_kill_rate: {min: 0.75}

@@ -1,0 +1,11 @@
+--- a/release/version.py
++++ b/release/version.py
+@@ -4,7 +4,7 @@
+ import re
+ 
+ PARTS = ("major", "minor", "patch")
+-_SEMVER = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?")
++_SEMVER = re.compile(r"(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?")
+ 
+ 
+ def bump(version: str, part: str) -> str:

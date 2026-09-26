@@ -1,0 +1,86 @@
+diff --git a/notes/repository.py b/notes/repository.py
+new file mode 100644
+index 0000000..080d2ee
+--- /dev/null
++++ b/notes/repository.py
+@@ -0,0 +1,34 @@
++"""Suche über Notizen (SPEC-0021 FR-01..FR-04)."""
++
++import sqlite3
++
++from notes.models import Note
++
++# Nur diese Ausdrücke gelangen in ORDER BY; der Nutzer wählt den Schlüssel, nie den Text.
++_SORT_COLUMNS = {
++    "updated": "updated_at DESC, id DESC",
++    "title": "title COLLATE NOCASE ASC, id ASC",
++}
++MAX_LIMIT = 50
++
++
++def _escape_like(text: str) -> str:
++    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
++
++
++def search_notes(conn: sqlite3.Connection, owner_id: int, text: str, *,
++                 sort: str = "updated", limit: int = 20) -> list[Note]:
++    """Titelsuche über die Notizen eines Besitzers."""
++    order_by = _SORT_COLUMNS.get(sort)
++    if order_by is None:
++        raise ValueError(f"unbekannte Sortierung: {sort!r}")
++    if limit < 1:
++        raise ValueError("limit muss mindestens 1 sein")
++    limit = min(limit, MAX_LIMIT)
++    sql = (
++        "SELECT id, owner_id, title, updated_at FROM notes "
++        "WHERE owner_id = ? AND title LIKE ? ESCAPE '\\' "
++        f"ORDER BY {order_by} LIMIT ?"
++    )
++    rows = conn.execute(sql, (owner_id, f"%{_escape_like(text)}%", limit)).fetchall()
++    return [Note(*row) for row in rows]
+diff --git a/tests/test_repository.py b/tests/test_repository.py
+new file mode 100644
+index 0000000..3353f0d
+--- /dev/null
++++ b/tests/test_repository.py
+@@ -0,0 +1,40 @@
++import unittest
++
++from notes.repository import search_notes
++from notes.schema import connect
++
++
++class SearchNotesTest(unittest.TestCase):
++    def setUp(self):
++        self.conn = connect()
++        self.conn.executemany(
++            "INSERT INTO notes (id, owner_id, title, updated_at) VALUES (?, ?, ?, ?)",
++            [(1, 1, "Einkauf", "2026-01-02"), (2, 1, "100% erledigt", "2026-01-03"),
++             (3, 1, "1000 Ideen", "2026-01-01"), (4, 2, "Einkauf Bob", "2026-01-04"),
++             (5, 1, "b_x", "2026-01-05"), (6, 1, "bax", "2026-01-06")],
++        )
++
++    def tearDown(self):
++        self.conn.close()
++
++    def test_fr01_only_own_notes_case_insensitive(self):
++        self.assertEqual([n.id for n in search_notes(self.conn, 1, "EINKAUF")], [1])
++
++    def test_fr02_sort_by_title_and_unknown_sort(self):
++        titles = [n.title for n in search_notes(self.conn, 1, "", sort="title")]
++        self.assertEqual(titles, sorted(titles, key=str.lower))
++        with self.assertRaises(ValueError):
++            search_notes(self.conn, 1, "", sort="title; DROP TABLE notes")
++
++    def test_fr03_limit_is_clamped_and_validated(self):
++        self.assertEqual(len(search_notes(self.conn, 1, "", limit=500)), 5)
++        with self.assertRaises(ValueError):
++            search_notes(self.conn, 1, "", limit=0)
++
++    def test_fr04_wildcards_are_literal(self):
++        self.assertEqual([n.id for n in search_notes(self.conn, 1, "100%")], [2])
++        self.assertEqual([n.id for n in search_notes(self.conn, 1, "b_x")], [5])
++
++
++if __name__ == "__main__":
++    unittest.main()

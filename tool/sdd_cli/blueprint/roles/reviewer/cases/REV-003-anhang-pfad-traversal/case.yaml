@@ -1,0 +1,10 @@
+id: REV-003
+role: reviewer
+title: "Anhänge: Pfad-Traversal über absolute Namen"
+description: "Sicherheitslücke: open_attachment blockt nur '..'-Segmente. Ein absoluter Name ('/etc/passwd') ersetzt base_dir beim Pfad-Join, Symlinks nach außen werden ebenfalls nicht erkannt. Der Test prüft nur '../', daher grün."
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+    - json_schema: {}
+    - seeded_bug_recall: {min: 1.0, tolerance: 3}

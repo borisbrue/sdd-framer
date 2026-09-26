@@ -245,7 +245,7 @@ def _git_benutzername(target: Path) -> str | None:
 # Geheimnissen (#103), die Usage-Datenbank, in die jeder LLM-Aufruf schreibt (SPEC-0060), und die
 # Laufzeitartefakte von Testsonde (SPEC-0006) und Qualitätsmessung (SPEC-0054).
 LOCAL_IGNORES = (".sdd/config.local.yaml", ".sdd/evaluations.db", ".sdd/test-runs/",
-                 ".sdd/quality/runs/")
+                 ".sdd/quality/runs/", ".sdd/role-evals/")
 
 
 def ignore_local_config(target: Path) -> bool:
@@ -304,7 +304,9 @@ def init_project(
     for sub in ["templates", "schemas", "roles"]:
         src = src_root / sub
         if src.exists():
-            for src_file in src.rglob("*"):
+            # Rollen: nur die Rollendateien; Fälle über install_cases, Baselines sind projektlokal.
+            dateien = src.glob("*.md") if sub == "roles" else src.rglob("*")
+            for src_file in dateien:
                 if src_file.is_dir():
                     continue
                 rel = src_file.relative_to(src)
@@ -314,6 +316,10 @@ def init_project(
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(src_file, dst_file)
                 created.append(dst_file)
+
+    # Golden Cases der Rollen-Evals (SPEC-0055 FR-02)
+    from .pipeline.evals.cases import install_cases
+    created.extend(install_cases(target))
 
     # specs/README kopieren falls vorhanden
     readme_src = src_root / "specs" / "README.md"

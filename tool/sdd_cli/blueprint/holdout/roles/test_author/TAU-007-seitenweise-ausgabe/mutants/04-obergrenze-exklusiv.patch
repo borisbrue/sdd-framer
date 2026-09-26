@@ -1,0 +1,11 @@
+--- a/listing/paging.py
++++ b/listing/paging.py
+@@ -17,7 +17,7 @@
+ 
+ 
+ def paginate(items: list, page: int = 1, per_page: int = 20) -> Page:
+-    if not 1 <= per_page <= MAX_PER_PAGE:
++    if not 1 <= per_page < MAX_PER_PAGE:
+         raise ValueError(f"per_page muss zwischen 1 und {MAX_PER_PAGE} liegen")
+     if page < 1:
+         raise ValueError("page beginnt bei 1")

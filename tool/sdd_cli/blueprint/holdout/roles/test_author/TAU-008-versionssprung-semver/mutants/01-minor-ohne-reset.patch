@@ -1,0 +1,11 @@
+--- a/release/version.py
++++ b/release/version.py
+@@ -19,7 +19,7 @@
+     if part == "major":
+         major, minor, patch = major + 1, 0, 0
+     elif part == "minor":
+-        minor, patch = minor + 1, 0
++        minor = minor + 1
+     elif not vorab:
+         patch += 1
+     return f"{major}.{minor}.{patch}"

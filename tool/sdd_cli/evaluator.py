@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from .config import SddConfig
 from .frontmatter import parse_safe
+from .holdout_paths import scenario_files
 from .llm.base import CompletionProvider
 
 if TYPE_CHECKING:
@@ -158,7 +159,7 @@ def _load_holdout_docs_with_skips(
     skipped: dict[str, int] = {}
     if not config.holdout_dir.exists():
         return docs, skipped
-    for md in sorted(config.holdout_dir.rglob("*.md")):
+    for md in sorted(scenario_files(config.holdout_dir)):
         doc = parse_safe(md)
         if not doc:
             continue

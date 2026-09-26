@@ -1,0 +1,22 @@
+id: DEC-001
+role: decomposer
+title: "Notiz-API mit Token-Auth und Eigentümerprüfung"
+description: >-
+  Kleine REST-API (Python-Standardbibliothek, http.server + sqlite3) für persönliche Notizen.
+  Falle: Die Persistenzschicht muss vor den Endpunkten stehen, und die Nicht-Ziele
+  (Registrierung, Web-Oberfläche) dürfen keine Tasks werden. FR-04 (fremde Notizen liefern
+  404 statt 403) wird leicht in den CRUD-Task gekippt und nicht ausgewiesen.
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 3, max: 8}
+    - ordered_before: {first: "(Datenmodell|Modell|Schema|Persistenz|Speicher|Repository|Datenbank|SQLite)", then: "(Endpunkt|CRUD|Route|Handler)"}
+  rubric:
+    - {id: non_goals, question: "Enthält die Zerlegung KEINEN Task für die in Abschnitt 5 genannten Nicht-Ziele (Benutzerregistrierung, Passwort-Login, Web-Oberfläche, Volltextsuche)? 5 = keiner, 1 = mindestens ein vollständiger Task für ein Nicht-Ziel."}
+weights: {checks: 0.8, rubric: 0.2}

@@ -164,6 +164,14 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in [*angelegt, *neu]:
             print(f"  + {datei.relative_to(target)}")
 
+    # 7b. Golden Cases der Rollen-Evals (SPEC-0055 FR-02): nur fehlende Fälle.
+    from .pipeline.evals.cases import install_cases
+    faelle = install_cases(target)
+    result["created"].extend(faelle)
+    if verbose:
+        for fall in faelle:
+            print(f"  + {fall.relative_to(target)}/")
+
     # 8. Web-Usage aus .sdd/ai_usage.json nach token_usage übernehmen (SPEC-0060 FR-08).
     migriert = migrate_ai_usage_json(target)
     if migriert is not None:

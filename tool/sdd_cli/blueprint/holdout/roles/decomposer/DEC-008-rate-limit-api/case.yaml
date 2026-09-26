@@ -1,0 +1,18 @@
+id: DEC-008
+role: decomposer
+title: "Rate-Limiting pro API-Schlüssel für eine kleine Web-API"
+description: "Token-Bucket, Konfiguration, Middleware mit Headern, Admin-Endpunkt und Metrik. Fallen: der Algorithmus (Bucket) muss vor der Middleware stehen; FR-05 (Zähler für abgelehnte Anfragen) ist klein und wird leicht vergessen; verteilte Limits (Redis) sind Nicht-Ziel; der Contract gibt Header und Fehlerformat vor."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 3, max: 8}
+    - ordered_before: {first: "(bucket|algorithm|limiter-kern|kontingent)", then: "(middleware|header|429)"}
+  rubric:
+    - {id: contract_use, question: "Nennen die Beschreibungen der betroffenen Tasks die Vorgaben aus contracts.md (Header-Namen, 429-Fehlerkörper, Retry-After) so konkret, dass ein Test daraus ableitbar ist? 5 = ja, 1 = gar nicht."}
+weights: {checks: 0.8, rubric: 0.2}

@@ -1,5 +1,29 @@
 # Changelog
 
+## [Unreleased] – SPEC-0055: Rollen-Evals mit Golden Cases
+
+### Added
+
+- **`sdd role eval|compare|accept`** und **`sdd role case new|capture|confirm`**: Rollen gegen
+  Golden Cases messen (Score, Streuung, `pass@1`, `pass^k`, Tokens je Fall), Kandidaten nach der
+  Ratchet-Regel vergleichen und übernehmen (Version, `baseline.json`, Rollen-CHANGELOG).
+- Golden Cases im Blueprint: je Pipeline-Rolle 8 Fälle, davon 3 Holdout unter
+  `.sdd/holdout/roles/`; `sdd init`/`sdd upgrade` installieren fehlende Fälle.
+- Check-Registry `pipeline/checks.py` mit Kontexten (`gate`, `eval`), Parametern und Score; neue
+  Checks u. a. `task_count`, `ordered_before`, `max_complexity`, `fr_marker_present`,
+  `red_against_stub`, `green_against_reference`, `mutation_kill_rate`, `paths_allowed`,
+  `hidden_tests_pass`, `arch_violations`, `quality_score`, `seeded_bug_recall`,
+  `clean_diff_precision`, `decision_matches`, `reason_mentions`.
+- Rolle **`judge`** (`llm.roles.judge`, Default `claude-cli`): bewertet Rubriken blind und ersetzt
+  die Komponente `evaluator` in `sdd quality --judge`.
+- Skill **`/sdd-role-tune`**; Profil-Schlüssel `requests_per_minute`.
+
+### Changed
+
+- Alle Scanner von `.sdd/holdout/` lassen `.sdd/holdout/roles/` aus; Rollendateien dürfen nur
+  gate-fähige Checks nennen (`sdd validate`).
+- Das Run-Protokoll nennt gescheiterte Checks eines Rollenaufrufs (`failed_checks`).
+
 ## [Unreleased] – SPEC-0062: Ein Ausführungspfad
 
 ### Added

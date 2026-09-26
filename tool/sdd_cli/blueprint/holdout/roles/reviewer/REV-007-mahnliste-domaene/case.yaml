@@ -1,0 +1,10 @@
+id: REV-007
+role: reviewer
+title: "Mahnliste für Mitgliedsbeiträge im Domänenkern"
+description: "Eingebauter Fehler: Verstoß gegen die Architekturregel aus AGENTS.md – das Domänenmodul öffnet selbst eine SQLite-Verbindung und schreibt SQL, statt die Beiträge über den Port BeitragRepository zu beziehen. Fachlich und laut Tests korrekt; nur die Schichtregel ist verletzt."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - seeded_bug_recall: {min: 1.0, tolerance: 3}

@@ -1,0 +1,10 @@
+id: REV-006
+role: reviewer
+title: "Auslieferung von Beleganhängen pro Mandant"
+description: "Eingebauter Fehler: Die Namensprüfung weist nur führende Punkte ab; Namen mit Unterverzeichnis und '..' oder absolute Pfade verlassen das Mandantenverzeichnis (Path Traversal, Zugriff auf fremde Mandanten). Die Tests sind grün, weil sie nur den Punkt-Fall prüfen."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - seeded_bug_recall: {min: 1.0, tolerance: 3}

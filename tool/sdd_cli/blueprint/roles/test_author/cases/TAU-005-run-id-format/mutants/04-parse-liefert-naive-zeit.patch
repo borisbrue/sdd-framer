@@ -1,0 +1,9 @@
+--- a/sddlib/run_id.py
++++ b/sddlib/run_id.py
+@@ -23,5 +23,5 @@
+     m = _RUN_ID.match(run_id)
+     if m is None:
+         raise ValueError(f"ungültige Run-ID: {run_id!r}")
+-    when = datetime.strptime(m["ts"], _FORMAT).replace(tzinfo=timezone.utc)
++    when = datetime.strptime(m["ts"], _FORMAT)
+     return m["spec"], when

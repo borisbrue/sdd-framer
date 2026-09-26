@@ -1,0 +1,19 @@
+{
+  "request_id": "req-3f70c9e1",
+  "point": "S3",
+  "created_at": "2026-09-24T16:55:02Z",
+  "allowed_commands": ["accept_frs", "reopen", "halt"],
+  "facts": {
+    "frs": [
+      {"id": "FR-01", "status": "grün", "tests": ["tests/test_position.py"]},
+      {"id": "FR-02", "status": "grün", "tests": ["tests/test_preise.py"]},
+      {"id": "FR-03", "status": "rot", "tests": ["tests/test_staffel.py"]},
+      {"id": "FR-04", "status": "grün", "tests": ["tests/test_rundung.py"]},
+      {"id": "FR-05", "status": "grün", "tests": ["tests/test_ausgabe.py"]}
+    ],
+    "gate_results": [
+      {"probe": "tests", "status": "ok", "tests": 27, "failed": ["tests.test_staffel.StaffelTest.test_fr03_grenze_100_stueck_einschliesslich"]}
+    ],
+    "holdout": {"status": "n/a", "reason": "keine Base-URL (evaluator.base_url oder --base-url)"}
+  }
+}

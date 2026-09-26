@@ -1,0 +1,19 @@
+id: DEC-004
+role: decomposer
+title: "Token-Bucket-Rate-Limiter als WSGI-Middleware"
+description: >-
+  Rate-Limiter für eine bestehende WSGI-Anwendung. Falle: Der Bucket-Algorithmus (mit
+  injizierbarer Uhr) muss vor der Middleware stehen, die ihn benutzt; FR-05 (Aufräumen
+  inaktiver Buckets gegen Speicherwachstum) wird leicht übersehen. Verteilte Limits über
+  Redis sind ausdrücklich ein Nicht-Ziel.
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 3, max: 7}
+    - ordered_before: {first: "(Bucket|Algorithmus|Kontingent)", then: "(Middleware|429|Retry)"}

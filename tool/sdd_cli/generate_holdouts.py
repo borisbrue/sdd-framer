@@ -6,6 +6,7 @@ from typing import Any
 
 from .config import SddConfig
 from .frontmatter import parse_safe
+from .holdout_paths import scenario_files
 from .templates import slugify
 
 _VALID_STATUSES = {"approved", "in-progress"}
@@ -78,7 +79,7 @@ def get_existing_hol_ids_for_spec(spec_id: str, cfg: SddConfig) -> set[str]:
         return set()
 
     existing: set[str] = set()
-    for md in holdout_dir.rglob("*.md"):
+    for md in scenario_files(holdout_dir):
         doc = parse_safe(md)
         if doc and doc.frontmatter.get("spec") == spec_id:
             hol_id = doc.frontmatter.get("id")

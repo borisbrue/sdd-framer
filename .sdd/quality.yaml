@@ -6,7 +6,8 @@ version: 1
 preset: python
 paths: ["tool/**/*.py"]
 exclude: [".venv/**", "venv/**", "build/**", "dist/**", "**/dist/**", "**/__pycache__/**",
-          "**/node_modules/**", "vscode-extension/**", "**/site-packages/**"]
+          "**/node_modules/**", "vscode-extension/**", "**/site-packages/**",
+          "tool/sdd_cli/blueprint/roles/*/cases/**", "tool/sdd_cli/blueprint/holdout/**"]
 test_paths: ["tests/**"]
 probes:
   tests:

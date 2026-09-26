@@ -1,0 +1,6 @@
+notes/__init__.py
+notes/config.py
+notes.toml.example
+tests/__init__.py
+tests/test_config.py
+README.md

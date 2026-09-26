@@ -1,0 +1,16 @@
+id: IMP-002
+role: implementer
+title: "Glob-Muster mit ** und Dateiauswahl für Quality-Gates"
+description: >-
+  Nach quality/files.py aus sdd-framer. fnmatch reicht nicht: '*' darf keinen '/' überspringen,
+  '**/' ist optional (trifft auch die Wurzel), 'dir/**' verlangt mindestens einen Eintrag unter
+  dir, Sonderzeichen wie '.' sind literal. collect_files schließt .sdd/ und .git/ immer aus und
+  sortiert. Der sichtbare Test prüft nur einfache Fälle.
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

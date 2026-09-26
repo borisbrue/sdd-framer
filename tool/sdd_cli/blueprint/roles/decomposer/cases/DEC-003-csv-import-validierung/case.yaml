@@ -1,0 +1,19 @@
+id: DEC-003
+role: decomposer
+title: "Kunden-CSV-Import mit Validierung und Alles-oder-nichts"
+description: >-
+  Import von Kundendaten aus CSV in eine bestehende SQLite-Datenbank. Falle: FR-06
+  (Dubletten per E-Mail, auch gegen den Bestand) ist eine eigene Regel, die leicht in der
+  Zeilenvalidierung verschwindet; das Einlesen/Validieren muss vor dem transaktionalen
+  Schreiben stehen. Excel-Import und automatische Korrektur sind Nicht-Ziele.
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 4, max: 9}
+    - ordered_before: {first: "(Pars|Einles|Lese|Lesen|Validier|Prüf)", then: "(Transaktion|Alles.oder.nichts|Einfüg|Schreiben|Persist)"}

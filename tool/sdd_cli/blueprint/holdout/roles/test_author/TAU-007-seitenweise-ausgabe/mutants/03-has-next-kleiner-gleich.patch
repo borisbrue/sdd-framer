@@ -1,0 +1,8 @@
+--- a/listing/paging.py
++++ b/listing/paging.py
+@@ -25,4 +25,4 @@
+     seiten = max(1, -(-total // per_page))
+     start = (page - 1) * per_page
+     ausschnitt = list(items[start:start + per_page])
+-    return Page(ausschnitt, page, per_page, total, seiten, page < seiten)
++    return Page(ausschnitt, page, per_page, total, seiten, page <= seiten)

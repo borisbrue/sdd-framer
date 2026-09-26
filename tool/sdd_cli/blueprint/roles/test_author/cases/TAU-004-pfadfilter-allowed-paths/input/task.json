@@ -1,0 +1,18 @@
+{
+  "id": "T01",
+  "title": "Pfadfilter path_violations",
+  "description": "Implementiere sddlib.paths.path_violations(paths, allowed, test_file=None) gemäß FR-01 bis FR-03: liefert die Pfade, die ein Implementierer nicht schreiben darf.",
+  "type": "code",
+  "complexity": "medium",
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [],
+  "test_file": "tests/test_paths.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "sddlib/paths.py"
+  ]
+}

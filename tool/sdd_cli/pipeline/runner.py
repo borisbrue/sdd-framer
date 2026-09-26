@@ -12,12 +12,13 @@ import json
 import logging
 import re
 import secrets
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
 from ..llm.base import UsageMetadata
 from ..llm.usage import usage_context
+from . import checks as checks_mod
 from .roles import CONTEXT_SOURCES, RoleDefinition
 from .schemas import errors as schema_errors
 
@@ -43,80 +44,17 @@ class RoleResult:
     problems: list[str] = field(default_factory=list)
     prompt_hash: str = ""
     raw: str = ""
+    failed_checks: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
         return self.outcome == "ok"
 
 
-# ── Rollen-Checks: prüfen nur die Ausgabe der Rolle (CON-0199 INV-03) ─────────
-
-Check = Callable[[Any, Mapping], list[str]]
-
-
-def _check_fr_coverage(output: Any, ctx: Mapping) -> list[str]:
-    abgedeckt = {fr for t in output.get("tasks", []) for fr in t.get("fr_ids", [])}
-    return [f"{fr} ist von keinem Task abgedeckt" for fr in ctx.get("spec_frs", [])
-            if fr not in abgedeckt]
-
-
-def _check_deps_resolvable(output: Any, ctx: Mapping) -> list[str]:
-    titel = {t["title"] for t in output.get("tasks", [])}
-    return [f"Task {t['title']!r}: Abhängigkeit {d!r} existiert nicht"
-            for t in output.get("tasks", []) for d in t.get("dependencies", []) if d not in titel]
-
-
-def _check_acyclic(output: Any, ctx: Mapping) -> list[str]:
-    kanten = {t["title"]: list(t.get("dependencies", [])) for t in output.get("tasks", [])}
-    zustand: dict[str, int] = {}
-
-    def zyklisch(knoten: str) -> bool:
-        if zustand.get(knoten) == 1:
-            return True
-        if zustand.get(knoten) == 2 or knoten not in kanten:
-            return False
-        zustand[knoten] = 1
-        if any(zyklisch(n) for n in kanten[knoten]):
-            return True
-        zustand[knoten] = 2
-        return False
-
-    return ["Die Abhängigkeiten der Tasks enthalten einen Zyklus"] if any(
-        zyklisch(k) for k in kanten) else []
-
-
-def _check_test_file_per_code_task(output: Any, ctx: Mapping) -> list[str]:
-    gesehen: dict[str, str] = {}
-    probleme = []
-    for t in output.get("tasks", []):
-        datei = t.get("test_file")
-        if t.get("type") == "code" and datei:
-            if datei in gesehen:
-                probleme.append(f"Tasks {gesehen[datei]!r} und {t['title']!r} teilen die "
-                                f"Testdatei {datei}")
-            gesehen[datei] = t["title"]
-    return probleme
-
-
-def _check_test_file_matches_task(output: Any, ctx: Mapping) -> list[str]:
-    erwartet = (ctx.get("task") or {}).get("test_file")
-    if erwartet and output.get("test_file") != erwartet:
-        return [f"test_file muss {erwartet} sein, nicht {output.get('test_file')}"]
-    return []
-
-
-CHECKS: dict[str, Check] = {
-    "json_schema": lambda output, ctx: [],  # läuft immer vorab, s. RoleRunner._validate
-    "fr_coverage": _check_fr_coverage,
-    "acyclic": _check_acyclic,
-    "deps_resolvable": _check_deps_resolvable,
-    "test_file_per_code_task": _check_test_file_per_code_task,
-    "test_file_matches_task": _check_test_file_matches_task,
-}
-
-
 def unknown_checks(role_def: RoleDefinition) -> list[str]:
-    return [c for c in role_def.checks if c not in CHECKS]
+    """Unbekannte oder im Gate nicht nutzbare Checks einer Rolle (CON-0219 INV-01)."""
+    return [*checks_mod.unknown_checks(role_def.checks),
+            *checks_mod.not_gate_capable(role_def.checks)]
 
 
 # ── Hilfen ────────────────────────────────────────────────────────────────────
@@ -211,7 +149,8 @@ class RoleRunner:
             ergebnis.problems = ["Antwort enthält kein JSON"
                                  + (" (Längenabbruch)" if laengenabbruch else "")]
             return ergebnis
-        probleme = self._validate(role_def, output, check_context or {})
+        probleme, gescheitert = self.validate_checks(role_def, output, check_context or {})
+        ergebnis.failed_checks = gescheitert
         ergebnis.output = output
         ergebnis.problems = probleme
         ergebnis.outcome = "invalid_output" if probleme else "ok"
@@ -226,15 +165,15 @@ class RoleRunner:
         return "\n\n".join(teile) or role_def.purpose
 
     @staticmethod
-    def _validate(role_def: RoleDefinition, output: Any, ctx: Mapping) -> list[str]:
+    def validate_checks(role_def: RoleDefinition, output: Any,
+                        ctx: Mapping) -> tuple[list[str], list[str]]:
+        """Schema und Gate-Checks der Rolle: (Probleme, Namen der gescheiterten Checks)."""
         name, definition = role_def.schema_ref()
         probleme = schema_errors(name, output, definition)
         if probleme:
-            return probleme
-        for check in role_def.checks:
-            funktion = CHECKS.get(check)
-            if funktion is None:
-                probleme.append(f"unbekannter Rollen-Check {check!r}")
-                continue
-            probleme.extend(funktion(output, ctx))
-        return probleme
+            return probleme, ["json_schema"]
+        return checks_mod.gate_problems(role_def.checks, output, ctx)
+
+    @staticmethod
+    def _validate(role_def: RoleDefinition, output: Any, ctx: Mapping) -> list[str]:
+        return RoleRunner.validate_checks(role_def, output, ctx)[0]

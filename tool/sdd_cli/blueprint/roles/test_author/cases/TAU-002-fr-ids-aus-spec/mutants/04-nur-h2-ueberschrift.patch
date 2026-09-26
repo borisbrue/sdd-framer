@@ -1,0 +1,11 @@
+--- a/sddlib/frs.py
++++ b/sddlib/frs.py
+@@ -4,7 +4,7 @@
+ import re
+ 
+ _FR_HEADING_RE = re.compile(
+-    r"^(#{2,3})\s+(?:\d+\.\s+)?Funktionale Anforderungen\b.*$",
++    r"^(##)\s+(?:\d+\.\s+)?Funktionale Anforderungen\b.*$",
+     re.IGNORECASE | re.MULTILINE,
+ )
+ 

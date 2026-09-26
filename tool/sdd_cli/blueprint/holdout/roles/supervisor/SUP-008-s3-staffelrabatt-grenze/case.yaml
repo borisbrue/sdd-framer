@@ -1,0 +1,11 @@
+id: SUP-008
+role: supervisor
+title: "S3: Abnahme mit einer roten Grenzfall-FR"
+description: "Vier von fünf FRs sind grün, FR-03 (Staffelrabatt) hat einen roten Test genau an der Staffelgrenze – ein behebbarer Fehler in einem abgeschlossenen Task. Richtige Entscheidung: reopen genau des Tasks, der FR-03 umgesetzt hat (aus der Historie ablesbar), nicht accept_frs mit 'teilweise'/'fehlt' und nicht halt."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - decision_matches: {}
+    - reason_mentions: {terms: ["FR-03", "Staffel", "Grenze", "100"], all: false}

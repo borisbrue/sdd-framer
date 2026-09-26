@@ -1,0 +1,16 @@
+id: IMP-001
+role: implementer
+title: "FR-IDs aus dem Anforderungsabschnitt einer Spec lesen"
+description: >-
+  Nach compliance.extract_fr_ids aus sdd-framer. Der sichtbare Test deckt nur eine h2-Liste ab.
+  Fallen: h3-Überschrift ohne Nummer, h3-Unterabschnitte innerhalb einer h2-Sektion (dürfen den
+  Abschnitt nicht beenden), Querverweise im Fließtext (FR-18 aus anderer Spec) zählen nicht,
+  Duplikate reihenfolgestabil entfernen, FRs nach dem Abschnitt werden ignoriert.
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

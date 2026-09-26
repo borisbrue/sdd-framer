@@ -38,6 +38,7 @@ from sdd_context import get_config
 
 from sdd_cli.dev_container import container_name, get_runtime
 from sdd_cli.frontmatter import Document, parse_safe
+from sdd_cli.holdout_paths import scenario_files
 from sdd_cli.pipeline_jobs import JobManager
 
 router = APIRouter(tags=["interactive"])
@@ -66,7 +67,7 @@ def _find_contract(cfg, cid: str) -> Document:
 
 def _find_holdout(cfg, hid: str) -> Document:
     holdout_dir = cfg.holdout_dir
-    for md in holdout_dir.rglob("*.md"):
+    for md in scenario_files(holdout_dir):
         doc = parse_safe(md)
         if doc and doc.frontmatter.get("id") == hid:
             return doc
@@ -91,7 +92,7 @@ def _next_hol_id(cfg) -> str:
     holdout_dir = cfg.holdout_dir
     ids = []
     if holdout_dir.exists():
-        for md in holdout_dir.rglob("*.md"):
+        for md in scenario_files(holdout_dir):
             doc = parse_safe(md)
             if doc:
                 raw = doc.frontmatter.get("id", "")

@@ -1,0 +1,21 @@
+{
+  "bugs": [
+    {
+      "file": "userimport/importer.py",
+      "line": 26,
+      "keywords": [
+        "unbekannte Rolle",
+        "unknown role",
+        "ungültige Rolle",
+        "invalid role",
+        "ALLOWED_ROLES",
+        "erlaubte Rolle",
+        "allowed role",
+        "Rollenprüfung",
+        "Rolle wird nicht geprüft",
+        "role validation",
+        "Rolle nicht validiert"
+      ]
+    }
+  ]
+}

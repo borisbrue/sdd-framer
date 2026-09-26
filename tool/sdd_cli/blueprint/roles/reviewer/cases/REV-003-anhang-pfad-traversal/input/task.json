@@ -1,0 +1,19 @@
+{
+  "id": "T02",
+  "title": "Anhang laden",
+  "description": "AttachmentStore.open_attachment(name) nach FR-03; name stammt ungeprüft aus der Download-URL.",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": [
+    "FR-03"
+  ],
+  "dependencies": [
+    "T01"
+  ],
+  "test_file": "tests/test_store.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "attachments/store.py",
+    "tests/test_store.py"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "T01",
+  "title": "Versions-Bump bump_version",
+  "description": "Implementiere sddlib.version.bump_version(version, part) gemäß FR-01 und FR-02 für die Versionsfelder von Specs und Rollen.",
+  "type": "code",
+  "complexity": "low",
+  "fr_ids": [
+    "FR-01",
+    "FR-02"
+  ],
+  "dependencies": [],
+  "test_file": "tests/test_version.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "sddlib/version.py"
+  ]
+}

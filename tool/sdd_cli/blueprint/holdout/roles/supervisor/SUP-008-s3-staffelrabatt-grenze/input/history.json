@@ -1,0 +1,9 @@
+[
+  "S1 approve: 5 Tasks – T01 'Positionen und Nettobetrag' (FR-01), T02 'Preisliste laden' (FR-02), T03 'Staffelrabatt berechnen' (FR-03), T04 'Rundung auf Cent' (FR-04), T05 'JSON-Ausgabe des Angebots' (FR-05)",
+  "T01 done (Review pass)",
+  "T02 done (Review pass)",
+  "T03 done (Review pass): rabatt_satz(menge) in angebot/staffel.py",
+  "T04 done (Review pass)",
+  "T05 done (Review pass)",
+  "Abnahmelauf: tests/test_staffel.py::test_fr03_grenze_100_stueck_einschliesslich – AssertionError: Decimal('0') != Decimal('0.05') für menge=100"
+]

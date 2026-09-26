@@ -1,0 +1,9 @@
+--- a/sddlib/version.py
++++ b/sddlib/version.py
+@@ -18,5 +18,5 @@
+     if part == "major":
+         return f"{major + 1}.0.0"
+     if part == "minor":
+-        return f"{major}.{minor + 1}.0"
++        return f"{major}.{minor + 1}.{patch}"
+     return f"{major}.{minor}.{patch + 1}"
