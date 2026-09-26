@@ -33,6 +33,7 @@ Feature: Verweise, Entfernen, Config-Migration und ARCH-05
     And llm.roles.implementer.by_complexity ordnet low und medium dem Profil lokal zu, high nicht
     And task_routing und llm.local_llm sind mit "# [SPEC-0062] " auskommentiert
     And die Ausgabe meldet Profil, Zuordnung und beide auskommentierten Blöcke
+    And die Blöcke llm.code_gen und orchestrator sind unverändert
 
   Scenario: Routing war abgeschaltet
     Given config.yaml enthält task_routing.enabled false und llm.local_llm
@@ -59,7 +60,8 @@ Feature: Verweise, Entfernen, Config-Migration und ARCH-05
 
   Scenario: Abgelöste Artefakte
     Then hat SPEC-0045 den Status deprecated mit Nachfolger SPEC-0061
-    And CON-0171, CON-0172, CON-0173, CON-0174 und CON-0012 haben den Status deprecated
+    And CON-0171, CON-0172, CON-0173, CON-0174 haben den Status deprecated
+    And CON-0012, CON-0024, CON-0033, CON-0063, CON-0113 und CON-0164 haben den Status deprecated
 
   Scenario: ARCH-05 schützt die Interna der Pipeline
     Given ein Modul in tool/sdd_cli/web importiert sdd_cli.pipeline.mediator

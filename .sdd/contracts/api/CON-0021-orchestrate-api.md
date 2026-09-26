@@ -5,7 +5,7 @@ title: "Orchestrate API – POST /api/orchestrate + GET /api/pipeline/{run_id}"
 type: api
 format: openapi
 spec: SPEC-0007
-version: 0.3.0
+version: 0.4.0
 status: active
 artifact: "contracts/api/orchestrate-api.openapi.yaml"
 tests: ["TST-0025"]
@@ -147,3 +147,11 @@ Abgeschlossene Runs sind über G-02 abrufbar.
 | run_id       | `{spec_id}-{unix_timestamp_ms}` — eindeutige Pipeline-Run-Kennung      |
 | current_step | Menschenlesbarer Fortschritts-Text, aktualisiert vom Background-Worker |
 | issue_url    | GitHub-Issue-URL, nur befüllt wenn `status == failed`                  |
+
+## Seit SPEC-0062 (0.4.0)
+
+Die Route ist ein Adapter vor `sdd pipeline run SPEC --auto` (CON-0216): `run_id` ist die Run-ID der
+Pipeline (`.sdd/runs/<SPEC>/<run_id>`). Neu im Schema: Status `paused` (Run wartet auf eine
+Session-Rolle) und `aborted`, die Felder `max_attempts`, `log` und `report` sowie die Routen
+`POST /api/pipeline/{run_id}/abort` und `GET /api/pipeline/{run_id}/log` (SSE), die der Code schon
+vorher anbot.

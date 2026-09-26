@@ -6,7 +6,7 @@ status: draft
 owner: "Boris"
 created: 2026-09-26
 updated: 2026-09-26
-version: 0.2.0
+version: 0.2.1
 priority: medium
 tags: [pipeline, refactoring, cleanup, skill]
 depends_on: [SPEC-0061, SPEC-0058, SPEC-0059]
@@ -32,7 +32,7 @@ fr_test_map:
 
 # Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.2.1
 
 ## 1. Kontext & Motivation
 
@@ -98,7 +98,9 @@ Angenommen (Review 2026-09-26):
   Pfade, Anfrage- und Antwortformate. Dahinter läuft `sdd pipeline run SPEC --auto` als Prozess
   (`dry_run` → `--dry-run`, `no_pr` → `--steps holdout`, `base_url` → `--base-url`); das Log sind
   die Ausgabezeilen, der `report` kommt aus dem Run-Protokoll (`pr_url` aus `finalize`,
-  `pass_rate` aus `holdout`).
+  `pass_rate` aus `holdout`). Die Statuswerte `paused` und `aborted` und die Routen `abort`/`log`
+  werden in CON-0021 (0.4.0) nachgetragen. `orchestrate` in der Allowlist von `/api/run` und der
+  Chat-Intent `orchestrate SPEC` werden ebenso auf `sdd pipeline run SPEC --auto` übersetzt.
 - **FR-04:** **`sdd start --auto`** startet `sdd pipeline run --auto` statt des Orchestrators.
 - **FR-05:** **Verweise.** `task-route`, `task-exec`, `task-loop` und `orchestrate` nehmen ihre
   bisherigen Argumente an, führen nichts aus, nennen den Ersatz und enden mit Exit 1 (Konvention aus
@@ -115,8 +117,13 @@ Angenommen (Review 2026-09-26):
   `llm.roles.implementer.by_complexity`, wird nichts überschrieben, sondern gemeldet.
 - **FR-08:** **GitHub-Action-Vorlage** ruft `sdd pipeline run $ID --auto`; `ANTHROPIC_API_KEY` ist
   nur noch ein optionales Secret für Projekte, die `provider: anthropic` ausdrücklich wählen.
-- **FR-09:** **Lifecycle.** SPEC-0045 und ihre Contracts werden über `sdd spec deprecate` abgelöst
-  (Nachfolger SPEC-0061); CON-0012 (Orchestrator aus SPEC-0004) über `sdd contract deprecate`.
+- **FR-09:** **Lifecycle.** SPEC-0045 und ihre Contracts CON-0171 bis CON-0174 werden über
+  `sdd spec deprecate` abgelöst (Nachfolger SPEC-0061). Über `sdd contract deprecate` folgen
+  CON-0012 (Orchestrator), CON-0024 (CodeGen-Interface), CON-0033 (huggingface als CodeGen),
+  CON-0063, CON-0113 und CON-0164 (alte Abläufe von `/sdd-implement`). CON-0169 (Action-Vorlage)
+  und CON-0207 (Usage von CodeGen) werden nachgezogen. Die Config-Blöcke `llm.code_gen`,
+  `llm.orchestrator` und `orchestrator` bleiben: Sie sind der Legacy-Fallback der Rollen
+  (SPEC-0053) bzw. die Einstellungen von `automerge` und `finalize`.
 - **FR-10:** **Architektur.** `.sdd/architecture.yaml` bekommt die Schicht `pipeline`
   (`tool/sdd_cli/pipeline/**`) und die Regel ARCH-05 mit ADR-0006: Außerhalb von `pipeline` und
   `entry` importiert niemand `mediator`, `runner`, `steps`, `gates`, `providers`, `decisions` oder
@@ -186,3 +193,4 @@ Feature: Ein Ausführungspfad
 |------------|---------|---------------|----------|
 | 2026-09-26 | 0.1.0   | Boris, Claude | Aus SPEC-0061 0.1.0 abgespalten (Review) |
 | 2026-09-26 | 0.2.0   | Boris, Claude | Review: `--session`/`--steps`, Web-Adapter, `sdd start --auto`, ARCH-05, Migration |
+| 2026-09-26 | 0.2.1   | Boris, Claude | Konflikte aus `contract analyze`: weitere Deprecations, CON-0021, `/api/run` und Chat |

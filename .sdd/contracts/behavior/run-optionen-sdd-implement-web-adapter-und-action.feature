@@ -61,6 +61,10 @@ Feature: Run-Optionen, sdd-implement, Web-Adapter und Action
     Then ist der Status paused
     And das Log nennt "sdd pipeline decide"
 
+  Scenario: Remote-Befehl orchestrate
+    When "POST /api/run" mit cmd orchestrate und args SPEC-0900 aufgerufen wird
+    Then wird "sdd pipeline run SPEC-0900 --auto" ausgeführt
+
   Scenario: sdd start --auto
     When ich "sdd start SPEC-0900 --auto --no-container" ausführe
     Then gibt es unter .sdd/runs/SPEC-0900 einen neuen Run
