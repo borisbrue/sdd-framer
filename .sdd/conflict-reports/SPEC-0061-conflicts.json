@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0061",
-  "generated_at": "2026-09-26T10:05:22Z",
+  "generated_at": "2026-09-26T10:12:29Z",
   "new_contracts": [
     "CON-0212",
     "CON-0213",
@@ -292,6 +292,81 @@
       "resolution": {
         "action": "CON-0214 INV-08: fehlende Usage ergibt 'Reasoning: unbekannt', kein Fehler.",
         "resolved_at": "2026-09-26T10:09:28Z"
+      }
+    },
+    {
+      "id": "CF-0061-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Abschluss-Kette (pipeline.auto_steps)",
+      "conflicting_contract": "SPEC-0004:Holdout-Evaluation / Auto-Merge",
+      "detail": "SPEC-0004 definiert bereits die Holdout-Evaluation mit Retry und den Auto-Merge nach Autonomie-Level. Die Abschluss-Kette `holdout → finalize → automerge` aus SPEC-0061 löst dasselbe Problem ein zweites Mal im Pipeline-Pfad, deshalb muss sie `evaluator.py` und die Level-Regeln aus SPEC-0004 wiederverwenden statt sie neu zu definieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "So umgesetzt: holdout nutzt die bestehende Holdout-Evaluation, automerge die bestehende Autonomie-Logik (CON-0214 INV-02/INV-04); nichts wird neu definiert.",
+        "resolved_at": "2026-09-26T10:12:39Z"
+      }
+    },
+    {
+      "id": "CF-0061-R002",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "sdd pipeline run --auto",
+      "conflicting_contract": "SPEC-0004:Orchestrator-Pipeline (sdd orchestrate)",
+      "detail": "Bis SPEC-0062 bestehen `sdd orchestrate` und `sdd pipeline run --auto` parallel als zwei autonome Pfade von der Spec bis zum Merge. Diese Redundanz ist gewollt und zeitlich begrenzt, sollte aber in beiden Specs vermerkt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt und zeitlich begrenzt; SPEC-0062 macht orchestrate zum Verweis.",
+        "resolved_at": "2026-09-26T10:12:40Z"
+      }
+    },
+    {
+      "id": "CF-0061-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "sdd pipeline run --auto",
+      "conflicting_contract": "SPEC-0007:POST /api/orchestrate",
+      "detail": "Der Execute-Button der Web UI startet weiterhin den Orchestrator und nicht die Pipeline. Nach SPEC-0061 gibt es damit zwei Ausführungspfade, deren Ergebnisse (PR-URL, Pass-Rate) auf unterschiedlichen Wegen gemeldet werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Web-Route orchestrate startet ab SPEC-0062 die Pipeline mit --auto.",
+        "resolved_at": "2026-09-26T10:12:41Z"
+      }
+    },
+    {
+      "id": "CF-0061-R004",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Rollenbelegung (llm.roles, llm.profiles, by_complexity)",
+      "conflicting_contract": "SPEC-0008:Provider-Konfiguration / Rollen-Zuordnung",
+      "detail": "SPEC-0008 legt die Zuordnung von Komponenten zu Providern fest, und SPEC-0061 führt mit `llm.roles` und `llm.profiles` samt `by_complexity` ein zweites Belegungsmodell ein. Welches der beiden Config-Schemata maßgeblich ist, muss eindeutig festgelegt werden, damit `sdd config test-llm` nur eines davon prüft.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.roles/llm.profiles gelten für die Pipeline, llm.<komponente> für die übrigen Befehle und als legacy_component-Rückfall der Rollen (CON-0199 INV-04); test-llm prüft Rollen und Profile.",
+        "resolved_at": "2026-09-26T10:12:42Z"
+      }
+    },
+    {
+      "id": "CF-0061-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Lint- und Architektur-Gates pro Task",
+      "conflicting_contract": "SPEC-0014:Execution Gate (gestufte Phasen)",
+      "detail": "SPEC-0014 sieht vor der Ausführung Qualitäts-Gates vor, SPEC-0061 ergänzt Gates pro Task innerhalb der Pipeline. Die Begriffe und Zuständigkeiten der beiden Gate-Ebenen sollten abgegrenzt werden, damit keine doppelten Prüfungen entstehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgrenzung: SPEC-0014 regelt Phasen vor der Ausführung, SPEC-0061 Gates nach jedem Task innerhalb eines Runs; keine doppelte Prüfung.",
+        "resolved_at": "2026-09-26T10:12:42Z"
       }
     }
   ],

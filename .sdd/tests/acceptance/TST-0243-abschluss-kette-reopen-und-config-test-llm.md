@@ -1,48 +1,34 @@
 ---
 id: TST-0243
-project: ""                # PRJ-XXXX
 title: "Abschluss-Kette, reopen und config test-llm"
-level: acceptance            # unit | integration | contract | acceptance | performance | property
+level: acceptance
 spec: SPEC-0061
 contract: CON-0214
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/acceptance/test_con_0214.py"
+tags: [pipeline]
 ---
 
 # Test: Abschluss-Kette, reopen und config test-llm
 
-> **Level:** {{level}} · **Spec:** SPEC-0061 · **Contract:** CON-0214 · **Status:** draft
+> **Level:** acceptance · **Spec:** SPEC-0061 · **Contract:** CON-0214 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Abschluss-Kette mit ersetzten Wrappern (holdout, finalize, automerge), `reopen`, `config test-llm`.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0214:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
+- [x] INV-07
+- [x] INV-08
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-08, FR-09, FR-10

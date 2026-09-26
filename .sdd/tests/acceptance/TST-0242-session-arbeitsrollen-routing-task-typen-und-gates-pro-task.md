@@ -1,48 +1,34 @@
 ---
 id: TST-0242
-project: ""                # PRJ-XXXX
 title: "Session-Arbeitsrollen, Routing, Task-Typen und Gates pro Task"
-level: acceptance            # unit | integration | contract | acceptance | performance | property
+level: acceptance
 spec: SPEC-0061
 contract: CON-0213
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/acceptance/test_con_0213.py"
+tags: [pipeline]
 ---
 
 # Test: Session-Arbeitsrollen, Routing, Task-Typen und Gates pro Task
 
-> **Level:** {{level}} · **Spec:** SPEC-0061 · **Contract:** CON-0213 · **Status:** draft
+> **Level:** acceptance · **Spec:** SPEC-0061 · **Contract:** CON-0213 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Session-Arbeitsrollen und `sdd pipeline done`, Rollenvertrag, Routing nach Komplexität, `--task`, Task-Typen und Gates pro Task gegen den Fake-LLM-Server.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0213:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
+- [x] INV-07
+- [x] INV-08
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-07

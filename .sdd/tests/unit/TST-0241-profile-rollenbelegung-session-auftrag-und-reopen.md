@@ -1,48 +1,32 @@
 ---
 id: TST-0241
-project: ""                # PRJ-XXXX
 title: "Profile, Rollenbelegung, Session-Auftrag und reopen"
-level: unit            # unit | integration | contract | acceptance | performance | property
+level: unit
 spec: SPEC-0061
 contract: CON-0212
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/unit/test_con_0212.py"
+tags: [pipeline]
 ---
 
 # Test: Profile, Rollenbelegung, Session-Auftrag und reopen
 
-> **Level:** {{level}} · **Spec:** SPEC-0061 · **Contract:** CON-0212 · **Status:** draft
+> **Level:** unit · **Spec:** SPEC-0061 · **Contract:** CON-0212 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Schemas für Profile, Rollenbelegung, Pipeline-Einstellungen, Session-Auftrag und reopen; Prüfregeln in `sdd config validate`.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0212:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-01, FR-04, FR-09
