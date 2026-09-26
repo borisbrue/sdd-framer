@@ -10,8 +10,24 @@ version: 0.2.0
 priority: medium
 tags: [pipeline, refactoring, cleanup, skill]
 depends_on: [SPEC-0061, SPEC-0058, SPEC-0059]
-contracts: []
-tests: []
+contracts:
+- CON-0215
+- CON-0216
+tests:
+- TST-0244
+- TST-0245
+fr_test_map:
+  FR-01: [TST-0245]
+  FR-02: [TST-0245]
+  FR-03: [TST-0245]
+  FR-04: [TST-0245]
+  FR-05: [TST-0244]
+  FR-06: [TST-0244]
+  FR-07: [TST-0244]
+  FR-08: [TST-0245]
+  FR-09: [TST-0244]
+  FR-10: [TST-0244]
+  FR-11: [TST-0244]
 ---
 
 # Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline
@@ -147,15 +163,15 @@ Feature: Ein Ausführungspfad
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | behavior | Verweise, Entfernen, Config-Migration, Lifecycle, ARCH-05 |
-| CON-XXXX    | behavior | Run-Optionen, `/sdd-implement`, Web-Route als Adapter, `sdd start --auto`, Action-Vorlage |
+| CON-0215    | behavior | Verweise, Entfernen, Config-Migration, Lifecycle, ARCH-05 |
+| CON-0216    | behavior | Run-Optionen, `/sdd-implement`, Web-Route als Adapter, `sdd start --auto`, Action-Vorlage |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | acceptance  | Verweise, Migration, Entfernen, ARCH-05 |
-| TST-XXXX | acceptance  | Run-Optionen, Web-Adapter mit Fake-LLM-Server, `sdd start --auto`, Skill- und Action-Text |
+| TST-0244 | acceptance  | Verweise, Migration, Entfernen, ARCH-05 |
+| TST-0245 | acceptance  | Run-Optionen, Web-Adapter mit Fake-LLM-Server, `sdd start --auto`, Skill- und Action-Text |
 
 ## 10. Offene Fragen
 
