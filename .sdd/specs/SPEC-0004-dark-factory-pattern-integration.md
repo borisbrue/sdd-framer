@@ -18,6 +18,8 @@ adrs: []
 
 > **Status:** implemented · **Owner:** Boris · **Version:** 0.8.0
 
+> **Hinweis (SPEC-0062):** `orchestrator.py` und `sdd orchestrate` sind durch `sdd pipeline run --auto` abgelöst; Holdout, Evaluation und Auto-Merge laufen dort als Schritte `holdout` und `automerge`. CON-0012 ist deprecated.
+
 ## 1. Kontext & Motivation
 
 Das SDD-System liefert bisher die **Inputs-Schicht** des Dark Factory Patterns

@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0062
 version: 0.2.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/run-optionen-sdd-implement-web-adapter-und-action.feature"
 tests: ["TST-0245"]
 ---
 
 # Contract: Run-Optionen, sdd-implement, Web-Adapter und Action
 
-> **Spec:** SPEC-0062 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0062 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

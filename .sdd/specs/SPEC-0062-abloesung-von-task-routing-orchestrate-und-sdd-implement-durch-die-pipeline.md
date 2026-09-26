@@ -2,7 +2,7 @@
 id: SPEC-0062
 title: "Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-26
 updated: 2026-09-26
@@ -79,6 +79,17 @@ Angenommen (Review 2026-09-26):
 - **Facade:** Nach außen gibt es nur `sdd pipeline` (CLI, `monitor`, `store`, `schemas`, `roles`,
   `path_policy`). ARCH-05 verbietet allen anderen Schichten den Zugriff auf die Interna der Pipeline
   (DIP-Befund aus SPEC-0061).
+
+### 3.1 Auswirkungen auf bestehende Specs
+
+| Spec | Betroffen | Umgang in SPEC-0062 |
+|------|-----------|---------------------|
+| SPEC-0004 (Dark Factory) | `orchestrator.py`, `sdd orchestrate` als Ausführungsebene | Ausführungsebene ist `sdd pipeline run --auto`. Die Garantien bleiben erhalten: Holdout-Isolation und Evaluation im Schritt `holdout`, Auto-Merge nach Autonomie-Level im Schritt `automerge` (SPEC-0061 FR-08). CON-0012 wird deprecated, SPEC-0004 erhält einen Ablösungsvermerk. |
+| SPEC-0007 (Execute-Flow der Web-UI) | `POST /api/orchestrate`, `/api/pipeline/*` | Routen, Anfrage und Antwortfelder bleiben (CON-0021 0.4.0, nur erweitert um `paused`, `aborted`, `abort`, `log`); dahinter läuft die Pipeline. SPEC-0007 erhält einen Ablösungsvermerk. |
+| SPEC-0008 (Provider-Abstraktion) | `orchestrator.py`, CodeGen | CodeGen-Pfad entfällt; Rollen bauen ihre Provider über `llm/factory.py` (`get_role_provider`). SPEC-0008 erhält einen Vermerk. |
+| SPEC-0011 (Kostenschätzung) | Orchestrator als Token-Verbraucher | Verbrauch kommt aus den Rollen-Aufrufen der Pipeline (Usage, SPEC-0060). |
+| SPEC-0014 (Execution Gate) | Gate vor der Ausführung | `sdd pipeline run` verlangt die Phase `execute-unlocked` bereits (SPEC-0053); die Web-Route prüft sie wie bisher vor dem Start. |
+| SPEC-0003, SPEC-0017, SPEC-0032 | Routentabellen, Extension | Routen unverändert; die VS-Code-Extension wird nicht angepasst (Nicht-Ziel). |
 
 ## 4. Funktionale Anforderungen
 

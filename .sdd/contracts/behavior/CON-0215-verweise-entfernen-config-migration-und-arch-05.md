@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0062
 version: 0.2.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/verweise-entfernen-config-migration-und-arch-05.feature"
 tests: ["TST-0244"]
 ---
 
 # Contract: Verweise, Entfernen, Config-Migration und ARCH-05
 
-> **Spec:** SPEC-0062 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0062 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

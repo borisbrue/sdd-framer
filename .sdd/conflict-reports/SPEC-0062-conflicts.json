@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0062",
-  "generated_at": "2026-09-26T15:12:33Z",
+  "generated_at": "2026-09-26T15:20:06Z",
   "new_contracts": [
     "CON-0215",
     "CON-0216"
@@ -280,6 +280,171 @@
         "action": "acknowledged",
         "reason": "VS-Code-Extension wird nicht angepasst (Nicht-Ziel, Editor-Integration künftig über sddit).",
         "resolved_at": "2026-09-26T15:17:22Z"
+      }
+    },
+    {
+      "id": "CF-0062-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0007:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:15Z"
+      }
+    },
+    {
+      "id": "CF-0062-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/pipeline/active",
+      "conflicting_contract": "SPEC-0007:endpoint /api/pipeline/active",
+      "detail": "Endpoint '/api/pipeline/active' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:16Z"
+      }
+    },
+    {
+      "id": "CF-0062-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0017:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0017 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0062-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/pipeline/active",
+      "conflicting_contract": "SPEC-0017:endpoint /api/pipeline/active",
+      "detail": "Endpoint '/api/pipeline/active' auch in SPEC-0017 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:18Z"
+      }
+    },
+    {
+      "id": "CF-0062-R005",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0032:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0032 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:18Z"
+      }
+    },
+    {
+      "id": "CF-0062-R006",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0004:2",
+      "detail": "SPEC-0004 beschreibt orchestrator.py und `sdd orchestrate` als Ausführungspipeline, die SPEC-0062 durch `sdd pipeline run --auto` mit den Schritten holdout und automerge ersetzt. Der Hinweis ist ergänzt, aber CON-0012 und die Erfolgskriterien von SPEC-0004 zeigen weiter auf den entfernten Pfad.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:19Z"
+      }
+    },
+    {
+      "id": "CF-0062-R007",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0007:1",
+      "detail": "Der Execute-Flow aus SPEC-0007 startet den Orchestrator. SPEC-0062 lässt `POST /api/orchestrate` als Adapter vor `sdd pipeline run --auto` bestehen, deshalb müssen Semantik und Herkunft der `run_id` in CON-0021 0.4.0 zu `.sdd/runs/` passen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:20Z"
+      }
+    },
+    {
+      "id": "CF-0062-R008",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "3",
+      "conflicting_contract": "SPEC-0008:1",
+      "detail": "SPEC-0008 führt den Orchestrator mit agentischem Datei-Schreiben weiter als LLM-Integrationspunkt und definiert CodeGenProvider und get_code_gen_provider. SPEC-0062 entfernt genau diese zweite Erzeugungslinie zugunsten von llm/factory.py und get_role_provider, CON-0024 wird damit deprecated.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:21Z"
+      }
+    },
+    {
+      "id": "CF-0062-R009",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2",
+      "conflicting_contract": "SPEC-0014:1",
+      "detail": "Das Execution Gate aus SPEC-0014 blockiert `sdd execute`. Wenn `sdd pipeline` der einzige Ausführungspfad ist, muss das Gate vor `sdd pipeline run` greifen, sonst umgehen `/sdd-implement`, Web-UI, `sdd start --auto` und die GitHub-Action die Gate-Prüfung.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:22Z"
+      }
+    },
+    {
+      "id": "CF-0062-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0011:1",
+      "detail": "SPEC-0011 nennt den Orchestrator als Token-Verbraucher und Anlass für die Schätzung. Nach SPEC-0062 laufen alle Implementierungen als Pipeline-Runs, deshalb müsste sich die Schätzung auf die Rollen test_author, implementer und supervisor beziehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:23Z"
+      }
+    },
+    {
+      "id": "CF-0062-R011",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2",
+      "conflicting_contract": "SPEC-0003:2.1",
+      "detail": "Die REST-API aus SPEC-0003 enthält die Orchestrate- und Pipeline-Routen, die SPEC-0062 bei unveränderten Web-UI-Quellen intern auf `sdd pipeline run --auto` umstellt. Die Routenliste in SPEC-0003 bleibt gültig, beschreibt die Ausführung dahinter aber nicht mehr.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:23Z"
       }
     }
   ],

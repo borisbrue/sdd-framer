@@ -39,6 +39,8 @@ adrs: []
 
 > **Status:** draft · **Owner:** Boris · **Version:** 0.6.0
 
+> **Hinweis (SPEC-0062):** Der CodeGen-Pfad (`CodeGenProvider`, `get_code_gen_provider`) und `orchestrator.py` sind entfernt; Rollen bauen ihre Provider über `get_role_provider`. CON-0024 ist deprecated.
+
 ## 1. Kontext & Motivation
 
 Das Projekt enthält vier Integrationspunkte, die LLMs direkt und hart gekoppelt
