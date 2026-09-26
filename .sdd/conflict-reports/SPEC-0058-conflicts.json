@@ -1,0 +1,447 @@
+{
+  "spec_id": "SPEC-0058",
+  "generated_at": "2026-09-26T05:50:26Z",
+  "new_contracts": [
+    "CON-0210",
+    "CON-0211"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0058-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0098",
+      "detail": "CON-0098 describes the LLM-pool registry and the selector that matches tasks to LLMs, both from llm_pool.py. CON-0210 requires llm_pool.py to be removed and `sdd upgrade` to comment out the llm_pool block. Both contracts cannot hold at once. CON-0098 needs to be set to deprecated.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:26Z"
+      }
+    },
+    {
+      "id": "CF-0058-002",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0106",
+      "detail": "CON-0106 defines llm_pool as a valid config.yaml section. CON-0210 says that after `sdd upgrade` the block is no longer read and gets commented out. Schema and cleanup behaviour contradict each other.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-06 + FR-09: der llm_pool-Teil von SPEC-0027 (CON-0103) wird per sdd contract deprecate abgelöst; der docker-Teil von CON-0106 bleibt gültig.",
+        "resolved_at": "2026-09-26T05:53:33Z"
+      }
+    },
+    {
+      "id": "CF-0058-003",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0128",
+      "detail": "CON-0128 defines the config schema for local_agent. CON-0210 comments the local_agent block out and removes local_agent.py.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09). CON-0128 gehört zu SPEC-0036.",
+        "resolved_at": "2026-09-26T05:53:34Z"
+      }
+    },
+    {
+      "id": "CF-0058-004",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0126",
+      "detail": "CON-0126 covers LocalSubAgentProxy (execution and error escalation) in local_agent.py/sub_agent.py. CON-0210 requires both modules to be gone and no module to set ANTHROPIC_BASE_URL.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:26Z"
+      }
+    },
+    {
+      "id": "CF-0058-005",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0100",
+      "detail": "CON-0100 describes the ReviewPipeline (automatic review and retry). CON-0210 requires review_pipeline.py to be removed.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:27Z"
+      }
+    },
+    {
+      "id": "CF-0058-006",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0127",
+      "detail": "CON-0127 describes the DagScheduler (dependencies and parallelism). CON-0210 requires dag_command.py and dag_event.py to be removed.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:28Z"
+      }
+    },
+    {
+      "id": "CF-0058-007",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0095",
+      "detail": "CON-0095 describes the task lifecycle of the distribution engine (dist_orchestrator). CON-0210 turns `sdd distribute` into a pointer with exit code 1 that runs nothing, and removes dist_orchestrator.py.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:29Z"
+      }
+    },
+    {
+      "id": "CF-0058-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0099",
+      "detail": "CON-0099 describes container creation and task assignment inside the distribution flow. That flow is no longer reachable through `sdd distribute` because the command now only points to `sdd pipeline run`.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:30Z"
+      }
+    },
+    {
+      "id": "CF-0058-009",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0101",
+      "detail": "CON-0101 describes the PR workflow (branch, commits, tests, merge, closing the spec) of the distribution/autopilot engine. With autopilot.py removed and distribute turned into a pointer, it is unclear whether CON-0101 still applies or has moved to `sdd pipeline run`.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:31Z"
+      }
+    },
+    {
+      "id": "CF-0058-010",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0122",
+      "detail": "CON-0122 describes the sub-agent delegation protocol through sub_agent.py. CON-0210 requires that module to be removed.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:31Z"
+      }
+    },
+    {
+      "id": "CF-0058-011",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0125",
+      "detail": "CON-0125 describes LlmRoutingStrategy, which routes to the local agent/LLM pool (and sets ANTHROPIC_BASE_URL where applicable). CON-0210 forbids any module setting ANTHROPIC_API_KEY or ANTHROPIC_BASE_URL and removes the routing targets.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05: sdd spec deprecate löst die Contracts der abgelösten Spec mit ab (SPEC-0026/0035/0036/0037, FR-09).",
+        "resolved_at": "2026-09-26T05:53:32Z"
+      }
+    },
+    {
+      "id": "CF-0058-012",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0097",
+      "detail": "CON-0097 (sdd decompose) produces tasks for the distribution engine, whose entry point `sdd distribute` becomes a pointer. CON-0210 does not say whether decompose stays and feeds into `sdd pipeline run`.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-06: sdd decompose bleibt; SPEC-0026 wird mit --keep CON-0097 abgelöst.",
+        "resolved_at": "2026-09-26T05:53:35Z"
+      }
+    },
+    {
+      "id": "CF-0058-013",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0103",
+      "detail": "CON-0103 sets up LLM-pool providers and tests the connection, writing into llm_pool. That is exactly the block CON-0210 comments out on upgrade. Wizard-created config would be commented out again on every upgrade.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-05/06: CON-0103 wird per sdd contract deprecate abgelöst, der Wizard-Schritt entfällt.",
+        "resolved_at": "2026-09-26T05:53:36Z"
+      }
+    },
+    {
+      "id": "CF-0058-014",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0102",
+      "detail": "The config wizard (CON-0102) can create llm_pool/local_agent entries. That clashes with CON-0210, which treats these blocks as no longer read.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-06: Wizard-Schritt für llm_pool entfällt; local_agent erzeugt der Wizard nicht.",
+        "resolved_at": "2026-09-26T05:53:36Z"
+      }
+    },
+    {
+      "id": "CF-0058-015",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0105",
+      "detail": "CON-0105 configures parallelism and container cleanup through the wizard for the distribution engine. It overlaps with the llm_pool/autopilot blocks that CON-0210 removes.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Parallelität/Container-Cleanup aus CON-0105 betreffen den docker-Block, der bleibt; nur llm_pool/autopilot werden auskommentiert.",
+        "resolved_at": "2026-09-26T05:53:37Z"
+      }
+    },
+    {
+      "id": "CF-0058-016",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0190",
+      "detail": "The config validation rules (CON-0190) check provider consistency, possibly including llm_pool/local_agent. CON-0210 does not say whether commented-out or leftover blocks trigger validation warnings or errors after the upgrade.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Auskommentierte Blöcke sind für die Validierung unsichtbar; ConfigValidator prüft llm_pool/local_agent nicht (Bestandsaufnahme).",
+        "resolved_at": "2026-09-26T05:53:38Z"
+      }
+    },
+    {
+      "id": "CF-0058-017",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0016",
+      "detail": "The config.yaml schema contract (CON-0016) still lists the llm_pool, local_agent and autopilot blocks. It is not updated alongside CON-0210's cleanup.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0016 ist Beschreibungs-Contract ohne additionalProperties false; die Blöcke bleiben dort als historisch dokumentiert, SPEC-0061 bereinigt das Schema mit der Config-Migration.",
+        "resolved_at": "2026-09-26T05:53:39Z"
+      }
+    },
+    {
+      "id": "CF-0058-018",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0210",
+      "conflicting_contract": "CON-0104",
+      "detail": "`sdd config set/get` (CON-0104) can still set llm_pool.* or local_agent.* keys, which CON-0210 treats as dead. CON-0210 does not say whether config set rejects these keys.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0210 INV-06: sdd config set bleibt freiformig; tote Schlüssel werden nicht gelesen.",
+        "resolved_at": "2026-09-26T05:53:40Z"
+      }
+    },
+    {
+      "id": "CF-0058-019",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0010",
+      "detail": "Laut CON-0010 ist `sdd evaluate --base-url <URL> [--hol ...] [--json] [--no-save]` der eigenständige Evaluator-Prozess. CON-0211 INV-07 nennt `sdd evaluate` einen entfernten Befehl und lässt `/evaluate` stattdessen `sdd holdout run --base-url <url> --spec <id>` aufrufen. Solange CON-0010 aktiv bleibt, gilt der Befehl als vorhanden. CON-0010 (und CON-0161/CON-0163 zu `--tier`/`--smoke`) muss auf `sdd holdout run` umgestellt oder deprecated werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd evaluate ist seit SPEC-0044 ein Stub (Ersatz sdd holdout run); CON-0010/0161/0163 waren schon vorher veraltet – nicht Folge dieser Spec. Nachziehen bei der nächsten Holdout-Spec.",
+        "resolved_at": "2026-09-26T05:53:40Z"
+      }
+    },
+    {
+      "id": "CF-0058-020",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0055",
+      "detail": "Die Extension fragt `GET /api/pipeline/{run_id}` ab. Sie erwartet dort die Status `labeled`/`failed`, die Felder `current_step`/`pr_url`/`reason` und ruft zum Abbrechen `POST /api/pipeline/{run_id}/abort` auf. CON-0211 macht `sdd_cli.pipeline.monitor` mit den Status `running/paused/done/failed` zur einzigen Leseschnittstelle für Runs und löst Steuer-Routen per 410 zugunsten von `sdd pipeline decide` ab. Es ist nicht festgelegt, ob `/api/pipeline/*` und `abort` für Runs von `sdd pipeline run` weiter funktionieren.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0211 INV-08: /api/pipeline/* inkl. abort bleiben bis SPEC-0061 unverändert.",
+        "resolved_at": "2026-09-26T05:53:41Z"
+      }
+    },
+    {
+      "id": "CF-0058-021",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 legt `GET /api/pipeline/{run_id}` und `GET /api/pipeline/active` für den Status von Orchestrate-Runs fest. CON-0211 definiert parallel dazu `GET /api/orchestrate/runs` und `/stream/{run_id}` über `monitor.list_runs`. Damit gibt es zwei Lesewege für Runs mit unterschiedlichen Status-Vokabularen. Unklar ist, ob die CON-0021-Routen ebenfalls über `monitor` lesen (ADR-0003: 'Die Web-Schicht liest Runs nur über diese Schnittstelle') oder deprecated werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0211 INV-08: zwei Run-Arten bis SPEC-0061 abgegrenzt; /api/orchestrate/runs nur für sdd pipeline run.",
+        "resolved_at": "2026-09-26T05:53:42Z"
+      }
+    },
+    {
+      "id": "CF-0058-022",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0211 INV-01 bildet Status aus `state.json` ab: `running`, `awaiting_supervisor`, `completed`, `halted`, `failed`. CON-0030 definiert das JSON-Schema für den Pipeline-Phase-State. Wenn CON-0030 die Werte `awaiting_supervisor` und `halted` nicht enthält oder den State anders ablegt, passen Schema und Abbildung nicht zusammen. Der Enum muss abgeglichen werden oder CON-0030 muss für die neuen Runs als nicht zuständig markiert werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0030 beschreibt den Phasen-Zustand (.sdd/pipeline/<SPEC>-gate.json), nicht state.json der Runs (CON-0202 INV-08); die Abbildung bezieht sich auf CON-0202.",
+        "resolved_at": "2026-09-26T05:53:43Z"
+      }
+    },
+    {
+      "id": "CF-0058-023",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0122",
+      "detail": "CON-0122 bindet das Delegations-Protokoll (G-02: 1 Retry) ausdrücklich an `sdd implement`-Sub-Agenten. Laut CON-0211 INV-07 ist `sdd implement` entfernt und `/implement` startet `sdd pipeline run`. Damit fehlt der Geltungsbereich von CON-0122, oder die Retry-Regel müsste auf Pipeline-Rollen übertragen werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0122 wird mit SPEC-0035 abgelöst (CON-0210 INV-05); Retry der Pipeline-Rollen regelt CON-0205.",
+        "resolved_at": "2026-09-26T05:53:44Z"
+      }
+    },
+    {
+      "id": "CF-0058-024",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0063",
+      "detail": "Der Flow des sdd-implement-Skills geht vom Befehl `sdd implement` aus, den CON-0211 INV-07 als entfernt bezeichnet. Der Skill-Flow muss auf `sdd pipeline run` umgestellt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der Skill /sdd-implement wird in SPEC-0061 auf sdd pipeline run umgestellt.",
+        "resolved_at": "2026-09-26T05:53:44Z"
+      }
+    },
+    {
+      "id": "CF-0058-025",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0127",
+      "detail": "Die `DagEvent`-Stati `pending/running/done/failed/skipped/paused` und der SSE-Stream stammen ursprünglich aus dem DagScheduler und DagEventBus. CON-0211 erzeugt DagEvents jetzt aus `events.jsonl` per Offset-Polling (höchstens 2 s Abstand) statt über den Bus. `skipped` wird in INV-02 nie erzeugt. Es fehlt die Angabe, ob der Scheduler weiter in denselben Stream schreibt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0211 INV-08: skipped bleibt erlaubt, wird nicht erzeugt; der DagScheduler entfällt mit SPEC-0036.",
+        "resolved_at": "2026-09-26T05:53:45Z"
+      }
+    },
+    {
+      "id": "CF-0058-026",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0020",
+      "detail": "Der Execute Flow legt UI-Statusübergänge für das Starten einer Implementierung fest. CON-0211 INV-07 ändert das Backend von `/implement` auf `sdd pipeline run` im Hintergrund, bei gleichem Antwortformat `{ok, output}`. Die UI-Übergänge (z. B. Pause bei `awaiting_supervisor` → `paused`) sind in CON-0020 nicht berücksichtigt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Antwortformat der Route bleibt; UI-Übergänge für awaiting_supervisor folgen mit SPEC-0061.",
+        "resolved_at": "2026-09-26T05:53:46Z"
+      }
+    },
+    {
+      "id": "CF-0058-027",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0012",
+      "detail": "Die lokale Orchestrator-Pipeline (Spec → Code → PR → Eval → Retry) und `sdd pipeline run` beschreiben beide den Lebenszyklus eines Runs. Sie legen Run-Zustände an unterschiedlichen Stellen ab, `.sdd/runs/` gibt es nur bei CON-0211. Wenn nicht beide Run-Arten in `/api/orchestrate/runs` erscheinen sollen, muss eine Abgrenzung oder Deprecation her.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0211 INV-08: /api/orchestrate/runs listet nur Pipeline-Runs; orchestrate-Runs bleiben bis SPEC-0061 bei SPEC-0007.",
+        "resolved_at": "2026-09-26T05:53:47Z"
+      }
+    },
+    {
+      "id": "CF-0058-028",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0211",
+      "conflicting_contract": "CON-0016",
+      "detail": "Laut CON-0016 ist `evaluator.base_url` 'Pflicht für sdd evaluate', dort sind auch weitere Evaluator-Defaults beschrieben. CON-0211 verlangt `evaluator.base_url` für `/evaluate` → `sdd holdout run`. Die Beschreibung des Config-Schemas muss auf den neuen Befehl zeigen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Beschreibung von evaluator.base_url in CON-0016 wird mit dem Holdout-Befund aus CF-0058-019 nachgezogen.",
+        "resolved_at": "2026-09-26T05:53:48Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 28,
+    "high": 8,
+    "medium": 11,
+    "low": 9,
+    "affected_specs_count": 0
+  }
+}

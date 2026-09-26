@@ -4,7 +4,7 @@ title: "Pipeline-Monitor und Web-Routen"
 type: behavior
 format: gherkin
 spec: SPEC-0058
-version: 0.1.0
+version: 0.2.0
 status: approved
 artifact: ".sdd/contracts/behavior/pipeline-monitor-und-web-routen.feature"
 tests: ["TST-0240"]
@@ -49,3 +49,8 @@ einen automatisierten Test (pytest) abgedeckt sein.
 - **INV-07:** `POST /api/specs/{id}/implement` und `/evaluate` behalten Antwortformat
   (`{"ok", "output"}`) und Log-Stream; sie rufen `sdd pipeline run` bzw. `sdd holdout run` auf,
   nie die entfernten Befehle `sdd implement`/`sdd evaluate`.
+- **INV-08 (Abgrenzung):** Die Routen aus SPEC-0007 (`POST /api/orchestrate`,
+  `GET /api/pipeline/{run_id}`, `/api/pipeline/active`, `/abort`) und die Run-Ablage von
+  `sdd orchestrate` bleiben bis SPEC-0061 unverändert. `/api/orchestrate/runs` listet ausschließlich
+  Runs von `sdd pipeline run` (`.sdd/runs/`). Der Status `skipped` wird von der Abbildung nicht
+  erzeugt, bleibt aber im Format erlaubt.

@@ -100,8 +100,10 @@ Pipeline-Runs an und startet sie über die CLI.
   `fixed_by: SPEC-0061`.
 - **FR-09:** **Lifecycle.** `sdd spec deprecate SPEC-XXXX --reason "…" [--replaced-by SPEC-YYYY]`
   setzt `status: deprecated` und hält Grund und Nachfolger im Frontmatter und im Audit-Log fest.
-  SPEC-0026, SPEC-0035, SPEC-0036 und SPEC-0037 werden damit auf `deprecated` gesetzt (Nachfolger
-  SPEC-0053/SPEC-0058).
+  Die Contracts der Spec werden mit abgelöst, außer sie sind mit `--keep` ausgenommen;
+  `sdd contract deprecate CON-XXXX --reason "…"` löst einen einzelnen Contract ab. SPEC-0026
+  (mit `--keep CON-0097`), SPEC-0035, SPEC-0036 und SPEC-0037 werden damit auf `deprecated`
+  gesetzt (Nachfolger SPEC-0053/SPEC-0058), CON-0103 (LLM-Pool-Schritt des Wizards) einzeln.
 
 ## 5. Nicht-funktionale Anforderungen
 

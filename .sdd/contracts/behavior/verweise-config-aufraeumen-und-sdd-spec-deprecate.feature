@@ -42,6 +42,16 @@ Feature: Verweise, Config-Aufräumen und sdd spec deprecate
     And das Frontmatter nennt den Grund und SPEC-0901 als Nachfolger
     And das Audit-Log enthält die Statusänderung
 
+  Scenario: Deprecate setzt die Contracts der Spec ab
+    Given SPEC-0900 hat die Contracts CON-0900 und CON-0901
+    When ich "sdd spec deprecate SPEC-0900 --reason 'abgelöst' --keep CON-0901" ausführe
+    Then hat CON-0900 den Status deprecated
+    And CON-0901 behält seinen Status
+
+  Scenario: Einzelner Contract wird abgelöst
+    When ich "sdd contract deprecate CON-0901 --reason 'Schritt entfernt'" ausführe
+    Then hat CON-0901 den Status deprecated und nennt den Grund
+
   Scenario: Deprecate mit abhängigen Specs
     Given SPEC-0902 hängt von SPEC-0900 ab und ist nicht deprecated
     When ich "sdd spec deprecate SPEC-0900 --reason 'abgelöst'" ausführe
