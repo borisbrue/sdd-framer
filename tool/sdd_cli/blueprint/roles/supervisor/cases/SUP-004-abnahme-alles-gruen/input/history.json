@@ -1,0 +1,4 @@
+[
+  "S1 approve: Vier Tasks decken FR-01 bis FR-04 ab (T01 CSV-Parser, T02 Validierung, T03 Duplikaterkennung, T04 Unterbefehl import).",
+  "S2 retry_with_hint: T03 verglich E-Mails ohne casefold; Hinweis gegeben, danach grün."
+]

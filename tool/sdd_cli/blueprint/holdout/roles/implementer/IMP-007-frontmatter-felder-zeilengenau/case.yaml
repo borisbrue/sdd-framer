@@ -1,0 +1,12 @@
+id: IMP-007
+role: implementer
+title: "Frontmatter-Felder zeilengenau setzen"
+description: "Zeilengenaues Ersetzen/Anhängen im Frontmatter ohne YAML-Neuserialisierung. Fallen: Präfix-Schlüssel, wörtliche Schlüssel, nur erste Zeile, Rumpf unverändert, JSON-Quoting ohne ASCII-Escape, Fehler ohne Schreibzugriff."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

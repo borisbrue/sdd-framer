@@ -1,0 +1,22 @@
+{
+  "id": "T02",
+  "title": "Repository-Funktion search_notes",
+  "description": "notes/repository.py: search_notes nach FR-01..FR-04 mit sqlite3; Nutzereingaben sicher in SQL übernehmen.",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03",
+    "FR-04"
+  ],
+  "dependencies": [
+    "T01"
+  ],
+  "test_file": "tests/test_repository.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "notes/repository.py",
+    "tests/test_repository.py"
+  ]
+}

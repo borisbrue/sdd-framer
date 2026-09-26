@@ -1,0 +1,12 @@
+{
+  "id": "T01",
+  "title": "extract_fr_ids implementieren",
+  "description": "Neues Modul sddlib/fr_ids.py mit extract_fr_ids(body: str) -> list[str] gemäß FR-01 bis FR-04 der Spec.",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": ["FR-01", "FR-02", "FR-03", "FR-04"],
+  "dependencies": [],
+  "test_file": "tests/test_fr_ids.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": ["sddlib/fr_ids.py"]
+}

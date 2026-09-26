@@ -6,7 +6,7 @@ status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-26
-version: 0.2.0
+version: 0.2.1
 priority: high
 tags: [llm, roles, evals, prompt-engineering, holdout]
 depends_on: [SPEC-0053, SPEC-0054, SPEC-0061, SPEC-0062]
@@ -37,7 +37,7 @@ fr_test_map:
 
 # Rollen-Evals: trainierbare Rollendefinitionen mit Golden Cases
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** approved · **Owner:** Boris · **Version:** 0.2.1
 
 ## 1. Kontext & Motivation
 
@@ -170,7 +170,7 @@ erreicht die Rolle `judge` über `pipeline.facade` (ARCH-05).
 
   | Rolle | Checks |
   |-------|--------|
-  | decomposer | json_schema, fr_coverage, acyclic, deps_resolvable, test_file_per_code_task, task_count, ordered_before, max_context_size |
+  | decomposer | json_schema, fr_coverage, acyclic, deps_resolvable, test_file_per_code_task, task_count, ordered_before, max_complexity |
   | test_author | fr_marker_present, red_against_stub, green_against_reference, mutation_kill_rate |
   | implementer | paths_allowed, hidden_tests_pass, arch_violations, quality_score |
   | reviewer | seeded_bug_recall, clean_diff_precision |
@@ -300,3 +300,4 @@ Feature: Rollen-Evals
 |------------|---------|---------------|----------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
 | 2026-09-26 | 0.2.0   | Boris, Claude | Review: Check-Kontexte (LSP), Holdout unter `.sdd/holdout/roles/`, Rolle `judge`, `capture` über Facade, Patterns |
+| 2026-09-26 | 0.2.1   | Boris, Claude | Umsetzung: `max_complexity` statt `max_context_size` (die Decomposer-Ausgabe hat keine Kontextgröße) |

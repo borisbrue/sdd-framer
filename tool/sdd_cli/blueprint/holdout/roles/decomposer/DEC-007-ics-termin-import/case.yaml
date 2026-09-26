@@ -1,0 +1,18 @@
+id: DEC-007
+role: decomposer
+title: "iCalendar-Import in eine SQLite-Terminverwaltung"
+description: "Datenimport mit Parser, Zeitzonen-Normalisierung, Serienexpansion, Upsert und Bericht. Fallen: das Datenbankschema muss vor dem Upsert existieren; FR-06 (Trockenlauf) wird leicht übersehen; Nicht-Ziele (Export, andere RRULE-Frequenzen) dürfen keine Tasks werden."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 4, max: 9}
+    - ordered_before: {first: "(schema|tabelle|migration|datenbank|datenmodell)", then: "(upsert|speicher|schreib|persist|import.*db|übernehm)"}
+  rubric:
+    - {id: dependencies, question: "Sind die Abhängigkeiten fachlich richtig gesetzt (Upsert hängt vom Schema und vom Parser ab, die Serienexpansion vom Parser, der Bericht vom Upsert)? 5 = alle zutreffend, 1 = fehlen oder willkürlich."}
+weights: {checks: 0.8, rubric: 0.2}

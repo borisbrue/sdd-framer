@@ -1,0 +1,11 @@
+--- a/sddlib/run_id.py
++++ b/sddlib/run_id.py
+@@ -11,8 +11,6 @@
+ 
+ def new_run_id(spec_id: str, when: datetime) -> str:
+     """Run-ID aus Spec-ID und zeitzonenbewusstem Zeitpunkt."""
+-    if when.tzinfo is None or when.utcoffset() is None:
+-        raise ValueError("Zeitpunkt braucht eine Zeitzone")
+     if not _SPEC_ID.match(spec_id):
+         raise ValueError(f"ungültige Spec-ID: {spec_id!r}")
+     return f"{spec_id}-{when.astimezone(timezone.utc).strftime(_FORMAT)}"

@@ -415,6 +415,43 @@ Weitere Möglichkeiten (SPEC-0061):
 
 ---
 
+### `sdd role` — Rollen-Evals mit Golden Cases
+
+```bash
+sdd role eval <rolle> [--model PROFIL] [--version DATEI] [--runs 3] [--case ID] [--concurrency 2]
+                      [--dry-run] [--json]
+sdd role compare <report-a> <report-b>
+sdd role accept <rolle> --report <pfad> [--force --reason "…"]
+sdd role case new <rolle> --title "…" [--holdout]
+sdd role case capture <run_id> <task_id|request_id>
+sdd role case confirm <rolle> <ID>
+```
+
+Jede Rolle hat Golden Cases (SPEC-0055): sichtbare unter `.sdd/roles/<rolle>/cases/<ID>/`,
+Holdout-Fälle unter `.sdd/holdout/roles/<rolle>/<ID>/`. Ein Fall besteht aus `case.yaml`
+(erwartete Checks, optional Rubrik) und `input/` (Kontextquellen der Rolle, bei Test-Author und
+Implementer ein Arbeitsverzeichnis `input/repo/`), dazu je nach Rolle `reference/`, `hidden/`,
+`mutants/*.patch` und `expected/`. `sdd init`/`sdd upgrade` installieren die Fälle aus dem Blueprint
+(je Rolle 8, davon 3 Holdout).
+
+- **Messen:** `sdd role eval` führt die Rolle je Fall `--runs` mal in einem temporären Verzeichnis aus
+  und bewertet die Ausgabe mit den Checks der Registry (`pipeline/checks.py`; ausführende Checks wie
+  `hidden_tests_pass` oder `mutation_kill_rate` starten den `test_command` des Falls). Rubrik-Fragen
+  bewertet die Rolle `judge` (`llm.roles.judge`, Default `claude-cli`) blind. Holdout-Fälle erscheinen
+  nur als Aggregat. Reports liegen unter `.sdd/role-evals/` (lokal).
+- **Übernehmen (Ratchet):** `compare` akzeptiert einen Kandidaten nur, wenn Gesamt- und Holdout-Score
+  nicht sinken, kein Fall von pass auf fail fällt und das Ausgabeschema gleich bleibt. `accept` erhöht
+  die Version der Rolle, ersetzt `baseline.json` und ergänzt `CHANGELOG.md` im Datenverzeichnis der
+  Rolle.
+- **Tunen im Dialog:** `/sdd-role-tune <rolle> [--model PROFIL]` führt Claude Code durch Baseline,
+  eine Änderung mit Hypothese, Messung, Vergleich und Übernahme nach Bestätigung.
+- **Fälle aus echten Fehlschlägen:** `sdd role case capture` übernimmt einen gescheiterten
+  Rollenaufruf oder eine Supervisor-Entscheidung aus einem Pipeline-Run als Entwurf.
+
+Profile können `requests_per_minute` setzen, um Endpunkte mit Rate-Limit zu schonen.
+
+---
+
 ### `sdd holdout run` — Holdout-Evaluation
 
 ```bash

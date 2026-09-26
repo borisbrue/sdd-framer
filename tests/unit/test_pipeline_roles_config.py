@@ -8,7 +8,6 @@ from sdd_cli.pipeline.providers import SAME_MODEL_WARNING, resolve_binding
 from sdd_cli.pipeline.roles import (
     ALL_ROLES,
     BLUEPRINT_ROLES,
-    DEFAULT_ROLES,
     install_roles,
     load_role,
 )

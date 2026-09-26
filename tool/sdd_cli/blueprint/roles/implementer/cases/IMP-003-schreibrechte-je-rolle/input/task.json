@@ -1,0 +1,12 @@
+{
+  "id": "T02",
+  "title": "PathPolicy mit normalize und check",
+  "description": "Neues Modul sddlib/path_policy.py: normalize(path), PolicyDecision, PathPolicy(root, protected_paths) mit from_config und check(role, path, task) gemäß SPEC-0103 FR-01 bis FR-06. Für Muster sddlib.globs.matches_any verwenden.",
+  "type": "code",
+  "complexity": 3,
+  "fr_ids": ["FR-01", "FR-02", "FR-03", "FR-04", "FR-05", "FR-06"],
+  "dependencies": ["T01"],
+  "test_file": "tests/test_path_policy.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": ["sddlib/path_policy.py"]
+}

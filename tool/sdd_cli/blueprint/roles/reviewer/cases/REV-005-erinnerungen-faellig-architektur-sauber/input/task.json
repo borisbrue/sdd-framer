@@ -1,0 +1,23 @@
+{
+  "id": "T03",
+  "title": "Fälligkeit und Kommando due",
+  "description": "Domänenfunktion due_reminders (FR-02) mit injizierter Zeitquelle, Adapter für die Systemuhr, Unterkommando due in der CLI (FR-03).",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": [
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [
+    "T01"
+  ],
+  "test_file": "tests/test_due.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "reminders/domain/due.py",
+    "reminders/domain/clock.py",
+    "reminders/adapters/clock.py",
+    "reminders/cli.py",
+    "tests/test_due.py"
+  ]
+}

@@ -1,0 +1,11 @@
+--- a/sddlib/frs.py
++++ b/sddlib/frs.py
+@@ -9,7 +9,7 @@
+ )
+ 
+ _FR_ID_RE = re.compile(
+-    r"^[ \t]*(?:[-*+][ \t]*)?(?:\[[ xX]\][ \t]*)?(?:\*\*)?(FR-\d+)\b", re.MULTILINE
++    r"^[ \t]*(?:[-*+][ \t]*)?(?:\*\*)?(FR-\d+)\b", re.MULTILINE
+ )
+ 
+ 

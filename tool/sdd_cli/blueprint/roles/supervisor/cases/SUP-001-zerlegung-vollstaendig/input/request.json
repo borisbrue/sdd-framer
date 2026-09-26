@@ -1,0 +1,99 @@
+{
+  "request_id": "req-3a91c0d2",
+  "point": "S1",
+  "created_at": "2026-09-20T09:14:03+00:00",
+  "allowed_commands": [
+    "approve",
+    "revise",
+    "halt"
+  ],
+  "facts": {
+    "gate_results": [],
+    "tasks": [
+      {
+        "title": "CSV-Parser für Kontaktzeilen",
+        "description": "kontakte/csv_import.py: parse_csv(pfad) liest Kopfzeile name;email;telefon (Semikolon, UTF-8) und liefert Kontakt-Dicts mit Zeilennummer.",
+        "type": "code",
+        "complexity": "low",
+        "fr_ids": [
+          "FR-01"
+        ],
+        "dependencies": [],
+        "test_file": "tests/test_csv_import.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "kontakte/csv_import.py"
+        ]
+      },
+      {
+        "title": "Validierung der Kontaktzeilen",
+        "description": "kontakte/validate.py: validate(kontakt) liefert None oder einen Grund (fehlender Name, E-Mail ohne @); übersprungene Zeilen mit Zeilennummer und Grund auf stderr.",
+        "type": "code",
+        "complexity": "low",
+        "fr_ids": [
+          "FR-02"
+        ],
+        "dependencies": [
+          "CSV-Parser für Kontaktzeilen"
+        ],
+        "test_file": "tests/test_validate.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "kontakte/validate.py"
+        ]
+      },
+      {
+        "title": "Duplikaterkennung gegen kontakte.json",
+        "description": "kontakte/merge.py: merge(bestehend, neu) übernimmt nur Kontakte, deren E-Mail (casefold) noch nicht vorhanden ist; liefert Anzahl der Duplikate.",
+        "type": "code",
+        "complexity": "medium",
+        "fr_ids": [
+          "FR-03"
+        ],
+        "dependencies": [
+          "CSV-Parser für Kontaktzeilen"
+        ],
+        "test_file": "tests/test_merge.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "kontakte/merge.py"
+        ]
+      },
+      {
+        "title": "Unterbefehl import mit Zusammenfassung und Exit-Codes",
+        "description": "kontakte/cli.py: Unterbefehl `import` verbindet Parser, Validierung und Merge, schreibt kontakte.json, gibt die Zusammenfassung aus; Exit 0, bei nicht lesbarer Datei Exit 2.",
+        "type": "code",
+        "complexity": "medium",
+        "fr_ids": [
+          "FR-04",
+          "FR-01"
+        ],
+        "dependencies": [
+          "CSV-Parser für Kontaktzeilen",
+          "Validierung der Kontaktzeilen",
+          "Duplikaterkennung gegen kontakte.json"
+        ],
+        "test_file": "tests/test_cli_import.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "kontakte/cli.py"
+        ]
+      }
+    ],
+    "fr_coverage": {
+      "FR-01": [
+        "CSV-Parser für Kontaktzeilen",
+        "Unterbefehl import mit Zusammenfassung und Exit-Codes"
+      ],
+      "FR-02": [
+        "Validierung der Kontaktzeilen"
+      ],
+      "FR-03": [
+        "Duplikaterkennung gegen kontakte.json"
+      ],
+      "FR-04": [
+        "Unterbefehl import mit Zusammenfassung und Exit-Codes"
+      ]
+    }
+  }
+}

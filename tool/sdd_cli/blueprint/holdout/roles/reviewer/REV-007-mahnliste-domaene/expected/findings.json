@@ -1,0 +1,1 @@
+{"bugs": [{"file": "kasse/domain/mahnung.py", "line": 25, "keywords": ["sqlite", "SQL", "Datenbank", "Adapter", "Port", "Repository", "BeitragRepository", "Architektur", "Schicht", "AGENTS", "I/O"]}]}

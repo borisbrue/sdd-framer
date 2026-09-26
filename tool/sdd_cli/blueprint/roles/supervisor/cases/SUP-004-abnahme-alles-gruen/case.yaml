@@ -1,0 +1,20 @@
+id: SUP-004
+role: supervisor
+title: 'S3: alle FRs belegt grün – accept_frs'
+description: Alle vier FRs haben zugeordnete, grüne Tests, der Testlauf hat keine
+  Fehler und alle Holdout-Szenarien bestehen. Richtig ist accept_frs mit allen FRs
+  als erfüllt; reopen oder halt wären unbegründet.
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+  - json_schema: {}
+  - decision_matches: {}
+  - reason_mentions:
+      terms:
+      - grün
+      - Holdout
+      - erfüllt
+      - alle
+      - FR-
+      all: false

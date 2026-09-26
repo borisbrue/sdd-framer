@@ -183,6 +183,8 @@ Einziger Einstiegspunkt für alle LLM-gestützten Review-Operationen.
 | `sdd decompose SPEC-ID [--yes]` | Spec in klassifizierte Tasks zerlegen |
 | `sdd pipeline run SPEC-ID [--dry-run] [--task T] [--auto [--steps …]] [--session ROLLE …]` | Rollen-Pipeline: Tasks über die Modelle aus `llm.roles` umsetzen; `--session` belegt Rollen nur für diesen Run mit Claude Code im Dialog |
 | `sdd pipeline decide\|done\|status\|report RUN-ID` | Entscheidung bzw. Session-Ergebnis abgeben, Stand und Report |
+| `sdd role eval\|compare\|accept ROLLE …` | Rollen-Evals gegen Golden Cases, Ratchet-Vergleich, Übernahme mit Baseline (SPEC-0055) |
+| `sdd role case new\|capture\|confirm …` | Golden Cases anlegen, aus Pipeline-Runs übernehmen, bestätigen |
 | `sdd task-status SPEC-ID` | Task-Status einer Spec anzeigen |
 
 ---
@@ -203,6 +205,7 @@ für andere LLMs steht immer der entsprechende CLI-Pfad bereit.
 | `/sdd-status` | `sdd status` + `sdd autonomy level` | Status-Dashboard mit Metriken |
 | `/sdd-config` | `sdd config wizard` | Geführte Konfiguration |
 | `/sdd-hotfix` | `sdd hotfix start/finalize` | Hotfix-Flow |
+| `/sdd-role-tune ROLLE` | `sdd role eval` + `compare` + `accept` | Rolle gegen Golden Cases verbessern (Ratchet, Holdout bleibt verborgen) |
 
 ---
 

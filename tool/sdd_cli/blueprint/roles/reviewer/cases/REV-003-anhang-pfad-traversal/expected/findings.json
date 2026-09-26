@@ -1,0 +1,21 @@
+{
+  "bugs": [
+    {
+      "file": "attachments/store.py",
+      "line": 22,
+      "keywords": [
+        "traversal",
+        "absolut",
+        "absolute",
+        "außerhalb",
+        "outside",
+        "resolve",
+        "is_relative_to",
+        "symlink",
+        "/etc/passwd",
+        "Verzeichnis verlassen",
+        "escape the base"
+      ]
+    }
+  ]
+}

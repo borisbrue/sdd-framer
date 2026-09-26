@@ -1,0 +1,5 @@
+{
+  "point": "S2",
+  "command": "retry_with_hint",
+  "task_id": "T02"
+}

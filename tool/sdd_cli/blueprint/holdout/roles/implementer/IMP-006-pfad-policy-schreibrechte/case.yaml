@@ -1,0 +1,12 @@
+id: IMP-006
+role: implementer
+title: "PathPolicy mit fester Regelreihenfolge"
+description: "Schreibrechte je Rolle nach geordneten Regeln. Fallen: Pfadflucht vor Rollenprüfung, geschützte Pfade vor Testdatei, Normalisierung auch der test_file, leere allowed_paths erlauben, from_config mit None-Werten."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

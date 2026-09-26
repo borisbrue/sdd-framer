@@ -1,0 +1,22 @@
+id: SUP-003
+role: supervisor
+title: 'S2: wiederholter Fehler mit klarer Ursache – retry_with_hint'
+description: 'T02 scheitert dreimal am selben Test: die Implementierung entfernt Diakritika
+  per NFKD statt ä/ö/ü/ß vorher nach FR-02 zu ersetzen. Die Ursache ist eindeutig
+  und mit einem konkreten Hinweis behebbar; die übrigen Tests sind grün. Richtig ist
+  retry_with_hint für T02 (nicht reassign/redecompose/halt).'
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+  - json_schema: {}
+  - decision_matches: {}
+  - reason_mentions:
+      terms:
+      - Umlaut
+      - ß
+      - translit
+      - NFKD
+      - FR-02
+      - ue
+      all: false

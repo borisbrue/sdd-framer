@@ -1,0 +1,19 @@
+id: DEC-006
+role: decomposer
+title: "Link-Checker für Markdown-Doku (CLI)"
+description: "CLI mit Scan, Linkprüfung, Ausnahmedatei und Ausgabeformaten. Fallen: die Ausnahmedatei (FR-05) steht am Ende und wird leicht übersehen; externe HTTP-Prüfung ist ausdrücklich Nicht-Ziel und darf kein Task werden; die Linkextraktion muss vor der Prüfung stehen."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_count: {min: 3, max: 8}
+    - ordered_before: {first: "(extrah|pars|scan|sammel|erkenn)", then: "anker"}
+    - max_complexity: {value: medium}
+  rubric:
+    - {id: non_goals, question: "Enthält die Zerlegung keinen Task für die ausdrücklich ausgeschlossene Prüfung externer HTTP-Links (Nicht-Ziel)? 5 = kein solcher Task und keine Andeutung, 1 = eigener Task dafür."}
+weights: {checks: 0.8, rubric: 0.2}

@@ -1,0 +1,23 @@
+{
+  "request_id": "req-5c1e07a2",
+  "point": "S1",
+  "created_at": "2026-09-18T08:41:07Z",
+  "allowed_commands": ["approve", "revise", "halt"],
+  "facts": {
+    "gate_results": [],
+    "tasks": [
+      {"title": "Buchungspaare bilden", "description": "Kommen/Gehen je Mitarbeiter und Tag paaren; offene Kommen-Buchungen als Fehlerliste zurückgeben.", "type": "code", "complexity": "medium", "fr_ids": ["FR-02"], "dependencies": [], "test_file": "tests/test_paare.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["stempel/export/paare.py"]},
+      {"title": "Pausenabzug", "description": "Gesetzliche Mindestpause abziehen (ab 6 h 30 min, ab 9 h 45 min), wenn weniger Pause gebucht ist.", "type": "code", "complexity": "low", "fr_ids": ["FR-03"], "dependencies": ["Buchungspaare bilden"], "test_file": "tests/test_pausen.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["stempel/export/pausen.py"]},
+      {"title": "CSV-Writer für die Lohnsoftware", "description": "Zeilen mit ';', UTF-8 mit BOM und CRLF schreiben.", "type": "code", "complexity": "low", "fr_ids": ["FR-05"], "dependencies": [], "test_file": "tests/test_csv_writer.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["stempel/export/csv_writer.py"]},
+      {"title": "Tageszeilen berechnen", "description": "Aus Paaren und Pausenabzug je Mitarbeiter und Tag Arbeits- und Pausenminuten bilden; Minutenwerte ggf. runden.", "type": "code", "complexity": "medium", "fr_ids": ["FR-01"], "dependencies": ["Buchungspaare bilden", "Pausenabzug"], "test_file": "tests/test_tageszeilen.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["stempel/export/tage.py"]},
+      {"title": "Kommando stempel export", "description": "argparse-Unterkommando --monat; schreibt export/<monat>.csv und export/<monat>.fehler.txt.", "type": "code", "complexity": "low", "fr_ids": ["FR-01", "FR-02"], "dependencies": ["Tageszeilen berechnen", "CSV-Writer für die Lohnsoftware"], "test_file": "tests/test_cli_export.py", "test_command": "python3 -m unittest discover -s tests -t .", "allowed_paths": ["stempel/cli.py"]}
+    ],
+    "fr_coverage": {
+      "FR-01": ["Tageszeilen berechnen", "Kommando stempel export"],
+      "FR-02": ["Buchungspaare bilden", "Kommando stempel export"],
+      "FR-03": ["Pausenabzug"],
+      "FR-04": [],
+      "FR-05": ["CSV-Writer für die Lohnsoftware"]
+    }
+  }
+}

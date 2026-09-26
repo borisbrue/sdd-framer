@@ -1,0 +1,24 @@
+{
+  "bugs": [
+    {
+      "file": "catalog/pagination.py",
+      "line": 32,
+      "keywords": [
+        "teilbar",
+        "divisible",
+        "ceil",
+        "aufrund",
+        "round up",
+        "rounding",
+        "off-by-one",
+        "off by one",
+        "eine Seite zu viel",
+        "one page too many",
+        "Vielfach",
+        "multiple of",
+        "zu hoch",
+        "ganzzahlig"
+      ]
+    }
+  ]
+}

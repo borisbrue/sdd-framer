@@ -1,0 +1,18 @@
+{
+  "id": "T01",
+  "title": "ID-Vergabe next_id",
+  "description": "Implementiere sddlib.ids.next_id(existing, prefix, padding=4) gemäß FR-01 bis FR-03: nächste freie ID aus den vorhandenen IDs eines Präfixes.",
+  "type": "code",
+  "complexity": "low",
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [],
+  "test_file": "tests/test_ids.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "sddlib/ids.py"
+  ]
+}

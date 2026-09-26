@@ -1,0 +1,10 @@
+--- a/listing/paging.py
++++ b/listing/paging.py
+@@ -23,6 +23,6 @@
+         raise ValueError("page beginnt bei 1")
+     total = len(items)
+     seiten = max(1, -(-total // per_page))
+-    start = (page - 1) * per_page
++    start = page * per_page
+     ausschnitt = list(items[start:start + per_page])
+     return Page(ausschnitt, page, per_page, total, seiten, page < seiten)

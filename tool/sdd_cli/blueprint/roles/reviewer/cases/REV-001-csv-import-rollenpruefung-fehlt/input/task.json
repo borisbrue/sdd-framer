@@ -1,0 +1,22 @@
+{
+  "id": "T02",
+  "title": "Importlogik mit Bericht",
+  "description": "import_rows(lines) in userimport/importer.py: normalisieren, Duplikate überspringen, ungültige Zeilen melden, Standardrolle setzen. Bericht als ImportReport.",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": [
+    "FR-02",
+    "FR-03",
+    "FR-04"
+  ],
+  "dependencies": [
+    "T01"
+  ],
+  "test_file": "tests/test_importer.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "userimport/importer.py",
+    "userimport/models.py",
+    "tests/test_importer.py"
+  ]
+}

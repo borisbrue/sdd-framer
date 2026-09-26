@@ -1,0 +1,11 @@
+--- a/timebox/duration.py
++++ b/timebox/duration.py
+@@ -14,7 +14,7 @@
+ 
+ def parse_duration(text: str) -> int:
+     """Wandelt eine Dauerangabe in Sekunden um."""
+-    roh = text.strip().lower()
++    roh = text.strip()
+     if not roh:
+         raise DurationError("leere Dauer")
+     if roh.isdigit():

@@ -1,0 +1,66 @@
+diff --git a/tempo/zeit.py b/tempo/zeit.py
+index 6b9d931..c7159df 100644
+--- a/tempo/zeit.py
++++ b/tempo/zeit.py
+@@ -1,6 +1,11 @@
+ """Zeitangaben für den Pomodoro-Timer."""
+ from __future__ import annotations
+ 
++import re
++
++_DAUER = re.compile(r"(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?")
++MAX_SEKUNDEN = 24 * 3600
++
+ 
+ def formatiere(sekunden: int) -> str:
+     """Formatiert Sekunden als `MM:SS` bzw. `H:MM:SS` ab einer Stunde."""
+@@ -9,3 +14,18 @@ def formatiere(sekunden: int) -> str:
+     if stunden:
+         return f"{stunden}:{minuten:02d}:{sek:02d}"
+     return f"{minuten:02d}:{sek:02d}"
++
++
++def parse_dauer(text: str) -> int:
++    """Wandelt `1h30m`, `25m`, `90s` … in Sekunden um (FR-01, FR-02)."""
++    eingabe = text.strip()
++    treffer = _DAUER.fullmatch(eingabe)
++    if not eingabe or treffer is None:
++        raise ValueError(f"ungültige Dauer: {text!r} (erwartet z. B. 1h30m, 25m, 90s)")
++    h, m, s = (int(g) if g else 0 for g in treffer.groups())
++    gesamt = h * 3600 + m * 60 + s
++    if gesamt == 0:
++        raise ValueError("Dauer muss größer als 0 sein")
++    if gesamt > MAX_SEKUNDEN:
++        raise ValueError("Dauer darf höchstens 24h betragen")
++    return gesamt
+diff --git a/tests/test_zeit.py b/tests/test_zeit.py
+new file mode 100644
+index 0000000..6df69fe
+--- /dev/null
++++ b/tests/test_zeit.py
+@@ -0,0 +1,25 @@
++import unittest
++
++from tempo.zeit import parse_dauer
++
++
++class ParseDauerTest(unittest.TestCase):
++    def test_fr01_einheiten_und_kombinationen(self):
++        self.assertEqual(parse_dauer("25m"), 1500)
++        self.assertEqual(parse_dauer("90s"), 90)
++        self.assertEqual(parse_dauer("1h30m"), 5400)
++        self.assertEqual(parse_dauer("1h0m5s"), 3605)
++        self.assertEqual(parse_dauer("90m"), 5400)
++        self.assertEqual(parse_dauer("  45m \n"), 2700)
++
++    def test_fr02_ungueltige_eingaben(self):
++        for text in ("", "   ", "30", "5x", "30m1h", "1h1h", "1.5h", "-5m", "1H", "1h 30m"):
++            with self.subTest(text=text), self.assertRaises(ValueError):
++                parse_dauer(text)
++
++    def test_fr02_grenzen(self):
++        with self.assertRaises(ValueError):
++            parse_dauer("0m")
++        self.assertEqual(parse_dauer("24h"), 86400)
++        with self.assertRaises(ValueError):
++            parse_dauer("24h1s")

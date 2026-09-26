@@ -1,0 +1,20 @@
+id: SUP-002
+role: supervisor
+title: 'S1: Zerlegung ohne Task für FR-04 überarbeiten lassen'
+description: Fünf ordentlich geschnittene Tasks mit Tests, aber keiner deckt FR-04
+  (Ablauf mit expires_in_days, 410 Gone) ab; fr_coverage zeigt FR-04 leer. Richtig
+  ist revise mit Verweis auf FR-04; ein oberflächliches Modell lässt sich von der
+  sauberen Struktur zu approve verleiten.
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+  - json_schema: {}
+  - decision_matches: {}
+  - reason_mentions:
+      terms:
+      - FR-04
+      - '410'
+      - Ablauf
+      - expires_in_days
+      all: false

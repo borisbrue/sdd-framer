@@ -1,0 +1,117 @@
+{
+  "request_id": "req-b7e4015f",
+  "point": "S1",
+  "created_at": "2026-09-21T13:02:47+00:00",
+  "allowed_commands": [
+    "approve",
+    "revise",
+    "halt"
+  ],
+  "facts": {
+    "gate_results": [],
+    "tasks": [
+      {
+        "title": "Speicher für Links (Datenmodell)",
+        "description": "shortener/store.py: LinkStore mit add(url) -> code (7 Zeichen a-zA-Z0-9, kollisionsfrei), get(code), Trefferzähler.",
+        "type": "code",
+        "complexity": "medium",
+        "fr_ids": [
+          "FR-01",
+          "FR-05"
+        ],
+        "dependencies": [],
+        "test_file": "tests/test_store.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "shortener/store.py"
+        ]
+      },
+      {
+        "title": "URL-Validierung",
+        "description": "shortener/validate.py: is_valid_url(url) akzeptiert nur nicht-leere http/https-URLs.",
+        "type": "code",
+        "complexity": "low",
+        "fr_ids": [
+          "FR-02"
+        ],
+        "dependencies": [],
+        "test_file": "tests/test_validate.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "shortener/validate.py"
+        ]
+      },
+      {
+        "title": "Endpunkt POST /links",
+        "description": "shortener/api.py: Handler für POST /links; 201 mit code, 400 bei ungültiger URL.",
+        "type": "code",
+        "complexity": "medium",
+        "fr_ids": [
+          "FR-01",
+          "FR-02"
+        ],
+        "dependencies": [
+          "Speicher für Links (Datenmodell)",
+          "URL-Validierung"
+        ],
+        "test_file": "tests/test_api_create.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "shortener/api.py"
+        ]
+      },
+      {
+        "title": "Weiterleitung GET /<code>",
+        "description": "shortener/api.py: 302 mit Location auf die Ziel-URL, 404 bei unbekanntem Code; erhöht den Trefferzähler.",
+        "type": "code",
+        "complexity": "medium",
+        "fr_ids": [
+          "FR-03"
+        ],
+        "dependencies": [
+          "Endpunkt POST /links"
+        ],
+        "test_file": "tests/test_api_redirect.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "shortener/api.py"
+        ]
+      },
+      {
+        "title": "Statistik-Endpunkt",
+        "description": "shortener/api.py: GET /links/<code>/stats liefert {\"hits\": n}; 404 bei unbekanntem Code.",
+        "type": "code",
+        "complexity": "low",
+        "fr_ids": [
+          "FR-05"
+        ],
+        "dependencies": [
+          "Weiterleitung GET /<code>"
+        ],
+        "test_file": "tests/test_api_stats.py",
+        "test_command": "python3 -m unittest discover -s tests -t .",
+        "allowed_paths": [
+          "shortener/api.py"
+        ]
+      }
+    ],
+    "fr_coverage": {
+      "FR-01": [
+        "Speicher für Links (Datenmodell)",
+        "Endpunkt POST /links"
+      ],
+      "FR-02": [
+        "URL-Validierung",
+        "Endpunkt POST /links"
+      ],
+      "FR-03": [
+        "Weiterleitung GET /<code>"
+      ],
+      "FR-04": [],
+      "FR-05": [
+        "Speicher für Links (Datenmodell)",
+        "Statistik-Endpunkt"
+      ]
+    }
+  }
+}

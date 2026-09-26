@@ -1,0 +1,10 @@
+id: REV-004
+role: reviewer
+title: "Notizsuche mit SQL: sauberer Diff"
+description: "Sauberer Diff mit Fehlalarm-Fallen: ORDER BY wird per f-String zusammengesetzt, der Wert stammt aber ausschließlich aus einer festen Whitelist; der Suchtext geht als Parameter mit LIKE-Escaping und ESCAPE-Klausel; limit wird geprüft und gekappt. Alle FRs erfüllt, Tests prüfen Verhalten gegen eine echte SQLite-Datenbank."
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+    - json_schema: {}
+    - clean_diff_precision: {}

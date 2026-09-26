@@ -1,0 +1,23 @@
+{
+  "request_id": "req-9ad24b10",
+  "point": "S2",
+  "created_at": "2026-09-21T13:12:44Z",
+  "allowed_commands": ["retry_with_hint", "reassign", "redecompose", "halt"],
+  "task_id": "T02",
+  "facts": {
+    "task": {"id": "T02", "title": "USt-ID in der PDF-Fußzeile", "fr_ids": ["FR-01", "FR-02"], "test_file": "tests/test_fusszeile.py", "allowed_paths": ["rechnung/pdf/fusszeile.py"]},
+    "state": "red",
+    "attempts": 3,
+    "errors": [
+      "implementer: Schreibzugriff abgelehnt: rechnung/models.py liegt außerhalb von allowed_paths (rechnung/pdf/fusszeile.py)",
+      "implementer: Schreibzugriff abgelehnt: migrations/0014_mandant_ust_id.sql liegt außerhalb von allowed_paths (rechnung/pdf/fusszeile.py)",
+      "tests rot: AttributeError: 'Mandant' object has no attribute 'ust_id'",
+      "implementer: Schreibzugriff abgelehnt: rechnung/models.py liegt außerhalb von allowed_paths (rechnung/pdf/fusszeile.py)",
+      "tests rot: AttributeError: 'Mandant' object has no attribute 'ust_id'",
+      "implementer: getattr(mandant, 'ust_id', None) in fusszeile.py – tests rot: test_fr01_ust_id_wird_geprueft erwartet ValueError beim Setzen von Mandant.ust_id='XY1'"
+    ],
+    "gate_results": [
+      {"probe": "tests", "output": "FAIL: test_fr01_ust_id_wird_geprueft (tests.test_fusszeile.FusszeileTest)\nTraceback (most recent call last):\n  File \"tests/test_fusszeile.py\", line 18, in test_fr01_ust_id_wird_geprueft\n    with self.assertRaises(ValueError):\nAssertionError: ValueError not raised\nERROR: test_fr02_fusszeile_zeigt_ust_id (tests.test_fusszeile.FusszeileTest)\n  File \"tests/test_fusszeile.py\", line 25, in test_fr02_fusszeile_zeigt_ust_id\n    m = Mandant(name=\"Muster GmbH\", ust_id=\"DE123456789\")\nTypeError: Mandant.__init__() got an unexpected keyword argument 'ust_id'\n\nRan 4 tests in 0.031s\nFAILED (failures=1, errors=1)"}
+    ]
+  }
+}

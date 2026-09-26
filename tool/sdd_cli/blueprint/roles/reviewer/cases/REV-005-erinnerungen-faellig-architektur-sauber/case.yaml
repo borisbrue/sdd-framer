@@ -1,0 +1,10 @@
+id: REV-005
+role: reviewer
+title: "Fällige Erinnerungen: architekturkonformer Diff"
+description: "Sauberer Diff mit Fehlalarm-Fallen gegen AGENTS.md: datetime.now() steht im Adapter (erlaubt), die Domäne bekommt die Zeit über das Clock-Protokoll; print nur in cli.py (erlaubt); domain/clock.py importiert datetime nur als Typ; die Grenze due_at <= jetzt ist laut FR-02 inklusiv. Das Umbauen der list-Ausgabe in cli.py ändert kein Verhalten."
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+    - json_schema: {}
+    - clean_diff_precision: {}

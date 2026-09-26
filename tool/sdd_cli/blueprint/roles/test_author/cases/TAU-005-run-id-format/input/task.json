@@ -1,0 +1,18 @@
+{
+  "id": "T01",
+  "title": "Run-IDs new_run_id und parse_run_id",
+  "description": "Implementiere sddlib.run_id.new_run_id(spec_id, when) und parse_run_id(run_id) gemäß FR-01 bis FR-03.",
+  "type": "code",
+  "complexity": "medium",
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [],
+  "test_file": "tests/test_run_id.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "sddlib/run_id.py"
+  ]
+}

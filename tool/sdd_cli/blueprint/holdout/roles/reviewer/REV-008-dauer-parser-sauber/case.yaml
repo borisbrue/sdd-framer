@@ -1,0 +1,10 @@
+id: REV-008
+role: reviewer
+title: "Dauer-Parser für einen Pomodoro-Timer (sauber)"
+description: "Sauberer Diff: Implementierung erfüllt FR-01 und FR-02 vollständig, inklusive Grenzen, Reihenfolge der Einheiten und Leerraum; der Test prüft Gut- und Schlechtfälle. Prüft, ob der Reviewer ohne Fehlalarm pass meldet."
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - clean_diff_precision: {}

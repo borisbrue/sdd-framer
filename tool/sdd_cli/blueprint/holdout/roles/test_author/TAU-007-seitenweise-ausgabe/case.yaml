@@ -1,0 +1,15 @@
+id: TAU-007
+role: test_author
+title: "Paginierung mit Grenzfällen"
+description: "Paginierung mit Seitenzählung ab 1. Ein guter Test prüft Offset, Aufrunden der Seitenzahl, leere Liste, has_next an der letzten Seite und die Grenzen von per_page."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - test_file_matches_task: {}
+    - fr_marker_present: {}
+    - red_against_stub: {}
+    - green_against_reference: {}
+    - mutation_kill_rate: {min: 0.75}

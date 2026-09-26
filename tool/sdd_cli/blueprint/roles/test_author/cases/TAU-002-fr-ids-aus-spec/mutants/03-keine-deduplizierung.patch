@@ -1,0 +1,8 @@
+--- a/sddlib/frs.py
++++ b/sddlib/frs.py
+@@ -30,4 +30,4 @@
+     if not abschnitt:
+         return []
+     ids = _FR_ID_RE.findall(abschnitt)
+-    return list(dict.fromkeys(ids))
++    return ids

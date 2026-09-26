@@ -1,0 +1,15 @@
+id: TAU-008
+role: test_author
+title: "SemVer-Sprung mit Vorabversionen"
+description: "Versionssprung nach SemVer. Ein guter Test prüft das Zurücksetzen niedrigerer Stellen, zweistellige Werte, die Sonderregel für Vorabversionen und die Ablehnung ungültiger Formen."
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - test_file_matches_task: {}
+    - fr_marker_present: {}
+    - red_against_stub: {}
+    - green_against_reference: {}
+    - mutation_kill_rate: {min: 0.75}

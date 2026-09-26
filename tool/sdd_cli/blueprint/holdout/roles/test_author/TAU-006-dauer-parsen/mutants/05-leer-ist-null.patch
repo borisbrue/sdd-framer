@@ -1,0 +1,11 @@
+--- a/timebox/duration.py
++++ b/timebox/duration.py
+@@ -16,7 +16,7 @@
+     """Wandelt eine Dauerangabe in Sekunden um."""
+     roh = text.strip().lower()
+     if not roh:
+-        raise DurationError("leere Dauer")
++        return 0
+     if roh.isdigit():
+         return int(roh)
+     pos, total, letzte = 0, 0, -1

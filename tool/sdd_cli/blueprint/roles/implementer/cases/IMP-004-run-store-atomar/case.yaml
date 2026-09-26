@@ -1,0 +1,17 @@
+id: IMP-004
+role: implementer
+title: "Run-Verzeichnis mit Run-ID, atomarem Schreiben und Ereignislog"
+description: >-
+  Nach pipeline/store.py aus sdd-framer (verkleinert). Fallen: Zeitstempel in UTC, Run-ID mit
+  vorgegebener ID gegen die Spec-ID prüfen, bestehendes Run-Verzeichnis nicht wiederverwenden,
+  atomares Schreiben ohne Temp-Reste und ohne Beschädigung der alten Datei bei Fehlern
+  (nicht serialisierbare Daten), Umlaute unescaped, None-Felder im Ereignis weglassen, fehlende
+  JSONL-Datei ergibt leere Liste. Der sichtbare Test prüft nur Format und Rundreise.
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

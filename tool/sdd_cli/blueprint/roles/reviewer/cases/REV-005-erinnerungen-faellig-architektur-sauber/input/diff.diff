@@ -1,0 +1,135 @@
+diff --git a/reminders/adapters/clock.py b/reminders/adapters/clock.py
+new file mode 100644
+index 0000000..0fc3fe5
+--- /dev/null
++++ b/reminders/adapters/clock.py
+@@ -0,0 +1,8 @@
++from datetime import datetime, timezone
++
++
++class SystemClock:
++    """Systemuhr als Adapter für ``reminders.domain.clock.Clock``."""
++
++    def now(self) -> datetime:
++        return datetime.now(timezone.utc)
+diff --git a/reminders/cli.py b/reminders/cli.py
+index 1fcaddc..d200a06 100644
+--- a/reminders/cli.py
++++ b/reminders/cli.py
+@@ -4,7 +4,9 @@ import argparse
+ import sys
+ from pathlib import Path
+ 
++from reminders.adapters.clock import SystemClock
+ from reminders.adapters.json_store import JsonReminderStore, StoreError
++from reminders.domain.due import due_reminders
+ 
+ 
+ def main(argv: list[str] | None = None) -> int:
+@@ -12,15 +14,17 @@ def main(argv: list[str] | None = None) -> int:
+     parser.add_argument("--file", type=Path, default=Path("reminders.json"))
+     sub = parser.add_subparsers(dest="command", required=True)
+     sub.add_parser("list", help="alle Erinnerungen anzeigen")
++    sub.add_parser("due", help="fällige, offene Erinnerungen anzeigen")
+     args = parser.parse_args(argv)
+     try:
+         reminders = JsonReminderStore(args.file).load()
+     except StoreError as exc:
+         print(f"Fehler: {exc}", file=sys.stderr)
+         return 2
+-    if args.command == "list":
+-        for reminder in reminders:
+-            print(f"{reminder.due_at:%Y-%m-%d %H:%M}  {reminder.text}")
++    if args.command == "due":
++        reminders = due_reminders(reminders, SystemClock())
++    for reminder in reminders:
++        print(f"{reminder.due_at:%Y-%m-%d %H:%M}  {reminder.text}")
+     return 0
+ 
+ 
+diff --git a/reminders/domain/clock.py b/reminders/domain/clock.py
+new file mode 100644
+index 0000000..8a9f9b3
+--- /dev/null
++++ b/reminders/domain/clock.py
+@@ -0,0 +1,8 @@
++from datetime import datetime
++from typing import Protocol
++
++
++class Clock(Protocol):
++    """Zeitquelle der Domäne; liefert zeitzonenbewusste Zeitpunkte (UTC)."""
++
++    def now(self) -> datetime: ...
+diff --git a/reminders/domain/due.py b/reminders/domain/due.py
+new file mode 100644
+index 0000000..da5e7cd
+--- /dev/null
++++ b/reminders/domain/due.py
+@@ -0,0 +1,13 @@
++"""Fällige Erinnerungen (SPEC-0031 FR-02)."""
++
++from collections.abc import Iterable
++
++from reminders.domain.clock import Clock
++from reminders.domain.model import Reminder
++
++
++def due_reminders(reminders: Iterable[Reminder], clock: Clock) -> list[Reminder]:
++    """Offene Erinnerungen mit ``due_at <= jetzt``, älteste zuerst."""
++    now = clock.now()
++    return sorted((r for r in reminders if not r.done and r.due_at <= now),
++                  key=lambda r: r.due_at)
+diff --git a/tests/test_due.py b/tests/test_due.py
+new file mode 100644
+index 0000000..a0083c7
+--- /dev/null
++++ b/tests/test_due.py
+@@ -0,0 +1,47 @@
++import io
++import json
++import tempfile
++import unittest
++from contextlib import redirect_stdout
++from datetime import datetime, timezone
++from pathlib import Path
++
++from reminders.cli import main
++from reminders.domain.due import due_reminders
++from reminders.domain.model import Reminder
++
++NOW = datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc)
++
++
++class FixedClock:
++    def now(self):
++        return NOW
++
++
++def at(hour, minute=0):
++    return datetime(2026, 3, 1, hour, minute, tzinfo=timezone.utc)
++
++
++class DueRemindersTest(unittest.TestCase):
++    def test_fr02_open_due_sorted_inclusive(self):
++        items = [Reminder("a", "später", at(13)), Reminder("b", "genau jetzt", at(12)),
++                 Reminder("c", "erledigt", at(9), done=True), Reminder("d", "früh", at(8))]
++        self.assertEqual([r.id for r in due_reminders(items, FixedClock())], ["d", "b"])
++
++    def test_fr03_cli_prints_due_lines(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            path = Path(tmp) / "r.json"
++            path.write_text(json.dumps([
++                {"id": "x", "text": "Zahnarzt", "due_at": "2020-05-04T09:30:00+00:00",
++                 "done": False},
++                {"id": "y", "text": "Zukunft", "due_at": "2999-01-01T00:00:00+00:00",
++                 "done": False}]))
++            out = io.StringIO()
++            with redirect_stdout(out):
++                code = main(["--file", str(path), "due"])
++        self.assertEqual(code, 0)
++        self.assertEqual(out.getvalue(), "2020-05-04 09:30  Zahnarzt\n")
++
++
++if __name__ == "__main__":
++    unittest.main()

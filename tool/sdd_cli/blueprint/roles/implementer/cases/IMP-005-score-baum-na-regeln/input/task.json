@@ -1,0 +1,12 @@
+{
+  "id": "T03",
+  "title": "Score-Baum (MetricLeaf, ScoreNode)",
+  "description": "Neues Modul sddlib/score.py mit MetricLeaf und ScoreNode gemäß SPEC-0105 FR-01 bis FR-06.",
+  "type": "code",
+  "complexity": 3,
+  "fr_ids": ["FR-01", "FR-02", "FR-03", "FR-04", "FR-05", "FR-06"],
+  "dependencies": [],
+  "test_file": "tests/test_score.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": ["sddlib/score.py"]
+}

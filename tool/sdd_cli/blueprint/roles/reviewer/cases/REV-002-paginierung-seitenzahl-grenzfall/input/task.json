@@ -1,0 +1,22 @@
+{
+  "id": "T03",
+  "title": "Paginierungsfunktion",
+  "description": "catalog/pagination.py mit Page-Datenklasse und paginate(); Validierung, Seitenzahl, has_next.",
+  "type": "code",
+  "complexity": 2,
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03",
+    "FR-04"
+  ],
+  "dependencies": [
+    "T01"
+  ],
+  "test_file": "tests/test_pagination.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "catalog/pagination.py",
+    "tests/test_pagination.py"
+  ]
+}

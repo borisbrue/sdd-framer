@@ -1,0 +1,18 @@
+{
+  "id": "T01",
+  "title": "FR-Parser extract_fr_ids",
+  "description": "Implementiere sddlib.frs.extract_fr_ids(body) gemäß FR-01 bis FR-03: findet den Abschnitt 'Funktionale Anforderungen' und liefert die dort deklarierten FR-IDs.",
+  "type": "code",
+  "complexity": "medium",
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [],
+  "test_file": "tests/test_frs.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "sddlib/frs.py"
+  ]
+}

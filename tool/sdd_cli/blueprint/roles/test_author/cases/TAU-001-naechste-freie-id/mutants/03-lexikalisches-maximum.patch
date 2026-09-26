@@ -1,0 +1,11 @@
+--- a/sddlib/ids.py
++++ b/sddlib/ids.py
+@@ -10,6 +10,6 @@
+     if padding < 1:
+         raise ValueError("padding muss mindestens 1 sein")
+     pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)$")
+-    numbers = [int(m.group(1)) for i in existing if (m := pattern.match(i))]
+-    nxt = (max(numbers) + 1) if numbers else 1
++    numbers = [m.group(1) for i in existing if (m := pattern.match(i))]
++    nxt = (int(max(numbers)) + 1) if numbers else 1
+     return f"{prefix}-{str(nxt).zfill(padding)}"

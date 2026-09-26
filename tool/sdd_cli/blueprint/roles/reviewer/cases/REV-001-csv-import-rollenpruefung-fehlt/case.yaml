@@ -1,0 +1,10 @@
+id: REV-001
+role: reviewer
+title: "CSV-Import ohne Rollenprüfung"
+description: "Fehlende Anforderung: FR-03 verlangt, Zeilen mit unbekannter Rolle abzulehnen; der Diff prüft nur die E-Mail und übernimmt jede Rolle. ALLOWED_ROLES existiert, wird aber nicht benutzt. Tests und Lint sind grün, der Test deckt den Fall nicht ab."
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+    - json_schema: {}
+    - seeded_bug_recall: {min: 1.0, tolerance: 3}

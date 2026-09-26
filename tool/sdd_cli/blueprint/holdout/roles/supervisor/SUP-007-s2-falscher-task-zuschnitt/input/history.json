@@ -1,0 +1,8 @@
+[
+  "S1 approve: 3 Tasks – T01 'Mandanten-Einstellungsseite: Feld USt-ID' (FR-03, allowed_paths: rechnung/web/einstellungen.py, templates/einstellungen.html), T02 'USt-ID in der PDF-Fußzeile' (FR-01, FR-02, allowed_paths: rechnung/pdf/fusszeile.py), T03 'Abbruch ohne USt-ID in der Rechnungserstellung' (FR-02, allowed_paths: rechnung/erstellen.py)",
+  "T01: Umsetzung wartet auf T02 (Test importiert Mandant.ust_id)",
+  "S2 T02 retry_with_hint: 'Das Feld ust_id im Mandanten ergänzen und in der Fußzeile ausgeben.'",
+  "T02: 3 weitere Versuche gescheitert (Schreibzugriff auf rechnung/models.py abgelehnt)",
+  "S2 T02 reassign implementer → claude-opus: 'anderes Modell versuchen'",
+  "T02: 3 weitere Versuche gescheitert (gleiche Fehler)"
+]

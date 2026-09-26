@@ -1,0 +1,67 @@
+diff --git a/belege/anhaenge.py b/belege/anhaenge.py
+index 853ab1c..c9c3382 100644
+--- a/belege/anhaenge.py
++++ b/belege/anhaenge.py
+@@ -17,3 +17,27 @@ class Anhang:
+     name: str
+     mime: str
+     inhalt: bytes
++
++
++class NichtGefunden(AnhangFehler):
++    status = 404
++
++
++class UngueltigerName(AnhangFehler):
++    status = 400
++
++
++MAX_GROESSE = 20 * 1024 * 1024
++
++
++def lade_anhang(ablage: Path, mandant: str, name: str) -> Anhang:
++    """Liefert den Anhang `name` aus dem Ablageverzeichnis des Mandanten (FR-02)."""
++    if not name or name.startswith("."):
++        raise UngueltigerName(f"ungültiger Dateiname: {name!r}")
++    pfad = ablage / mandant / name
++    if not pfad.is_file():
++        raise NichtGefunden(name)
++    if pfad.stat().st_size > MAX_GROESSE:
++        raise UngueltigerName(f"{name} ist größer als 20 MiB")
++    mime = mimetypes.guess_type(pfad.name)[0] or "application/octet-stream"
++    return Anhang(pfad.name, mime, pfad.read_bytes())
+diff --git a/tests/test_anhaenge.py b/tests/test_anhaenge.py
+new file mode 100644
+index 0000000..359285f
+--- /dev/null
++++ b/tests/test_anhaenge.py
+@@ -0,0 +1,29 @@
++import tempfile
++import unittest
++from pathlib import Path
++
++from belege.anhaenge import NichtGefunden, UngueltigerName, lade_anhang
++
++
++class LadeAnhangTest(unittest.TestCase):
++    def setUp(self):
++        self.tmp = tempfile.TemporaryDirectory()
++        self.ablage = Path(self.tmp.name)
++        (self.ablage / "m1").mkdir()
++        (self.ablage / "m1" / "rechnung.pdf").write_bytes(b"%PDF-1.7")
++
++    def tearDown(self):
++        self.tmp.cleanup()
++
++    def test_fr02_liefert_anhang_des_mandanten(self):
++        anhang = lade_anhang(self.ablage, "m1", "rechnung.pdf")
++        self.assertEqual(anhang.inhalt, b"%PDF-1.7")
++        self.assertEqual(anhang.mime, "application/pdf")
++
++    def test_fr02_unbekannter_name_ist_404(self):
++        with self.assertRaises(NichtGefunden):
++            lade_anhang(self.ablage, "m1", "fehlt.pdf")
++
++    def test_fr02_versteckte_datei_ist_400(self):
++        with self.assertRaises(UngueltigerName):
++            lade_anhang(self.ablage, "m1", ".env")

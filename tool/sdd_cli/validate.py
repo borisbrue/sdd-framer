@@ -501,6 +501,14 @@ def _check_multi_agents_md(config: SddConfig, report: Report) -> None:
             )
 
 
+def _is_eval_data(parts: tuple[str, ...]) -> bool:
+    """Golden Cases (SPEC-0055) sind Eval-Daten, kein Projektcode; Holdout-Pfade tauchen in keiner
+    Ausgabe auf (CON-0219 INV-09)."""
+    if "holdout" in parts:
+        return True
+    return any(parts[i] == "roles" and parts[i + 2] == "cases" for i in range(len(parts) - 2))
+
+
 def _check_inline_disables(config: SddConfig, report: Report) -> None:
     """Findet Inline-Suppress-Kommentare in Quelldateien (Taste Invariant)."""
     skip_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv",
@@ -511,6 +519,8 @@ def _check_inline_disables(config: SddConfig, report: Report) -> None:
         if src_file.suffix not in _SOURCE_EXTENSIONS:
             continue
         if any(part in skip_dirs for part in src_file.parts):
+            continue
+        if _is_eval_data(src_file.relative_to(config.root).parts):
             continue
         try:
             text = src_file.read_text(encoding="utf-8", errors="ignore")

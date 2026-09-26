@@ -1,0 +1,66 @@
+diff --git a/attachments/store.py b/attachments/store.py
+index aed9c91..d03b460 100644
+--- a/attachments/store.py
++++ b/attachments/store.py
+@@ -3,6 +3,8 @@
+ import secrets
+ from pathlib import Path
+ 
++from attachments.errors import AttachmentNotFound
++
+ 
+ class AttachmentStore:
+     def __init__(self, base_dir: Path) -> None:
+@@ -13,3 +15,12 @@ class AttachmentStore:
+         name = secrets.token_hex(16) + suffix
+         (self.base_dir / name).write_bytes(data)
+         return name
++
++    def open_attachment(self, name: str) -> bytes:
++        """Liefert den Inhalt des Anhangs ``name`` (FR-03)."""
++        if not name or ".." in Path(name).parts:
++            raise AttachmentNotFound(name)
++        path = self.base_dir / name
++        if not path.is_file():
++            raise AttachmentNotFound(name)
++        return path.read_bytes()
+diff --git a/tests/test_store.py b/tests/test_store.py
+new file mode 100644
+index 0000000..0851bc9
+--- /dev/null
++++ b/tests/test_store.py
+@@ -0,0 +1,34 @@
++import tempfile
++import unittest
++from pathlib import Path
++
++from attachments.errors import AttachmentNotFound
++from attachments.store import AttachmentStore
++
++
++class OpenAttachmentTest(unittest.TestCase):
++    def setUp(self):
++        self._tmp = tempfile.TemporaryDirectory()
++        self.root = Path(self._tmp.name)
++        (self.root / "files").mkdir()
++        (self.root / "secret.txt").write_text("geheim")
++        self.store = AttachmentStore(self.root / "files")
++
++    def tearDown(self):
++        self._tmp.cleanup()
++
++    def test_fr03_returns_saved_content(self):
++        name = self.store.save(b"hallo", ".txt")
++        self.assertEqual(self.store.open_attachment(name), b"hallo")
++
++    def test_fr03_missing_file(self):
++        with self.assertRaises(AttachmentNotFound):
++            self.store.open_attachment("gibt-es-nicht.txt")
++
++    def test_fr03_parent_directory_is_rejected(self):
++        with self.assertRaises(AttachmentNotFound):
++            self.store.open_attachment("../secret.txt")
++
++
++if __name__ == "__main__":
++    unittest.main()

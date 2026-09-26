@@ -1,0 +1,11 @@
+--- a/timebox/duration.py
++++ b/timebox/duration.py
+@@ -27,7 +27,7 @@
+         if einheit not in UNITS:
+             raise DurationError(f"unbekannte Einheit {einheit!r}")
+         rang = ORDER.index(einheit)
+-        if rang <= letzte:
++        if rang < letzte:
+             raise DurationError(f"Einheit {einheit!r} doppelt oder in falscher Reihenfolge")
+         letzte = rang
+         total += zahl * UNITS[einheit]

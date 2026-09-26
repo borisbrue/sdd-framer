@@ -1,0 +1,18 @@
+id: IMP-005
+role: implementer
+title: "Score-Baum mit n/a-Regeln renormalize, strict und quorum"
+description: >-
+  Nach quality/score.py aus sdd-framer (ohne Plug-in-Aggregation). Fallen: fehlende Metriken
+  renormalisieren statt als 0 zählen, Gewicht 0 ignorieren (auch beim Quorum-Nenner), Quorum
+  ist 'höchstens Anteil fehlend' (Gleichheit zählt noch), Clamping auf [0, 1], Gründe
+  deduplizieren und rekursiv sammeln, unbekannte Regel wirft ValueError, to_dict rundet auf vier
+  Stellen und setzt renormalized/reason nur bei Bedarf. Der sichtbare Test prüft nur den
+  gewichteten Mittelwert.
+origin: blueprint
+test_command: "python3 -m unittest discover -s tests -t ."
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - paths_allowed: {}
+    - hidden_tests_pass: {}

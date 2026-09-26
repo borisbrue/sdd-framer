@@ -1,0 +1,9 @@
+--- a/timebox/duration.py
++++ b/timebox/duration.py
+@@ -32,6 +32,4 @@
+         letzte = rang
+         total += zahl * UNITS[einheit]
+         pos = m.end()
+-    if pos != len(roh):
+-        raise DurationError(f"ungültige Dauer: {text!r}")
+     return total
