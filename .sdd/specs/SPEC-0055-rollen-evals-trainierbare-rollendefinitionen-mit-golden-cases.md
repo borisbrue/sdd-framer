@@ -2,7 +2,7 @@
 id: SPEC-0055
 title: "Rollen-Evals: trainierbare Rollendefinitionen mit Golden Cases"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-26
