@@ -2,7 +2,7 @@
 id: SPEC-0058
 title: "Rückbau abgelöster Ausführungspfade und Pipeline-Monitor"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-26
@@ -12,6 +12,16 @@ tags: [refactoring, pipeline, cleanup, cli]
 depends_on: [SPEC-0053, SPEC-0059]
 contracts: [CON-0210, CON-0211]
 tests: [TST-0239, TST-0240]
+fr_test_map:
+  FR-01: [TST-0239]
+  FR-02: [TST-0239]
+  FR-03: [TST-0239]
+  FR-04: [TST-0239]
+  FR-05: [TST-0240]
+  FR-06: [TST-0240]
+  FR-07: [TST-0240]
+  FR-08: [TST-0240]
+  FR-09: [TST-0239]
 ---
 
 # Rückbau abgelöster Ausführungspfade und Pipeline-Monitor

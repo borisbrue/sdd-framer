@@ -1,48 +1,32 @@
 ---
 id: TST-0239
-project: ""                # PRJ-XXXX
 title: "Verweise, Config-Aufräumen und sdd spec deprecate"
-level: acceptance            # unit | integration | contract | acceptance | performance | property
+level: acceptance
 spec: SPEC-0058
 contract: CON-0210
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/acceptance/test_con_0210.py"
+tags: [pipeline, cleanup]
 ---
 
 # Test: Verweise, Config-Aufräumen und sdd spec deprecate
 
-> **Level:** {{level}} · **Spec:** SPEC-0058 · **Contract:** CON-0210 · **Status:** draft
+> **Level:** acceptance · **Spec:** SPEC-0058 · **Contract:** CON-0210 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Verweis `distribute` ohne Nebenwirkungen, entfernte Module, Config-Aufräumen beim Upgrade, `sdd spec deprecate` und `sdd contract deprecate` in temporären Projekten.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0210:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-01, FR-02, FR-03, FR-04, FR-09

@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0058",
-  "generated_at": "2026-09-26T05:50:26Z",
+  "generated_at": "2026-09-26T05:56:13Z",
   "new_contracts": [
     "CON-0210",
     "CON-0211"
@@ -434,6 +434,81 @@
         "action": "acknowledged",
         "reason": "Beschreibung von evaluator.base_url in CON-0016 wird mit dem Holdout-Befund aus CF-0058-019 nachgezogen.",
         "resolved_at": "2026-09-26T05:53:48Z"
+      }
+    },
+    {
+      "id": "CF-0058-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0007:2. Zielsetzung",
+      "detail": "SPEC-0007 startet Läufe über einen Execute-Button in der Web-UI per `POST /api/orchestrate` und zeigt sie dort an; SPEC-0058 lässt die Web-UI Pipeline-Runs über die CLI starten und anzeigen, damit gibt es zwei Web-Einstiege für denselben Zweck, ohne dass das Verhältnis geklärt ist.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bis SPEC-0061 bewusst zwei Einstiege (CON-0211 INV-08); SPEC-0061 lässt die Route orchestrate die Pipeline mit --auto starten.",
+        "resolved_at": "2026-09-26T05:56:23Z"
+      }
+    },
+    {
+      "id": "CF-0058-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0003:2.1 REST-API",
+      "detail": "SPEC-0058 entfernt oder ersetzt die Web-Routen `/specs/{id}/implement` und `/evaluate` sowie die Route `dag_monitor`; die Routenliste der implementierten SPEC-0003 muss deshalb nachgezogen werden, sonst beschreibt sie Endpunkte, die es nicht mehr gibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Routen bleiben erhalten (Pfade und Antwortformat unverändert, nur das Backend wechselt); dag_monitor bleibt als Pipeline-Monitor.",
+        "resolved_at": "2026-09-26T05:56:24Z"
+      }
+    },
+    {
+      "id": "CF-0058-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0004:2. Zielsetzung",
+      "detail": "SPEC-0004 beschreibt die autonome Ausführungs-Pipeline von der Spec bis zum Merge; SPEC-0058 baut Teile der daraus entstandenen alten Pfade (autopilot, distribute, DAG-Monitor) zugunsten von `sdd pipeline` zurück, SPEC-0004 sollte also auf den neuen Ausführungspfad verweisen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "SPEC-0061 FR-10 gibt SPEC-0004 den Hinweis auf die Pipeline.",
+        "resolved_at": "2026-09-26T05:56:25Z"
+      }
+    },
+    {
+      "id": "CF-0058-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "SPEC-0058 fordert, dass kein Code in `tool/` mehr `ANTHROPIC_API_KEY` oder `ANTHROPIC_BASE_URL` setzt; diese Provider-Entkopplung ist Kernthema der Provider-Abstraktion in SPEC-0008, die Zuständigkeit sollte daher abgegrenzt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgrenzung: SPEC-0008 regelt Provider; SPEC-0058 entfernt nur den letzten Code außerhalb der Provider, der die Variablen setzte (local_agent).",
+        "resolved_at": "2026-09-26T05:56:26Z"
+      }
+    },
+    {
+      "id": "CF-0058-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0016:1. Kontext & Motivation",
+      "detail": "SPEC-0016 und der Pipeline-Monitor in SPEC-0058 zeigen beide Hintergrundläufe mit Status in der Web-UI an; SPEC-0016 tut das für Analyse-Jobs, SPEC-0058 für Pipeline-Runs, deshalb entsteht ein ähnlicher Anzeige- und Statusmechanismus zweimal.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bewusst getrennt: Analyse-Jobs (SPEC-0016) sind kurz und im Speicher, Pipeline-Runs persistent unter .sdd/runs; eine Vereinheitlichung wäre eine eigene Spec.",
+        "resolved_at": "2026-09-26T05:56:27Z"
       }
     }
   ],

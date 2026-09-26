@@ -1,48 +1,34 @@
 ---
 id: TST-0240
-project: ""                # PRJ-XXXX
 title: "Pipeline-Monitor und Web-Routen"
-level: acceptance            # unit | integration | contract | acceptance | performance | property
+level: acceptance
 spec: SPEC-0058
 contract: CON-0211
-status: planned            # planned | implemented | passing | failing | skipped
-framework: ""              # z.B. pytest, vitest, schemathesis, behave – frei wählbar
-artifact: "tests/<level>/<name>.test.<ext>"
-tags: []
+status: planned
+framework: pytest
+artifact: "tests/acceptance/test_con_0211.py"
+tags: [pipeline, cleanup]
 ---
 
 # Test: Pipeline-Monitor und Web-Routen
 
-> **Level:** {{level}} · **Spec:** SPEC-0058 · **Contract:** CON-0211 · **Status:** draft
+> **Level:** acceptance · **Spec:** SPEC-0058 · **Contract:** CON-0211 · **Status:** planned
 
 ## Was wird geprüft?
 
-<!-- Welche Aussage der Spec / welche Garantie des Contracts wird hier verifiziert? -->
-
-## Vorbedingungen
-
-- ...
-
-## Ablauf
-
-1. ...
-2. ...
-3. ...
-
-## Erwartetes Ergebnis
-
-- ...
-
-## Negativfälle / Edge Cases
-
-- ...
+Leseschnittstelle `sdd_cli.pipeline.monitor` mit echten Run-Verzeichnissen; Monitor-Routen, `pipeline status --json` und Web-Routen mit Pipeline-Läufen gegen den Fake-LLM-Server.
 
 ## Verknüpfung mit Contract
 
-Dieser Test prüft konkret folgende Punkte aus CON-0211:
+- [x] INV-01
+- [x] INV-02
+- [x] INV-03
+- [x] INV-04
+- [x] INV-05
+- [x] INV-06
+- [x] INV-07
+- [x] INV-08
 
-- [ ] ...
+## Verknüpfung mit Spec
 
-## Hinweise zur Implementierung
-
-<!-- Frameworkspezifische Hinweise, Fixtures, Testdaten -->
+FR-05, FR-06, FR-07, FR-08
