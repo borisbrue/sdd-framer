@@ -10,8 +10,8 @@ version: 0.2.0
 priority: medium
 tags: [pipeline, refactoring, session, routing]
 depends_on: [SPEC-0053, SPEC-0054, SPEC-0058]
-contracts: []           # z.B. ["CON-0001"] – MUSS mindestens einen Eintrag enthalten
-tests: []               # z.B. ["TST-0001"] – MUSS mindestens einen Eintrag enthalten
+contracts: [CON-0212, CON-0213, CON-0214]           # z.B. ["CON-0001"] – MUSS mindestens einen Eintrag enthalten
+tests: [TST-0241, TST-0242, TST-0243]               # z.B. ["TST-0001"] – MUSS mindestens einen Eintrag enthalten
 ---
 
 # Pipeline-Fähigkeiten: Session-Arbeitsrollen, Routing nach Komplexität, Abschluss-Schritte
@@ -169,17 +169,17 @@ Feature: Pipeline-Fähigkeiten
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | data     | `llm.profiles`, `by_complexity`, Rollenmodus, `pipeline.task_gates`/`auto_steps`, Auftrag `pending-work.json`, Command `reopen` |
-| CON-XXXX    | behavior | Session-Arbeitsrollen, `done`, Rollenvertrag, Task-Typen, Gates pro Task, `--task`, Routing |
-| CON-XXXX    | behavior | Abschluss-Kette (`holdout`, `finalize`, `automerge`), `reopen`, `config test-llm` |
+| CON-0212    | data     | `llm.profiles`, `by_complexity`, Rollenmodus, `pipeline.task_gates`/`auto_steps`, Auftrag `pending-work.json`, Command `reopen` |
+| CON-0213    | behavior | Session-Arbeitsrollen, `done`, Rollenvertrag, Task-Typen, Gates pro Task, `--task`, Routing |
+| CON-0214    | behavior | Abschluss-Kette (`holdout`, `finalize`, `automerge`), `reopen`, `config test-llm` |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | unit        | Schemas, Auflösung von Profilen und `by_complexity` |
-| TST-XXXX | acceptance  | Session-Rollen, Task-Typen, Gates, `--task` gegen den Fake-LLM-Server |
-| TST-XXXX | acceptance  | Abschluss-Kette mit Fake-Finalize/Holdout, `reopen`, `test-llm` |
+| TST-0241 | unit        | Schemas, Auflösung von Profilen und `by_complexity` |
+| TST-0242 | acceptance  | Session-Rollen, Task-Typen, Gates, `--task` gegen den Fake-LLM-Server |
+| TST-0243 | acceptance  | Abschluss-Kette mit Fake-Finalize/Holdout, `reopen`, `test-llm` |
 
 ## 10. Offene Fragen
 

@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/pipeline-capabilities.schema.json",
+  "title": "SDD Pipeline-Fähigkeiten: Profile, Rollenbelegung, Session-Auftrag, reopen",
+  "description": "SPEC-0061 / CON-0212. Ergänzt CON-0199 (llm.roles), CON-0201 (Commands) und CON-0202 (Run-Verzeichnis) additiv.",
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "required": [
+        "provider"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "claude-cli",
+            "anthropic",
+            "openai-compat"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_key": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "top_p": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "thinking": {
+          "type": "boolean"
+        },
+        "reasoning_effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "description": "llm.profiles.<name>: eine Modellbelegung"
+    },
+    "profiles": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9_.-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      }
+    },
+    "assignment": {
+      "description": "Ziel einer Komplexitätsstufe: Profilname oder 'session'",
+      "type": "string",
+      "minLength": 1
+    },
+    "role_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "claude-cli",
+            "anthropic",
+            "openai-compat"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "api_key": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "top_p": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "max_output_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "thinking": {
+          "type": "boolean"
+        },
+        "reasoning_effort": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mode": {
+          "enum": [
+            "inline",
+            "session"
+          ]
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "by_complexity": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "low": {
+              "$ref": "#/$defs/assignment"
+            },
+            "medium": {
+              "$ref": "#/$defs/assignment"
+            },
+            "high": {
+              "$ref": "#/$defs/assignment"
+            }
+          }
+        }
+      },
+      "not": {
+        "required": [
+          "profile",
+          "provider"
+        ]
+      },
+      "description": "llm.roles.<rolle>; profile und provider schließen sich aus"
+    },
+    "pipeline_config": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "task_gates": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "tests",
+              "architecture",
+              "lint"
+            ]
+          }
+        },
+        "lint_probe": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auto_steps": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "holdout",
+              "finalize",
+              "automerge"
+            ]
+          }
+        },
+        "max_reopen": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_revisions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "protected_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "work_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "role",
+        "task_id",
+        "created_at",
+        "allowed_paths",
+        "sources"
+      ],
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "enum": [
+            "decomposer",
+            "test_author",
+            "implementer",
+            "reviewer"
+          ]
+        },
+        "task_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "allowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "test_file": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sources": {
+          "type": "object",
+          "description": "Kontextquellen als Verweise (Pfade) oder kurze Texte; nie Holdouts"
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "output_schema": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Schema für --json (decomposer, reviewer)"
+        },
+        "snapshot": {
+          "type": "string",
+          "description": "Datei mit Prüfsummen zum Zeitpunkt des Auftrags"
+        }
+      }
+    },
+    "reopen_command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "point",
+        "command",
+        "reason",
+        "task_ids",
+        "hint"
+      ],
+      "properties": {
+        "point": {
+          "const": "S3"
+        },
+        "command": {
+          "const": "reopen"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hint": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
