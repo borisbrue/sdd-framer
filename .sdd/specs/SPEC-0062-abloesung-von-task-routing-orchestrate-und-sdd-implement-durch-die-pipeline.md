@@ -2,7 +2,7 @@
 id: SPEC-0062
 title: "Ablösung von task-routing, orchestrate und sdd-implement durch die Pipeline"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-09-26
 updated: 2026-09-26
