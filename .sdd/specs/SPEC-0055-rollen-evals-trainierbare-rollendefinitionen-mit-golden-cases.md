@@ -10,8 +10,29 @@ version: 0.2.0
 priority: high
 tags: [llm, roles, evals, prompt-engineering, holdout]
 depends_on: [SPEC-0053, SPEC-0054, SPEC-0061, SPEC-0062]
-contracts: []
-tests: []
+contracts:
+- CON-0217
+- CON-0218
+- CON-0219
+- CON-0220
+tests:
+- TST-0246
+- TST-0247
+- TST-0248
+- TST-0249
+fr_test_map:
+  FR-01: [TST-0246, TST-0248]
+  FR-02: [TST-0246]
+  FR-03: [TST-0248]
+  FR-04: [TST-0247, TST-0248]
+  FR-05: [TST-0247, TST-0248]
+  FR-06: [TST-0247, TST-0248]
+  FR-07: [TST-0249]
+  FR-08: [TST-0247, TST-0249]
+  FR-09: [TST-0248]
+  FR-10: [TST-0249]
+  FR-11: [TST-0248]
+  FR-12: [TST-0248]
 ---
 
 # Rollen-Evals: trainierbare Rollendefinitionen mit Golden Cases
@@ -253,18 +274,18 @@ Feature: Rollen-Evals
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | data     | `role-case.schema.json` (`case.yaml`) |
-| CON-XXXX    | data     | `role-eval-report.schema.json` und `baseline.json` |
-| CON-XXXX    | behavior | Check-Registry, Eval-Ablauf, Holdout-Sichtbarkeit, `capture`, Rolle `judge` |
-| CON-XXXX    | behavior | Ratchet (`compare`/`accept`), Versionierung, Skill `/sdd-role-tune` |
+| CON-0217    | data     | `role-case.schema.json` (`case.yaml`) |
+| CON-0218    | data     | `role-eval-report.schema.json` und `baseline.json` |
+| CON-0219    | behavior | Check-Registry, Eval-Ablauf, Holdout-Sichtbarkeit, `capture`, Rolle `judge` |
+| CON-0220    | behavior | Ratchet (`compare`/`accept`), Versionierung, Skill `/sdd-role-tune` |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | unit        | Jeder Check mit Positiv- und Negativfall; Aggregation; Ratchet |
-| TST-XXXX | acceptance  | Szenarien der vier Contracts mit Fake-LLM-Server auf Fixture-Fällen |
-| TST-XXXX | acceptance  | Blueprint-Fälle: Anzahl, Schema, jeder Check-Fall läuft mit der Referenz grün |
+| TST-0246, TST-0247 | unit | Schemas, Score-Formel, Aggregation; jeder Check mit Positiv- und Negativfall; Aggregation; Ratchet |
+| TST-0248, TST-0249 | acceptance | Szenarien der Contracts CON-0219 und CON-0220 mit Fake-LLM-Server auf Fixture-Fällen |
+| TST-0246 | unit | Blueprint-Fälle: Anzahl, Schema, jeder Check-Fall läuft mit der Referenz grün |
 
 ## 10. Offene Fragen
 
