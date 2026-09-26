@@ -4,7 +4,7 @@ title: "Session-Arbeitsrollen, Routing, Task-Typen und Gates pro Task"
 type: behavior
 format: gherkin
 spec: SPEC-0061
-version: 0.1.0
+version: 0.2.0
 status: approved
 artifact: ".sdd/contracts/behavior/session-arbeitsrollen-routing-task-typen-und-gates-pro-task.feature"
 tests: ["TST-0242"]
@@ -47,3 +47,7 @@ Session-Rollen werden im Test durch Dateischreiben und `sdd pipeline done` gespi
   nie. Ein blockierendes Gate setzt die Dateien eines LLM-Implementers zurück.
 - **INV-07:** `--task ID` braucht eine gespeicherte Zerlegung, bearbeitet nur diesen Task und endet
   ohne S1, S3 und Abschluss; kombiniert mit `--auto` oder `--resume` Exit 2.
+- **INV-08 (Abgrenzung):** Die Pipeline führt Task-Zustände in `state.json` (CON-0202) und nutzt
+  weder `TaskLifecycle` (CON-0124) noch die Regeln des Skills `/sdd-implement` (CON-0061); deren
+  Test-Pflicht für `passed` gilt für die Pipeline nicht. `--task` liest die Task-IDs aus
+  `.sdd/tasks/<SPEC>.json`, egal ob `sdd decompose` oder die Pipeline die Zerlegung gespeichert hat.
