@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0055
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/ratchet-uebernahme-und-skill-sdd-role-tune.feature"
 tests: ["TST-0249"]
 ---
 
 # Contract: Ratchet, Übernahme und Skill sdd-role-tune
 
-> **Spec:** SPEC-0055 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0055 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

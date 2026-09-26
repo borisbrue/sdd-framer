@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0055
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/golden-case-case-yaml.schema.json"
 tests: ["TST-0246"]
 ---
 
 # Contract: Golden Case case.yaml
 
-> **Spec:** SPEC-0055 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0055 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 

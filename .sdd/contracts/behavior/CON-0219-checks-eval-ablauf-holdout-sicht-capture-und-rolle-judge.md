@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0055
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/checks-eval-ablauf-holdout-sicht-capture-und-rolle-judge.feature"
 tests: ["TST-0248"]
 ---
 
 # Contract: Checks, Eval-Ablauf, Holdout-Sicht, capture und Rolle judge
 
-> **Spec:** SPEC-0055 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0055 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

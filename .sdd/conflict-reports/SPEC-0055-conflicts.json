@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0055",
-  "generated_at": "2026-09-26T16:34:46Z",
+  "generated_at": "2026-09-26T16:40:06Z",
   "new_contracts": [
     "CON-0217",
     "CON-0218",
@@ -284,6 +284,66 @@
         "action": "acknowledged",
         "reason": "CON-0057 beschreibt den Befehlssatz von /sdd; /sdd-role-tune ergänzt ihn additiv.",
         "resolved_at": "2026-09-26T16:39:35Z"
+      }
+    },
+    {
+      "id": "CF-0055-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Kontext & Motivation (Holdout-Scanner)",
+      "conflicting_contract": "SPEC-0004:Holdout/Evaluation",
+      "detail": "SPEC-0055 legt Golden Cases unter `.sdd/holdout/roles/` ab und lässt die bestehenden Holdout-Scanner diesen Pfad ignorieren. Damit ändert sie die Holdout-Semantik aus SPEC-0004, die inzwischen als Pipeline-Schritt `holdout` läuft; beide Specs müssen deshalb dieselbe Abgrenzung festlegen, welche Holdout-Dateien die Pipeline-Evaluation einliest.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Holdout-Scanner ignorieren .sdd/holdout/roles/ (FR-05), Rolle judge ersetzt die Komponente evaluator für Rubriken (FR-12).",
+        "resolved_at": "2026-09-26T16:40:15Z"
+      }
+    },
+    {
+      "id": "CF-0055-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "Zielsetzung (Rolle judge)",
+      "conflicting_contract": "SPEC-0008:Evaluator-Komponente",
+      "detail": "SPEC-0055 lässt `sdd quality --judge` künftig über die Rolle `judge` in `llm.roles` laufen statt über die Komponente `evaluator`. SPEC-0008 (draft 0.6.0) beschreibt den Evaluator dagegen weiterhin als eigenständigen Integrationspunkt der Provider-Abstraktion; das muss angeglichen werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Holdout-Scanner ignorieren .sdd/holdout/roles/ (FR-05), Rolle judge ersetzt die Komponente evaluator für Rubriken (FR-12).",
+        "resolved_at": "2026-09-26T16:40:16Z"
+      }
+    },
+    {
+      "id": "CF-0055-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien (Tokens je Fall)",
+      "conflicting_contract": "SPEC-0011:Token-Erfassung",
+      "detail": "`sdd role eval` erfasst Tokens je Fall und überschneidet sich damit mit der Token-Datenbasis aus SPEC-0011. Mit dem Default-Provider `claude-cli` (`usage: None`) bleiben die Werte in beiden Specs leer.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Holdout-Scanner ignorieren .sdd/holdout/roles/ (FR-05), Rolle judge ersetzt die Komponente evaluator für Rubriken (FR-12).",
+        "resolved_at": "2026-09-26T16:40:17Z"
+      }
+    },
+    {
+      "id": "CF-0055-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien (Score, Streuung je Fall)",
+      "conflicting_contract": "SPEC-0006:Test-Run-Ergebnisse",
+      "detail": "Eval-Läufe mit Score je Fall und `baseline.json` ähneln der spec-bezogenen Ergebnisspeicherung aus SPEC-0006. Es sollte geklärt werden, ob Eval-Ergebnisse ein eigenes Format bekommen oder den bestehenden Ergebnisspeicher nutzen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Holdout-Scanner ignorieren .sdd/holdout/roles/ (FR-05), Rolle judge ersetzt die Komponente evaluator für Rubriken (FR-12).",
+        "resolved_at": "2026-09-26T16:40:17Z"
       }
     }
   ],
