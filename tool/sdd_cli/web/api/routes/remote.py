@@ -26,6 +26,15 @@ _PUSH_TRIGGER_CMDS = frozenset({"orchestrate", "dev"})
 _ALLOWLIST = frozenset({"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"})
 
 
+def sdd_argv(cmd: str, args: list[str]) -> list[str]:
+    """Argumente für `sdd`; `orchestrate` ist seit SPEC-0062 ein Adapter auf
+    `sdd pipeline run SPEC --auto` (CON-0216 INV-05)."""
+    if cmd != "orchestrate":
+        return [cmd, *args]
+    spec_id = next((a for a in args if a.startswith("SPEC-")), "")
+    return ["pipeline", "run", spec_id, "--auto"]
+
+
 class PushStore:
     """Observer: In-Memory subscription registry. Deduplicates by endpoint."""
 
@@ -110,7 +119,7 @@ async def sdd_run(body: RunRequest, request: Request) -> StreamingResponse:
 
     async def generate() -> AsyncGenerator[str, None]:
         proc = await _exec(
-            "sdd", cmd, *args,
+            "sdd", *sdd_argv(cmd, args),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

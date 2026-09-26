@@ -72,7 +72,6 @@ def test_tc01_abgeloester_befehl_verweist_auf_den_ersatz(projekt, monkeypatch, a
     monkeypatch.setattr(subprocess, "run", verboten)
     monkeypatch.setattr(subprocess, "Popen", verboten)
     monkeypatch.setattr(factory, "get_completion_provider", verboten)
-    monkeypatch.setattr(factory, "get_code_gen_provider", verboten)
     ergebnis = _cli(*args)
     assert ergebnis.exit_code == 1, ergebnis.output
     assert "sdd pipeline run" in ergebnis.output

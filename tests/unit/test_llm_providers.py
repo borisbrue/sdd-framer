@@ -14,7 +14,7 @@ from sdd_cli.llm.usage import unwrap
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.llm.base import CompletionResult
-from sdd_cli.llm.factory import get_code_gen_provider, get_completion_provider
+from sdd_cli.llm.factory import get_completion_provider
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -165,15 +165,6 @@ class TestFactory:
         with pytest.raises(RuntimeError, match="MISSING_VAR_XYZ"):
             get_completion_provider(config, "completion")
 
-    def test_anthropic_not_valid_for_code_gen_provider(self):
-        """anthropic ist kein gültiger code_gen-Provider → ValueError (§5.1)."""
-        config = _make_config({
-            "llm": {
-                "code_gen": {"provider": "anthropic"}
-            }
-        })
-        with pytest.raises(ValueError, match="anthropic"):
-            get_code_gen_provider(config)
 
     def test_unknown_component_raises_value_error(self):
         """Unbekannte Komponente → ValueError."""
@@ -334,86 +325,6 @@ class TestOpenAICompatCompletionProvider:
             with pytest.raises(RuntimeError, match="lm-studio"):
                 provider.complete("prompt")
 
-
-# ─── TST-0030: OpenAICompatCodeGenProvider ────────────────────────────────────
-
-class TestOpenAICompatCodeGenProvider:
-    def _make_provider(self):
-        from sdd_cli.llm.providers.openai_compat import OpenAICompatCodeGenProvider
-        return OpenAICompatCodeGenProvider(
-            base_url="http://localhost:1234/v1",
-            model="test-model",
-        )
-
-    def _make_mock_openai_with_content(self, content: str):
-        mock_response = MagicMock()
-        mock_response.choices[0].message.content = content
-        mock_openai = MagicMock()
-        mock_openai.OpenAI.return_value.chat.completions.create.return_value = mock_response
-        return mock_openai
-
-    def test_generate_writes_files_from_json_response(self, tmp_path):
-        """generate() schreibt Dateien aus JSON-Antwort in workspace."""
-        provider = self._make_provider()
-        json_response = json.dumps({
-            "files": [
-                {"path": "src/main.py", "content": "print('hello')"},
-                {"path": "README.md", "content": "# Project"},
-            ],
-            "explanation": "initial implementation",
-        })
-        mock_openai = self._make_mock_openai_with_content(json_response)
-
-        with patch.dict("sys.modules", {"openai": mock_openai}):
-            files, explanation = provider.generate("implement X", tmp_path)
-
-        assert len(files) == 2
-        assert (tmp_path / "src" / "main.py").read_text() == "print('hello')"
-        assert (tmp_path / "README.md").read_text() == "# Project"
-        assert explanation == "initial implementation"
-
-    def test_generate_overwrites_existing_files(self, tmp_path):
-        """Existierende Dateien werden ohne Fehler überschrieben (FR-09)."""
-        existing = tmp_path / "src" / "main.py"
-        existing.parent.mkdir()
-        existing.write_text("old content")
-
-        provider = self._make_provider()
-        json_response = json.dumps({
-            "files": [{"path": "src/main.py", "content": "new content"}],
-            "explanation": "update",
-        })
-        mock_openai = self._make_mock_openai_with_content(json_response)
-
-        with patch.dict("sys.modules", {"openai": mock_openai}):
-            provider.generate("update X", tmp_path)
-
-        assert existing.read_text() == "new content"
-
-    def test_path_traversal_raises_value_error(self, tmp_path):
-        """Pfad außerhalb workspace → ValueError (E-08)."""
-        provider = self._make_provider()
-        json_response = json.dumps({
-            "files": [{"path": "../../etc/passwd", "content": "evil"}],
-            "explanation": "pwned",
-        })
-        mock_openai = self._make_mock_openai_with_content(json_response)
-
-        with patch.dict("sys.modules", {"openai": mock_openai}):
-            with pytest.raises(ValueError, match="Workspace-Escape"):
-                provider.generate("evil", tmp_path)
-
-    def test_invalid_json_raises_json_decode_error(self, tmp_path):
-        """Ungültiges JSON vom Modell → JSONDecodeError (E-04)."""
-        provider = self._make_provider()
-        mock_openai = self._make_mock_openai_with_content("not json at all")
-
-        with patch.dict("sys.modules", {"openai": mock_openai}):
-            with pytest.raises(json.JSONDecodeError):
-                provider.generate("fail", tmp_path)
-
-
-# ─── TST-0031: ClaudeCliCompletionProvider ────────────────────────────────────
 
 class TestClaudeCliCompletionProvider:
     def _make_provider(self):

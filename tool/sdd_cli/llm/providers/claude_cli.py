@@ -1,4 +1,4 @@
-"""ClaudeCliCompletionProvider und ClaudeCliCodeGenProvider – nutzen die claude CLI."""
+"""ClaudeCliCompletionProvider – nutzt die claude CLI."""
 from __future__ import annotations
 
 import json
@@ -6,11 +6,10 @@ import logging
 import os
 import shutil
 import subprocess
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from ..base import CodeGenResult, CompletionResult, UsageMetadata
+from ..base import CompletionResult, UsageMetadata
 
 log = logging.getLogger(__name__)
 
@@ -119,71 +118,3 @@ class ClaudeCliCompletionProvider:
             return CompletionResult(text=str(outer["result"]), usage=usage_from_envelope(outer))
         log.info("claude-cli: Ausgabe ist kein JSON-Envelope – Usage 'unavailable'")
         return CompletionResult(text=raw, usage=UsageMetadata.unavailable())
-
-
-class ClaudeCliCodeGenProvider:
-    """Ruft `claude --print --dangerously-skip-permissions` auf.
-
-    Claude schreibt Dateien direkt in den Workspace; die Methode
-    entdeckt Änderungen anschließend via git.
-    """
-
-    def generate(
-        self,
-        prompt: str,
-        workspace: Path,
-        *,
-        timeout: int = 600,
-        on_proc: Callable[[Any], None] | None = None,
-    ) -> CodeGenResult:
-        claude = _find_claude()
-        if not claude:
-            raise RuntimeError(
-                "claude CLI nicht gefunden. "
-                "Installiere Claude Code CLI und melde dich an."
-            )
-        proc = subprocess.Popen(
-            [claude, "--print", "--dangerously-skip-permissions", "-p", prompt],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=str(workspace),
-        )
-        if on_proc:
-            on_proc(proc)
-        try:
-            stdout, _ = proc.communicate(timeout=timeout)
-        except subprocess.TimeoutExpired as exc:
-            proc.kill()
-            proc.wait()
-            raise RuntimeError(f"claude CLI Timeout nach {timeout}s") from exc
-
-        if proc.returncode != 0:
-            raise RuntimeError(f"claude CLI Fehler (exit {proc.returncode})")
-
-        def _git(*args: str) -> str:
-            r = subprocess.run(
-                ["git", *args], cwd=workspace, capture_output=True, text=True
-            )
-            return (r.stdout + r.stderr).strip()
-
-        changed = _git("diff", "--name-only")
-        untracked = _git("ls-files", "--others", "--exclude-standard")
-        all_paths = [
-            p.strip()
-            for p in (changed + "\n" + untracked).splitlines()
-            if p.strip()
-        ]
-        files: list[dict[str, Any]] = []
-        for p in all_paths:
-            full = workspace / p
-            if full.exists():
-                try:
-                    files.append({"path": p, "content": full.read_text(encoding="utf-8")})
-                except Exception:
-                    files.append({"path": p, "content": ""})
-
-        lines = [ln for ln in stdout.strip().splitlines() if ln.strip()]
-        explanation = lines[-1][:200] if lines else "implement via claude-cli"
-        # Textausgabe ohne Envelope: die Usage ist nicht verfügbar (CON-0207 INV-07).
-        return CodeGenResult(files, explanation, UsageMetadata.unavailable())

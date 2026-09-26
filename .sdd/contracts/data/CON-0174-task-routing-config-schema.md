@@ -6,9 +6,10 @@ type: data
 format: json-schema
 spec: SPEC-0045
 version: 0.1.0
-status: approved
+status: deprecated
 artifact: ""
 tests: ["TST-0200"]
+deprecated_reason: "mit SPEC-0045 abgelöst: Task-Routing durch Rollen-Profile und by_complexity der Pipeline abgelöst (SPEC-0062)"
 ---
 
 # Contract: task_routing Konfigurationsschema

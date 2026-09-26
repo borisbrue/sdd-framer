@@ -158,18 +158,16 @@ llm:
     provider: claude-cli
   orchestrator:
     provider: claude-cli
-  # Lokales LLM für task_routing (SPEC-0045) – openai-compatible (Ollama, LM Studio, llama.cpp)
-  # local_llm:
-  #   provider: openai-compat
-  #   base_url: "http://localhost:11434/v1"
-  #   model: "qwen2.5-coder:14b"
-  #   api_key: "lm-studio"          # optional; default lm-studio
-
-task_routing:
-  enabled: false                   # true = lokales LLM für triviale Tasks nutzen
-  complexity_threshold: 30         # Tasks mit score <= threshold → executor: local
-  max_retries: 3                   # Versuche vor Eskalation zu Claude
-  max_concurrent: 3                # gleichzeitige async Tasks (Semaphore)
+  # Lokales Modell für einfache Tasks der Pipeline (SPEC-0061): ein Profil und die
+  # Zuordnung je Komplexität. Ersetzt task_routing und llm.local_llm (SPEC-0062).
+  # profiles:
+  #   lokal:
+  #     provider: openai-compat      # Ollama, LM Studio, llama.cpp
+  #     base_url: "http://localhost:11434/v1"
+  #     model: "qwen2.5-coder:14b"
+  # roles:
+  #   implementer:
+  #     by_complexity: {low: lokal}
 
 docker:
   # Abzweigpunkt fuer den Entwicklungsbranch von `sdd start`.

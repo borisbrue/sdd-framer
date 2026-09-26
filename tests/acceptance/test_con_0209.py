@@ -62,11 +62,10 @@ def test_tc01_main_ist_gruen_trotz_altlasten(repo_lauf):
     """Scenario: Main ist grün trotz Altlasten (CON-0209)."""
     exit_code, ausgabe, _ = repo_lauf
     assert exit_code == 0, ausgabe
-    # Seit SPEC-0058 ist local_agent.py entfernt; der verbleibende Eintrag mit Ziel-Spec ist der
-    # CodeGen-Pfad, den SPEC-0061 ablöst.
+    # Der CodeGen-Pfad in openai_compat.py ist seit SPEC-0062 entfernt, sein Baseline-Eintrag mit.
     treffer = [z for z in ausgabe.splitlines()
                if "ARCH-01" in z and "tool/sdd_cli/llm/providers/openai_compat.py" in z]
-    assert treffer and all("warn (Baseline, SPEC-0061)" in z for z in treffer), ausgabe
+    assert not treffer, ausgabe
 
 
 def test_tc02_jede_regel_ist_an_ein_akzeptiertes_adr_gebunden():
@@ -77,7 +76,7 @@ def test_tc02_jede_regel_ist_an_ein_akzeptiertes_adr_gebunden():
 
     arch = yaml.safe_load((REPO / ".sdd/architecture.yaml").read_text(encoding="utf-8"))
     regeln = {r["id"]: r["adr"] for r in arch["rules"]}
-    assert set(regeln) == set(REGELN)
+    assert set(REGELN) <= set(regeln)  # spätere Specs ergänzen Regeln (SPEC-0062: ARCH-05)
     for regel, adr in regeln.items():
         [datei] = (REPO / "docs/adr").glob(f"{adr}-*.md")
         fm = parse(datei).frontmatter

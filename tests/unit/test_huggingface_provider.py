@@ -12,7 +12,7 @@ from sdd_cli.llm.usage import unwrap
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tool"))
 
 from sdd_cli.llm.base import CompletionResult
-from sdd_cli.llm.factory import get_code_gen_provider, get_completion_provider
+from sdd_cli.llm.factory import get_completion_provider
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -395,15 +395,6 @@ class TestHuggingFaceFactory:
         with pytest.raises(RuntimeError, match="MY_HF_TOKEN"):
             get_completion_provider(config, "completion")
 
-    def test_factory_huggingface_as_code_gen_raises_value_error(self):
-        """huggingface als code_gen-Provider → ValueError (FR-06)."""
-        config = _make_config({
-            "llm": {
-                "code_gen": {"provider": "huggingface"}
-            }
-        })
-        with pytest.raises(ValueError, match="huggingface"):
-            get_code_gen_provider(config)
 
     def test_factory_existing_anthropic_branch_unaffected(self):
         """OCP: bestehende anthropic-Branch bleibt unverändert (FR-07)."""

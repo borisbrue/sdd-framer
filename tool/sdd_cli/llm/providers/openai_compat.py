@@ -1,20 +1,12 @@
-"""OpenAICompatCompletionProvider und OpenAICompatCodeGenProvider.
+"""OpenAICompatCompletionProvider.
 
 Kompatibel mit LM Studio, Ollama und jedem anderen OpenAI-kompatiblen Server.
 """
 from __future__ import annotations
 
-import json
-from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
-from ..base import CodeGenResult, CompletionResult, UsageMetadata
-
-_CODE_GEN_SUFFIX = (
-    "\n\nReturn ONLY a JSON object — no markdown fences, no prose:\n"
-    '{"files":[{"path":"relative/path","content":"..."}],"explanation":"<one line>"}'
-)
+from ..base import CompletionResult, UsageMetadata
 
 
 def usage_from_response(response: Any, model: str) -> UsageMetadata:
@@ -115,77 +107,3 @@ class OpenAICompatCompletionProvider:
             text=(response.choices[0].message.content or "").strip(),
             usage=usage_from_response(response, self._model),
         )
-
-
-class OpenAICompatCodeGenProvider:
-    def __init__(
-        self,
-        base_url: str,
-        model: str,
-        api_key: str = "lm-studio",
-    ) -> None:
-        self._base_url = base_url
-        self._model = model
-        self._api_key = api_key or "lm-studio"
-
-    def generate(
-        self,
-        prompt: str,
-        workspace: Path,
-        *,
-        timeout: int = 600,
-        on_proc: Callable[[Any], None] | None = None,
-    ) -> CodeGenResult:
-        from ...pipeline.path_policy import PathPolicy
-
-        try:
-            import openai
-        except ImportError as exc:
-            raise RuntimeError(
-                "Das openai-Paket ist nicht installiert. "
-                "Führe `pip install 'sdd-cli[lm-studio]'` aus."
-            ) from exc
-
-        client = openai.OpenAI(
-            base_url=self._base_url,
-            api_key=self._api_key,
-            timeout=float(timeout),
-        )
-        response = client.chat.completions.create(
-            model=self._model,
-            messages=[{"role": "user", "content": prompt + _CODE_GEN_SUFFIX}],
-            max_tokens=8192,
-            temperature=0,
-        )
-        raw = response.choices[0].message.content.strip()
-
-        start = raw.find("{")
-        end = raw.rfind("}") + 1
-        if start == -1 or end == 0:
-            raise json.JSONDecodeError("Kein JSON-Objekt in LLM-Antwort gefunden", raw, 0)
-        data = json.loads(raw[start:end])
-
-        workspace_resolved = workspace.resolve()
-        files_written: list[dict[str, Any]] = []
-        for entry in data.get("files", []):
-            rel_path: str = entry["path"].lstrip("/")
-            # Path traversal validation
-            full = (workspace / rel_path).resolve()
-            try:
-                full.relative_to(workspace_resolved)
-            except ValueError as exc:
-                raise ValueError(f"Unsicherer Pfad (Workspace-Escape): {rel_path!r}") from exc
-            # SPEC-0053 FR-07: dieselbe PathPolicy wie die Pipeline, keine eigene Pfadregel.
-            entscheidung = PathPolicy(workspace).check("implementer", rel_path, {})
-            if not entscheidung.allowed:
-                raise ValueError(
-                    f"SDD-Artefakt darf nicht überschrieben werden: {rel_path!r} "
-                    f"({entscheidung.reason})"
-                )
-            full.parent.mkdir(parents=True, exist_ok=True)
-            content: str = entry.get("content", "")
-            full.write_text(content, encoding="utf-8")
-            files_written.append({"path": rel_path, "content": content})
-
-        explanation = data.get("explanation", "implement via openai-compat")[:200]
-        return CodeGenResult(files_written, explanation, usage_from_response(response, self._model))

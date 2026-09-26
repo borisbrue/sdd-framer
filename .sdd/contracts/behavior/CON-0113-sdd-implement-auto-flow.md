@@ -5,10 +5,11 @@ type: behavior
 format: gherkin
 spec: SPEC-0029
 version: 0.1.0
-status: approved
+status: deprecated
 artifact: "contracts/behavior/sdd-implement-auto-flow.feature"
 tests:
 - TST-0132
+deprecated_reason: "/sdd-implement läuft über sdd pipeline run (SPEC-0062, CON-0216)"
 ---
 
 # Contract: /sdd-implement – Vollständiger Auto-Flow

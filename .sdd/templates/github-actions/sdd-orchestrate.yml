@@ -1,14 +1,20 @@
-name: SDD Orchestrator
+name: SDD Pipeline
+
+# Startet für jede geänderte Spec `sdd pipeline run <SPEC> --auto` (SPEC-0062 FR-08).
+# Im CI gibt es keine lokale `claude`-CLI: die Rollen brauchen in .sdd/config.yaml ein Profil
+# mit erreichbarem Modell (llm.profiles / llm.roles), und keine Rolle darf im Modus `session`
+# stehen. Nur wer ausdrücklich `provider: anthropic` wählt, legt das Secret ANTHROPIC_API_KEY an
+# und ergänzt es unten unter `env`.
 
 on:
   push:
     paths:
-      - 'specs/**.md'
+      - '.sdd/specs/**.md'
     branches:
       - main
 
 jobs:
-  orchestrate:
+  pipeline:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -30,27 +36,25 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name "SDD Orchestrator"
+          git config user.name "SDD Pipeline"
           git config user.email "sdd-bot@users.noreply.github.com"
 
       - name: Detect changed specs
         id: specs
         run: |
-          SPECS=$(git diff --name-only HEAD~1 HEAD -- 'specs/*.md' \
+          SPECS=$(git diff --name-only HEAD~1 HEAD -- '.sdd/specs/*.md' \
             | xargs -I{} python -c \
               "import yaml; fm=open('{}').read().split('---')[1]; print(yaml.safe_load(fm).get('id',''))" \
               2>/dev/null | tr '\n' ' ')
           echo "ids=$SPECS" >> $GITHUB_OUTPUT
 
-      - name: Run orchestrator for each changed spec
+      - name: Run pipeline for each changed spec
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SDD_EVAL_BASE_URL: ${{ vars.SDD_EVAL_BASE_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for SPEC_ID in ${{ steps.specs.outputs.ids }}; do
-            echo "→ Orchestrating $SPEC_ID"
-            sdd orchestrate --spec "$SPEC_ID" \
-              --max-retries 3 \
+            echo "→ sdd pipeline run $SPEC_ID --auto"
+            sdd pipeline run "$SPEC_ID" --auto \
               ${{ vars.SDD_EVAL_BASE_URL && '--base-url $SDD_EVAL_BASE_URL' || '' }}
           done

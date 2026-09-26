@@ -55,8 +55,13 @@ class RunStore:
 
     # ── Anlegen und Finden ──
     @classmethod
-    def create(cls, root: Path, spec_id: str) -> RunStore:
-        store = cls(root, spec_id, new_run_id(spec_id))
+    def create(cls, root: Path, spec_id: str, run_id: str | None = None) -> RunStore:
+        """Neuer Run; `run_id` vorgegeben z. B. vom Web-Adapter (SPEC-0062 FR-03)."""
+        if run_id is not None:
+            treffer = RUN_ID_RE.match(run_id)
+            if not treffer or treffer.group(1) != spec_id:
+                raise ValueError(f"Run-ID {run_id!r} passt nicht zu {spec_id}.")
+        store = cls(root, spec_id, run_id or new_run_id(spec_id))
         store.dir.mkdir(parents=True, exist_ok=False)
         return store
 

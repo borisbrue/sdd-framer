@@ -4,7 +4,7 @@ title: "Run-Optionen, sdd-implement, Web-Adapter und Action"
 type: behavior
 format: gherkin
 spec: SPEC-0062
-version: 0.2.0
+version: 0.2.1
 status: approved
 artifact: ".sdd/contracts/behavior/run-optionen-sdd-implement-web-adapter-und-action.feature"
 tests: ["TST-0245"]
@@ -27,7 +27,7 @@ Jedes Szenario MUSS durch einen automatisierten Test (pytest) abgedeckt sein. Di
 
 - **INV-01:** `sdd pipeline run --session ROLLE` (mehrfach) belegt die genannten Rollen für diesen Run mit Modus `session`; die Belegung steht unter `options.session` in `run.json` und gilt auch bei `--resume`. `config.yaml` bleibt unverändert. Eine unbekannte Rolle ergibt Exit 2.
 - **INV-02:** `--steps` (kommagetrennt, nur `holdout`, `finalize`, `automerge`) ersetzt `pipeline.auto_steps` für den Run und steht unter `options.steps` in `run.json`; ohne `--auto` oder mit unbekanntem Schritt Exit 2.
-- **INV-03:** `/sdd-implement` startet nach Vorbedingungen, Review/Approve und Holdout-Anlage genau `sdd pipeline run SPEC --auto --session test_author --session implementer --session supervisor` und setzt bei Exit 3 mit `sdd pipeline done` (Arbeitsauftrag) bzw. `sdd pipeline decide` (Entscheidung) fort. Er enthält weder `task-route`, `task-exec`, `sdd decompose` noch `sdd finalize`. Repo-Kopie (`.claude/commands/sdd-implement.md`) und Blueprint sind identisch.
+- **INV-03:** `/sdd-implement` startet nach Vorbedingungen, Review/Approve und Holdout-Anlage genau `sdd pipeline run SPEC --auto --session test_author --session implementer --session supervisor` und setzt bei Exit 3 mit `sdd pipeline done` (Arbeitsauftrag) bzw. `sdd pipeline decide` (Entscheidung) fort. Er enthält weder `task-route`, `task-exec`, `sdd decompose` noch `sdd finalize`. Repo-Kopie (`.claude/commands/sdd-implement.md`) und Blueprint sind identisch, abgesehen vom `scope:`-Frontmatter, das alle Repo-Skills tragen (TST-0196).
 - **INV-04:** Die Web-Endpunkte `POST /api/orchestrate`, `GET /api/pipeline/active`, `GET /api/pipeline/{id}`, `GET /api/pipeline/{id}/log` und `POST /api/pipeline/{id}/abort` behalten Pfade, Statuscodes und Felder nach CON-0021 in Version 0.4.0. Die `run_id` der Antwort ist die Run-ID der Pipeline. `project_id`, `force` und `override_reason` behalten ihre Bedeutung (Gate-Prüfung vor dem Start).
 - **INV-05:** Hinter `POST /api/orchestrate` läuft `sdd pipeline run SPEC --auto` als eigener Prozess; `dry_run` wird zu `--dry-run`, `no_pr` zu `--steps holdout`, `base_url` zu `--base-url`. Das Log besteht aus den Ausgabezeilen; `report.pr_url` kommt aus dem Ereignis `finalize`, `report.pass_rate` aus `holdout`. `abort` beendet den Prozess, der Status wird `aborted`. Wartet der Run auf eine Session-Rolle (Exit 3), ist der Status `paused` und das Log nennt `sdd pipeline decide` bzw. `done`. `POST /api/run` mit `cmd: orchestrate` und der Chat-Intent `orchestrate SPEC` führen `sdd pipeline run SPEC --auto` aus; Push-Typen (CON-0077) bleiben.
 - **INV-06:** `sdd start SPEC --auto` startet `sdd pipeline run SPEC --auto` und gibt dessen Exit-Code weiter; ohne `--auto` bleibt `sdd start` unverändert.

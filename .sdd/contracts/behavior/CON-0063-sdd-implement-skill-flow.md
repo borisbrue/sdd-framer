@@ -5,9 +5,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0020
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: ""
 tests: [TST-0072]
+deprecated_reason: "/sdd-implement läuft über sdd pipeline run (SPEC-0062, CON-0216)"
 ---
 
 # Contract: /sdd-implement – Skill-Flow

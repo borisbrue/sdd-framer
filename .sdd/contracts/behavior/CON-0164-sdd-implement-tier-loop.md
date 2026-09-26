@@ -6,10 +6,11 @@ type: behavior
 format: markdown
 spec: SPEC-0042
 version: 0.1.0
-status: approved
+status: deprecated
 artifact: "contracts/behavior/sdd-implement-tier-loop.md"
 tests:
 - TST-0192
+deprecated_reason: "Holdout-Stufen laufen im Pipeline-Schritt holdout (SPEC-0062, CON-0216)"
 ---
 
 # Contract: sdd-implement Schritt 5.5 — Tier-spezifische Loop-Verzweigung

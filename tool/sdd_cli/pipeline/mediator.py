@@ -30,10 +30,12 @@ from .decisions import Answer, Pending, SessionSource, new_request, validate_com
 from .path_policy import PathPolicy
 from .providers import (
     SAME_MODEL_WARNING,
+    SESSION,
     RoleBinding,
     RoleConfigError,
     all_bindings,
     build_provider,
+    profile_binding,
     resolve_binding,
     same_model_conflict,
     supervisor_mode,
@@ -125,8 +127,10 @@ class PipelineSupervisor:
     @classmethod
     def start(cls, config: SddConfig, spec_id: str, *, dry_run: bool = False,
               max_tasks: int | None = None, task_id: str | None = None, auto: bool = False,
-              base_url: str | None = None,
+              base_url: str | None = None, session: tuple[str, ...] | list[str] = (),
+              steps: list[str] | None = None, run_id: str | None = None,
               notify: Callable[[str], None] | None = None) -> RunOutcome:
+        cls._check_run_options(session, steps, auto)
         ctx = ProjectContext(config.root, spec_id)
         try:
             status = ctx.status
@@ -150,12 +154,22 @@ class PipelineSupervisor:
             if task_id not in ids:
                 raise PipelineError(f"{spec_id}: Task {task_id} gibt es nicht "
                                     f"(vorhanden: {', '.join(sorted(ids))}).")
-        store = RunStore.create(config.root, spec_id)
+        try:
+            store = RunStore.create(config.root, spec_id, run_id)
+        except (ValueError, FileExistsError) as exc:
+            raise PipelineError(f"Run-ID {run_id}: {exc}") from exc
         optionen = {"dry_run": dry_run, "max_tasks": max_tasks}
         if task_id:
             optionen["task"] = task_id
         if auto:
             optionen.update(auto=True, base_url=base_url)
+        if steps is not None:
+            optionen["steps"] = list(steps)
+        if session:
+            optionen["session"] = sorted(set(session))
+            for rolle in optionen["session"]:
+                roles[rolle] = {"mode": SESSION, "source": "--session",
+                                "role_version": roles[rolle]["role_version"]}
         store.write_run({"run_id": store.run_id, "spec_id": spec_id, "started_at": now(),
                          "sdd_version": __version__, "options": optionen,
                          "roles": roles, "warnings": warnings})
@@ -170,6 +184,23 @@ class PipelineSupervisor:
             store.event("warning", detail={"message": w})
             m.notify(f"⚠ {w}")
         return m.advance()
+
+    @staticmethod
+    def _check_run_options(session: tuple[str, ...] | list[str], steps: list[str] | None,
+                           auto: bool) -> None:
+        """Run-Optionen `--session` und `--steps` (SPEC-0062 FR-01, CON-0216 INV-01/02)."""
+        unbekannt = sorted(set(session) - set(DEFAULT_ROLES))
+        if unbekannt:
+            raise PipelineError(f"--session: unbekannte Rolle {', '.join(unbekannt)} "
+                                f"(bekannt: {', '.join(DEFAULT_ROLES)}).")
+        if steps is None:
+            return
+        if not auto:
+            raise PipelineError("--steps gilt nur zusammen mit --auto.")
+        falsch = [s for s in steps if s not in auto_steps_mod.DEFAULT_AUTO_STEPS]
+        if falsch:
+            raise PipelineError(f"--steps: unbekannter Schritt {', '.join(falsch)} "
+                                f"(erlaubt: {', '.join(auto_steps_mod.DEFAULT_AUTO_STEPS)}).")
 
     @classmethod
     def resume(cls, config: SddConfig, run_id: str, *, max_tasks: int | None = None,
@@ -273,7 +304,10 @@ class PipelineSupervisor:
 
     def binding(self, name: str, task_state: dict | None = None,
                 task: dict | None = None) -> RoleBinding:
-        """Belegung eines Aufrufs (CON-0213 INV-04): reassign → by_complexity → Rolle → Legacy."""
+        """Belegung eines Aufrufs (CON-0213 INV-04): --session → reassign → by_complexity → Rolle
+        → Legacy."""
+        if name in self.session_roles():
+            return profile_binding(self.config, name, SESSION)
         modell = ((task_state or {}).get("assignment") or {}).get(name)
         if modell:
             return resolve_binding(self.config, self.role(name)).with_model(modell)
@@ -284,6 +318,15 @@ class PipelineSupervisor:
 
     def options(self) -> dict:
         return self.store.read_run().get("options") or {}
+
+    def session_roles(self) -> set[str]:
+        return set(self.options().get("session") or ())
+
+    def auto_steps(self) -> list[str]:
+        """`--steps` des Runs, sonst `pipeline.auto_steps` (CON-0216 INV-02)."""
+        schritte = self.options().get("steps")
+        return list(schritte) if schritte is not None else auto_steps_mod.auto_steps(
+            self.config.raw)
 
     def provider(self, binding: RoleBinding, role_def: RoleDefinition) -> Any:
         return build_provider(self.config, binding, role_def)
@@ -341,7 +384,9 @@ class PipelineSupervisor:
 
     # ── Entscheidungen ───────────────────────────────────────────────────────
     def source(self) -> Any:
-        return SessionSource() if supervisor_mode(self.config) == "session" else InlineSource(self)
+        if "supervisor" in self.session_roles() or supervisor_mode(self.config) == SESSION:
+            return SessionSource()
+        return InlineSource(self)
 
     def ask(self, request: dict) -> dict | RunOutcome:
         """Anfrage persistieren, Quelle fragen, validieren (CON-0202 INV-02, CON-0205 INV-03)."""
@@ -898,7 +943,7 @@ class PipelineSupervisor:
         probe = self.ctx.run_tests()
         facts = {"frs": self.ctx.fr_status(probe), "gate_results": [probe.summary()]}
         optionen = self.options()
-        if optionen.get("auto") and "holdout" in auto_steps_mod.auto_steps(self.config.raw):
+        if optionen.get("auto") and "holdout" in self.auto_steps():
             base_url = optionen.get("base_url") or (
                 (self.config.raw.get("evaluator") or {}).get("base_url"))
             ergebnis = auto_steps_mod.holdout_step(self.config, self.store.spec_id, base_url)
@@ -938,8 +983,7 @@ class PipelineSupervisor:
     def _finalize(self) -> RunOutcome:
         """Nach S3: ohne --auto nur finalize, mit --auto die Kette (CON-0214 INV-01)."""
         spec_id = self.store.spec_id
-        schritte = (auto_steps_mod.auto_steps(self.config.raw) if self.options().get("auto")
-                    else ["finalize"])
+        schritte = self.auto_steps() if self.options().get("auto") else ["finalize"]
         danach = [s for s in schritte if s not in auto_steps_mod.BEFORE_ACCEPTANCE]
         ergebnisse = auto_steps_mod.after_acceptance(self.config, spec_id, danach)
         for r in ergebnisse:

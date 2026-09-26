@@ -1,6 +1,7 @@
 """Click-basierte Befehle der sdd-CLI."""
 from __future__ import annotations
 
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -19,7 +20,6 @@ from .frontmatter import parse_safe
 from .ids import next_id
 from .init import init_project
 from .maintenance import run_maintenance_sweep
-from .orchestrator import persist_pipeline_report, run_pipeline
 from .projects import load_project, set_autonomy_level
 from .templates import (
     CONTRACT_SUBDIR,
@@ -287,11 +287,16 @@ def upgrade(target: str, verbose: bool) -> None:
     for block in result.get("obsolete_blocks", []):
         console.print(f"  [yellow]#[/] config.yaml: Block [cyan]{block}[/] auskommentiert "
                       f"(wird seit SPEC-0058 nicht mehr gelesen).")
+    for meldung in result.get("migrations", []):
+        console.print(f"  [yellow]↺[/] config.yaml: {meldung} (SPEC-0062)")
+    for konflikt in result.get("migration_conflicts", []):
+        console.print(f"  [red]![/] config.yaml: {konflikt}")
     for neu in result.get("roles_new", []):
         console.print(f"  [yellow]![/] Rolle lokal geändert – neue Version liegt in "
                       f"[cyan]{neu.relative_to(target_path)}[/]; bitte abgleichen.")
 
-    if n_created == 0 and n_updated == 0 and not result.get("obsolete_blocks"):
+    if (n_created == 0 and n_updated == 0 and not result.get("obsolete_blocks")
+            and not result.get("migration_conflicts")):
         console.print("[green]✓[/] Projekt ist bereits auf dem neuesten Stand.")
     else:
         console.print("\n[green]✓[/] Upgrade abgeschlossen.")
@@ -539,8 +544,8 @@ def new_agents_md(subdir: str, force: bool) -> None:
 @new.command("github-workflow", help="[Entfernt] Vorlage unter .sdd/templates/github-actions/.")
 def new_github_workflow() -> None:
     # Der Hinweis lautete "in sdd init integriert" — das ist nie geschehen und
-    # wurde mit SPEC-0044 v0.2.0 zurueckgenommen (FR-06). Der Workflow braucht
-    # einen ANTHROPIC_API_KEY als Secret, was dem keyfreien Default widerspricht.
+    # wurde mit SPEC-0044 v0.2.0 zurueckgenommen (FR-06). Seit SPEC-0062 ruft die
+    # Vorlage sdd pipeline run --auto; ein ANTHROPIC_API_KEY ist nur noch optional.
     console.print(
         "[yellow]⚠[/] 'sdd new github-workflow' wurde entfernt. Die Vorlage liegt unter\n"
         "  [cyan].sdd/templates/github-actions/sdd-orchestrate.yml[/] und wird bei Bedarf kopiert:\n"
@@ -950,73 +955,30 @@ def holdout_run(base_url: str | None, hol_ids: tuple, save: bool, output_json: b
 # ─────────────────────────────────────────────────────────────────────────────
 # sdd orchestrate
 # ─────────────────────────────────────────────────────────────────────────────
-@cli.command(help="Führt die Dark-Factory-Pipeline aus: Spec → Code → PR → Eval → Retry.")
-@click.option("--spec", "spec_id", required=True, help="Spec-ID, z.B. SPEC-0004.")
-@click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
-              help="Basis-URL des Services für den Evaluator-Schritt.")
-@click.option("--build-cmd", default=None,
-              help="Build-Kommando; läuft in der Finalisierung vor den Tests (im Dev-Container). "
-                   "Überschreibt orchestrator.build_command.")
-@click.option("--max-retries", default=3, show_default=True,
-              help="Max. Versuche bei Fehlschlag.")
-@click.option("--no-pr", is_flag=True, help="PR-Erstellung überspringen.")
-@click.option("--dry-run", is_flag=True,
-              help="Zeigt generierten Code, schreibt/committed/pushed nicht.")
-@click.option("--save/--no-save", default=True,
-              help="Report in .sdd/pipeline/ persistieren.")
-@click.option("--project", "project_id", default="",
-              help="Projekt-ID für Autonomy-Level-Tracking und evaluations.db.")
-@click.option("--resume", is_flag=True,
-              help="Setzt Retry-Zähler zurück (nach manuellem Review). Startet neuen Zyklus.")
-def orchestrate_cmd(spec_id: str, base_url: str | None, build_cmd: str | None,
-                    max_retries: int, no_pr: bool, dry_run: bool, save: bool,
-                    project_id: str, resume: bool) -> None:
-    cfg = _ensure_project()
-
-    if resume and project_id:
-        from .autonomy import record_resume_event
-        record_resume_event(cfg, pr_number=spec_id, triggered_by="cli")
-        console.print(f"[yellow]↺[/] Resume-Event für [bold]{spec_id}[/] geloggt.")
-
-    mode = "[yellow]dry-run[/]" if dry_run else "[cyan]live[/]"
-    console.print(f"[cyan]▶[/] Orchestrator startet für [bold]{spec_id}[/] ({mode}) …")
-
-    try:
-        report = run_pipeline(
-            cfg, spec_id,
-            base_url=base_url,
-            build_cmd=build_cmd,
-            max_retries=max_retries,
-            no_pr=no_pr,
-            dry_run=dry_run,
-            project_id=project_id,
-        )
-    except (ValueError, RuntimeError) as e:
-        console.print(f"[red]✗[/] {e}")
-        sys.exit(1)
-
-    if save and not dry_run:
-        path = persist_pipeline_report(cfg, report)
-        console.print(f"[dim]  Report gespeichert: {path.relative_to(cfg.root)}[/]")
-
-    status_color = {
-        "merged": "bold green", "labeled": "green",
-        "failed": "red", "dry_run": "yellow",
-    }.get(report.final_status, "white")
-
-    for a in report.attempts:
-        pr = f" · PR: {a.pr_url}" if a.pr_url else ""
-        eval_str = f" · Eval: {a.eval_pass_rate:.0%}" if a.eval_pass_rate is not None else ""
-        build_str = " · Build: ✓" if a.build_passed else (" · Build: ✗" if a.build_passed is False else "")
-        console.print(f"  Attempt {a.attempt}: {a.explanation}{build_str}{eval_str}{pr}")
-        if a.error:
-            console.print(f"    [dim red]{a.error[:120]}[/]")
-
-    console.print(f"\n[{status_color}]Status: {report.final_status.upper()}[/]")
-    sys.exit(0 if report.final_status in ("merged", "labeled", "dry_run") else 1)
+_REDIRECT = {"ignore_unknown_options": True, "allow_extra_args": True,
+             "help_option_names": []}
 
 
-cli.add_command(orchestrate_cmd, name="orchestrate")
+def _redirect(alt: str, ersatz: str) -> None:
+    """Verweis auf die Pipeline (SPEC-0062 FR-05, CON-0215 INV-01): führt nichts aus, Exit 1."""
+    console.print(f"[yellow]⚠[/] 'sdd {alt}' wurde entfernt (SPEC-0062). Verwende: "
+                  f"[cyan]{ersatz}[/]")
+    sys.exit(1)
+
+
+def _ids(args: list[str]) -> tuple[str, str]:
+    """Spec- und Task-ID aus den alten Argumenten (positionell oder `--spec`)."""
+    spec = next((a for a in args if re.fullmatch(r"SPEC-\d{4}", a)), "SPEC-XXXX")
+    rest = [a for a in args if not a.startswith("-") and a != spec]
+    return spec, (rest[0] if rest else "<task>")
+
+
+@cli.command("orchestrate", context_settings=_REDIRECT, hidden=True,
+             help="[Entfernt] Verwende sdd pipeline run SPEC --auto.")
+@click.pass_context
+def orchestrate_cmd(ctx: click.Context) -> None:
+    spec, _ = _ids(ctx.args)
+    _redirect("orchestrate", f"sdd pipeline run {spec} --auto")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1122,7 +1084,7 @@ def level_cmd(project_id: str) -> None:
 @click.option("--json", "output_json", is_flag=True,
               help="Ausgabe als JSON (maschinenlesbar).")
 @click.option("--auto-pr", is_flag=True,
-              help="Startet sdd orchestrate für jede veraltete Spec (öffnet Cleanup-PR).")
+              help="Startet sdd pipeline run SPEC --auto für jede veraltete Spec (Cleanup-PR).")
 @click.option("--spec", "spec_id", default=None,
               help="Einschränkung auf eine einzelne Spec-ID.")
 def maintenance_cmd(output_json: bool, auto_pr: bool, spec_id: str | None) -> None:
@@ -1162,16 +1124,17 @@ def maintenance_cmd(output_json: bool, auto_pr: bool, spec_id: str | None) -> No
             console.print(f"    [dim]→ {issue.action}[/]")
 
     if auto_pr and sweep.stale:
-        console.print("\n[cyan]▶[/] Starte Orchestrator für veraltete Specs …")
+        from .pipeline.mediator import PipelineError, PipelineSupervisor
+
+        console.print("\n[cyan]▶[/] Starte sdd pipeline run --auto für veraltete Specs …")
         for issue in sweep.stale:
             console.print(f"  [dim]{issue.spec_id}[/] …")
             try:
-                report = run_pipeline(cfg, issue.spec_id)
-                color = "green" if report.final_status in ("merged", "labeled") else "red"
-                console.print(
-                    f"  [{color}]{issue.spec_id}: {report.final_status.upper()}[/]"
-                )
-            except Exception as exc:
+                outcome = PipelineSupervisor.start(cfg, issue.spec_id, auto=True)
+                color = "green" if outcome.exit_code == 0 else "red"
+                console.print(f"  [{color}]{issue.spec_id}: {outcome.message} "
+                              f"({outcome.run_id})[/]")
+            except PipelineError as exc:
                 console.print(f"  [red]✗ {issue.spec_id}: {exc}[/]")
 
     sys.exit(0 if not sweep.issues else 1)
@@ -2402,18 +2365,26 @@ def _print_in_progress_section(cfg: object) -> None:
 @cli.command("start", help="Startet die TDD-Implementierungsphase: approved → in-progress + Test-Stubs (SPEC-0019).")
 @click.argument("spec_id")
 @click.option("--auto", is_flag=True,
-              help="Nach start sofort sdd orchestrate ausführen (autonomer Dark-Factory-Pfad).")
+              help="Statt der TDD-Phase sdd pipeline run SPEC --auto ausführen (SPEC-0062 FR-04).")
 @click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
               help="Basis-URL für den Evaluator-Schritt (nur mit --auto).")
-@click.option("--build-cmd", default=None,
-              help="Build-Kommando (nur mit --auto); läuft in der Finalisierung vor den Tests. "
-                   "Überschreibt orchestrator.build_command.")
-@click.option("--no-pr", is_flag=True, help="PR-Erstellung überspringen (nur mit --auto).")
+@click.option("--no-pr", is_flag=True,
+              help="Nur mit --auto: Abschluss ohne finalize/automerge (--steps holdout).")
 @click.option("--no-container", is_flag=True,
               help="Container nicht starten (z.B. in CI ohne Docker-Daemon).")
-def start_cmd(spec_id: str, auto: bool, base_url: str | None,
-              build_cmd: str | None, no_pr: bool, no_container: bool) -> None:
+@click.pass_context
+def start_cmd(ctx: click.Context, spec_id: str, auto: bool, base_url: str | None,
+              no_pr: bool, no_container: bool) -> None:
     cfg = _ensure_project()
+    if auto:
+        # Die Pipeline verlangt Status approved (CON-0205 INV-09) und schreibt Tests selbst;
+        # Statuswechsel, Stubs und Container entfallen daher (CON-0216 INV-06).
+        from .pipeline_cli import run_cmd
+
+        console.print(f"[dim]▶ --auto: sdd pipeline run {spec_id} --auto[/]")
+        ctx.invoke(run_cmd, spec_id=spec_id, auto=True, base_url=base_url,
+                   steps="holdout" if no_pr else None)
+        return
     from .lifecycle import start_spec
 
     try:
@@ -2486,27 +2457,6 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
         for p in result.stubs_skipped:
             console.print(f"  [yellow]~[/] {p.relative_to(cfg.root)}")
 
-    if auto:
-        console.print()
-        console.print(f"[dim]▶ --auto: starte orchestrate für [cyan]{result.spec_id}[/] …[/]")
-        from .orchestrator import persist_pipeline_report, run_pipeline
-        try:
-            report = run_pipeline(
-                cfg, result.spec_id,
-                base_url=base_url,
-                build_cmd=build_cmd,
-                no_pr=no_pr,
-                on_step=lambda msg: console.print(f"  {msg}"),
-            )
-        except (ValueError, RuntimeError) as exc:
-            console.print(f"[red]✗[/] Orchestrator fehlgeschlagen: {exc}")
-            sys.exit(1)
-        persist_pipeline_report(cfg, report)
-        color = {"merged": "bold green", "labeled": "green",
-                 "failed": "red", "dry_run": "yellow"}.get(report.final_status, "white")
-        console.print(f"\n[{color}]Orchestrator: {report.final_status.upper()}[/]")
-        sys.exit(0 if report.final_status in ("merged", "labeled") else 1)
-
     console.print()
     if result.stubs_placeholder:
         n = len(result.stubs_placeholder)
@@ -2520,18 +2470,18 @@ def start_cmd(spec_id: str, auto: bool, base_url: str | None,
         )
     if result.stubs_placeholder:
         # Die Aufforderung zu implementieren waere hier irrefuehrend, und
-        # `sdd orchestrate` gegen Platzhalter laeuft entweder in eine
+        # die Pipeline gegen Platzhalter laeuft entweder in eine
         # Retry-Schleife oder meldet die Spec als fertig, ohne dass etwas
         # geprueft wurde. Erst die Testdateien reparieren.
         console.print(
             f"[bold]Erst die Platzhalter ersetzen, dann implementieren.[/]\n"
             f"  [dim]Danach: [/][cyan]/sdd-implement {result.spec_id}[/][dim] oder [/]"
-            f"[cyan]sdd orchestrate --spec {result.spec_id}[/]"
+            f"[cyan]sdd pipeline run {result.spec_id} --auto[/]"
         )
     else:
         console.print("[bold]Jetzt Code implementieren bis alle Tests grün sind.[/]")
         console.print(f"  Interaktiv:  [cyan]/sdd-implement {result.spec_id}[/] in Claude Code")
-        console.print(f"  Autonom:     [cyan]sdd orchestrate --spec {result.spec_id}[/]")
+        console.print(f"  Autonom:     [cyan]sdd pipeline run {result.spec_id} --auto[/]")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3755,155 +3705,28 @@ def config_test_llm_cmd(rolle: str | None, profil: str | None) -> None:
         sys.exit(1)
 
 
-@cli.command(
-    "task-route",
-    help="Gibt 'local' oder 'claude' für einen Task zurück (SPEC-0045 Routing).",
-)
-@click.argument("spec_id")
-@click.argument("task_id")
-def task_route_cmd(spec_id: str, task_id: str) -> None:
-    import json as _json
-
-    from .task_routing.config import load_task_routing_config
-    from .task_routing.task_exec import decide_routing
-
-    root = find_project_root()
-    cfg = load_config(root)
-    routing_cfg = load_task_routing_config(cfg.raw)
-
-    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
-    if not task_file.exists():
-        console.print(f"[red]✗[/] Task-Datei nicht gefunden: {task_file}")
-        sys.exit(1)
-
-    tasks = _json.loads(task_file.read_text())
-    task_dict = next((t for t in tasks if t.get("id") == task_id), None)
-    if task_dict is None:
-        console.print(f"[red]✗[/] Task-ID '{task_id}' nicht in {task_file} gefunden.")
-        sys.exit(1)
-
-    decision = decide_routing(task_dict, routing_cfg)
-    print(decision)
+@cli.command("task-route", context_settings=_REDIRECT, hidden=True,
+             help="[Entfernt] Routing über llm.roles.implementer.by_complexity.")
+@click.pass_context
+def task_route_cmd(ctx: click.Context) -> None:
+    spec, task = _ids(ctx.args)
+    _redirect("task-route", f"sdd pipeline run {spec} --task {task}")
 
 
-@cli.command(
-    "task-exec",
-    help="Führt Implementierungsphase eines Tasks via lokalem LLM aus (SPEC-0045).",
-)
-@click.argument("spec_id")
-@click.argument("task_id")
-@click.option("--test-file", "test_file_override", default=None, help="Override Test-Datei-Pfad.")
-@click.option("--iteration", default=1, type=int, show_default=True, help="Versuchs-Nummer.")
-@click.option("--error-context", default="", help="pytest-Output des vorherigen Fehlversuchs.")
-def task_exec_cmd(
-    spec_id: str,
-    task_id: str,
-    test_file_override: str | None,
-    iteration: int,
-    error_context: str,
-) -> None:
-    import json as _json
-
-    from .task_routing.config import load_task_routing_config
-    from .task_routing.task_exec import ImplOnlyExecutor
-
-    root = find_project_root()
-    cfg = load_config(root)
-    routing_cfg = load_task_routing_config(cfg.raw)
-
-    if not routing_cfg.local_llm_configured:
-        console.print(
-            "[red]✗[/] Kein lokales LLM konfiguriert. "
-            "Setze llm.local_llm in .sdd/config.yaml."
-        )
-        sys.exit(1)
-
-    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
-    if not task_file.exists():
-        console.print(f"[red]✗[/] Task-Datei nicht gefunden: {task_file}")
-        sys.exit(1)
-
-    tasks = _json.loads(task_file.read_text())
-    task_dict = next((t for t in tasks if t.get("id") == task_id), None)
-    if task_dict is None:
-        console.print(f"[red]✗[/] Task-ID '{task_id}' nicht gefunden.")
-        sys.exit(1)
-
-    if test_file_override:
-        test_file = Path(test_file_override)
-    elif task_dict.get("test_file"):
-        test_file = root / task_dict["test_file"]
-    else:
-        console.print("[red]✗[/] Kein test_file im Task und kein --test-file angegeben.")
-        sys.exit(1)
-
-    if not test_file.exists():
-        console.print(f"[red]✗[/] Test-Datei nicht gefunden: {test_file}")
-        sys.exit(1)
-
-    executor = ImplOnlyExecutor(config=cfg, project_root=root)
-    console.print(f"[cyan]▶[/] Lokales LLM implementiert Task '{task_dict['title']}' (Versuch {iteration}) …")
-
-    try:
-        success, output = executor.execute(
-            task=task_dict,
-            test_file=test_file,
-            iteration=iteration,
-            error_context=error_context,
-        )
-    except ValueError as exc:
-        console.print(f"[red]✗[/] {exc}")
-        sys.exit(1)
-
-    if success:
-        console.print("[green]✓[/] Tests grün.")
-    else:
-        console.print("[yellow]✗[/] Tests noch rot.")
-        console.print(output)
-        sys.exit(1)
+@cli.command("task-exec", context_settings=_REDIRECT, hidden=True,
+             help="[Entfernt] Verwende sdd pipeline run SPEC --task ID.")
+@click.pass_context
+def task_exec_cmd(ctx: click.Context) -> None:
+    spec, task = _ids(ctx.args)
+    _redirect("task-exec", f"sdd pipeline run {spec} --task {task}")
 
 
-@cli.command(
-    "task-loop",
-    help="Headless Batch-Loop: verarbeitet alle Tasks einer Spec unbeaufsichtigt (SPEC-0045).",
-)
-@click.argument("spec_id")
-@click.option(
-    "--max-concurrent", "max_concurrent", default=None, type=int,
-    help="Override für task_routing.max_concurrent.",
-)
-def task_loop_cmd(spec_id: str, max_concurrent: int | None) -> None:
-    import asyncio
-
-    from .task_routing.task_loop import execute_task_loop
-
-    root = find_project_root()
-    cfg = load_config(root)
-
-    task_file = root / ".sdd" / "tasks" / f"{spec_id}.json"
-    if not task_file.exists():
-        console.print(
-            f"[red]✗[/] Task-Datei nicht gefunden: {task_file}. "
-            f"Zuerst [cyan]sdd decompose {spec_id}[/] ausführen."
-        )
-        sys.exit(1)
-
-    report = asyncio.run(
-        execute_task_loop(spec_id, cfg, root, max_concurrent=max_concurrent)
-    )
-
-    console.print(f"\n[bold]Task-Loop {spec_id}[/]")
-    console.print("─" * 60)
-    for o in report.outcomes:
-        icon = "[green]✓[/]" if o.status == "completed" else "[red]✗[/]"
-        console.print(f"{icon} {o.task.title} — {o.executor} ({o.iterations} Versuch(e))")
-        if o.status != "completed" and o.detail:
-            console.print(f"    {o.detail[:200]}")
-
-    n_ok = sum(1 for o in report.outcomes if o.status == "completed")
-    console.print(f"\n{n_ok}/{len(report.outcomes)} Tasks abgeschlossen.")
-    if not report.all_passed:
-        sys.exit(1)
+@cli.command("task-loop", context_settings=_REDIRECT, hidden=True,
+             help="[Entfernt] Verwende sdd pipeline run SPEC.")
+@click.pass_context
+def task_loop_cmd(ctx: click.Context) -> None:
+    spec, _ = _ids(ctx.args)
+    _redirect("task-loop", f"sdd pipeline run {spec}")
 
 
 @cli.command(

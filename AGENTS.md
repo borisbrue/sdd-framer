@@ -38,9 +38,10 @@ Architekturentscheidungen mit maschineller Folge stehen als ADR unter `docs/adr/
 | ADR | Entscheidung | Regel |
 |-----|--------------|-------|
 | ADR-0002 | CLI ist einziger Schreiber für SDD-Artefakte | ARCH-01 |
-| ADR-0003 | Schichtrichtung Einstieg → Web/UI/PWA/Hub → CLI → LLM → Core | ARCH-02 |
+| ADR-0003 | Schichtrichtung Einstieg → Web/UI/PWA/Hub → CLI/Pipeline → LLM → Core | ARCH-02 |
 | ADR-0004 | LLM-Zugriff nur über die Provider-Factory (`tool/sdd_cli/llm/factory.py`) | ARCH-03 |
 | ADR-0005 | Claude-CLI wird nur im Provider `claude_cli` aufgelöst | ARCH-04 |
+| ADR-0006 | Pipeline-Interna (`mediator`, `runner`, `steps`, `gates`, `providers`, `decisions`, `context`) nur in `pipeline` und im Einstieg; sonst `pipeline.facade` | ARCH-05 |
 
 `sdd arch check` wertet sie aus; bekannte Altlasten stehen mit Grund in `.sdd/quality/arch-baseline.json`. **Ein Commit kann am Pre-Commit-Hook scheitern** (`sdd install-hooks`), sobald eine gestagte `.py`-Datei eine Regel neu verletzt. Neue Architekturentscheidung = ADR und Regel im selben PR.
 
@@ -88,7 +89,7 @@ Keine Datenbank, kein externer Service – das System ist vollständig offline-f
 
 ## Container-Runtime (Podman / Docker)
 
-`sdd finalize`, `sdd dev` und `sdd orchestrate` starten isolierte Container. Die Runtime wird in `.sdd/config.yaml` konfiguriert:
+`sdd start` und `sdd finalize` starten isolierte Container. Die Runtime wird in `.sdd/config.yaml` konfiguriert:
 
 ```yaml
 docker:

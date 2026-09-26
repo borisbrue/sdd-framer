@@ -17,6 +17,7 @@ layers:
   pwa: [tool/sdd_cli/web/pwa/**]
   hub: [tool/sdd_cli/hub/**]
   llm: [tool/sdd_cli/llm/**]
+  pipeline: [tool/sdd_cli/pipeline/**]   # Ausführungspfad, nach außen nur die Facade (ADR-0006)
   cli: [tool/sdd_cli/**]
 rules:
   - id: ARCH-01
@@ -24,32 +25,46 @@ rules:
     kind: write_ownership
     description: SDD-Artefakte schreibt nur die CLI; unaufgelöste Schreibziele zählen (CON-0208).
     paths: [.sdd/**, docs/adr/**]
-    owners: [cli, entry, core]
+    owners: [cli, pipeline, entry, core]
     unresolved: violation
   - id: ARCH-02
     adr: ADR-0003
     kind: allowed_dependencies
-    description: Einstieg → Web/UI/PWA/Hub → CLI → LLM → Core.
+    description: Einstieg → Web/UI/PWA/Hub → CLI/Pipeline → LLM → Core.
     graph:
-      entry: [core, web, ui, pwa, hub, cli, llm]
-      web: [core, cli, llm]
+      entry: [core, web, ui, pwa, hub, cli, pipeline, llm]
+      web: [core, cli, pipeline, llm]
       ui: [core, cli, llm]
       pwa: [core, cli, llm]
       hub: [core, cli, llm]
-      cli: [core, llm]
+      cli: [core, pipeline, llm]
+      pipeline: [core, cli, llm]
       llm: [core]
       core: []
   - id: ARCH-03
     adr: ADR-0004
     kind: forbidden_dependency
     description: Provider entstehen nur in der Factory.
-    from: [entry, core, web, ui, pwa, hub, cli]
+    from: [entry, core, web, ui, pwa, hub, cli, pipeline]
     to_paths: [tool/sdd_cli/llm/providers/**]
   - id: ARCH-04
     adr: ADR-0005
     kind: forbidden_call
     description: Die claude-CLI wird nur im Provider claude_cli aufgelöst.
-    in: [entry, core, web, ui, pwa, hub, cli, llm]
+    in: [entry, core, web, ui, pwa, hub, cli, pipeline, llm]
     calls: [shutil.which]
     args_match: "^claude$"
     except: [tool/sdd_cli/llm/providers/claude_cli.py]
+  - id: ARCH-05
+    adr: ADR-0006
+    kind: forbidden_dependency
+    description: Pipeline-Interna nur innerhalb der Pipeline und im Einstieg; sonst die Facade.
+    from: [core, web, ui, pwa, hub, cli, llm]
+    to_paths:
+      - tool/sdd_cli/pipeline/mediator.py
+      - tool/sdd_cli/pipeline/runner.py
+      - tool/sdd_cli/pipeline/steps.py
+      - tool/sdd_cli/pipeline/gates.py
+      - tool/sdd_cli/pipeline/providers.py
+      - tool/sdd_cli/pipeline/decisions.py
+      - tool/sdd_cli/pipeline/context.py

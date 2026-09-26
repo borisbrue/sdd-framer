@@ -30,7 +30,7 @@ Feature: Run-Optionen, sdd-implement, Web-Adapter und Action
 
   Scenario: Skill sdd-implement nutzt die Pipeline
     Given der Skill sdd-implement in Repo und Blueprint
-    Then sind beide Dateien identisch
+    Then sind beide Dateien identisch bis auf das scope-Frontmatter der Repo-Kopie
     And der Skill ruft "sdd pipeline run $ARGUMENTS --auto --session test_author --session implementer --session supervisor"
     And er beschreibt die Fortsetzung mit "sdd pipeline done" und "sdd pipeline decide"
     And er enthält weder task-route, task-exec, "sdd decompose" noch "sdd finalize"

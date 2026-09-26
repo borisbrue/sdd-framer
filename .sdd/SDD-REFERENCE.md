@@ -16,7 +16,7 @@
 | `sdd validate [--strict] [--instruct]` | Frontmatter, Links und Konsistenz aller Artefakte prüfen |
 | `sdd trace` | Traceability-Matrix Spec ↔ Contract ↔ Test neu schreiben |
 | `sdd status` | Tabellarische Übersicht aller Specs + Hotfixes |
-| `sdd orchestrate --spec SPEC-ID [options]` | Autonomer Dark-Factory-Pfad: Spec → Code → PR → Eval → Retry |
+| `sdd pipeline run SPEC-ID --auto` | Autonomer Pfad: Rollen-Pipeline mit Holdout, PR und Auto-Merge (ersetzt `sdd orchestrate`, SPEC-0062) |
 | `sdd maintenance [--json] [--auto-pr] [--spec]` | Drift-Sweep: veraltete Specs, fehlende Contracts/Tests |
 | `sdd install-hooks` | Git-Pre-Commit-Hook installieren |
 | `sdd ui [--port] [--watch] [--no-browser] [--external-url]` | Projekt-Web-UI starten (einzelnes Projekt; `--watch` = Vite Dev-Server + HMR) |
@@ -173,15 +173,16 @@ Einziger Einstiegspunkt für alle LLM-gestützten Review-Operationen.
 
 ---
 
-### Advanced / CI (Orchestrator-Unterbefehle)
+### Advanced / CI (Pipeline)
 
-Werden normalerweise von `sdd orchestrate` intern aufgerufen.
-Für nicht-Claude-LLMs oder CI-Pipelines auch direkt nutzbar.
+`sdd pipeline` ist seit SPEC-0062 der einzige Ausführungspfad. `sdd orchestrate`, `sdd task-route`,
+`sdd task-exec` und `sdd task-loop` verweisen nur noch auf ihn (Exit 1).
 
 | Befehl | Funktion |
 |--------|----------|
 | `sdd decompose SPEC-ID [--yes]` | Spec in klassifizierte Tasks zerlegen |
-| `sdd pipeline run SPEC-ID [--dry-run]` | Rollen-Pipeline: Tasks über die Modelle aus `llm.roles` umsetzen (ersetzt `sdd distribute`, SPEC-0058) |
+| `sdd pipeline run SPEC-ID [--dry-run] [--task T] [--auto [--steps …]] [--session ROLLE …]` | Rollen-Pipeline: Tasks über die Modelle aus `llm.roles` umsetzen; `--session` belegt Rollen nur für diesen Run mit Claude Code im Dialog |
+| `sdd pipeline decide\|done\|status\|report RUN-ID` | Entscheidung bzw. Session-Ergebnis abgeben, Stand und Report |
 | `sdd task-status SPEC-ID` | Task-Status einer Spec anzeigen |
 
 ---
@@ -195,7 +196,7 @@ für andere LLMs steht immer der entsprechende CLI-Pfad bereit.
 |-------|---------------|----------|
 | `/sdd` | `sdd status` | Projekt-Übersicht, Navigation, Quick-Actions |
 | `/sdd-new` | `sdd new spec\|contract\|test\|holdout\|hotfix` | Geführtes Anlegen eines neuen SDD-Artefakts |
-| `/sdd-implement SPEC-ID` | `sdd spec start` + `sdd spec finalize` | TDD-Implementierungs-Assistent |
+| `/sdd-implement SPEC-ID` | `sdd pipeline run SPEC-ID --auto --session test_author --session implementer --session supervisor` | Implementierung über die Pipeline; Claude Code schreibt Tests und Code und entscheidet S1–S3 |
 | `/sdd-review SPEC-ID\|CON-ID` | `sdd review spec` / `sdd review contract` | LLM-Review: SOLID + Patterns + Vollständigkeit |
 | `/sdd-holdout SPEC-ID` | `sdd holdout generate` + `sdd holdout run` | Holdout-Szenarien generieren und ausführen |
 | `/sdd-validate` | `sdd validate` | Validierung mit interaktiver Fehlerliste |
@@ -246,8 +247,8 @@ flowchart TD
     subgraph IMPL["Phase 4 – Implementierung"]
         E0{Pfad wählen}
         E0 -->|Manuell TDD| E1[sdd spec start\nin-progress + Stubs]
-        E0 -->|Lokal-Autonom\nÜbergang| E1B[sdd spec start --auto\nlokal: orchestrate ohne CI]
-        E0 -->|CI-Autonom\nDark Factory| E2[sdd orchestrate\nvia GitHub Actions]
+        E0 -->|Lokal-Autonom| E1B[sdd pipeline run --auto\nlokal]
+        E0 -->|CI-Autonom\nDark Factory| E2[sdd pipeline run --auto\nvia GitHub Actions]
         E0 -->|Claude Code| E3[/sdd-implement/]
         E1 --> E4[Code schreiben\nbis Tests grün]
         E4 --> E5[sdd spec finalize\nCommit + PR]
@@ -291,7 +292,7 @@ flowchart LR
     end
 
     subgraph TRANSITION["Pfad B – Lokal-Autonom (Übergang ohne CI)"]
-        T1[sdd spec start --auto\nlokal orchestrate triggern] --> T2[sdd decompose\nTask-Zerlegung]
+        T1[sdd pipeline run --auto\nlokal] --> T2[decomposer\nTask-Zerlegung]
         T2 --> T3[sdd pipeline run\nRollen]
         T3 --> T4[Build + Test\nim Container]
         T4 -->|grün| T5[PR erstellen]
@@ -303,8 +304,8 @@ flowchart LR
 
     subgraph AUTO["Pfad C – CI-Autonom (Dark Factory Vision)"]
         A1[Push auf main\nSpec geändert] --> A2[GitHub Actions\nsdd-orchestrate.yml]
-        A2 --> A3[sdd orchestrate\n--spec SPEC-ID]
-        A3 --> A4[sdd decompose\nTask-Zerlegung]
+        A2 --> A3[sdd pipeline run\nSPEC-ID --auto]
+        A3 --> A4[decomposer\nTask-Zerlegung]
         A4 --> A5[sdd pipeline run\nRollen]
         A5 --> A6[Build + Test\nim Container]
         A6 -->|grün| A7[PR erstellen]
@@ -315,8 +316,8 @@ flowchart LR
     end
 
     subgraph SKILL["Pfad D – Claude Code Skill"]
-        S1[/sdd-implement SPEC-ID/] --> S2[Interaktive\nTDD-Session]
-        S2 --> S3[sdd spec finalize\nauto am Ende]
+        S1[/sdd-implement SPEC-ID/] --> S2[sdd pipeline run --auto\n--session …]
+        S2 --> S3[Claude Code: done / decide\nbis Finalize]
     end
 
     START --> MANUAL
@@ -357,7 +358,7 @@ flowchart TD
     L2 -->|stabil| L5[weiter wie bisher]
 
     L3 --> L6{Level ≥ 3.5?}
-    L6 -->|ja| L7[Auto-Merge aktivierbar\nsdd orchestrate merged automatisch]
+    L6 -->|ja| L7[Auto-Merge aktivierbar\nPipeline-Schritt automerge]
     L6 -->|nein| L5
 
     P1[PR fehlgeschlagen\nmanuelle Korrektur] --> P2[sdd autonomy false-positive\nPR-NR --project PRJ-ID]
@@ -395,8 +396,8 @@ Hotfix-Status:   open → done
 | Tests anlegen | `sdd new test` · `sdd test generate` | — |
 | Spec genehmigen | `sdd spec approve` | — |
 | Implementieren (manuell) | `sdd spec start` · `sdd spec finalize` | `/sdd-implement` |
-| Implementieren (lokal-autonom, Übergang) | `sdd spec start --auto` | — |
-| Implementieren (CI-autonom, Dark Factory) | `sdd orchestrate` via GitHub Actions | — |
+| Implementieren (lokal-autonom) | `sdd pipeline run SPEC-ID --auto` | `/sdd-implement` |
+| Implementieren (CI-autonom, Dark Factory) | `sdd pipeline run --auto` via GitHub Actions | — |
 | Tests ausführen | `sdd test run` · `sdd test results` | — |
 | Holdouts definieren | `sdd new holdout` · `sdd holdout generate` | `/sdd-holdout` |
 | Holdouts ausführen | `sdd holdout run` | `/sdd-holdout` |

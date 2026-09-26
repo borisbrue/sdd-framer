@@ -1,11 +1,15 @@
 """Execute-Flow: POST /api/orchestrate + GET /api/pipeline/{run_id} + GET /api/pipeline/active.
 
-SPEC-0007 §3 — Pipeline-State-Store (In-Memory, TTL 1h).
+SPEC-0007 §3 — Pipeline-State-Store (In-Memory, TTL 1h). Seit SPEC-0062 ein Adapter: dahinter läuft
+`sdd pipeline run SPEC --auto` als eigener Prozess, die `run_id` ist die Run-ID der Pipeline
+(CON-0021 0.4.0, CON-0216 INV-04/05).
 """
 from __future__ import annotations
 
 import asyncio
 import datetime
+import os
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -69,23 +73,70 @@ def _to_dict(state: RunState) -> dict[str, Any]:
     return d
 
 
-def _build_report(state: RunState, final_status: str) -> dict:
-    last = state.attempts[-1] if state.attempts else None
+def _gate_events(cfg: Any, run_id: str) -> dict[str, dict]:
+    """Letztes `gate`-Ereignis je Schritt aus dem Run-Protokoll (öffentliche Facade `store`)."""
+    from sdd_cli.pipeline.store import RunNotFound, RunStore
+
+    try:
+        store = RunStore.open(cfg.root, run_id)
+    except RunNotFound:
+        return {}
+    schritte: dict[str, dict] = {}
+    for ereignis in store.read_jsonl("events.jsonl"):
+        detail = ereignis.get("detail") or {}
+        if ereignis.get("type") == "gate" and detail.get("gate"):
+            schritte[detail["gate"]] = detail
+    return schritte
+
+
+def _build_report(state: RunState, gates: dict[str, dict], reason: str | None) -> dict:
+    """PipelineReport (CON-0021) aus den Ereignissen `holdout` und `finalize` (CON-0216 INV-05)."""
+    holdout = gates.get("holdout", {}).get("result") or {}
     return {
-        "pass_rate":        last["eval_pass_rate"] if last and last["eval_pass_rate"] is not None else 0.0,
-        "pr_url":           next((a["pr_url"] for a in reversed(state.attempts) if a["pr_url"]), None),
+        "pass_rate":        holdout.get("rate"),
+        "pr_url":           gates.get("finalize", {}).get("pr") or None,
         "issue_url":        state.issue_url,
-        "failed_scenarios": [],
-        "reason":           last["error"] if last else None,
-        "explanation":      last["explanation"] if last and final_status == "dry_run" else None,
+        "failed_scenarios": [s.get("id", "") for s in holdout.get("scenarios", [])
+                             if not s.get("passed")],
+        "reason":           reason,
+        "explanation":      None,
     }
+
+
+def _final_status(exit_code: int, body: OrchestrateRequest, gates: dict[str, dict],
+                  aborted: bool) -> str:
+    if aborted:
+        return "aborted"
+    if exit_code == 3:
+        return "paused"
+    if exit_code != 0:
+        return "failed"
+    if body.dry_run:
+        return "dry_run"
+    return "merged" if gates.get("automerge", {}).get("result") == "merged" else "labeled"
+
+
+def pipeline_argv(run_id: str, body: OrchestrateRequest) -> list[str]:
+    """`sdd pipeline run SPEC --auto` mit den Optionen der Anfrage (CON-0216 INV-05)."""
+    argv = ["pipeline", "run", body.spec_id, "--auto", "--run-id", run_id]
+    if body.dry_run:
+        argv.append("--dry-run")
+    if body.no_pr:
+        argv += ["--steps", "holdout"]
+    if body.base_url:
+        argv += ["--base-url", body.base_url]
+    return argv
+
+
+# Patched in tests: Prozessstart des Adapters.
+_popen = subprocess.Popen
 
 
 # ─── Background worker ───────────────────────────────────────────────────────
 
 def _run_pipeline_bg(run_id: str, body: OrchestrateRequest) -> None:
-    from sdd_cli.frontmatter import parse_safe, patch_status
-    from sdd_cli.orchestrator import persist_pipeline_report, run_pipeline
+    """Adapter (SPEC-0062 FR-03): startet `sdd pipeline run --auto` als eigenen Prozess."""
+    import sdd_cli
 
     state = _runs.get(run_id)
     if not state:
@@ -96,77 +147,50 @@ def _run_pipeline_bg(run_id: str, body: OrchestrateRequest) -> None:
         state.log.append(f"[{ts}] {msg}")
         state.current_step = msg
 
-    on_step("Pipeline gestartet…")
-
     cfg = get_config()
-
-    project_id = body.project_id
-    if not project_id:
-        for md in cfg.specs_dir.rglob("*.md"):
-            doc = parse_safe(md)
-            if doc and doc.frontmatter.get("id") == body.spec_id:
-                project_id = doc.frontmatter.get("project", "")
-                break
-
+    argv = pipeline_argv(run_id, body)
+    on_step("▶ sdd " + " ".join(argv))
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(
+        [str(Path(sdd_cli.__file__).resolve().parents[1]),
+         *filter(None, [os.environ.get("PYTHONPATH")])])}
+    reason: str | None = None
+    exit_code = 1
     try:
-        report = run_pipeline(
-            cfg,
-            spec_id=body.spec_id,
-            base_url=body.base_url or None,
-            build_cmd=None,
-            max_retries=cfg.raw.get("orchestrator", {}).get("max_retries", 3),
-            no_pr=body.no_pr,
-            dry_run=body.dry_run,
-            project_id=project_id,
-            on_step=on_step,
-            on_proc=lambda p: setattr(state, "active_proc", p),
-            is_aborted=lambda: state.abort_requested,
-        )
-        persist_pipeline_report(cfg, report)
-
-        state.attempts = [
-            {
-                "attempt":        a.attempt,
-                "branch":         a.branch,
-                "build_passed":   a.build_passed,
-                "eval_pass_rate": a.eval_pass_rate,
-                "pr_url":         a.pr_url,
-                "error":          a.error,
-                "explanation":    a.explanation,
-            }
-            for a in report.attempts
-        ]
-        state.status = report.final_status
-        if report.issue_url:
-            state.issue_url = report.issue_url
-        state.report = _build_report(state, report.final_status)
-
-        if report.final_status in ("labeled", "merged"):
-            for md in cfg.specs_dir.rglob("*.md"):
-                doc = parse_safe(md)
-                if doc and doc.frontmatter.get("id") == body.spec_id:
-                    try:
-                        patch_status(md, "implemented")
-                    except Exception:
-                        pass
-                    break
-
-    except Exception as exc:
+        proc = _popen([sys.executable, "-c", "from sdd_cli.main import cli; cli()", *argv],
+                      cwd=cfg.root, env=env, stdout=subprocess.PIPE,
+                      stderr=subprocess.STDOUT, text=True)
+        state.active_proc = proc
+        for zeile in proc.stdout or []:
+            if zeile.strip():
+                on_step(zeile.rstrip())
+                reason = zeile.strip()
+        exit_code = proc.wait()
+    except OSError as exc:
         on_step(f"✗ Fehler: {exc}")
-        state.status = "failed"
-        state.attempts = [{
-            "attempt": 1, "branch": "", "build_passed": None,
-            "eval_pass_rate": None, "pr_url": None,
-            "error": str(exc), "explanation": "",
-        }]
-        state.report = {
-            "pass_rate": 0.0, "pr_url": None, "issue_url": None,
-            "failed_scenarios": [], "reason": str(exc), "explanation": None,
-        }
+        reason = str(exc)
     finally:
         state.active_proc = None
-        state.current_step = ""
         _active.pop(body.spec_id, None)
+
+    gates = _gate_events(cfg, run_id)
+    state.status = _final_status(exit_code, body, gates, state.abort_requested)
+    if state.status == "paused":
+        from sdd_cli.pipeline.store import RunNotFound, RunStore
+
+        try:
+            wartet_auf_arbeit = RunStore.open(cfg.root, run_id).read_work() is not None
+        except RunNotFound:
+            wartet_auf_arbeit = False
+        befehl = "done" if wartet_auf_arbeit else "decide"
+        on_step(f"⏸ Wartet auf Claude Code: sdd pipeline {befehl} {run_id} "
+                f"(oder /sdd-supervise {body.spec_id})")
+    else:
+        state.current_step = ""
+    report = _build_report(state, gates, None if exit_code == 0 else reason)
+    state.attempts = [{"attempt": 1, "branch": "", "build_passed": None,
+                       "eval_pass_rate": report["pass_rate"], "pr_url": report["pr_url"],
+                       "error": report["reason"], "explanation": ""}]
+    state.report = report
 
 
 # ─── Gate helpers ────────────────────────────────────────────────────────────
@@ -269,8 +293,10 @@ def start_orchestrate(
         existing = _active[body.spec_id]
         raise HTTPException(status_code=409, detail=f"Lauf {existing} läuft bereits")
 
+    from sdd_cli.pipeline.store import new_run_id
+
     max_attempts = cfg.raw.get("orchestrator", {}).get("max_retries", 3)
-    run_id = f"{body.spec_id}-{int(time.time() * 1000)}"
+    run_id = new_run_id(body.spec_id)
     _runs[run_id] = RunState(run_id=run_id, spec_id=body.spec_id, max_attempts=max_attempts)
     _active[body.spec_id] = run_id
 
@@ -291,12 +317,15 @@ def abort_pipeline_run(run_id: str) -> dict[str, Any]:
     state = _runs.get(run_id)
     if not state:
         raise HTTPException(status_code=404, detail=f"Lauf nicht gefunden: {run_id}")
-    if state.status != "running":
+    if state.status not in ("running", "paused"):
         raise HTTPException(
             status_code=409,
             detail=f"Lauf ist nicht aktiv (status={state.status!r})",
         )
     state.abort_requested = True
+    if state.status == "paused":
+        state.status = "aborted"
+        state.current_step = ""
     proc = state.active_proc
     if proc is not None:
         try:

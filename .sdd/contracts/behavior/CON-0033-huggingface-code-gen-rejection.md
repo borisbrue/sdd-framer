@@ -6,9 +6,10 @@ type: behavior
 format: markdown
 spec: SPEC-0013
 version: 0.1.0
-status: active
+status: deprecated
 artifact: "tool/sdd_cli/llm/factory.py"
 tests: ["TST-0068"]
+deprecated_reason: "CodeGen-Pfad entfernt, damit entfällt die huggingface-Prüfung für code_gen (SPEC-0062)"
 ---
 
 # Contract: Factory – huggingface als code_gen-Provider wird abgelehnt
