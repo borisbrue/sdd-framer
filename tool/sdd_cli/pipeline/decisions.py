@@ -18,7 +18,7 @@ from .store import now
 ALLOWED = {
     "S1": ("approve", "revise", "halt"),
     "S2": ("retry_with_hint", "reassign", "redecompose", "halt"),
-    "S3": ("accept_frs", "halt"),
+    "S3": ("accept_frs", "reopen", "halt"),  # reopen: SPEC-0061 FR-09
 }
 
 
@@ -31,8 +31,8 @@ def new_request(point: str, facts: dict, task_id: str | None = None) -> dict:
     return request
 
 
-def validate_command(command: Any, request: dict) -> list[str]:
-    """Fehler eines Commands gegenüber Schema (CON-0201) und offener Anfrage."""
+def validate_command(command: Any, request: dict, task_ids: set[str] | None = None) -> list[str]:
+    """Fehler eines Commands gegenüber Schema (CON-0201), offener Anfrage und Tasks des Runs."""
     if not isinstance(command, dict):
         return ["Command ist kein JSON-Objekt"]
     fehler = schema_errors("supervisor-decision", command)
@@ -45,6 +45,10 @@ def validate_command(command: Any, request: dict) -> list[str]:
     task_id = command.get("task_id")
     if task_id is not None and task_id != request.get("task_id"):
         return [f"task_id {task_id} passt nicht zur Anfrage ({request.get('task_id')})"]
+    if task_ids is not None:
+        unbekannt = [t for t in command.get("task_ids", []) if t not in task_ids]
+        if unbekannt:
+            return [f"unbekannte Tasks: {', '.join(unbekannt)}"]
     return []
 
 

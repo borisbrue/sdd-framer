@@ -4,11 +4,18 @@ Die Rollen kennen einander nicht. Der Mediator steuert den Ablauf als fortsetzba
 Zustandsautomaten (`state.json` nach jedem Übergang), reicht Artefakte weiter, wendet die
 PathPolicy auf jeden Schreibvorgang an und holt an S1 bis S3 eine Entscheidung ein. Der
 Supervisor liefert nur Commands; ausgeführt werden sie hier.
+
+SPEC-0061: Arbeitsrollen können im Modus `session` laufen (Auftrag in `pending-work.json`,
+Bestätigung mit `sdd pipeline done`); für alle Modi gilt derselbe Rollenvertrag (CON-0213 INV-01).
+Belegungen hängen optional von der Komplexität des Tasks ab, Gates laufen pro Task, und
+`--auto` führt die Abschluss-Kette aus (CON-0214).
 """
 from __future__ import annotations
 
 import difflib
+import hashlib
 import json
+import secrets
 import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -16,6 +23,8 @@ from typing import TYPE_CHECKING, Any
 
 from .. import __version__
 from ..gate import ExecutionGate
+from . import gates as task_gates_mod
+from . import steps as auto_steps_mod
 from .context import ContextError, ProjectContext
 from .decisions import Answer, Pending, SessionSource, new_request, validate_command
 from .path_policy import PathPolicy
@@ -23,6 +32,7 @@ from .providers import (
     SAME_MODEL_WARNING,
     RoleBinding,
     RoleConfigError,
+    all_bindings,
     build_provider,
     resolve_binding,
     same_model_conflict,
@@ -37,6 +47,10 @@ if TYPE_CHECKING:
 
 MAX_REVISIONS = 2
 MAX_ATTEMPTS = 3
+MAX_REOPEN = 2
+WRITING_ROLES = ("test_author", "implementer")
+JSON_ROLES = ("decomposer", "reviewer")  # Session-Ergebnis kommt als --json (FR-02)
+SNAPSHOT_EXCLUDE = ["**/node_modules/**", "**/__pycache__/**", "**/.venv/**"]
 COMPLEXITY_SIZE = {"low": ("S", 2000), "medium": ("M", 5000), "high": ("L", 10000)}
 
 
@@ -58,6 +72,7 @@ class _TaskMemory:
     test_output: str = ""
     review: Any = None
     diff: str = ""
+    changed: list[str] = field(default_factory=list)
 
 
 class InlineSource:
@@ -100,6 +115,7 @@ class PipelineSupervisor:
         pipeline = config.raw.get("pipeline") or {}
         self.max_revisions = int(pipeline.get("max_revisions", MAX_REVISIONS))
         self.max_attempts = int(pipeline.get("max_attempts", MAX_ATTEMPTS))
+        self.max_reopen = int(pipeline.get("max_reopen", MAX_REOPEN))
         self.state: dict = {}
         self._roles: dict[str, RoleDefinition] = {}
         self._memory: dict[str, _TaskMemory] = {}
@@ -108,7 +124,8 @@ class PipelineSupervisor:
     # ── Einstieg ─────────────────────────────────────────────────────────────
     @classmethod
     def start(cls, config: SddConfig, spec_id: str, *, dry_run: bool = False,
-              max_tasks: int | None = None,
+              max_tasks: int | None = None, task_id: str | None = None, auto: bool = False,
+              base_url: str | None = None,
               notify: Callable[[str], None] | None = None) -> RunOutcome:
         ctx = ProjectContext(config.root, spec_id)
         try:
@@ -121,14 +138,33 @@ class PipelineSupervisor:
             raise PipelineError(f"{spec_id}: Gate-Phase execute-unlocked fehlt "
                                 f"(sdd spec approve {spec_id}).")
         roles, warnings = cls._check_roles(config)
+        if task_id and (auto or dry_run):
+            raise PipelineError("--task lässt sich nicht mit --auto oder --dry-run kombinieren.")
+        if task_id:
+            from ..decompose import TaskDecomposer
+
+            ids = {t.id for t in TaskDecomposer().load(spec_id, config)}
+            if not ids:
+                raise PipelineError(f"{spec_id}: keine gespeicherte Zerlegung "
+                                    f"(.sdd/tasks/{spec_id}.json); erst sdd pipeline run --dry-run.")
+            if task_id not in ids:
+                raise PipelineError(f"{spec_id}: Task {task_id} gibt es nicht "
+                                    f"(vorhanden: {', '.join(sorted(ids))}).")
         store = RunStore.create(config.root, spec_id)
+        optionen = {"dry_run": dry_run, "max_tasks": max_tasks}
+        if task_id:
+            optionen["task"] = task_id
+        if auto:
+            optionen.update(auto=True, base_url=base_url)
         store.write_run({"run_id": store.run_id, "spec_id": spec_id, "started_at": now(),
-                         "sdd_version": __version__,
-                         "options": {"dry_run": dry_run, "max_tasks": max_tasks},
+                         "sdd_version": __version__, "options": optionen,
                          "roles": roles, "warnings": warnings})
         m = cls(config, store, notify=notify, max_tasks=max_tasks)
         m.state = {"run_id": store.run_id, "status": "running", "phase": "decompose",
                    "revisions": 0, "tasks": [], "pending_request_id": None}
+        if task_id:
+            m.state.update(phase="tasks",
+                           tasks=[{"task_id": task_id, "state": "pending", "attempts": 0}])
         m.save()
         for w in warnings:
             store.event("warning", detail={"message": w})
@@ -142,6 +178,8 @@ class PipelineSupervisor:
         status = m.state["status"]
         if status == "awaiting_supervisor":
             return RunOutcome(3, "Wartet auf eine Entscheidung (sdd pipeline decide).", run_id)
+        if status == "awaiting_session":
+            return RunOutcome(3, "Wartet auf die Session (sdd pipeline done).", run_id)
         if status in ("halted", "failed"):
             return RunOutcome(1, f"Run ist {status}.", run_id)
         if status == "completed":
@@ -156,7 +194,7 @@ class PipelineSupervisor:
         if not m.state.get("pending_request_id") or request is None \
                 or request.get("request_id") != m.state["pending_request_id"]:
             raise PipelineError(f"Run {run_id} hat keine offene Entscheidungsanfrage.")
-        fehler = validate_command(command, request)
+        fehler = validate_command(command, request, m.task_ids())
         m.log_decision(request, command, source="session", errors=fehler)
         if fehler:
             raise PipelineError("Command ungültig: " + "; ".join(fehler))
@@ -164,6 +202,30 @@ class PipelineSupervisor:
         m.state["status"] = "running"
         m.save()
         stopp = m.apply(request, command)
+        return stopp or m.advance()
+
+    @classmethod
+    def done(cls, config: SddConfig, run_id: str, output: Any = None, *,
+             notify: Callable[[str], None] | None = None) -> RunOutcome:
+        """Schließt den offenen Session-Auftrag ab und setzt den Run fort (FR-02, CON-0213)."""
+        m = cls._open(config, run_id, notify=notify)
+        auftrag = m.store.read_work()
+        if m.state.get("status") != "awaiting_session" or auftrag is None:
+            raise PipelineError(f"Run {run_id} hat keinen offenen Session-Auftrag.")
+        rolle = auftrag["role"]
+        role_def = m.role(rolle)
+        if rolle in JSON_ROLES:
+            if output is None:
+                raise PipelineError(f"Rolle {rolle}: --json mit der Ausgabe ist Pflicht.")
+            kontext = ({"spec_frs": m.ctx.spec_frs} if rolle == "decomposer" else
+                       {"task": m._load_tasks().get(auftrag.get("task_id") or "", {})})
+            fehler = RoleRunner._validate(role_def, output, kontext)
+            if fehler:
+                raise PipelineError("Ausgabe ungültig: " + "; ".join(fehler[:5]))
+        m.store.archive_work(auftrag["request_id"])
+        m.state["status"] = "running"
+        m.save()
+        stopp = m._continue_session(auftrag, output)
         return stopp or m.advance()
 
     @classmethod
@@ -185,6 +247,7 @@ class PipelineSupervisor:
             try:
                 role_def = load_role(config.root, rolle)
                 binding = resolve_binding(config, role_def)
+                all_bindings(config, role_def)  # unbekannte Profile verhindern den Start
             except (RoleError, RoleConfigError, RuntimeError) as exc:
                 raise PipelineError(str(exc)) from exc
             eintrag = {**binding.describe(), "role_version": role_def.version}
@@ -208,10 +271,19 @@ class PipelineSupervisor:
             self._roles[name] = load_role(self.config.root, name)
         return self._roles[name]
 
-    def binding(self, name: str, task_state: dict | None = None) -> RoleBinding:
-        b = resolve_binding(self.config, self.role(name))
+    def binding(self, name: str, task_state: dict | None = None,
+                task: dict | None = None) -> RoleBinding:
+        """Belegung eines Aufrufs (CON-0213 INV-04): reassign → by_complexity → Rolle → Legacy."""
         modell = ((task_state or {}).get("assignment") or {}).get(name)
-        return b.with_model(modell) if modell else b
+        if modell:
+            return resolve_binding(self.config, self.role(name)).with_model(modell)
+        return resolve_binding(self.config, self.role(name), (task or {}).get("complexity"))
+
+    def task_ids(self) -> set[str]:
+        return {t["task_id"] for t in self.state.get("tasks", [])}
+
+    def options(self) -> dict:
+        return self.store.read_run().get("options") or {}
 
     def provider(self, binding: RoleBinding, role_def: RoleDefinition) -> Any:
         return build_provider(self.config, binding, role_def)
@@ -249,6 +321,8 @@ class PipelineSupervisor:
             if task_id is not None:
                 if c.get("command") == "retry_with_hint" and c.get("task_id") == task_id:
                     zeilen.append(f"Hinweis des Supervisors: {c['hint']}")
+                elif c.get("command") == "reopen" and task_id in c.get("task_ids", []):
+                    zeilen.append(f"Nach der Abnahme wieder geöffnet: {c['hint']}")
                 continue
             zeilen.append(f"{c.get('point')} {c.get('command')}: {c.get('reason')}")
         return zeilen
@@ -284,7 +358,7 @@ class PipelineSupervisor:
                 return RunOutcome(3, f"{request['point']}: Entscheidung erforderlich "
                                      f"(sdd pipeline decide {self.store.run_id} --json …).",
                                   self.store.run_id)
-            fehler = validate_command(antwort.command, request)
+            fehler = validate_command(antwort.command, request, self.task_ids())
             self.log_decision(request, antwort.command, source=quelle.name, errors=fehler)
             if not fehler:
                 self.close_request(request)
@@ -330,6 +404,8 @@ class PipelineSupervisor:
             return None
         if name == "accept_frs":
             return self._accept(command)
+        if name == "reopen":
+            return self._reopen(command)
         task_state = self._task_state(command.get("task_id") or request.get("task_id"))
         if name == "retry_with_hint":
             task_state["attempts"] = 0
@@ -364,13 +440,18 @@ class PipelineSupervisor:
 
     def _outcome_for_status(self) -> RunOutcome:
         status = self.state["status"]
-        codes = {"completed": 0, "awaiting_supervisor": 3, "halted": 1, "failed": 1}
+        codes = {"completed": 0, "awaiting_supervisor": 3, "awaiting_session": 3, "halted": 1,
+                 "failed": 1}
         return RunOutcome(codes.get(status, 0), f"Run ist {status}.", self.store.run_id)
 
     # Phase decompose ─────────────────────────────────────────────────────────
     def _decompose(self) -> RunOutcome | None:
         role_def = self.role("decomposer")
         binding = self.binding("decomposer")
+        if binding.is_session:
+            return self._request_work("decomposer", None, None, self._decomposer_feedback,
+                                      {"spec": self._rel(self.ctx.spec_path),
+                                       "agents_md": "AGENTS.md" if self.ctx.agents_md else None})
         provider = self.provider(binding, role_def)
         feedback = list(self._decomposer_feedback)
         ergebnis = None
@@ -390,7 +471,9 @@ class PipelineSupervisor:
         if ergebnis is None or not ergebnis.ok:
             return self.halt("Zerlegung nach max_attempts nicht gültig",
                              problems=(ergebnis.problems if ergebnis else [])[:10])
-        tasks = ergebnis.output["tasks"]
+        return self._s1(ergebnis.output["tasks"])
+
+    def _s1(self, tasks: list[dict]) -> RunOutcome | None:
         self.notify(f"  decomposer: {len(tasks)} Tasks")
         request = new_request("S1", {"tasks": tasks, "fr_coverage": self._fr_coverage(tasks)})
         antwort = self.ask(request)
@@ -434,6 +517,13 @@ class PipelineSupervisor:
             if stopp is not None or self.state["phase"] != "tasks":
                 return stopp
             bearbeitet += 1
+        if self.options().get("task"):
+            # --task: ein Task, ohne Abnahme und Abschluss (CON-0213 INV-07)
+            self.state.update(status="completed", phase="done")
+            self.transition(frm="tasks", to="done", reason="--task")
+            self.save()
+            return RunOutcome(0, f"Task {self.options()['task']} abgeschlossen.",
+                              self.store.run_id)
         self.state["phase"] = "acceptance"
         self.transition(frm="tasks", to="acceptance")
         self.save()
@@ -452,11 +542,17 @@ class PipelineSupervisor:
 
     def _work(self, st: dict, task: dict) -> RunOutcome | None:
         mem = self._memory.setdefault(st["task_id"], _TaskMemory())
+        typ = task.get("type") or "code"
         while st["state"] != "done":
             if st["state"] == "reviewed":
                 self._set(st, "done")
                 self.save()
                 break
+            if st["state"] == "pending" and typ in ("config", "doc"):
+                # FR-06: config/doc brauchen keinen Test vorab.
+                self._set(st, "red", reason=f"Task-Typ {typ}: ohne test_author")
+                self.save()
+                continue
             if st["attempts"] >= self.max_attempts:
                 stopp = self._escalate(st, task, mem)
                 if stopp is not None or self.state["phase"] != "tasks":
@@ -464,14 +560,59 @@ class PipelineSupervisor:
                 continue
             st["attempts"] += 1
             self.save()
-            if st["state"] in ("pending", "retry", "reassigned"):
-                self._test_author(st, task, mem)
-            elif st["state"] == "red":
-                self._implementer(st, task, mem)
-            elif st["state"] == "green":
-                self._reviewer(st, task, mem)
+            stopp = self._stage(st, task, mem)
+            if stopp is not None:
+                return stopp
         self.notify(f"  ✓ {task['id']} {task['title']}")
         return None
+
+    def _role_for(self, st: dict) -> str:
+        if st["state"] in ("pending", "retry", "reassigned"):
+            return "test_author"
+        return "implementer" if st["state"] == "red" else "reviewer"
+
+    def _sources_for(self, role: str, task: dict, mem: _TaskMemory) -> dict:
+        if role == "test_author":
+            return self._sources(task, mem, test_output=mem.test_output)
+        if role == "implementer":
+            return self._sources(task, mem, repo_map=self.ctx.repo_map(),
+                                 test_file=self.ctx.read(task.get("test_file") or "") or "",
+                                 test_output=mem.test_output, review=mem.review)
+        return self._sources(task, mem, diff=mem.diff or "(Diff nicht verfügbar)",
+                             gate_results=[json.loads(mem.test_output)] if mem.test_output else [])
+
+    def _stage(self, st: dict, task: dict, mem: _TaskMemory) -> RunOutcome | None:
+        """Ein Versuch einer Arbeitsrolle; LLM sofort, Session über einen Auftrag (Strategy)."""
+        rolle = self._role_for(st)
+        binding = self.binding(rolle, st, task)
+        sources = self._sources_for(rolle, task, mem)
+        if binding.is_session:
+            basis = None
+            if rolle == "implementer" and (task.get("type") or "code") in ("config", "doc"):
+                basis = self._failing()
+            return self._request_work(rolle, st, task, mem.feedback[-6:], {
+                "spec": self._rel(self.ctx.spec_path), "task": task,
+                "test_file": task.get("test_file"), "test_output": mem.test_output or None,
+                "review": mem.review, "diff": mem.diff or None,
+                "history": self.decision_history(task_id=task["id"])}, failing=basis)
+        role_def = self.role(rolle)
+        basis = self._failing() if rolle == "implementer" and (
+            task.get("type") or "code") in ("config", "doc") else None
+        ergebnis = self.runner.run(role_def, self.provider(binding, role_def), sources,
+                                   attempt=st["attempts"], params=binding.params,
+                                   check_context={"task": task}, task=task)
+        self._apply(rolle, st, task, mem, ergebnis, binding, baseline=basis)
+        return None
+
+    def _apply(self, rolle: str, st: dict, task: dict, mem: _TaskMemory, ergebnis: RoleResult,
+               binding: RoleBinding, *, session_files: list[str] | None = None,
+               baseline: list[str] | None = None) -> None:
+        if rolle == "test_author":
+            self._apply_test_author(st, task, mem, ergebnis, binding, session_files)
+        elif rolle == "implementer":
+            self._apply_implementer(st, task, mem, ergebnis, binding, session_files, baseline)
+        else:
+            self._apply_reviewer(st, task, mem, ergebnis, binding)
 
     def _set(self, st: dict, neu: str, reason: str | None = None) -> None:
         alt = st["state"]
@@ -496,28 +637,13 @@ class PipelineSupervisor:
                 "agents_md": self.ctx.agents_md, "task": task,
                 "history": [*hinweise, *mem.feedback[-4:]], **extra}
 
-    def _call(self, role: str, st: dict, task: dict, sources: dict) -> tuple[RoleResult,
-                                                                              RoleBinding]:
-        binding = self.binding(role, st)
-        role_def = self.role(role)
-        ergebnis = self.runner.run(role_def, self.provider(binding, role_def), sources,
-                                   attempt=st["attempts"], params=binding.params,
-                                   check_context={"task": task}, task=task)
-        return ergebnis, binding
-
     def _write(self, role: str, task: dict, files: list[dict],
                ergebnis: RoleResult) -> dict[str, str | None] | None:
         """Schreibt nach PathPolicy; None, wenn ein Pfad abgelehnt wurde (nichts geschrieben)."""
-        abgelehnt = []
-        for f in files:
-            e = self.policy.check(role, f["path"], task)
-            if not e.allowed:
-                abgelehnt.append((f["path"], e.reason))
+        abgelehnt = [(f["path"], e.reason) for f in files
+                     if not (e := self.policy.check(role, f["path"], task)).allowed]
         if abgelehnt:
-            for pfad, grund in abgelehnt:
-                self.store.event("write_rejected", role=role, task_id=task["id"],
-                                 detail={"path": pfad, "reason": grund,
-                                         "call_id": ergebnis.call_id})
+            self._log_rejected(role, task, abgelehnt, ergebnis.call_id)
             return None
         vorher: dict[str, str | None] = {}
         for f in files:
@@ -527,35 +653,70 @@ class PipelineSupervisor:
             ziel.write_text(f["content"], encoding="utf-8")
         return vorher
 
-    def _restore(self, vorher: dict[str, str | None]) -> None:
-        for pfad, inhalt in vorher.items():
+    def _log_rejected(self, role: str, task: dict, abgelehnt: list[tuple[str, str | None]],
+                      call_id: str) -> None:
+        for pfad, grund in abgelehnt:
+            self.store.event("write_rejected", role=role, task_id=task["id"],
+                             detail={"path": pfad, "reason": grund, "call_id": call_id})
+
+    def _check_session(self, role: str, task: dict, files: list[str], call_id: str,
+                       mem: _TaskMemory) -> bool:
+        """Rollenvertrag für Session-Dateien (CON-0213 INV-01); True, wenn alles erlaubt war."""
+        abgelehnt = [(f, e.reason) for f in files
+                     if not (e := self.policy.check(role, f, task)).allowed]
+        if abgelehnt:
+            self._log_rejected(role, task, abgelehnt, call_id)
+            for pfad, grund in abgelehnt:
+                mem.feedback.append(f"Bitte zurücksetzen: {pfad} ({grund}); erlaubt: "
+                                    f"{task.get('allowed_paths') if role == 'implementer' else task.get('test_file')}")
+        return not abgelehnt
+
+    def _restore(self, vorher: dict[str, str | None] | None) -> None:
+        for pfad, inhalt in (vorher or {}).items():
             ziel = self.config.root / pfad
             if inhalt is None:
                 ziel.unlink(missing_ok=True)
             else:
                 ziel.write_text(inhalt, encoding="utf-8")
 
-    def _test_author(self, st: dict, task: dict, mem: _TaskMemory) -> None:
-        ergebnis, binding = self._call("test_author", st, task, self._sources(
-            task, mem, test_output=mem.test_output))
+    def _failing(self) -> list[str]:
+        probe = self.ctx.run_tests()
+        return [f"{c.classname}.{c.name}" for c in probe.failing()] if probe.ok else []
+
+    def _apply_test_author(self, st: dict, task: dict, mem: _TaskMemory, ergebnis: RoleResult,
+                           binding: RoleBinding, session_files: list[str] | None) -> None:
         outcome, detail = ergebnis.outcome, {}
+        test_task = (task.get("type") or "code") == "test"
         if ergebnis.ok:
-            files = [{"path": ergebnis.output["test_file"], "content": ergebnis.output["content"]}]
-            vorher = self._write("test_author", task, files, ergebnis)
+            vorher: dict[str, str | None] | None = {}
+            if session_files is None:
+                files = [{"path": ergebnis.output["test_file"],
+                          "content": ergebnis.output["content"]}]
+                vorher = self._write("test_author", task, files, ergebnis)
+                if vorher is None:
+                    mem.feedback.append(f"Schreibversuch abgelehnt: {files[0]['path']}")
+            elif not self._check_session("test_author", task, session_files, ergebnis.call_id,
+                                         mem):
+                vorher = None
             if vorher is None:
                 outcome = "gate_failed"
-                mem.feedback.append(f"Schreibversuch abgelehnt: {files[0]['path']}")
             else:
                 probe = self.ctx.run_tests()
                 faelle = probe.for_file(task["test_file"]) if probe.ok else []
                 rot = [c for c in faelle if c.status in ("failed", "error")]
-                if probe.ok and rot:
-                    detail = {"gate": "red", "passed": True}
+                bestanden = probe.ok and (bool(faelle) if test_task else bool(rot))
+                if bestanden:
+                    detail = {"gate": "red", "passed": True} if not test_task else \
+                        {"gate": "test", "passed": True}
                     mem.test_output = json.dumps(probe.summary(), ensure_ascii=False)
                     st["attempts"] = 0
-                    self._set(st, "red")
+                    # FR-06: ein reiner Test-Task geht ohne Implementer zum Review.
+                    self._set(st, "green" if test_task else "red")
+                    if test_task:
+                        mem.diff = self.ctx.read(task["test_file"]) or ""
                 else:
-                    self._restore(vorher)
+                    if session_files is None:
+                        self._restore(vorher)
                     outcome = "gate_failed"
                     grund = (probe.reason if not probe.ok else
                              "Test ist ohne Implementierung grün" if faelle else
@@ -567,34 +728,65 @@ class PipelineSupervisor:
         self.log_role_call(ergebnis, binding, task_id=task["id"], outcome=outcome, detail=detail)
         self.save()
 
-    def _implementer(self, st: dict, task: dict, mem: _TaskMemory) -> None:
-        sources = self._sources(task, mem, repo_map=self.ctx.repo_map(),
-                                test_file=self.ctx.read(task["test_file"]) or "",
-                                test_output=mem.test_output, review=mem.review)
-        ergebnis, binding = self._call("implementer", st, task, sources)
+    def _apply_implementer(self, st: dict, task: dict, mem: _TaskMemory, ergebnis: RoleResult,
+                           binding: RoleBinding, session_files: list[str] | None,
+                           baseline: list[str] | None) -> None:
         outcome, detail = ergebnis.outcome, {}
         if ergebnis.ok:
-            vorher = self._write("implementer", task, ergebnis.output["files"], ergebnis)
+            vorher: dict[str, str | None] | None
+            if session_files is None:
+                vorher = self._write("implementer", task, ergebnis.output["files"], ergebnis)
+                geaendert = [f["path"] for f in ergebnis.output["files"]]
+                if vorher is None:
+                    mem.feedback.append("Schreibversuch außerhalb der erlaubten Pfade abgelehnt; "
+                                        f"erlaubt: {task.get('allowed_paths')}")
+            else:
+                geaendert = session_files
+                vorher = {} if self._check_session("implementer", task, session_files,
+                                                   ergebnis.call_id, mem) else None
             if vorher is None:
                 outcome = "gate_failed"
-                mem.feedback.append("Schreibversuch außerhalb der erlaubten Pfade abgelehnt; "
-                                    f"erlaubt: {task.get('allowed_paths')}")
             else:
-                probe = self.ctx.run_tests()
-                mem.test_output = json.dumps(probe.summary(), ensure_ascii=False)
-                if probe.ok and probe.cases and not probe.failing():
-                    mem.diff = self._diff(vorher)
-                    detail = {"gate": "green", "passed": True}
+                gruen, detail = self._green(task, mem, baseline)
+                if gruen:
+                    ergebnisse = task_gates_mod.run_task_gates(self.config.root, self.config.raw,
+                                                               geaendert)
+                    for g in ergebnisse:
+                        self.store.event("gate", task_id=task["id"], role="implementer",
+                                         detail=g.event_detail())
+                    blockiert = [g for g in ergebnisse if g.blocks]
+                    if blockiert:
+                        gruen = False
+                        detail = {"gate": blockiert[0].gate, "passed": False}
+                        mem.feedback.extend(f"{g.gate}-Gate: {'; '.join(g.findings[:3])}"
+                                            for g in blockiert)
+                if gruen:
+                    mem.diff = self._diff(vorher) if vorher else ""
+                    mem.changed = list(geaendert)
                     self._set(st, "green")
                 else:
-                    self._restore(vorher)
+                    if session_files is None:
+                        self._restore(vorher)
                     outcome = "gate_failed"
-                    detail = {"gate": "green", "passed": False}
-                    mem.feedback.append(f"GREEN-Gate: {mem.test_output[:500]}")
         else:
             mem.feedback.extend(ergebnis.problems[:3])
         self.log_role_call(ergebnis, binding, task_id=task["id"], outcome=outcome, detail=detail)
         self.save()
+
+    def _green(self, task: dict, mem: _TaskMemory, baseline: list[str] | None) -> tuple[bool,
+                                                                                        dict]:
+        """GREEN-Gate: code/test alle Tests grün; config/doc keine neuen Fehler (FR-06)."""
+        probe = self.ctx.run_tests()
+        mem.test_output = json.dumps(probe.summary(), ensure_ascii=False)
+        if (task.get("type") or "code") in ("config", "doc"):
+            neu = [f"{c.classname}.{c.name}" for c in probe.failing()
+                   if f"{c.classname}.{c.name}" not in (baseline or [])] if probe.ok else []
+            gruen = probe.ok and not neu
+        else:
+            gruen = probe.ok and bool(probe.cases) and not probe.failing()
+        if not gruen:
+            mem.feedback.append(f"GREEN-Gate: {mem.test_output[:500]}")
+        return gruen, {"gate": "green", "passed": gruen}
 
     def _diff(self, vorher: dict[str, str | None]) -> str:
         teile = []
@@ -605,11 +797,8 @@ class PipelineSupervisor:
                                               fromfile=f"a/{pfad}", tofile=f"b/{pfad}"))
         return "".join(teile)
 
-    def _reviewer(self, st: dict, task: dict, mem: _TaskMemory) -> None:
-        sources = self._sources(task, mem, diff=mem.diff or "(Diff nicht verfügbar)",
-                                gate_results=[json.loads(mem.test_output)]
-                                if mem.test_output else [])
-        ergebnis, binding = self._call("reviewer", st, task, sources)
+    def _apply_reviewer(self, st: dict, task: dict, mem: _TaskMemory, ergebnis: RoleResult,
+                        binding: RoleBinding) -> None:
         if ergebnis.ok and ergebnis.output["verdict"] == "pass":
             self._set(st, "reviewed")
             st["attempts"] = 0
@@ -622,10 +811,99 @@ class PipelineSupervisor:
         self.log_role_call(ergebnis, binding, task_id=task["id"])
         self.save()
 
+    # Session-Aufträge (SPEC-0061 FR-01 bis FR-03) ─────────────────────────────
+    def _rel(self, pfad) -> str:
+        try:
+            return str(pfad.relative_to(self.config.root))
+        except ValueError:
+            return str(pfad)
+
+    def _snapshot(self) -> dict[str, str]:
+        from ..quality.files import collect_files
+
+        return {f: hashlib.sha256((self.config.root / f).read_bytes()).hexdigest()
+                for f in collect_files(self.config.root, ["**"], SNAPSHOT_EXCLUDE)}
+
+    def _request_work(self, rolle: str, st: dict | None, task: dict | None,
+                      feedback: list[str], sources: dict,
+                      failing: list[str] | None = None) -> RunOutcome:
+        """Persistiert einen Auftrag an eine Session-Arbeitsrolle (CON-0212 INV-05)."""
+        request_id = f"work-{secrets.token_hex(4)}"
+        erlaubt: list[str] = []
+        if task and rolle == "test_author" and task.get("test_file"):
+            erlaubt = [task["test_file"]]
+        elif task and rolle == "implementer":
+            erlaubt = list(task.get("allowed_paths") or [])
+        auftrag = {"kind": "work", "request_id": request_id, "role": rolle,
+                   "task_id": task["id"] if task else None,
+                   "attempt": st["attempts"] if st else 1, "created_at": now(),
+                   "allowed_paths": erlaubt, "test_file": (task or {}).get("test_file"),
+                   "sources": {k: v for k, v in sources.items() if v not in (None, "", [], {})},
+                   "feedback": list(feedback),
+                   "output_schema": (self.role(rolle).output_schema if rolle in JSON_ROLES
+                                     else None),
+                   "snapshot": f"{request_id}.snapshot.json"}
+        self.store.write_work(auftrag, {"files": self._snapshot(), "failing": failing or []})
+        self.state["status"] = "awaiting_session"
+        self.transition(frm=(st or {}).get("state", self.state.get("phase")),
+                        to="awaiting_session", task_id=(task or {}).get("id"), role=rolle)
+        self.save()
+        return RunOutcome(3, f"{rolle}: Auftrag an die Session – Ergebnis bestätigen mit "
+                             f"sdd pipeline done {self.store.run_id}"
+                             + (" --json '…'" if rolle in JSON_ROLES else "") + ".",
+                          self.store.run_id)
+
+    def _changed_since(self, auftrag: dict) -> list[str]:
+        vorher = self.store.read_snapshot(auftrag).get("files", {})
+        jetzt = self._snapshot()
+        return sorted({f for f, h in jetzt.items() if vorher.get(f) != h} |
+                      {f for f in vorher if f not in jetzt})
+
+    def _continue_session(self, auftrag: dict, output: Any) -> RunOutcome | None:
+        rolle = auftrag["role"]
+        binding = RoleBinding(rolle, "session", "", None, None, {}, "session")
+        call_id = f"session-{auftrag['request_id']}"
+        if rolle == "decomposer":
+            ergebnis = RoleResult(rolle, call_id, 1, "ok", output=output)
+            self.log_role_call(ergebnis, binding)
+            return self._s1(output["tasks"])
+        st = self._task_state(auftrag["task_id"])
+        task = self._load_tasks()[auftrag["task_id"]]
+        mem = self._memory.setdefault(st["task_id"], _TaskMemory(feedback=list(
+            auftrag.get("feedback") or [])))
+        attempt = max(1, st["attempts"])
+        if rolle == "reviewer":
+            ergebnis = RoleResult(rolle, call_id, attempt, "ok", output=output)
+            self._apply_reviewer(st, task, mem, ergebnis, binding)
+            return None
+        geaendert = self._changed_since(auftrag)
+        if rolle == "test_author":
+            inhalt = self.ctx.read(task.get("test_file") or "")
+            ergebnis = RoleResult(rolle, call_id, attempt, "ok" if inhalt is not None else
+                                  "invalid_output",
+                                  output={"test_file": task.get("test_file"), "content": inhalt,
+                                          "fr_ids": task.get("fr_ids")},
+                                  problems=[] if inhalt is not None else
+                                  [f"Testdatei {task.get('test_file')} fehlt"])
+            self._apply_test_author(st, task, mem, ergebnis, binding, geaendert)
+        else:
+            ergebnis = RoleResult(rolle, call_id, attempt, "ok",
+                                  output={"files": [], "explanation": "Session"})
+            basis = self.store.read_snapshot(auftrag).get("failing") or []
+            self._apply_implementer(st, task, mem, ergebnis, binding, geaendert, basis)
+        return None
+
     # Phase acceptance und finalize ───────────────────────────────────────────
     def _acceptance(self) -> RunOutcome | None:
         probe = self.ctx.run_tests()
         facts = {"frs": self.ctx.fr_status(probe), "gate_results": [probe.summary()]}
+        optionen = self.options()
+        if optionen.get("auto") and "holdout" in auto_steps_mod.auto_steps(self.config.raw):
+            base_url = optionen.get("base_url") or (
+                (self.config.raw.get("evaluator") or {}).get("base_url"))
+            ergebnis = auto_steps_mod.holdout_step(self.config, self.store.spec_id, base_url)
+            self.store.event("gate", detail=ergebnis.event_detail())
+            facts["holdout"] = auto_steps_mod.holdout_facts(ergebnis)
         request = new_request("S3", facts)
         antwort = self.ask(request)
         if isinstance(antwort, RunOutcome):
@@ -642,24 +920,40 @@ class PipelineSupervisor:
         self.save()
         return None
 
+    def _reopen(self, command: dict) -> RunOutcome | None:
+        """S3 reopen (FR-09): Tasks zurück auf red, Hinweis als history, S3 erneut."""
+        anzahl = sum(1 for d in self.decisions() if d.get("valid")
+                     and (d.get("command") or {}).get("command") == "reopen")
+        if anzahl > self.max_reopen:
+            return self.halt(f"max_reopen ({self.max_reopen}) erreicht")
+        for task_id in command["task_ids"]:
+            st = self._task_state(task_id)
+            st["attempts"] = 0
+            self._set(st, "red", reason=f"reopen: {command['hint']}")
+        self.state["phase"] = "tasks"
+        self.transition(frm="acceptance", to="tasks", reason="S3 reopen")
+        self.save()
+        return None
+
     def _finalize(self) -> RunOutcome:
+        """Nach S3: ohne --auto nur finalize, mit --auto die Kette (CON-0214 INV-01)."""
         spec_id = self.store.spec_id
-        if self.ctx.is_git_repo():
-            from ..finalize import SpecFinalizer
-
-            report = SpecFinalizer(self.config).run(spec_id, skip_container=True)
-            if report.error:
-                self.state["status"] = "failed"
-                self.store.event("transition", to="failed", detail={"reason": report.error},
-                                 **{"from": "finalize"})
-                self.save()
-                return RunOutcome(1, f"Finalize gescheitert: {report.error}", self.store.run_id)
-            ziel = report.pr_url or (str(report.pr_path) if report.pr_path else "")
-        else:
-            from ..frontmatter import patch_status
-
-            patch_status(self.ctx.spec_path, "implemented")
-            ziel = "kein Git-Repository: nur Status implemented gesetzt"
+        schritte = (auto_steps_mod.auto_steps(self.config.raw) if self.options().get("auto")
+                    else ["finalize"])
+        danach = [s for s in schritte if s not in auto_steps_mod.BEFORE_ACCEPTANCE]
+        ergebnisse = auto_steps_mod.after_acceptance(self.config, spec_id, danach)
+        for r in ergebnisse:
+            self.store.event("gate", detail=r.event_detail())
+        gescheitert = next((r for r in ergebnisse if r.status == "failed"), None)
+        if gescheitert:
+            self.state["status"] = "failed"
+            self.store.event("transition", to="failed", detail={"reason": gescheitert.reason},
+                             **{"from": "finalize"})
+            self.save()
+            return RunOutcome(1, f"{gescheitert.step} gescheitert: {gescheitert.reason}",
+                              self.store.run_id)
+        pr = next((r.data.get("pr") for r in ergebnisse if r.data.get("pr")), "")
+        ziel = pr or "ohne PR"
         self.state.update(status="completed", phase="done")
         self.transition(frm="finalize", to="done", reason=ziel)
         self.save()

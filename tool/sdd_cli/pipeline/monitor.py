@@ -102,9 +102,10 @@ def status(root: Path, run_id: str) -> dict:
     store = RunStore.open(root, run_id)
     state = store.read_state()
     offen = store.read_pending() if state.get("pending_request_id") else None
+    auftrag = store.read_work() if state.get("status") == "awaiting_session" else None
     return {"run_id": run_id, "spec_id": store.spec_id, "status": state.get("status"),
             "phase": state.get("phase"), "tasks": state.get("tasks", []),
-            "pending_request": offen}
+            "pending_request": offen, "pending_work": auftrag}
 
 
 __all__ = ["RunNotFound", "is_active", "list_runs", "status", "task_events"]

@@ -63,6 +63,8 @@ dieses Pfads.
 - **FR-06:** Die GitHub-Action-Vorlage ruft `sdd pipeline run --auto` und läuft keyfrei, wo möglich.
 - **FR-07:** SPEC-0045 wird über `sdd spec deprecate` abgelöst; SPEC-0004 bekommt den Hinweis auf
   die Pipeline.
+- **FR-09:** `llm_probe.py` (Erreichbarkeitsprüfung des abgelösten `llm_pool`) wird entfernt; seit
+  SPEC-0061 prüft `sdd config test-llm` Rollen und Profile über die Provider-Factory.
 - **FR-08:** Eine Regel in `.sdd/architecture.yaml` sichert ab, dass keine Schicht außerhalb von
   `pipeline` Tasks ausführt (konkrete Form im Review, DIP-Befund aus SPEC-0061).
 
