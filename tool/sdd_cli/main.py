@@ -3695,33 +3695,63 @@ def config_validate_cmd(output_json: bool) -> None:
         sys.exit(1)
 
 
-@config_group.command("test-llm", help="Testet die Erreichbarkeit eines LLM-Providers.")
-@click.option("--id", "llm_id", default=None, help="Provider-ID (leer = alle testen).")
-def config_test_llm_cmd(llm_id: str | None) -> None:
+@config_group.command("test-llm", help="Prüft die Modelle aus llm.roles und llm.profiles.")
+@click.option("--role", "rolle", default=None, help="Nur diese Rolle prüfen.")
+@click.option("--profile", "profil", default=None, help="Nur dieses Profil prüfen.")
+def config_test_llm_cmd(rolle: str | None, profil: str | None) -> None:
+    """SPEC-0061 FR-10, CON-0214 INV-05/INV-08: jeder Endpunkt einmal, session übersprungen."""
+    import time
+
+    from .llm.usage import use_sinks
+    from .pipeline.providers import (
+        RoleConfigError,
+        build_provider,
+        profile_binding,
+        profiles,
+        resolve_binding,
+    )
+    from .pipeline.roles import DEFAULT_ROLES, RoleError, load_role
+
     cfg = _ensure_project()
-    from .config_manager import ConfigManager
-    from .llm_probe import LlmProbeError, probe_llm
-    mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
-    data = mgr.load()
-    providers = data.get("llm_pool", {}).get("providers") or []
-    if llm_id:
-        providers = [p for p in providers if p.get("id") == llm_id]
-        if not providers:
-            console.print(f"[red]✗[/] Provider '{llm_id}' nicht gefunden.")
-            sys.exit(1)
-    if not providers:
-        console.print("[yellow]⚠[/] Keine LLM-Provider konfiguriert.")
+    ziele: list[tuple[str, object, object]] = []  # (Bezeichnung, Belegung, Rollendefinition)
+    try:
+        if not rolle:
+            for name in ([profil] if profil else sorted(profiles(cfg))):
+                ziele.append((f"Profil {name}", profile_binding(cfg, "completion", name),
+                              load_role(cfg.root, "implementer")))
+        if not profil:
+            for name in ([rolle] if rolle else DEFAULT_ROLES):
+                role_def = load_role(cfg.root, name)
+                ziele.append((f"Rolle {name}", resolve_binding(cfg, role_def), role_def))
+    except (RoleConfigError, RoleError) as exc:
+        console.print(f"[red]✗[/] {exc}")
         sys.exit(1)
-    has_error = False
-    for prov in providers:
-        pid = prov.get("id", "?")
+
+    geprueft: dict[tuple, str] = {}
+    fehler = False
+    for bezeichnung, binding, role_def in ziele:
+        if binding.is_session:
+            console.print(f"[dim]○[/] {bezeichnung}: session (Claude Code im Dialog) – nicht geprüft")
+            continue
+        if binding.endpoint in geprueft:
+            console.print(f"[dim]○[/] {bezeichnung}: wie {geprueft[binding.endpoint]}")
+            continue
+        geprueft[binding.endpoint] = bezeichnung
+        start = time.monotonic()
         try:
-            latency = probe_llm(prov)
-            console.print(f"[green]✓[/] {pid}: OK ({latency:.0f} ms)")
-        except LlmProbeError as exc:
-            console.print(f"[red]✗[/] {pid}: {exc}")
-            has_error = True
-    if has_error:
+            with use_sinks([]):
+                antwort = build_provider(cfg, binding, role_def).complete(
+                    "Antworte nur mit OK.", max_tokens=32, timeout=60)
+        except Exception as exc:  # Erreichbarkeit: jeder Fehler ist ein Befund, kein Absturz
+            console.print(f"[red]✗[/] {bezeichnung} ({binding.provider} {binding.model}): {exc}")
+            fehler = True
+            continue
+        dauer = (time.monotonic() - start) * 1000
+        reasoning = antwort.usage.reasoning_tokens if antwort.usage else None
+        console.print(f"[green]✓[/] {bezeichnung} ({binding.provider} {binding.model or ''}): "
+                      f"{dauer:.0f} ms, Reasoning: "
+                      + ("unbekannt" if reasoning is None else f"{reasoning} Tokens"))
+    if fehler:
         sys.exit(1)
 
 

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-26T05:45:16Z",
+  "last_updated": "2026-09-26T07:49:27Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -265,6 +265,34 @@
       "spec_id": "SPEC-0058",
       "accepted_at": "2026-09-26T05:45:15Z",
       "acceptance_reason": "Verweise alter Befehle und Monitor-Route (Pipeline-Ereignisse → DagEvent) als dünne Übersetzer ohne Logik.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0061",
+      "accepted_at": "2026-09-26T07:49:23Z",
+      "acceptance_reason": "Rollenbelegung als Strategie: LLM-Profil, by_complexity oder session; die Pipeline kennt nur die Rolle.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Command",
+      "spec_id": "SPEC-0061",
+      "accepted_at": "2026-09-26T07:49:24Z",
+      "acceptance_reason": "Session-Auftrag an Arbeitsrollen als persistierte Anfrage, bestätigt mit eigenem Befehl (sdd pipeline done), analog zu den Supervisor-Commands.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "spec_id": "SPEC-0061",
+      "accepted_at": "2026-09-26T07:49:25Z",
+      "acceptance_reason": "Abschluss-Schritte (holdout, finalize, automerge) als Kette aus der Config; neue Schritte ohne Änderung am Kern.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0061",
+      "accepted_at": "2026-09-26T07:49:27Z",
+      "acceptance_reason": "Verweise alter Befehle und Config-Migration als dünne Übersetzer (umgesetzt in SPEC-0062).",
       "refactoring_guru_url": null
     }
   ]

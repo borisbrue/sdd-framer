@@ -1,4 +1,4 @@
-<!-- skill: sdd-supervise | version: 0.1.0 | sdd-blueprint: true | updated: 2026-09-25 -->
+<!-- skill: sdd-supervise | version: 0.2.0 | sdd-blueprint: true | updated: 2026-09-26 -->
 
 # /sdd-supervise – Claude Code als Supervisor der Rollen-Pipeline
 
@@ -39,7 +39,8 @@ sdd pipeline run $ARGUMENTS --resume <run_id>   # nach Abbruch
 sdd pipeline status <run_id>
 ```
 Lies `.sdd/runs/<SPEC>/<run_id>/pending-decision.json`: `point`, `task_id`, `allowed_commands`
-und `facts` (Tasks, FR-Abdeckung, Gate-Ergebnisse, Fehler, Tokenstand).
+und `facts` (Tasks, FR-Abdeckung, Gate-Ergebnisse, Fehler, Tokenstand; mit `--auto` auch
+`holdout` mit Quote und Szenarien – nur Ergebnisse, nie Holdout-Inhalte).
 
 ## Schritt 4: Entscheiden
 Nur Commands aus `allowed_commands`; `point` und `task_id` übernimmst du aus der Anfrage.
@@ -52,6 +53,7 @@ Nur Commands aus `allowed_commands`; `point` und `task_id` übernimmst du aus de
 | S2 | Modell ist überfordert | `reassign` (`task_id`, `role`, `model`) |
 | S2 | Task ist falsch geschnitten | `redecompose` |
 | S3 Abnahme | je FR `erfüllt`, `teilweise` oder `fehlt` mit Beleg | `accept_frs` |
+| S3 | Tests oder Holdout-Ergebnis (`facts.holdout`) zeigen ein behebbares Problem | `reopen` (`task_ids`, `hint`) |
 | jederzeit | grundsätzliches Problem | `halt` (erst nach Rückfrage beim Nutzer) |
 
 ```bash

@@ -44,10 +44,21 @@ def pipeline_group() -> None:
 @click.option("--dry-run", is_flag=True, help="Nur Zerlegung und S1, kein Code.")
 @click.option("--resume", "resume_id", default=None, help="Run am gespeicherten Zustand fortsetzen.")
 @click.option("--max-tasks", type=int, default=None, help="Höchstens N Tasks bearbeiten.")
-def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int | None) -> None:
+@click.option("--task", "task_id", default=None,
+              help="Nur diesen Task der gespeicherten Zerlegung bearbeiten (SPEC-0061 FR-05).")
+@click.option("--auto", is_flag=True,
+              help="Abschluss-Kette aus pipeline.auto_steps (holdout, finalize, automerge).")
+@click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
+              help="Ziel der Holdout-Evaluation für --auto (sonst evaluator.base_url).")
+def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int | None,
+            task_id: str | None, auto: bool, base_url: str | None) -> None:
     from .pipeline.mediator import PipelineError, PipelineSupervisor
 
     cfg = _config()
+    if task_id and (resume_id or auto or dry_run):
+        console.print("[red]✗[/] --task lässt sich nicht mit --resume, --auto oder --dry-run "
+                      "kombinieren.")
+        sys.exit(2)
     try:
         if resume_id:
             if not resume_id.startswith(f"{spec_id}-"):
@@ -56,7 +67,8 @@ def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int |
                                                 notify=console.print)
         else:
             outcome = PipelineSupervisor.start(cfg, spec_id, dry_run=dry_run,
-                                               max_tasks=max_tasks, notify=console.print)
+                                               max_tasks=max_tasks, task_id=task_id, auto=auto,
+                                               base_url=base_url, notify=console.print)
     except PipelineError as exc:
         console.print(f"[red]✗[/] {exc}")
         sys.exit(2)
@@ -76,6 +88,30 @@ def decide_cmd(run_id: str, command_json: str) -> None:
     try:
         outcome = PipelineSupervisor.decide(cfg, run_id, parse_command(command_json),
                                             notify=console.print)
+    except PipelineError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(2)
+    _finish(outcome)
+
+
+@pipeline_group.command("done")
+@click.argument("run_id")
+@click.option("--json", "output_json", default=None,
+              help="Ausgabe der Rolle (Pflicht für decomposer und reviewer, CON-0200).")
+def done_cmd(run_id: str, output_json: str | None) -> None:
+    """Bestätigt den offenen Session-Auftrag einer Arbeitsrolle (SPEC-0061 FR-02)."""
+    from .pipeline.decisions import parse_command
+    from .pipeline.mediator import PipelineError, PipelineSupervisor
+
+    cfg = _config()
+    ausgabe = None
+    if output_json is not None:
+        ausgabe = parse_command(output_json)
+        if ausgabe is None:
+            console.print("[red]✗[/] --json ist kein gültiges JSON.")
+            sys.exit(2)
+    try:
+        outcome = PipelineSupervisor.done(cfg, run_id, ausgabe, notify=console.print)
     except PipelineError as exc:
         console.print(f"[red]✗[/] {exc}")
         sys.exit(2)
@@ -111,6 +147,16 @@ def status_cmd(run_id: str, as_json: bool) -> None:
                       + (f" für {anfrage['task_id']}" if anfrage.get("task_id") else ""))
         console.print(f"  Erlaubt: {', '.join(anfrage['allowed_commands'])}")
         console.print(f"  Datei: {store.dir / 'pending-decision.json'}")
+    auftrag = store.read_work() if state.get("status") == "awaiting_session" else None
+    if auftrag:
+        console.print(f"\n[yellow]Offener Auftrag {auftrag['request_id']}[/] an die Rolle "
+                      f"{auftrag['role']}"
+                      + (f" für {auftrag['task_id']}" if auftrag.get("task_id") else ""))
+        if auftrag.get("allowed_paths"):
+            console.print(f"  Erlaubte Pfade: {', '.join(auftrag['allowed_paths'])}")
+        console.print(f"  Datei: {store.dir / 'pending-work.json'}")
+        console.print(f"  Bestätigen: sdd pipeline done {run_id}"
+                      + (" --json '…'" if auftrag.get("output_schema") else ""))
     sys.exit(0)
 
 

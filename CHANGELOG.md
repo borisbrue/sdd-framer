@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased] – SPEC-0061: Pipeline-Fähigkeiten
+
+### Added
+
+- Arbeitsrollen im Modus `session` (`llm.roles.<rolle>.mode: session`): Auftrag in
+  `pending-work.json`, Exit 3, Bestätigung mit **`sdd pipeline done RUN [--json]`**. Rollenvertrag:
+  PathPolicy, Gates und Eskalation gelten wie bei Modellen.
+- `llm.profiles` (benannte Modelle) und `llm.roles.<rolle>.profile` / `.by_complexity`
+  (`low|medium|high` → Profil oder `session`).
+- `sdd pipeline run --task ID` (ein Task der gespeicherten Zerlegung) und `--auto`
+  (Abschluss-Kette aus `pipeline.auto_steps`: `holdout` vor S3 als Fakt, `finalize`, `automerge`
+  nach Autonomie-Level). S3 kennt `reopen` (Tasks mit Hinweis erneut öffnen, `pipeline.max_reopen`).
+- Gates pro Task (`pipeline.task_gates`: `tests`, `architecture`, `lint`); Task-Typen `test`,
+  `config`, `doc` ohne RED-Zwang.
+
+### Changed
+
+- `sdd config test-llm` prüft Rollen und Profile (`--role`, `--profile`) statt des abgelösten
+  `llm_pool`; `--id` entfällt.
+- Default-Rolle `supervisor` 1.1.0 (kennt `reopen`); lokal angepasste Rollen bekommen beim
+  `sdd upgrade` eine `supervisor.md.new`.
+
 ## [Unreleased] – SPEC-0058: Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
 
 ### Removed

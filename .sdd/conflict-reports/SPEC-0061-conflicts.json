@@ -1,0 +1,380 @@
+{
+  "spec_id": "SPEC-0061",
+  "generated_at": "2026-09-26T10:12:29Z",
+  "new_contracts": [
+    "CON-0212",
+    "CON-0213",
+    "CON-0214"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0061-001",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0202",
+      "detail": "CON-0202 legt ein geschlossenes `state.status`-Enum fest. `awaiting_supervisor` gilt dort genau dann, wenn eine Anfrage offen ist, und `requests/<request_id>.json` ist als `$defs/pending_decision` typisiert. CON-0212 INV-05 führt `awaiting_session` und `pending-work.json` neu ein und archiviert den Session-Auftrag im selben `requests/`-Verzeichnis. Das Run-Verzeichnis-Schema kennt diese Datei nicht. Das Archiv enthielte damit zwei Schemas, ohne Diskriminator. Offen bleibt auch, wie sich `awaiting_session` und `awaiting_supervisor` gegenseitig ausschließen und ob der Auftrag `pending_request_id` belegt. Laut CON-0212 INV-06 soll CON-0202 zwar 'additiv erweitert' werden, bis dahin wäre ein `state.json` mit `awaiting_session` gegen CON-0202 aber ungültig.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-05: Arbeitsaufträge tragen kind: work, Entscheidungsanfragen nicht; nie beides offen; awaiting_session steht schon im Enum von CON-0202.",
+        "resolved_at": "2026-09-26T10:09:14Z"
+      }
+    },
+    {
+      "id": "CF-0061-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0199",
+      "detail": "Nach CON-0199 INV-04 gilt: Fehlt `llm.roles.<rolle>`, wird der Provider über `legacy_component` und CON-0023 G-02 aufgelöst, und die Rolle führt keine eigene Rückfallkette ein. CON-0212 schafft mit `by_complexity` und `profile` aber eine zweite Auflösungsstufe. Nicht festgelegt ist, was für eine Komplexitätsstufe gilt, die in `by_complexity` fehlt. Ebenso offen ist eine Rolle, die nur `by_complexity` setzt, aber weder `profile` noch `provider` nennt (INV-01 verlangt 'entweder/oder'). Beides läuft faktisch auf eine Rückfallkette innerhalb der Rolle hinaus. Außerdem hebt INV-03 die bisherige Beschränkung `mode: session` nur für `supervisor` auf. Das ändert einen approved Contract, dessen Artefakt noch nicht angepasst ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-02: fehlende Stufe fällt auf die übrige Belegung/legacy_component zurück; nur by_complexity ist zulässig.",
+        "resolved_at": "2026-09-26T10:09:14Z"
+      }
+    },
+    {
+      "id": "CF-0061-003",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0023 G-03 legt fest, dass `load_config()` die `llm`-Sektion nicht validiert und Pflichtfelder erst in der Factory geprüft werden. CON-0212 INV-01 erklärt dagegen unbekannte Profilparameter und die gleichzeitige Angabe von `profile` und `provider` per Schema zu Fehlern. Zusätzlich fehlt eine Regel, wie `llm.roles.implementer` gegenüber `llm.orchestrator` bzw. `llm.code_gen` Vorrang hat. Das G-02-Hierarchieschema aus CON-0023 kennt weder `profiles` noch `roles`. Offen ist auch, ob Profile Felder aus `completion`/`code_gen` erben. Laut INV-01 sind sie 'vollständig', in der Rückfallkette von CON-0023 werden sie aber nicht erwähnt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-02: Prüfung in sdd config validate und beim Run-Start, nicht in load_config (G-03 bleibt); Auflösungsreihenfolge in CON-0213 INV-04.",
+        "resolved_at": "2026-09-26T10:09:15Z"
+      }
+    },
+    {
+      "id": "CF-0061-004",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0106",
+      "detail": "`llm_pool.providers` (Einträge mit `id`, `model`, `base_url`, `cost_tier`, dazu `strategy: local_first|cost_first|quality_first`) ist bereits eine Registry benannter Modelle mit kosten- bzw. lokalitätsbasierter Auswahl. `llm.profiles` und `by_complexity` aus CON-0212 decken denselben Zweck ab, also benannte Modelle mit einer Routing-Regel je Task. Keiner der beiden Contracts regelt, welches Mechanismus Vorrang hat oder ob `llm_pool` damit abgelöst ist. Dazu kommt ein Widerspruch bei den Keys: CON-0106 INV-02 lässt nur Env-Var-Namen zu (`api_key_env`). Profile übernehmen dagegen die Parameter aus CON-0023 und erlauben damit `api_key` im Klartext in `config.yaml`.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-07: llm.profiles/by_complexity lösen llm_pool ab, das seit SPEC-0058 nicht mehr gelesen wird.",
+        "resolved_at": "2026-09-26T10:09:16Z"
+      }
+    },
+    {
+      "id": "CF-0061-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0212 INV-02 verweist die Prüfung der Profilnamen (fehlendes Profil in `llm.profiles`, Sonderwert `session`) an `sdd config validate`. CON-0190 hat für `llm.profiles`, `llm.roles`, `by_complexity` und `pipeline.task_gates`/`auto_steps` aber weder eine Regelgruppe noch ein Level. Die Provider-Enum- und Konsistenzprüfungen dort beziehen sich nur auf `llm.<component>`-Blöcke. Zum Vergleich: SPEC-0054 hat seine Erweiterung mit der Regelgruppe `quality` in CON-0190 ausdrücklich nachgetragen. Für SPEC-0061 fehlt eine solche Erweiterung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-02: config validate bekommt Regeln für llm.profiles/by_complexity (Ergänzung zu CON-0190).",
+        "resolved_at": "2026-09-26T10:09:17Z"
+      }
+    },
+    {
+      "id": "CF-0061-006",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0096",
+      "detail": "`by_complexity` stützt sich auf `task.complexity` (`low|medium|high`) aus CON-0096. Die Stufen sind konsistent. CON-0212 erlaubt `by_complexity` aber auch für Rollen, die ohne Task-Kontext laufen, z. B. `decomposer` (vor der Zerlegung) und `supervisor`. Für diesen Fall legt der Contract nicht fest, welcher Eintrag gilt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-02: by_complexity wirkt nur für Rollen mit Task; bei decomposer/supervisor ignoriert und als Warnung gemeldet.",
+        "resolved_at": "2026-09-26T10:09:18Z"
+      }
+    },
+    {
+      "id": "CF-0061-007",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0212",
+      "conflicting_contract": "CON-0201",
+      "detail": "Die Liste der S3-Commands in CON-0201 ist geschlossen (`accept_frs`, `halt`). `reopen` wird zwar als additive Erweiterung angekündigt (INV-06), überschneidet sich semantisch aber mit dem S2-Command `retry_with_hint` (Task-IDs plus Hinweis). Offen ist, ob `reopen` den Run nach S2 zurücksetzt, wie viele Wiederholungen erlaubt sind und wie es mit `accept_frs` in derselben Antwort zusammenspielt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-06: Abgrenzung zu retry_with_hint, ein Command je Entscheidung, Zählung über decisions.jsonl.",
+        "resolved_at": "2026-09-26T10:09:19Z"
+      }
+    },
+    {
+      "id": "CF-0061-008",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0213",
+      "conflicting_contract": "CON-0124",
+      "detail": "CON-0213 lets a task of type doc run without an RED gate and without test_author; the only requirement is that the test suite gets no new failures. CON-0124 INV-01 blocks the passed transition when test_ids=[] and raises TestRequiredError. If the pipeline uses TaskLifecycle.mark_passed() (task_lifecycle.py still exists), doc tasks can never reach passed. Either CON-0213 states that pipeline tasks bypass TaskLifecycle, or CON-0124 gets an exception for type=doc.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0213 INV-08: Die Pipeline nutzt TaskLifecycle nicht; die Test-Pflicht aus CON-0124 gilt für sie nicht.",
+        "resolved_at": "2026-09-26T10:09:19Z"
+      }
+    },
+    {
+      "id": "CF-0061-009",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0213",
+      "conflicting_contract": "CON-0106",
+      "detail": "CON-0106 defines llm_pool with providers and strategy (cost_first/quality_first/local_first) for choosing a model. CON-0213 together with CON-0212 adds a second routing mechanism: llm.profiles plus llm.roles.<rolle>.by_complexity. With both in config.yaml, it is unclear which one wins in the pipeline, and whether llm_pool (and the old routing.py/task_routing) is deprecated or delegates to the new routing.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0212 INV-07: llm_pool ist abgelöst und hat keinen Einfluss auf die Pipeline.",
+        "resolved_at": "2026-09-26T10:09:20Z"
+      }
+    },
+    {
+      "id": "CF-0061-010",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0213",
+      "conflicting_contract": "CON-0061",
+      "detail": "CON-0061 G-01 requires tests before implementation code (Red phase) with no exceptions. CON-0213 skips the RED gate for doc tasks. Also, CON-0061 G-03 asks the user after more than 3 failures without progress, while CON-0213 counts gate_failed attempts and hands the file-reset instruction to the next session request. Both are fine as long as CON-0061 applies only to the implement skill, but that boundary is not stated.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0213 INV-08: CON-0061 gilt für den Skill, nicht für die Pipeline.",
+        "resolved_at": "2026-09-26T10:09:21Z"
+      }
+    },
+    {
+      "id": "CF-0061-011",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0213",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 defines the task types code, test, config and doc. CON-0213 only specifies the gate behaviour for doc (no RED gate). The test and config types have no scenario for whether test_author and the RED gate run.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Alle vier Task-Typen sind in CON-0213 INV-05 festgelegt (code, test, config/doc); Szenarien decken doc exemplarisch ab.",
+        "resolved_at": "2026-09-26T10:09:22Z"
+      }
+    },
+    {
+      "id": "CF-0061-012",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0213",
+      "conflicting_contract": "CON-0097",
+      "detail": "--task requires a stored decomposition and otherwise exits with code 2. CON-0097 describes sdd decompose, but it does not guarantee that the decomposition is saved at a place the pipeline reads, or that task IDs (T01, T02) stay stable. So nothing says whether a decomposition from sdd decompose is enough for --task.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0213 INV-08: --task liest die IDs aus .sdd/tasks/<SPEC>.json, unabhängig vom Erzeuger.",
+        "resolved_at": "2026-09-26T10:09:23Z"
+      }
+    },
+    {
+      "id": "CF-0061-013",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 (Orchestrator – lokale Pipeline Spec → Code → PR → Eval → Retry) beschreibt ebenfalls eine automatische Abschluss-Kette mit Evaluation und PR-Erzeugung. CON-0214 legt dafür `sdd pipeline run --auto` mit `pipeline.auto_steps` (holdout, finalize, automerge) fest. Zwei Contracts bestimmen dann Reihenfolge und Retry-Verhalten desselben Ablaufs. SPEC-0058 hat die alten Ausführungspfade entfernt, deshalb ist CON-0012 vermutlich veraltet und sollte deprecated oder auf CON-0214 umgestellt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0012 (Orchestrator) wird mit SPEC-0062 abgelöst, die orchestrate durch pipeline run --auto ersetzt.",
+        "resolved_at": "2026-09-26T10:09:23Z"
+      }
+    },
+    {
+      "id": "CF-0061-014",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate – Phase State Machine) legt die erlaubten Phasenübergänge fest. `reopen` setzt eine abgeschlossene oder fortgeschrittene Spec auf eine frühere Phase zurück. Erlaubt CON-0025 keine Rückwärtsübergänge (z. B. von finalized/merged zurück nach implement), widersprechen sich die Contracts. Klären, ob reopen als neuer Übergang in CON-0025 ergänzt wird oder ob die State Machine aus CON-0213 CON-0025 ersetzt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-06: reopen ändert nur den Run-Zustand, nie Gate-Phasen der Spec.",
+        "resolved_at": "2026-09-26T10:09:24Z"
+      }
+    },
+    {
+      "id": "CF-0061-015",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0030",
+      "detail": "Für `reopen` und die Schritte der Auto-Kette muss der Pipeline-Zustand persistiert werden (aktueller Schritt, abgeschlossene Schritte, Zurücksetzen). CON-0030 (Pipeline Phase State JSON Schema) enthält wahrscheinlich keine Felder für auto_steps oder den reopen-Verlauf. Der Datenvertrag dafür steht nun in CON-0212, das Verhältnis zu CON-0030 ist aber nicht geregelt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-06: kein neuer Zustand in state.json; Ketten-Ereignisse als gate, Wiedereröffnungen in decisions.jsonl; CON-0030 betrifft die Gate-Datei.",
+        "resolved_at": "2026-09-26T10:09:25Z"
+      }
+    },
+    {
+      "id": "CF-0061-016",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0064",
+      "detail": "Der Kettenschritt `holdout` muss die Holdout-Isolation aus CON-0064 (und die Verzeichnisstruktur und HOL-Isolation aus CON-0009) einhalten. CON-0214 verweist nicht darauf, dass auch der automatische Holdout-Lauf die Isolation garantiert, also dass der Implementierer keinen Zugriff auf HOL-Artefakte hat.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-02: Holdout-Isolation aus CON-0064/CON-0009 gilt unverändert.",
+        "resolved_at": "2026-09-26T10:09:26Z"
+      }
+    },
+    {
+      "id": "CF-0061-017",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0065",
+      "detail": "CON-0065 (docker-spec-lifecycle) beschreibt den Container-Lebenszyklus von `sdd finalize`. CON-0214 legt `finalize` als Kettenschritt fest. Offen ist, ob der Kettenschritt denselben Container-Lebenszyklus nutzt (Runtime podman/docker, Cleanup) oder sich anders verhält.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-07: finalize nutzt den Container-Lebenszyklus von sdd finalize (CON-0065) unverändert.",
+        "resolved_at": "2026-09-26T10:09:27Z"
+      }
+    },
+    {
+      "id": "CF-0061-018",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0104",
+      "detail": "CON-0104 legt die Familie `sdd config` (set/get/show/validate) fest. `sdd config test-llm` ist ein neuer Subcommand derselben Gruppe. CON-0104 sollte ihn referenzieren oder abgrenzen, damit Exit-Codes und Ausgabeformat (z. B. `--json` wie in CON-0191) einheitlich bleiben.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-08: test-llm gehört zur Familie sdd config; Exit-Codes in INV-05.",
+        "resolved_at": "2026-09-26T10:09:28Z"
+      }
+    },
+    {
+      "id": "CF-0061-019",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0214",
+      "conflicting_contract": "CON-0023",
+      "detail": "`sdd config test-llm` prüft die konfigurierten LLM-Provider und hängt damit vom llm-Konfigurationsschema aus CON-0023 ab, auch vom Default `claude-cli`. Der Contract sollte festlegen, wie sich test-llm bei fehlenden `usage`-Daten (claude-cli liefert None) und beim Fake-LLM-Server verhält, ohne gegen die Provider-Konsistenzregeln aus CON-0190 zu verstoßen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0214 INV-08: fehlende Usage ergibt 'Reasoning: unbekannt', kein Fehler.",
+        "resolved_at": "2026-09-26T10:09:28Z"
+      }
+    },
+    {
+      "id": "CF-0061-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Abschluss-Kette (pipeline.auto_steps)",
+      "conflicting_contract": "SPEC-0004:Holdout-Evaluation / Auto-Merge",
+      "detail": "SPEC-0004 definiert bereits die Holdout-Evaluation mit Retry und den Auto-Merge nach Autonomie-Level. Die Abschluss-Kette `holdout → finalize → automerge` aus SPEC-0061 löst dasselbe Problem ein zweites Mal im Pipeline-Pfad, deshalb muss sie `evaluator.py` und die Level-Regeln aus SPEC-0004 wiederverwenden statt sie neu zu definieren.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "So umgesetzt: holdout nutzt die bestehende Holdout-Evaluation, automerge die bestehende Autonomie-Logik (CON-0214 INV-02/INV-04); nichts wird neu definiert.",
+        "resolved_at": "2026-09-26T10:12:39Z"
+      }
+    },
+    {
+      "id": "CF-0061-R002",
+      "type": "redundancy",
+      "severity": "low",
+      "new_contract": "sdd pipeline run --auto",
+      "conflicting_contract": "SPEC-0004:Orchestrator-Pipeline (sdd orchestrate)",
+      "detail": "Bis SPEC-0062 bestehen `sdd orchestrate` und `sdd pipeline run --auto` parallel als zwei autonome Pfade von der Spec bis zum Merge. Diese Redundanz ist gewollt und zeitlich begrenzt, sollte aber in beiden Specs vermerkt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt und zeitlich begrenzt; SPEC-0062 macht orchestrate zum Verweis.",
+        "resolved_at": "2026-09-26T10:12:40Z"
+      }
+    },
+    {
+      "id": "CF-0061-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "sdd pipeline run --auto",
+      "conflicting_contract": "SPEC-0007:POST /api/orchestrate",
+      "detail": "Der Execute-Button der Web UI startet weiterhin den Orchestrator und nicht die Pipeline. Nach SPEC-0061 gibt es damit zwei Ausführungspfade, deren Ergebnisse (PR-URL, Pass-Rate) auf unterschiedlichen Wegen gemeldet werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Web-Route orchestrate startet ab SPEC-0062 die Pipeline mit --auto.",
+        "resolved_at": "2026-09-26T10:12:41Z"
+      }
+    },
+    {
+      "id": "CF-0061-R004",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "Rollenbelegung (llm.roles, llm.profiles, by_complexity)",
+      "conflicting_contract": "SPEC-0008:Provider-Konfiguration / Rollen-Zuordnung",
+      "detail": "SPEC-0008 legt die Zuordnung von Komponenten zu Providern fest, und SPEC-0061 führt mit `llm.roles` und `llm.profiles` samt `by_complexity` ein zweites Belegungsmodell ein. Welches der beiden Config-Schemata maßgeblich ist, muss eindeutig festgelegt werden, damit `sdd config test-llm` nur eines davon prüft.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.roles/llm.profiles gelten für die Pipeline, llm.<komponente> für die übrigen Befehle und als legacy_component-Rückfall der Rollen (CON-0199 INV-04); test-llm prüft Rollen und Profile.",
+        "resolved_at": "2026-09-26T10:12:42Z"
+      }
+    },
+    {
+      "id": "CF-0061-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Lint- und Architektur-Gates pro Task",
+      "conflicting_contract": "SPEC-0014:Execution Gate (gestufte Phasen)",
+      "detail": "SPEC-0014 sieht vor der Ausführung Qualitäts-Gates vor, SPEC-0061 ergänzt Gates pro Task innerhalb der Pipeline. Die Begriffe und Zuständigkeiten der beiden Gate-Ebenen sollten abgegrenzt werden, damit keine doppelten Prüfungen entstehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abgrenzung: SPEC-0014 regelt Phasen vor der Ausführung, SPEC-0061 Gates nach jedem Task innerhalb eines Runs; keine doppelte Prüfung.",
+        "resolved_at": "2026-09-26T10:12:42Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 19,
+    "high": 1,
+    "medium": 9,
+    "low": 9,
+    "affected_specs_count": 0
+  }
+}

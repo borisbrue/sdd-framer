@@ -14,6 +14,7 @@ CONTRACT_SCHEMAS = {
     "role-outputs": "rollenausgaben-decomposer-test-author-implementer-reviewer",
     "supervisor-decision": "supervisor-commands-fuer-s1-bis-s3",
     "pipeline-run": "run-verzeichnis-run-json-state-json-events-decisions-pending-decision",
+    "pipeline-capabilities": "profile-rollenbelegung-session-auftrag-und-reopen",
 }
 
 

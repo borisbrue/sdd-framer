@@ -116,3 +116,23 @@ class RunStore:
             ziel = self.dir / "requests" / f"{request_id}.json"
             ziel.parent.mkdir(parents=True, exist_ok=True)
             os.replace(pfad, ziel)
+
+    # ── Session-Aufträge an Arbeitsrollen (SPEC-0061 FR-01, CON-0212 INV-05) ──
+    def write_work(self, request: dict, snapshot: dict) -> None:
+        _atomic_write(self.dir / "pending-work.json", request)
+        _atomic_write(self.dir / request["snapshot"], snapshot)
+
+    def read_work(self) -> dict | None:
+        pfad = self.dir / "pending-work.json"
+        return json.loads(pfad.read_text(encoding="utf-8")) if pfad.is_file() else None
+
+    def read_snapshot(self, request: dict) -> dict:
+        pfad = self.dir / request["snapshot"]
+        return json.loads(pfad.read_text(encoding="utf-8")) if pfad.is_file() else {}
+
+    def archive_work(self, request_id: str) -> None:
+        pfad = self.dir / "pending-work.json"
+        if pfad.is_file():
+            ziel = self.dir / "requests" / f"{request_id}.json"
+            ziel.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(pfad, ziel)

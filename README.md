@@ -372,12 +372,31 @@ Schreibrechte regelt die PathPolicy: nur `test_author` (Testdatei) und `implemen
 
 ```yaml
 llm:
+  profiles:                                   # benannte Modelle (SPEC-0061)
+    lokal: {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-coder}
+    denker: {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-thinking}
   roles:
-    decomposer:  {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-thinking}
-    implementer: {provider: openai-compat, base_url: http://localhost:8080/v1, model: qwen3-coder}
+    decomposer:  {profile: denker}
+    implementer: {by_complexity: {low: lokal, medium: lokal, high: session}}
     reviewer:    {provider: claude-cli}
     supervisor:  {provider: claude-cli, mode: session}
+pipeline:
+  task_gates: [tests, architecture]           # Gates nach jedem Implementer-Versuch
+  auto_steps: [holdout, finalize, automerge]  # Abschluss-Kette für --auto
 ```
+
+Weitere Möglichkeiten (SPEC-0061):
+
+- **Arbeit im Dialog:** Jede Arbeitsrolle kann `mode: session` sein (oder per `by_complexity`
+  einzelne Stufen). Der Run hält mit Exit 3 und einem Auftrag in `pending-work.json` an; Claude Code
+  schreibt die Dateien und bestätigt mit `sdd pipeline done <run_id>` (`--json` für `decomposer`
+  und `reviewer`). Es gelten dieselben PathPolicy, Gates und Eskalationen wie bei Modellen.
+- **Einzelner Task:** `sdd pipeline run SPEC --task T02` bearbeitet einen Task der gespeicherten
+  Zerlegung.
+- **Autonom bis zum Merge:** `sdd pipeline run SPEC --auto` – das Holdout-Ergebnis erscheint in der
+  S3-Anfrage (der Supervisor kann Tasks mit `reopen` erneut öffnen), danach PR und Auto-Merge nach
+  Autonomie-Level.
+- **Modelle prüfen:** `sdd config test-llm [--role R | --profile P]`.
 
 ---
 

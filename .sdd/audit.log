@@ -80,3 +80,4 @@
 2026-09-26T06:04:57Z CON-0143 approved → deprecated [mit SPEC-0037 abgelöst: Autopilot nie lauffähig; der Monitor liest seit SPEC-0058 das Pipeline-Protokoll]
 2026-09-26T06:04:59Z CON-0103 draft → deprecated [LLM-Pool-Schritt des Wizards mit SPEC-0058 entfernt; Modelle stehen in llm.roles]
 2026-09-26T06:24:57Z SPEC-0058 approved → in-progress [sdd-start]
+2026-09-26T10:44:35Z SPEC-0061 approved → in-progress [sdd-start]
