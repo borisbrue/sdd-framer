@@ -337,6 +337,8 @@ class PipelineSupervisor:
         info = {"model": binding.model, "provider": binding.provider}
         if ergebnis.problems:
             info["problems"] = ergebnis.problems[:10]
+        if ergebnis.failed_checks:
+            info["failed_checks"] = ergebnis.failed_checks  # Quelle für `sdd role case capture`
         self.store.event("role_call", task_id=task_id, role=ergebnis.role,
                          call_id=ergebnis.call_id, attempt=ergebnis.attempt,
                          outcome=outcome or ergebnis.outcome, prompt_hash=ergebnis.prompt_hash,

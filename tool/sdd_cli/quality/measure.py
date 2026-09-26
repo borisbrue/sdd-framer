@@ -121,18 +121,16 @@ def _architecture(root: Path, raw_config: dict, deps: ProbeOutcome | None,
 
 
 def _judge(root: Path, raw_config: dict, base_ref: str | None, settings: QualitySettings):
+    """Judge über die Rolle `judge` (SPEC-0055 FR-12), nicht mehr über die Komponente evaluator."""
     from ..config import load_config as _load
-    from ..llm.factory import get_completion_provider
+    from ..pipeline.facade import JudgeUnavailable, judge_provider
 
-    cfg = _load(root)
-    block = (raw_config.get("llm") or {}).get("evaluator") or {}
-    modell = str(block.get("model") or block.get("provider") or "claude-cli")
     try:
-        provider = get_completion_provider(cfg, "evaluator")
-    except Exception as exc:
+        provider, modell = judge_provider(_load(root))
+    except JudgeUnavailable as exc:
         return ScoreNode("judge", settings.root_weights["judge"],
                          [MetricLeaf("rubric", None, None, reason=f"kein Judge-Provider: {exc}")],
-                         extra={"model": modell, "rubric_version": "-"})
+                         extra={"model": "-", "rubric_version": "-"})
     return judge_node(root, diff_text(root, base_ref), provider, modell,
                       weight=settings.root_weights["judge"])
 

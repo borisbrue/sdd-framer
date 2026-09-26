@@ -5,13 +5,19 @@ from sdd_cli.config import SddConfig, load_config
 from sdd_cli.config_validator import ConfigValidator
 from sdd_cli.init import init_project
 from sdd_cli.pipeline.providers import SAME_MODEL_WARNING, resolve_binding
-from sdd_cli.pipeline.roles import BLUEPRINT_ROLES, DEFAULT_ROLES, install_roles, load_role
+from sdd_cli.pipeline.roles import (
+    ALL_ROLES,
+    BLUEPRINT_ROLES,
+    DEFAULT_ROLES,
+    install_roles,
+    load_role,
+)
 from sdd_cli.pipeline.runner import unknown_checks
 from sdd_cli.validate import validate
 
 
 def test_blueprint_rollen_sind_gueltig_und_kennen_ihre_checks(tmp_path):
-    for rolle in DEFAULT_ROLES:
+    for rolle in ALL_ROLES:
         definition = load_role(tmp_path, rolle)
         assert definition.source == BLUEPRINT_ROLES / f"{rolle}.md"
         assert unknown_checks(definition) == []
@@ -19,11 +25,11 @@ def test_blueprint_rollen_sind_gueltig_und_kennen_ihre_checks(tmp_path):
 
 def test_install_roles_legt_new_nur_bei_abweichung_an(tmp_path):
     angelegt, neu, gleich = install_roles(tmp_path)
-    assert len(angelegt) == len(DEFAULT_ROLES) and not neu and not gleich
+    assert len(angelegt) == len(ALL_ROLES) and not neu and not gleich
     (tmp_path / ".sdd/roles/supervisor.md").write_text("eigene Rolle", encoding="utf-8")
     angelegt, neu, gleich = install_roles(tmp_path)
     assert not angelegt and [p.name for p in neu] == ["supervisor.md.new"]
-    assert len(gleich) == len(DEFAULT_ROLES) - 1
+    assert len(gleich) == len(ALL_ROLES) - 1
 
 
 def _issues(raw: dict, root):

@@ -325,9 +325,11 @@ def validate(config: SddConfig) -> Report:
 
 def _check_roles(config: SddConfig, report: Report) -> None:
     """Jede `.sdd/roles/<rolle>.md` erfüllt CON-0199 und nennt nur bekannte Rollen-Checks."""
-    from .pipeline.facade import unknown_checks
+    from .pipeline.checks import not_gate_capable
+    from .pipeline.checks import unknown_checks as unbekannt
     from .pipeline.roles import RoleError, load_role
 
+    _check_role_cases(config, report)
     ordner = config.root / ".sdd" / "roles"
     if not ordner.is_dir():
         return
@@ -339,9 +341,37 @@ def _check_roles(config: SddConfig, report: Report) -> None:
                        instruction="Frontmatter nach CON-0199 korrigieren (sdd upgrade liefert "
                                    "die Default-Rolle als .md.new).")
             continue
-        for check in unknown_checks(rolle):
+        for check in unbekannt(rolle.checks):
             report.add("error", datei, f"unbekannter Rollen-Check {check!r}",
                        instruction="Nur registrierte Rollen-Checks verwenden.")
+        for check in not_gate_capable(rolle.checks):
+            report.add("error", datei, f"Rollen-Check {check!r} ist im Gate nicht nutzbar",
+                       instruction="Eval-Checks gehören in case.yaml, nicht in die Rolle "
+                                   "(CON-0219 INV-01).")
+
+
+def _check_role_cases(config: SddConfig, report: Report) -> None:
+    """Golden Cases nach CON-0217; Holdout-Fälle ohne ID und Inhalt (CON-0219 INV-09)."""
+    from .pipeline.evals.cases import PREFIX, CaseError, case_problems, list_cases, role_home
+
+    for rolle in PREFIX:
+        home = role_home(config.root, rolle)
+        try:
+            faelle = list_cases(home, include_drafts=True)
+        except CaseError as exc:
+            report.add("error", home.cases_dir, str(exc))
+            continue
+        for fall in faelle:
+            probleme = case_problems(fall)
+            if not probleme:
+                continue
+            if fall.holdout:
+                report.add("error", home.holdout_dir, f"{rolle}: ein Holdout-Fall ist ungültig",
+                           instruction="Details nur außerhalb des Tuning-Dialogs: "
+                                       "sdd role eval --include-holdout.")
+            else:
+                report.add("error", fall.dir / "case.yaml", f"{fall.id}: {probleme[0]}",
+                           instruction="case.yaml nach CON-0217 korrigieren.")
 
 
 def _check_architecture_links(config: SddConfig, report: Report) -> None:

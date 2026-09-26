@@ -279,9 +279,9 @@ def test_tc15_judge_ohne_gewicht_veraendert_den_score_nicht(qproject: QualityPro
             return CompletionResult(text='{"scores": {"lesbarkeit": 1, "idiomatik": 1, '
                                          '"passung": 1, "fehlerbehandlung": 1}}')
 
-    for ziel in ("sdd_cli.llm.factory.get_completion_provider",
-                 "sdd_cli.llm.get_completion_provider"):
-        monkeypatch.setattr(ziel, lambda *a, **k: _Fake())
+    # Seit SPEC-0055 (FR-12) läuft der Judge über die Rolle judge.
+    monkeypatch.setattr("sdd_cli.pipeline.facade.judge_provider",
+                        lambda *a, **k: (_Fake(), "fake-judge"))
     standard_projekt(qproject)
     _, ohne = qproject.measure()
     _, mit = qproject.measure("--judge")

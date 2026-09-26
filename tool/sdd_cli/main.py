@@ -17,6 +17,7 @@ from .autonomy import LEVEL_CRITERIA, compute_level_stats, level_label
 from .config import SddConfig, find_project_root, load_config
 from .evaluator import persist_report, run_evaluation
 from .frontmatter import parse_safe
+from .holdout_paths import scenario_files
 from .ids import next_id
 from .init import init_project
 from .maintenance import run_maintenance_sweep
@@ -47,10 +48,12 @@ def cli() -> None:
 def _register_quality_commands() -> None:
     from .pipeline_cli import pipeline_group
     from .quality_cli import arch_group, quality_group
+    from .role_cli import role_group
 
     cli.add_command(quality_group)
     cli.add_command(arch_group)
     cli.add_command(pipeline_group)
+    cli.add_command(role_group)
 
 
 _register_quality_commands()
@@ -834,12 +837,12 @@ def holdout_generate(spec_id: str) -> None:
 
         already_have = any(
             parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
-            for p in cfg.holdout_dir.rglob("*.md")
+            for p in scenario_files(cfg.holdout_dir)
         ) if cfg.holdout_dir.exists() else False
 
         if already_have:
             count = sum(
-                1 for p in cfg.holdout_dir.rglob("*.md")
+                1 for p in scenario_files(cfg.holdout_dir)
                 if parse_safe(p) and parse_safe(p).frontmatter.get("contract") == cid
                    and parse_safe(p).frontmatter.get("spec") == spec_id
             )

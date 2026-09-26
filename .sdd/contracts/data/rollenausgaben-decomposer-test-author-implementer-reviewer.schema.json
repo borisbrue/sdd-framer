@@ -258,6 +258,30 @@
           }
         }
       }
+    },
+    "judge": {
+      "type": "object",
+      "required": [
+        "scores"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "scores": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "begruendung": {
+          "type": "string"
+        }
+      }
     }
   },
   "oneOf": [

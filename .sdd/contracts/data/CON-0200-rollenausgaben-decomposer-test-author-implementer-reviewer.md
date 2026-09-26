@@ -4,7 +4,7 @@ title: "Rollenausgaben: decomposer, test_author, implementer, reviewer"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json"
 tests: ["TST-0229"]
@@ -66,3 +66,7 @@ und ein gezählter Fehlversuch.
 
 - Schema: `.sdd/contracts/data/rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json`
   (`$defs` je Rolle).
+
+## Seit SPEC-0055 (0.3.0)
+
+`$defs/judge`: Ausgabe der Rolle `judge` (`scores` je Kriterium 1–5, optional `begruendung`), CON-0219 INV-07.

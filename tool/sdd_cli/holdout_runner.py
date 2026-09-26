@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from .holdout_paths import scenario_files
+
 if TYPE_CHECKING:
     # Zur Laufzeit importiert die Funktion selbst (zirkulaer auf Modulebene);
     # die Annotation in der Signatur sah diesen Import nicht (F821).
@@ -515,7 +517,7 @@ def run_structured_evaluation(
     holdout_dir = config.holdout_dir
     docs = []
     if holdout_dir.exists():
-        for md in sorted(holdout_dir.rglob("*.md")):
+        for md in sorted(scenario_files(holdout_dir)):
             doc = parse_safe(md)
             if not doc:
                 continue

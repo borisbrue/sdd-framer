@@ -4,7 +4,7 @@ title: "Profile, Rollenbelegung, Session-Auftrag und reopen"
 type: data
 format: json-schema
 spec: SPEC-0061
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/profile-rollenbelegung-session-auftrag-und-reopen.schema.json"
 tests: ["TST-0241"]
@@ -85,3 +85,7 @@ llm:
 
 - Schema: `.sdd/contracts/data/profile-rollenbelegung-session-auftrag-und-reopen.schema.json`.
 - INV-02 (Profilnamen) prüft `sdd config validate`, INV-05 der Pipeline-Test (TST-0242).
+
+## Seit SPEC-0055 (0.3.0)
+
+Profil-Schlüssel `requests_per_minute` (Zahl > 0): Höchstzahl der Aufrufe je Minute an den Endpunkt des Profils (SPEC-0055 FR-11, CON-0219 INV-08).
