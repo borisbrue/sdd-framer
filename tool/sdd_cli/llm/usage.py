@@ -1,6 +1,6 @@
 """Usage-Erfassung für jeden LLM-Aufruf (SPEC-0060, CON-0206, CON-0207).
 
-Decorator Pattern: `RecordingCompletionProvider`/`RecordingCodeGenProvider` umhüllen die Provider
+Decorator Pattern: `RecordingCompletionProvider` umhüllt die Provider
 aus der Factory und erzeugen je Aufruf genau einen `UsageRecord`, auch bei einer Ausnahme.
 Observer: Senken (`UsageSink`) empfangen die Datensätze; die SQLite-Senke für `token_usage` ist
 vorregistriert. Aufrufkontext (Spec, Lauf, Rolle …) kommt über `usage_context` aus einer
@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from .base import CodeGenResult, CompletionResult, UsageMetadata
+from .base import CompletionResult, UsageMetadata
 
 if TYPE_CHECKING:
     from ..config import SddConfig
@@ -207,13 +207,6 @@ class RecordingCompletionProvider(_Recording):
 
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResult:
         return self._call(lambda: self.inner.complete(prompt, **kwargs))
-
-
-class RecordingCodeGenProvider(_Recording):
-    """Decorator um einen CodeGenProvider; ein Datensatz je `generate()` (CON-0207 INV-07)."""
-
-    def generate(self, prompt: str, workspace: Path, **kwargs: Any) -> CodeGenResult:
-        return self._call(lambda: self.inner.generate(prompt, workspace, **kwargs))
 
 
 def unwrap(provider: Any) -> Any:

@@ -199,7 +199,7 @@ sdd trace
 >
 > | Entfernt | Grund |
 > |---|---|
-> | `sdd dev` (start/exec/close/pr/build/push/up/down) | Container-Lifecycle wird von `sdd start`, `sdd finalize` und `sdd orchestrate` intern verwaltet |
+> | `sdd dev` (start/exec/close/pr/build/push/up/down) | Container-Lifecycle wird von `sdd start` und `sdd finalize` intern verwaltet |
 > | `sdd pattern`, `sdd pattern-suggest` | Pattern-Entscheidungen stehen in der Spec unter „Architektur & Design Patterns" |
 > | `sdd status-check` | läuft automatisch im pre-commit-Hook (`sdd install-hooks`) |
 > | `sdd new agents-md` | `sdd init` legt die `AGENTS.md` an |
@@ -288,10 +288,10 @@ mkdir -p .github/workflows
 cp .sdd/templates/github-actions/sdd-orchestrate.yml .github/workflows/
 ```
 
-> Der Workflow startet `sdd orchestrate` bei jedem Push auf `main` mit geänderten
-> Spec-Dateien und benötigt dafür einen `ANTHROPIC_API_KEY` als GitHub-Secret.
-> SPEC-0044 FR-06 sieht vor, dass `sdd init` ihn nach Rückfrage selbst anlegt —
-> das ist noch nicht umgesetzt.
+> Der Workflow startet `sdd pipeline run <SPEC> --auto` bei jedem Push auf `main` mit geänderten
+> Spec-Dateien (SPEC-0062). Im CI gibt es keine lokale `claude`-CLI: die Rollen brauchen in
+> `llm.profiles`/`llm.roles` ein erreichbares Modell, keine Rolle darf `mode: session` haben.
+> `ANTHROPIC_API_KEY` ist nur nötig, wenn ein Projekt ausdrücklich `provider: anthropic` wählt.
 
 ---
 
@@ -334,29 +334,40 @@ Tabellarische Übersicht aller Specs mit Status, Contract- und Test-Coverage.
 ### `sdd start` — TDD-Implementierungsphase
 
 ```bash
-sdd start <SPEC-XXXX> [--auto] [--base-url <url>] [--build-cmd <cmd>] [--no-pr]
+sdd start <SPEC-XXXX> [--auto] [--base-url <url>] [--no-pr] [--no-container]
 ```
 
-Setzt die Spec auf `in-progress`, erzeugt Test-Stubs und startet optional den vollautomatischen Implement-Zyklus.
+Setzt die Spec auf `in-progress`, erzeugt Test-Stubs und startet den Dev-Container. Mit `--auto`
+entfällt das: `sdd start` übergibt an `sdd pipeline run SPEC --auto` (die Pipeline verlangt
+`approved` und schreibt ihre Tests selbst); `--no-pr` wird zu `--steps holdout`.
 
 ---
 
-### `sdd orchestrate` — Dark-Factory-Pipeline
+### `sdd orchestrate`, `sdd task-route`, `sdd task-exec`, `sdd task-loop` — entfernt
 
-```bash
-sdd orchestrate --spec SPEC-XXXX [--base-url <url>] [--build-cmd <cmd>]
-                [--max-retries 3] [--no-pr] [--dry-run] [--save/--no-save]
-                [--project PRJ-XXXX] [--resume]
-```
+Seit SPEC-0062 ist `sdd pipeline` der einzige Ausführungspfad. Die alten Befehle führen nichts mehr
+aus, nennen den Ersatz und enden mit Exit 1:
 
-Vollautomatische Pipeline: Spec → Code → Tests → PR → Evaluation → Retry.
+| Alt | Ersatz |
+|---|---|
+| `sdd orchestrate --spec SPEC` | `sdd pipeline run SPEC --auto` |
+| `sdd task-route SPEC T01`, `sdd task-exec SPEC T01` | `sdd pipeline run SPEC --task T01` |
+| `sdd task-loop SPEC` | `sdd pipeline run SPEC` |
+
+Das lokale Modell für einfache Tasks kommt aus `llm.profiles` und
+`llm.roles.implementer.by_complexity`. `sdd upgrade` übernimmt `task_routing` und `llm.local_llm`
+dorthin (Profil `lokal`, Stufen mit Score ≤ Schwelle: low = 15, medium = 50, high = 80) und
+kommentiert die alten Blöcke mit `# [SPEC-0062]` aus. Gibt es das Profil oder die Zuordnung
+schon, ändert es nichts und meldet den Konflikt. Die Web-UI (`POST /api/orchestrate`) und
+`/sdd-implement` laufen ebenfalls über die Pipeline.
 
 ---
 
 ### `sdd pipeline` — Rollen-Pipeline mit Supervisor
 
 ```bash
-sdd pipeline run SPEC-XXXX [--dry-run] [--resume <run_id>] [--max-tasks N]
+sdd pipeline run SPEC-XXXX [--dry-run] [--resume <run_id>] [--max-tasks N] [--task T]
+                           [--auto [--steps holdout,finalize,automerge]] [--session ROLLE ...]
 sdd pipeline decide <run_id> --json '{"point": "S1", "command": "approve", "reason": "…"}'
 sdd pipeline status <run_id>
 sdd pipeline report <run_id>
@@ -397,6 +408,10 @@ Weitere Möglichkeiten (SPEC-0061):
   S3-Anfrage (der Supervisor kann Tasks mit `reopen` erneut öffnen), danach PR und Auto-Merge nach
   Autonomie-Level.
 - **Modelle prüfen:** `sdd config test-llm [--role R | --profile P]`.
+- **Belegung je Run (SPEC-0062):** `--session ROLLE` (mehrfach) setzt Rollen nur für diesen Run in
+  den Modus `session`, ohne `config.yaml` zu ändern; `--steps` ersetzt `pipeline.auto_steps` für
+  einen Run mit `--auto`. `/sdd-implement` nutzt
+  `--auto --session test_author --session implementer --session supervisor`.
 
 ---
 
@@ -672,7 +687,7 @@ Die API ist unter `http://localhost:8000/api/...` erreichbar. Interaktive Dokume
 
 | Methode | Pfad | Beschreibung |
 |---|---|---|
-| `POST` | `/api/orchestrate` | Pipeline starten |
+| `POST` | `/api/orchestrate` | `sdd pipeline run SPEC --auto` als Prozess starten (Adapter, SPEC-0062) |
 | `GET` | `/api/pipeline/active` | Aktiver Lauf für eine Spec |
 | `POST` | `/api/pipeline/{run_id}/abort` | Pipeline abbrechen |
 | `GET` | `/api/pipeline/{run_id}/log` | Live-Log (SSE-Stream) |

@@ -153,7 +153,7 @@ class RolesCheck(ConfigCheck):
 
     def run(self, raw: dict, issues: list[ConfigIssue]) -> None:
         from .config import SddConfig
-        from .pipeline.providers import role_config_issues
+        from .pipeline.facade import role_config_issues
 
         config = SddConfig(root=self._root or Path.cwd(), raw=raw)
         issues.extend(ConfigIssue(level, pfad, meldung)

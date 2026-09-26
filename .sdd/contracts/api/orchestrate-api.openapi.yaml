@@ -1,7 +1,7 @@
 openapi: "3.1.0"
 info:
   title: "SDD Orchestrate API"
-  version: "0.2.0"
+  version: "0.4.0"
   description: |
     Orchestrate-Endpunkte für den Web UI Execute Flow.
     CON-0021 · SPEC-0007
@@ -12,7 +12,7 @@ paths:
       operationId: startOrchestrate
       summary: "Pipeline starten"
       description: |
-        Startet einen Orchestrator-Lauf für eine Spec als Background-Task.
+        Startet `sdd pipeline run SPEC --auto` als eigenen Prozess (Adapter, SPEC-0062).
         Die Spec muss `status: approved` haben.
       requestBody:
         required: true
@@ -76,6 +76,54 @@ paths:
         "404":
           description: "Kein aktiver Lauf für diese spec_id"
 
+  /api/pipeline/{run_id}/abort:
+    post:
+      operationId: abortPipelineRun
+      summary: "Lauf abbrechen"
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Abbruch ausgelöst"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [aborted, run_id]
+                properties:
+                  aborted:
+                    type: boolean
+                  run_id:
+                    type: string
+        "404":
+          description: "run_id nicht gefunden"
+        "409":
+          description: "Lauf ist nicht aktiv"
+
+  /api/pipeline/{run_id}/log:
+    get:
+      operationId: streamPipelineLog
+      summary: "Live-Log als Server-Sent Events"
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "SSE-Strom, je Zeile ein data-Ereignis, am Ende event done"
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "404":
+          description: "run_id nicht gefunden"
+
   /api/pipeline/{run_id}:
     get:
       operationId: getPipelineRun
@@ -134,12 +182,12 @@ components:
       properties:
         run_id:
           type: string
-          description: "Eindeutige Run-ID im Format {spec_id}-{unix_timestamp_ms}"
-          example: "SPEC-0007-1747084800000"
+          description: "Run-ID der Pipeline: {spec_id}-{YYYYMMDDTHHMMSS}-{suffix}"
+          example: "SPEC-0007-20260926T101500-a1b2c3"
 
     PipelineStatus:
       type: string
-      enum: [running, labeled, merged, failed, dry_run]
+      enum: [running, paused, labeled, merged, failed, dry_run, aborted]
 
     PipelineAttempt:
       type: object
@@ -181,7 +229,7 @@ components:
           $ref: "#/components/schemas/PipelineStatus"
         current_step:
           type: string
-          description: "Aktueller Fortschritts-Text; nur befüllt wenn status=running"
+          description: "Aktueller Fortschritts-Text; befüllt solange status running oder paused ist"
           example: "Code wird generiert… (Attempt 1/3)"
         attempts:
           type: array
@@ -191,6 +239,39 @@ components:
           type: string
           nullable: true
           description: "GitHub-Issue-URL; nur befüllt wenn status=failed"
+        max_attempts:
+          type: integer
+        log:
+          type: array
+          items:
+            type: string
+        report:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/PipelineReport"
+
+    PipelineReport:
+      type: object
+      properties:
+        pass_rate:
+          type: number
+          nullable: true
+        pr_url:
+          type: string
+          nullable: true
+        issue_url:
+          type: string
+          nullable: true
+        failed_scenarios:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          nullable: true
+        explanation:
+          type: string
+          nullable: true
 
     ErrorDetail:
       type: object

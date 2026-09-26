@@ -1,0 +1,458 @@
+{
+  "spec_id": "SPEC-0062",
+  "generated_at": "2026-09-26T15:20:06Z",
+  "new_contracts": [
+    "CON-0215",
+    "CON-0216"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0062-001",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0033",
+      "detail": "CON-0033 ist 'active' und garantiert, dass get_code_gen_provider(config) bei provider huggingface in llm.code_gen/llm.orchestrator einen ValueError wirft. CON-0215 INV-02 entfernt get_code_gen_provider und CodeGenProvider komplett. Damit kann die Garantie nicht mehr gelten. FR-09 setzt nur CON-0012 und CON-0171–0174 auf deprecated, CON-0033 fehlt dort. Sie bliebe also als aktiver Contract ohne Implementierung stehen, und ihre Tests scheitern.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0033 steht in FR-09/CON-0215 INV-06 und wird deprecated.",
+        "resolved_at": "2026-09-26T15:17:08Z"
+      }
+    },
+    {
+      "id": "CF-0062-002",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0024",
+      "detail": "CON-0024 legt das CodeGenProvider-Protocol, ClaudeCliCodeGenProvider, OpenAICompatCodeGenProvider und die Auflösungsreihenfolge von get_code_gen_provider fest. INV-02 verlangt, dass genau diese Symbole nicht mehr existieren. CON-0024 steht aber nicht in der Deprecation-Liste (INV-06, Szenario 'Abgelöste Artefakte').",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0024 steht in FR-09/CON-0215 INV-06 und wird deprecated.",
+        "resolved_at": "2026-09-26T15:17:08Z"
+      }
+    },
+    {
+      "id": "CF-0062-003",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0075",
+      "detail": "Die Allowlist von /api/run (G-02, G-07, G-09) enthält 'orchestrate' als Befehl, der ausgeführt wird und einen Push-Trigger auslöst, z. B. {\"cmd\": \"orchestrate\", \"args\": [\"SPEC-0024\"]}. Nach INV-01 führt 'sdd orchestrate' nichts mehr aus und endet mit Exit 1. Jeder Aufruf über /api/run schlägt dann fest fehl, und der Push meldet einen Fehler. Die Allowlist müsste auf 'pipeline' umgestellt oder CON-0075 angepasst werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0216 INV-05: orchestrate in /api/run und Chat wird auf sdd pipeline run --auto übersetzt.",
+        "resolved_at": "2026-09-26T15:17:09Z"
+      }
+    },
+    {
+      "id": "CF-0062-004",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0023",
+      "detail": "Das LLM-Config-Schema beschreibt CodeGenProvider-Defaults (llm.code_gen) und den Block llm.orchestrator, der von code_gen erbt, und verweist auf get_code_gen_provider(). CON-0215 entfernt den CodeGen-Pfad und führt llm.profiles/llm.roles ein. Die Config-Migration (INV-03/04) behandelt aber nur task_routing und llm.local_llm. Was mit llm.code_gen und llm.orchestrator in bestehenden Configs passiert, bleibt offen: Sie verwaisen still und werden weder migriert noch auskommentiert oder gemeldet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.code_gen und llm.orchestrator bleiben als Legacy-Fallback der Rollen (SPEC-0053); nur die CodeGen-API entfällt (FR-09, CON-0215 INV-06).",
+        "resolved_at": "2026-09-26T15:17:10Z"
+      }
+    },
+    {
+      "id": "CF-0062-005",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0065",
+      "detail": "Das Glossar nennt SpecFinalizer.run() als gemeinsamen Pfad für 'sdd finalize', '/sdd-implement', 'sdd orchestrate' und 'sdd distribute'. Durch INV-01 wird 'sdd orchestrate' zum reinen Verweis. CON-0065 beschreibt dann einen Aufrufpfad, den es nicht mehr gibt, und müsste nachgezogen werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Glossar-Hinweis; SpecFinalizer bleibt gemeinsamer Pfad, orchestrate ist nur noch Verweis. Keine Verhaltensänderung.",
+        "resolved_at": "2026-09-26T15:17:11Z"
+      }
+    },
+    {
+      "id": "CF-0062-006",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0096",
+      "detail": "Das Task-Schema gibt an, dass es in decompose.py, task_runner.py und orchestrator.py verwendet wird. INV-02 entfernt orchestrator.py. Der Verwendungshinweis ist danach veraltet. Das ist keine funktionale Kollision, aber der Contract sollte aktualisiert werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Verwendungshinweis im Task-Schema, keine funktionale Kollision; Schema bleibt gültig.",
+        "resolved_at": "2026-09-26T15:17:12Z"
+      }
+    },
+    {
+      "id": "CF-0062-007",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 ist 'active' und definiert in config.yaml einen Abschnitt 'orchestrator:'. CON-0215 migriert die Config (Änderungen melden, zweiter Lauf idempotent, übrige Einträge bleiben unverändert), sagt aber nichts über den orchestrator-Abschnitt, obwohl der zugehörige Befehl entfernt wird. Das Config-Schema-Contract und das Migrationsverhalten überschneiden sich, ohne abgestimmt zu sein.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abschnitt orchestrator bleibt (auto_merge, build_command, max_retries für automerge/finalize/Web); Migration rührt ihn nicht an.",
+        "resolved_at": "2026-09-26T15:17:13Z"
+      }
+    },
+    {
+      "id": "CF-0062-008",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0215",
+      "conflicting_contract": "CON-0012",
+      "detail": "Diese Überschneidung ist gewollt: INV-06 setzt CON-0012 (Orchestrator-Pipeline) auf deprecated. Solange der Lifecycle-Schritt aus FR-09 noch nicht ausgeführt ist, bleiben zwei Contracts gültig, die denselben Befehl 'sdd orchestrate' gegensätzlich beschreiben: Er führt aus bzw. ist nur ein Verweis mit Exit 1. Deprecation und Implementierung sollten im selben PR landen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0012 wird im selben PR deprecated (FR-09).",
+        "resolved_at": "2026-09-26T15:17:14Z"
+      }
+    },
+    {
+      "id": "CF-0062-009",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0021",
+      "detail": "In CON-0021 (orchestrate-api.openapi.yaml), PipelineStatus allows only [running, labeled, merged, failed, dry_run]. CON-0216 requires the status values 'paused' (Web UI waits on the supervisor session) and 'aborted' (abort route). Neither value exists in CON-0021, so any response carrying them violates the OpenAPI schema.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0021 0.4.0: Status paused und aborted ergänzt.",
+        "resolved_at": "2026-09-26T15:17:14Z"
+      }
+    },
+    {
+      "id": "CF-0062-010",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0216 requires GET /api/pipeline/<run_id> to return max_attempts, log and report. PipelineRunState in CON-0021 does not define these fields. It has issue_url instead, and pr_url sits in PipelineAttempt, not in report. CON-0021 also says current_step is only set when status=running, which clashes with the new paused state.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0021 0.4.0: max_attempts, log, report (PipelineReport) ergänzt; current_step auch bei paused.",
+        "resolved_at": "2026-09-26T15:17:15Z"
+      }
+    },
+    {
+      "id": "CF-0062-011",
+      "type": "endpoint-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0216 introduces POST /api/pipeline/{run_id}/abort. CON-0021 only defines /api/orchestrate, /api/pipeline/active and /api/pipeline/{run_id}. The route is missing from the OpenAPI contract, and there is no API test for it.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0021 0.4.0: Routen abort und log ergänzt (existierten im Code bereits).",
+        "resolved_at": "2026-09-26T15:17:16Z"
+      }
+    },
+    {
+      "id": "CF-0062-012",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0021",
+      "detail": "In CON-0021, POST /api/orchestrate starts the old orchestrator: attempts, labeled/merged, and a GitHub issue on failure. In CON-0216 the same route is only an adapter onto 'sdd pipeline run': no_pr maps to '--steps holdout', dry_run maps to '--dry-run', and runs are stored under .sdd/runs/<SPEC>. The request is the same but the semantics and lifecycle change. CON-0021 needs to be revised or superseded.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0021 0.4.0 beschreibt die Route als Adapter vor sdd pipeline run --auto; Anfrageformat bleibt.",
+        "resolved_at": "2026-09-26T15:17:17Z"
+      }
+    },
+    {
+      "id": "CF-0062-013",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0012",
+      "detail": "CON-0012 has CI systems (GitHub Actions) call 'sdd orchestrate' and makes ANTHROPIC_API_KEY mandatory (INV-04: exit 1 if it is missing). The Action scenario in CON-0216 requires the exact opposite: call 'sdd pipeline run --auto', never 'sdd orchestrate', and ANTHROPIC_API_KEY must not be a required secret.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0012 wird deprecated (FR-09); CON-0169 auf die Pipeline nachgezogen.",
+        "resolved_at": "2026-09-26T15:17:18Z"
+      }
+    },
+    {
+      "id": "CF-0062-014",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0113",
+      "detail": "CON-0113 (sdd-implement auto flow) describes the skill with decompose/finalize/task steps. CON-0216 requires the skill text to contain none of task-route, task-exec, 'sdd decompose' or 'sdd finalize', and to delegate everything to 'sdd pipeline run ... --auto --session ...'. Both contracts make claims about the same skill file.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0113 wird deprecated (FR-09), CON-0216 INV-03 ist maßgeblich.",
+        "resolved_at": "2026-09-26T15:17:19Z"
+      }
+    },
+    {
+      "id": "CF-0062-015",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0164",
+      "detail": "CON-0164 (sdd-implement tier loop) defines a tier loop inside the skill that uses decompose/finalize/task-exec. CON-0216 bans exactly these commands from the skill text. The skill cannot satisfy both contracts.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0164 wird deprecated (FR-09); die Holdout-Stufen laufen im Schritt holdout der Pipeline.",
+        "resolved_at": "2026-09-26T15:17:19Z"
+      }
+    },
+    {
+      "id": "CF-0062-016",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0063",
+      "detail": "CON-0063 (sdd-implement-skill-flow) already describes the sdd-implement flow. CON-0216 redefines that flow as a pure pipeline entry point with session roles. It is unclear which contract is authoritative. The older contract should be deprecated or given a supersedes link.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0063 wird deprecated (FR-09), CON-0216 INV-03 ist maßgeblich.",
+        "resolved_at": "2026-09-26T15:17:20Z"
+      }
+    },
+    {
+      "id": "CF-0062-017",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0060",
+      "detail": "CON-0060 (sdd-start-lifecycle) covers the lifecycle of 'sdd start'. CON-0216 adds a '--auto' variant whose exit code is the pipeline run's and which creates a run under .sdd/runs. CON-0060 does not describe this branch, so the two need to be aligned.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd start ohne --auto bleibt unverändert (CON-0216 INV-06); --auto ist ein Zusatzzweig.",
+        "resolved_at": "2026-09-26T15:17:21Z"
+      }
+    },
+    {
+      "id": "CF-0062-018",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0216",
+      "conflicting_contract": "CON-0055",
+      "detail": "CON-0055 (extension-pipeline-control) presumably controls pipeline runs from the VS Code extension through the old orchestrate API and its status values. Abort, paused and aborted from CON-0216 are not reflected there. Worth checking whether the extension breaks on the new status values.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "VS-Code-Extension wird nicht angepasst (Nicht-Ziel, Editor-Integration künftig über sddit).",
+        "resolved_at": "2026-09-26T15:17:22Z"
+      }
+    },
+    {
+      "id": "CF-0062-R001",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0007:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:15Z"
+      }
+    },
+    {
+      "id": "CF-0062-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/pipeline/active",
+      "conflicting_contract": "SPEC-0007:endpoint /api/pipeline/active",
+      "detail": "Endpoint '/api/pipeline/active' auch in SPEC-0007 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:16Z"
+      }
+    },
+    {
+      "id": "CF-0062-R003",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0017:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0017 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:17Z"
+      }
+    },
+    {
+      "id": "CF-0062-R004",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/pipeline/active",
+      "conflicting_contract": "SPEC-0017:endpoint /api/pipeline/active",
+      "detail": "Endpoint '/api/pipeline/active' auch in SPEC-0017 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:18Z"
+      }
+    },
+    {
+      "id": "CF-0062-R005",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "endpoint /api/orchestrate",
+      "conflicting_contract": "SPEC-0032:endpoint /api/orchestrate",
+      "detail": "Endpoint '/api/orchestrate' auch in SPEC-0032 definiert.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:18Z"
+      }
+    },
+    {
+      "id": "CF-0062-R006",
+      "type": "redundancy",
+      "severity": "medium",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0004:2",
+      "detail": "SPEC-0004 beschreibt orchestrator.py und `sdd orchestrate` als Ausführungspipeline, die SPEC-0062 durch `sdd pipeline run --auto` mit den Schritten holdout und automerge ersetzt. Der Hinweis ist ergänzt, aber CON-0012 und die Erfolgskriterien von SPEC-0004 zeigen weiter auf den entfernten Pfad.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:19Z"
+      }
+    },
+    {
+      "id": "CF-0062-R007",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0007:1",
+      "detail": "Der Execute-Flow aus SPEC-0007 startet den Orchestrator. SPEC-0062 lässt `POST /api/orchestrate` als Adapter vor `sdd pipeline run --auto` bestehen, deshalb müssen Semantik und Herkunft der `run_id` in CON-0021 0.4.0 zu `.sdd/runs/` passen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:20Z"
+      }
+    },
+    {
+      "id": "CF-0062-R008",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "3",
+      "conflicting_contract": "SPEC-0008:1",
+      "detail": "SPEC-0008 führt den Orchestrator mit agentischem Datei-Schreiben weiter als LLM-Integrationspunkt und definiert CodeGenProvider und get_code_gen_provider. SPEC-0062 entfernt genau diese zweite Erzeugungslinie zugunsten von llm/factory.py und get_role_provider, CON-0024 wird damit deprecated.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:21Z"
+      }
+    },
+    {
+      "id": "CF-0062-R009",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "2",
+      "conflicting_contract": "SPEC-0014:1",
+      "detail": "Das Execution Gate aus SPEC-0014 blockiert `sdd execute`. Wenn `sdd pipeline` der einzige Ausführungspfad ist, muss das Gate vor `sdd pipeline run` greifen, sonst umgehen `/sdd-implement`, Web-UI, `sdd start --auto` und die GitHub-Action die Gate-Prüfung.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:22Z"
+      }
+    },
+    {
+      "id": "CF-0062-R010",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1",
+      "conflicting_contract": "SPEC-0011:1",
+      "detail": "SPEC-0011 nennt den Orchestrator als Token-Verbraucher und Anlass für die Schätzung. Nach SPEC-0062 laufen alle Implementierungen als Pipeline-Runs, deshalb müsste sich die Schätzung auf die Rollen test_author, implementer und supervisor beziehen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:23Z"
+      }
+    },
+    {
+      "id": "CF-0062-R011",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2",
+      "conflicting_contract": "SPEC-0003:2.1",
+      "detail": "Die REST-API aus SPEC-0003 enthält die Orchestrate- und Pipeline-Routen, die SPEC-0062 bei unveränderten Web-UI-Quellen intern auf `sdd pipeline run --auto` umstellt. Die Routenliste in SPEC-0003 bleibt gültig, beschreibt die Ausführung dahinter aber nicht mehr.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: Routen bleiben als Adapter (CON-0021 0.4.0), Umgang je Spec in SPEC-0062 Abschnitt 3.1 mit Ablösungsvermerken in SPEC-0004/0007/0008.",
+        "resolved_at": "2026-09-26T15:20:23Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 18,
+    "high": 8,
+    "medium": 4,
+    "low": 6,
+    "affected_specs_count": 0
+  }
+}

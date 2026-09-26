@@ -2,7 +2,7 @@
 id: SPEC-0045
 title: Lokaler LLM Task-Loop – Kostenoptimierte Implementierung trivialer Tasks
 type: feature
-status: implemented
+status: deprecated
 owner: Boris
 created: 2026-06-10
 updated: '2026-06-10'
@@ -52,6 +52,8 @@ fr_test_map:
   - TST-0200
 adrs: []
 started_at: '2026-06-10T13:17:34Z'
+deprecated_reason: "Task-Routing durch Rollen-Profile und by_complexity der Pipeline abgelöst (SPEC-0062)"
+replaced_by: "SPEC-0061"
 ---
 # Lokaler LLM Task-Loop – Kostenoptimierte Implementierung trivialer Tasks
 

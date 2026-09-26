@@ -4,7 +4,7 @@ Prüft (SPEC-0004 §3.8):
 - Veraltete Specs (updated älter als stale_after_weeks)
 - Specs ohne Contracts (Drift)
 - Contracts ohne Tests (Drift)
-- Gibt einen Report zurück und kann optional sdd orchestrate für jede
+- Gibt einen Report zurück und kann optional sdd pipeline run --auto für jede
   veraltete Spec anstoßen.
 """
 from __future__ import annotations
@@ -140,7 +140,7 @@ def run_maintenance_sweep(config: SddConfig) -> MaintenanceReport:
                     f"Letzte Aktualisierung vor {days_old} Tagen "
                     f"(> {stale_weeks} Wochen)"
                 ),
-                action=f"sdd orchestrate --spec {sid}",
+                action=f"sdd pipeline run {sid} --auto",
             ))
 
         # Fehlende Contracts (Drift)

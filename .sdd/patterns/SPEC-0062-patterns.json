@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0062",
+  "generated_at": "2026-09-26T15:03:35Z",
+  "patterns": [
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-09-26T15:03:35Z",
+      "acceptance_reason": "Verweise alter Befehle, Web-Route orchestrate und Config-Migration als dünne Übersetzer auf die Pipeline.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-09-26T15:03:36Z",
+      "acceptance_reason": "Einstiege unterscheiden sich nur in der Rollenbelegung (session, by_complexity, Profil); task_routing wird Konfiguration.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Factory Method",
+      "status": "accepted",
+      "decided_at": "2026-09-26T15:03:37Z",
+      "acceptance_reason": "Mit CodeGen-Pfad und llm_probe entfällt die zweite Erzeugungslinie; Provider entstehen nur in llm/factory.py.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "accepted",
+      "decided_at": "2026-09-26T15:03:38Z",
+      "acceptance_reason": "sdd pipeline (CLI, monitor, store) ist die einzige Fläche nach außen; ARCH-05 verbietet den Zugriff auf Interna.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}

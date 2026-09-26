@@ -116,8 +116,10 @@ _intent_parser = _build_parser()
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _run_cmd_lines(cmd: str, args: list[str]) -> AsyncGenerator[str, None]:
+    from routes.remote import sdd_argv
+
     proc = await _exec(
-        "sdd", cmd, *args,
+        "sdd", *sdd_argv(cmd, args),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )

@@ -5,7 +5,7 @@ title: "`sdd init` integriert Skill-Dateien-Check und GitHub-Actions-Rückfrage"
 type: behavior
 format: markdown
 spec: SPEC-0044
-version: 0.1.0
+version: 0.1.1
 status: approved
 artifact: "contracts/behavior/sdd-init-scaffolding.md"
 tests:
@@ -33,8 +33,8 @@ eigenständigen Befehle `sdd new agents-md` und `sdd new github-workflow` entfal
 ### GitHub-Actions-Workflow
 - `sdd init` fragt interaktiv: "GitHub-Actions-Workflow anlegen? (ja/nein)"
 - Bei "ja": `.github/workflows/sdd-orchestrate.yml` wird angelegt
-- Der Workflow triggert `sdd orchestrate` bei Push auf `main` wenn Spec-Dateien geändert wurden
-- Die Frage wird immer gestellt (da `ANTHROPIC_API_KEY`-Secret nötig, nicht für alle sinnvoll)
+- Der Workflow triggert `sdd pipeline run <SPEC> --auto` bei Push auf `main` wenn Spec-Dateien geändert wurden (seit SPEC-0062, vorher `sdd orchestrate`)
+- Die Frage wird immer gestellt (CI braucht ein Rollen-Profil ohne lokales `claude`; `ANTHROPIC_API_KEY` nur bei `provider: anthropic`)
 - Bei "nein": Workflow-Datei wird nicht angelegt; kein Fehler
 
 ### Entfernte Befehle

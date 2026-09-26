@@ -325,8 +325,8 @@ def validate(config: SddConfig) -> Report:
 
 def _check_roles(config: SddConfig, report: Report) -> None:
     """Jede `.sdd/roles/<rolle>.md` erfüllt CON-0199 und nennt nur bekannte Rollen-Checks."""
+    from .pipeline.facade import unknown_checks
     from .pipeline.roles import RoleError, load_role
-    from .pipeline.runner import unknown_checks
 
     ordner = config.root / ".sdd" / "roles"
     if not ordner.is_dir():

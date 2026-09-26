@@ -1,16 +1,13 @@
-"""CompletionProvider und CodeGenProvider – abstrakte Protokoll-Interfaces.
+"""CompletionProvider – abstraktes Protokoll-Interface.
 
 SOLID:
-  - ISP: Zwei getrennte Interfaces für unterschiedliche Verwendungszwecke.
   - LSP: Alle Implementierungen sind über isinstance() prüfbar (@runtime_checkable).
-  - DIP: Komponenten (Evaluator, Orchestrator, …) hängen nur von diesen Protokollen ab.
+  - DIP: Komponenten (Evaluator, Pipeline-Rollen, …) hängen nur von diesem Protokoll ab.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 UsageSource = Literal["reported", "estimated", "unavailable"]
 
@@ -54,31 +51,6 @@ class CompletionResult:
     usage: UsageMetadata | None = None
 
 
-class CodeGenResult(tuple):
-    """Ergebnis von CodeGenProvider.generate() (SPEC-0060 FR-04).
-
-    Übergangs-Schnittstelle: bleibt als `(files, explanation)` entpackbar und trägt die Usage als
-    Attribut, bis SPEC-0058 die Tupel-Aufrufer ablöst.
-    """
-
-    usage: UsageMetadata
-
-    def __new__(
-        cls, files: list[dict[str, Any]], explanation: str, usage: UsageMetadata | None = None,
-    ) -> CodeGenResult:
-        obj = super().__new__(cls, (files, explanation))
-        obj.usage = usage or UsageMetadata.unavailable()
-        return obj
-
-    @property
-    def files(self) -> list[dict[str, Any]]:
-        return self[0]
-
-    @property
-    def explanation(self) -> str:
-        return self[1]
-
-
 @runtime_checkable
 class CompletionProvider(Protocol):
     """Synchrones Prompt → CompletionResult.
@@ -103,33 +75,5 @@ class CompletionProvider(Protocol):
         Wirft bei Fehler immer eine Exception — gibt nie None zurück.
         timeout: Sekunden; None = Provider-Default. Evaluator belegt ihn mit
         timeout_per_scenario; andere Komponenten lassen None.
-        """
-        ...
-
-
-@runtime_checkable
-class CodeGenProvider(Protocol):
-    """Agentische Code-Generierung, die Dateien in einen Workspace schreibt.
-
-    Genutzt von: Orchestrator.
-    Implementierungen: ClaudeCliCodeGenProvider,
-                       OpenAICompatCodeGenProvider.
-    """
-
-    def generate(
-        self,
-        prompt: str,
-        workspace: Path,
-        *,
-        timeout: int = 600,
-        on_proc: Callable[[Any], None] | None = None,
-    ) -> CodeGenResult:
-        """Generiert Code, schreibt Dateien in workspace und gibt sie zurück.
-
-        Returns:
-            CodeGenResult – entpackbar als ([{"path": "rel/path", "content": "..."}], explanation)
-
-        on_proc: wird von nicht-CLI-Providern ignoriert und niemals aufgerufen.
-        Aufrufer dürfen sich nicht darauf verlassen, dass der Callback ausgelöst wird.
         """
         ...

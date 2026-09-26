@@ -106,7 +106,7 @@ def detect_circular_dependencies(tasks: list[Task]) -> set[str]:
 
 def _parse_items(text: str) -> list[dict]:
     """Tasks aus der Antwort: Objekt `{"tasks": [...]}` (Rolle, CON-0200) oder JSON-Array."""
-    from .pipeline.runner import extract_json
+    from .pipeline.facade import extract_json
 
     daten = extract_json(text.strip())
     if isinstance(daten, dict) and isinstance(daten.get("tasks"), list):
@@ -199,8 +199,8 @@ class TaskDecomposer:
         if rolle is None:
             from .llm.factory import get_completion_provider
             return get_completion_provider(config, "completion")
-        from .pipeline.providers import build_provider, resolve_binding
-        return build_provider(config, resolve_binding(config, rolle), rolle)
+        from .pipeline.facade import role_provider
+        return role_provider(config, rolle)
 
     def _load_spec(self, spec_id: str, config: SddConfig) -> str:
         for md in config.specs_dir.rglob("*.md"):

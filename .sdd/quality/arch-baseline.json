@@ -15,13 +15,6 @@
     },
     {
       "rule": "ARCH-01",
-      "file": "tool/sdd_cli/llm/providers/openai_compat.py",
-      "symbol": "pathlib.Path.write_text",
-      "reason": "CodeGen-Pfad (CON-0024) schreibt Workspace-Dateien selbst; die Pipeline löst ihn ab",
-      "fixed_by": "SPEC-0061"
-    },
-    {
-      "rule": "ARCH-01",
       "file": "tool/sdd_cli/web/api/analysis_repository.py",
       "symbol": "pathlib.Path.write_text",
       "reason": "Web-API schreibt direkt, statt an die CLI zu delegieren; Behebung offen (eigene Spec nötig, SPEC-0059 Abschnitt 10)"

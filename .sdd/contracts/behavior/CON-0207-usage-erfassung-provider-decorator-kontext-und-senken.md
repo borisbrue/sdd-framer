@@ -4,7 +4,7 @@ title: "Usage-Erfassung: Provider, Decorator, Kontext und Senken"
 type: behavior
 format: gherkin
 spec: SPEC-0060
-version: 0.3.0
+version: 0.3.1
 status: approved
 artifact: ".sdd/contracts/behavior/usage-erfassung-provider-decorator-kontext-und-senken.feature"
 tests: ["TST-0236"]
@@ -31,13 +31,13 @@ abgedeckt sein.
 | Element | Vertrag |
 |---------|---------|
 | `CompletionProvider.complete()` | liefert `CompletionResult(text, usage)`; `usage` ist der Rückkanal der Metadaten und ab SPEC-0060 nie `None`. Das ersetzt die Signatur `-> str` aus CON-0022; der Text bleibt wie in CON-0022 G-02 nur `result` der claude-Hülle, die Usage wird zusätzlich aus derselben Hülle gelesen |
-| `CodeGenProvider.generate()` | liefert ein Ergebnis, das wie bisher als `(files, explanation)` entpackbar ist und zusätzlich `.usage` trägt (CON-0024 bleibt sonst unverändert) |
+| `CodeGenProvider.generate()` | entfallen mit SPEC-0062 (CodeGen-Pfad entfernt, CON-0024 deprecated) |
 | `UsageMetadata` | `input_tokens`, `output_tokens`, `cache_creation_tokens`, `cache_read_tokens`, `model`, `estimated`, `reasoning_tokens`, `finish_reason`, `latency_ms`, `server_model`, `source` |
 | `sdd_cli.llm.usage.usage_context(**kw)` | Kontextmanager; verschachtelt ergänzt/überschreibt Schlüssel; je Thread/Task getrennt |
 | `sdd_cli.llm.usage.UsageSink` | `record(record: UsageRecord) -> None` |
 | `sdd_cli.llm.usage.register_sink(sink)` | registriert eine Senke dauerhaft für den Prozess (z. B. Benchmark-Export); die SQLite-Senke ist vorregistriert |
 | `sdd_cli.llm.usage.use_sinks(sinks)` | Kontextmanager, der die registrierten Senken vorübergehend ersetzt (Tests) |
-| Factory | `get_completion_provider`/`get_code_gen_provider` liefern umhüllte Provider mit unveränderter Schnittstelle |
+| Factory | `get_completion_provider`/`get_role_provider` liefern umhüllte Provider mit unveränderter Schnittstelle (`get_code_gen_provider` entfallen mit SPEC-0062) |
 
 ## Invarianten
 
@@ -53,7 +53,7 @@ abgedeckt sein.
 - **INV-04:** Fällt eine Senke aus, erhalten alle übrigen Senken den Datensatz; der Aufruf gilt
   nicht als gescheitert; ein Warnhinweis wird geloggt.
 - **INV-05:** Die Erfassung setzt keinen API-Key voraus und speichert keinen Prompttext.
-- **INV-07:** Ein `generate()`-Aufruf eines CodeGen-Providers erzeugt genau einen `UsageRecord`;
+- **INV-07:** (entfallen mit SPEC-0062, galt bis dahin:) Ein `generate()`-Aufruf eines CodeGen-Providers erzeugt genau einen `UsageRecord`;
   macht der Provider intern mehrere Modellaufrufe, summiert er deren Zählwerte. Kann er das nicht,
   meldet er `source: unavailable`.
 - **INV-08:** Der Decorator umhüllt jeden Provider der Factory, auch `huggingface`

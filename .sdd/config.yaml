@@ -132,22 +132,34 @@ llm:
   # ":no-think"-Modellvariante, da dieser Server extra_body.enable_thinking
   # (anders als LM Studio) ignoriert — ohne den Suffix denkt das Modell und
   # content bleibt bei knappem max_tokens leer (finish_reason=length).
-  local_llm:
-    provider: openai-compat
-    base_url: http://192.168.0.149:8080/v1
-    model: mlx-community/Qwen3.5-35B-A3B-OptiQ-4bit:no-think
-    api_key: sk-optiq-local  # Server verlangt Bearer-Token im Format "sk-optiq-*"
-    temperature: 0.0
-task_routing:
-  enabled: true
-  # 50 statt Default 30: decide_routing() mappt complexity-Label auf Score
-  # low=15, medium=50, high=80 (task_exec.py). Mit 30 liefe nur "low" lokal;
-  # 50 nimmt zusätzlich "medium" mit (inklusiver Vergleich score<=threshold),
-  # "high" bleibt bei Claude. Kostet im Worst Case 2 verlorene lokale Versuche
-  # vor Eskalation (task-exec Retry-Grenze in /sdd-implement Schritt 4c).
-  complexity_threshold: 50
-  max_concurrent: 3
-  max_retries: 3
+# [SPEC-0062]   local_llm:
+# [SPEC-0062]     provider: openai-compat
+# [SPEC-0062]     base_url: http://192.168.0.149:8080/v1
+# [SPEC-0062]     model: mlx-community/Qwen3.5-35B-A3B-OptiQ-4bit:no-think
+# [SPEC-0062]     api_key: sk-optiq-local  # Server verlangt Bearer-Token im Format "sk-optiq-*"
+# [SPEC-0062]     temperature: 0.0
+  profiles:
+    lokal:
+      provider: openai-compat
+      base_url: http://192.168.0.149:8080/v1
+      model: mlx-community/Qwen3.5-35B-A3B-OptiQ-4bit:no-think
+      api_key: sk-optiq-local
+      temperature: 0.0
+  roles:
+    implementer:
+      by_complexity:
+        low: lokal
+        medium: lokal
+# [SPEC-0062] task_routing:
+# [SPEC-0062]   enabled: true
+# [SPEC-0062]   # 50 statt Default 30: decide_routing() mappt complexity-Label auf Score
+# [SPEC-0062]   # low=15, medium=50, high=80 (task_exec.py). Mit 30 liefe nur "low" lokal;
+# [SPEC-0062]   # 50 nimmt zusätzlich "medium" mit (inklusiver Vergleich score<=threshold),
+# [SPEC-0062]   # "high" bleibt bei Claude. Kostet im Worst Case 2 verlorene lokale Versuche
+# [SPEC-0062]   # vor Eskalation (task-exec Retry-Grenze in /sdd-implement Schritt 4c).
+# [SPEC-0062]   complexity_threshold: 50
+# [SPEC-0062]   max_concurrent: 3
+# [SPEC-0062]   max_retries: 3
 solid_gate:
   enabled: true
   mode: warn

@@ -50,11 +50,23 @@ def pipeline_group() -> None:
               help="Abschluss-Kette aus pipeline.auto_steps (holdout, finalize, automerge).")
 @click.option("--base-url", default=None, envvar="SDD_EVAL_BASE_URL",
               help="Ziel der Holdout-Evaluation für --auto (sonst evaluator.base_url).")
+@click.option("--session", "session", multiple=True, metavar="ROLLE",
+              help="Rolle nur für diesen Run im Modus session (mehrfach; SPEC-0062 FR-01).")
+@click.option("--steps", default=None, metavar="LISTE",
+              help="Abschluss-Schritte für --auto, kommagetrennt (überschreibt "
+                   "pipeline.auto_steps).")
+@click.option("--run-id", "run_id", default=None, hidden=True,
+              help="Vorgegebene Run-ID (Web-Adapter, SPEC-0062 FR-03).")
 def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int | None,
-            task_id: str | None, auto: bool, base_url: str | None) -> None:
+            task_id: str | None, auto: bool, base_url: str | None, session: tuple[str, ...],
+            steps: str | None, run_id: str | None = None) -> None:
     from .pipeline.mediator import PipelineError, PipelineSupervisor
 
     cfg = _config()
+    if resume_id and (session or steps is not None):
+        console.print("[red]✗[/] --session und --steps gelten beim Start; --resume übernimmt die "
+                      "Optionen aus run.json.")
+        sys.exit(2)
     if task_id and (resume_id or auto or dry_run):
         console.print("[red]✗[/] --task lässt sich nicht mit --resume, --auto oder --dry-run "
                       "kombinieren.")
@@ -66,9 +78,13 @@ def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int |
             outcome = PipelineSupervisor.resume(cfg, resume_id, max_tasks=max_tasks,
                                                 notify=console.print)
         else:
+            schritte = ([s.strip() for s in steps.split(",") if s.strip()]
+                        if steps is not None else None)
             outcome = PipelineSupervisor.start(cfg, spec_id, dry_run=dry_run,
                                                max_tasks=max_tasks, task_id=task_id, auto=auto,
-                                               base_url=base_url, notify=console.print)
+                                               base_url=base_url, session=session,
+                                               steps=schritte, run_id=run_id,
+                                               notify=console.print)
     except PipelineError as exc:
         console.print(f"[red]✗[/] {exc}")
         sys.exit(2)

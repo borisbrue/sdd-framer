@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from ..config import SddConfig
-    from .base import CodeGenProvider, CompletionProvider
+    from .base import CompletionProvider
 
 _COMPLETION_PROVIDERS = ("anthropic", "claude-cli", "openai-compat", "huggingface")
 _CODE_GEN_PROVIDERS = ("claude-cli", "openai-compat")
@@ -184,55 +184,6 @@ def _build_completion_provider(
     )
 
 
-def get_code_gen_provider(config: SddConfig) -> CodeGenProvider:
-    """Gibt den CodeGenProvider zurück (genutzt vom Orchestrator), umhüllt vom
-    Usage-Decorator (SPEC-0060 FR-06)."""
-    from .usage import RecordingCodeGenProvider
-
-    provider = _build_code_gen_provider(config)
-    model = _resolve(config.raw, "orchestrator", "code_gen")["model"] or ""
-    return RecordingCodeGenProvider(provider, component="orchestrator", model=model,
-                                    root=config.root)
-
-
-def _build_code_gen_provider(config: SddConfig) -> CodeGenProvider:
-    cfg = _resolve(config.raw, "orchestrator", "code_gen")
-    provider = cfg["provider"] or "claude-cli"
-
-    if provider == "huggingface":
-        raise ValueError(
-            "provider: huggingface unterstützt keinen code_gen-Modus. "
-            "Nutze claude-cli oder openai-compat für Code-Generierung."
-        )
-    if provider not in _CODE_GEN_PROVIDERS:
-        raise ValueError(
-            f"Unbekannter CodeGen-Provider: {provider!r}. "
-            f"Erlaubte Werte: {', '.join(_CODE_GEN_PROVIDERS)}"
-        )
-
-    if provider == "claude-cli":
-        from .providers.claude_cli import ClaudeCliCodeGenProvider
-        return ClaudeCliCodeGenProvider()
-
-    # openai-compat
-    base_url = cfg["base_url"]
-    model = cfg["model"]
-    if not base_url:
-        raise ValueError(
-            "llm.orchestrator.base_url ist Pflicht für provider: openai-compat."
-        )
-    if not model:
-        raise ValueError(
-            "llm.orchestrator.model ist Pflicht für provider: openai-compat."
-        )
-    from .providers.openai_compat import OpenAICompatCodeGenProvider
-    return OpenAICompatCodeGenProvider(
-        base_url=base_url,
-        model=model,
-        api_key=cfg["api_key"] or "lm-studio",
-    )
-
-
 ROLE_PROVIDERS = ("claude-cli", "anthropic", "openai-compat")
 
 
@@ -290,4 +241,3 @@ def claude_available() -> bool:
     from .providers.claude_cli import _find_claude
 
     return _find_claude() is not None
-

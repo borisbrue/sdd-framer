@@ -61,7 +61,8 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
     target = target.resolve()
     quelle = _quelle()
     result: dict[str, list] = {"created": [], "updated": [], "skipped": [], "skills": [],
-                               "roles_new": [], "obsolete_blocks": []}
+                               "roles_new": [], "obsolete_blocks": [], "migrations": [],
+                               "migration_conflicts": []}
 
     # Provider vor jeder Änderung prüfen: ein unbekannter Name bricht ab, bevor
     # etwas geschrieben ist, statt ein halbes Upgrade zu hinterlassen.
@@ -137,6 +138,14 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         result["obsolete_blocks"].append(block)
         if verbose:
             print(f"  # config: {block} auskommentiert (SPEC-0058)")
+
+    # 6b. task_routing + llm.local_llm → Rollen-Profile (SPEC-0062 FR-07, CON-0215).
+    from .pipeline.config_migration import migrate_task_routing
+    migration = migrate_task_routing(target / ".sdd" / "config.yaml")
+    result["migrations"].extend(migration.messages)
+    result["migration_conflicts"].extend(migration.conflicts)
+    if migration.changed and config_dst not in result["updated"]:
+        result["updated"].append(config_dst)
 
     # 6. Rechnerlokale Dateien (config.local.yaml, Usage-DB) in die .gitignore eintragen;
     #    Projekte von vor SPEC-0060 kennen den Eintrag für die Usage-DB noch nicht.

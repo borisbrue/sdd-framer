@@ -18,6 +18,8 @@ adrs: []
 
 > **Status:** implemented · **Owner:** Boris · **Version:** 0.4.0
 
+> **Hinweis (SPEC-0062):** Die Routen bleiben, dahinter läuft `sdd pipeline run --auto` (CON-0021 0.4.0). Die `run_id` ist die Run-ID der Pipeline unter `.sdd/runs/`.
+
 ## 1. Kontext & Motivation
 
 Der Orchestrator (`sdd orchestrate`) ist voll implementiert (SPEC-0004, CON-0012),

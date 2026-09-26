@@ -1,5 +1,40 @@
 # Changelog
 
+## [Unreleased] – SPEC-0062: Ein Ausführungspfad
+
+### Added
+
+- `sdd pipeline run --session ROLLE` (mehrfach): Rollen nur für diesen Run im Modus `session`,
+  `config.yaml` bleibt unverändert; `--steps holdout,finalize,automerge` ersetzt
+  `pipeline.auto_steps` für einen Run mit `--auto`. Beides steht unter `options` in `run.json`.
+- `sdd upgrade` migriert `task_routing` und `llm.local_llm`: Profil `llm.profiles.lokal`,
+  `llm.roles.implementer.by_complexity` für die Stufen mit Score ≤ Schwelle (low 15, medium 50,
+  high 80); die alten Blöcke werden mit `# [SPEC-0062]` auskommentiert. Bestehende Einträge werden
+  nicht überschrieben, sondern gemeldet.
+- Architekturregel ARCH-05 (ADR-0006) mit Schicht `pipeline`: Interna der Pipeline nur in
+  `pipeline` und `entry`, sonst `pipeline.facade`.
+
+### Changed
+
+- `/sdd-implement` 1.0.0: Vorbedingungen, Review, Holdout-Anlage, dann
+  `sdd pipeline run SPEC --auto --session test_author --session implementer --session supervisor`
+  und Abarbeiten der Anfragen mit `sdd pipeline done`/`decide`. Repo-Kopie und Blueprint sind gleich.
+- Web-UI: `POST /api/orchestrate` und `/api/pipeline/*` sind ein Adapter vor
+  `sdd pipeline run --auto` (Prozess; `dry_run` → `--dry-run`, `no_pr` → `--steps holdout`); neu
+  sind die Status `paused` und `aborted` (CON-0021 0.4.0). `orchestrate` in `/api/sdd/run` und im
+  Chat startet ebenfalls die Pipeline.
+- `sdd start --auto` und `sdd maintenance --auto-pr` starten `sdd pipeline run --auto`.
+- GitHub-Action-Vorlage ruft `sdd pipeline run $SPEC --auto`; `ANTHROPIC_API_KEY` ist optional.
+
+### Removed
+
+- `task_routing/`, `orchestrator.py`, `llm_probe.py` und der CodeGen-Pfad (`CodeGenProvider`,
+  `get_code_gen_provider`, `ClaudeCliCodeGenProvider`, `OpenAICompatCodeGenProvider`).
+  `sdd orchestrate`, `sdd task-route`, `sdd task-exec` und `sdd task-loop` sind Verweise (Exit 1).
+  Python unter `tool/`: 33 200 → 31 289 Zeilen (−1 911), Tests netto −1 869.
+- SPEC-0045 (CON-0171 bis CON-0174) sowie CON-0012, CON-0024, CON-0033, CON-0063, CON-0113 und
+  CON-0164 sind deprecated.
+
 ## [Unreleased] – SPEC-0061: Pipeline-Fähigkeiten
 
 ### Added

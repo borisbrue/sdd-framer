@@ -6,9 +6,10 @@ type: behavior
 format: markdown
 spec: SPEC-0004
 version: 0.2.0
-status: draft
+status: deprecated
 artifact: ""
 tests: ["TST-0012"]
+deprecated_reason: "Orchestrator durch sdd pipeline run --auto abgelöst (SPEC-0062)"
 ---
 
 # Contract: Orchestrator – Lokale Pipeline

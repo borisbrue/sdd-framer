@@ -102,35 +102,18 @@ def test_tc04_openai_compat_ohne_usage_block(cfg, llm):
     assert _completion(cfg).complete("x").usage.source == "unavailable"
 
 
-def test_tc05_codegen_liefert_usage_und_bleibt_kompatibel(cfg, llm, tmp_path):
-    """Scenario: CodeGen liefert Usage und bleibt kompatibel (CON-0207)."""
-    _openai()
-    from sdd_cli.llm.factory import get_code_gen_provider
-
-    llm.antworte("orchestrator", {"files": [{"path": "src/a.txt", "content": "x"}],
-                                  "explanation": "ok"})
-    ergebnis = get_code_gen_provider(cfg).generate("x", tmp_path)
-    files, erklaerung = ergebnis
-    assert files[0]["path"] == "src/a.txt" and erklaerung == "ok"
-    assert ergebnis.usage.source == "reported"
-
-
+# "orchestrator" (CodeGen) entfällt mit SPEC-0062 (CON-0207 INV-07).
 @pytest.mark.parametrize("komponente", ["completion", "evaluator", "analyzer", "ai_routes",
-                                        "local_llm", "orchestrator"])
+                                        "local_llm"])
 def test_tc06_jede_factory_komponente_wird_erfasst(cfg, llm, tmp_path, komponente):
     """Scenario Outline: Jede Factory-Komponente wird erfasst (CON-0207)."""
     _openai()
-    from sdd_cli.llm.factory import get_code_gen_provider
     from sdd_cli.llm.usage import use_sinks
 
     senke = FakeSink()
     with use_sinks([senke]):
-        if komponente == "orchestrator":
-            llm.antworte("orchestrator", {"files": [], "explanation": "e"})
-            get_code_gen_provider(cfg).generate("x", tmp_path)
-        else:
-            llm.antworte(komponente, "antwort")
-            _completion(cfg, komponente).complete("x")
+        llm.antworte(komponente, "antwort")
+        _completion(cfg, komponente).complete("x")
     assert [r.component for r in senke.records] == [komponente]
 
 

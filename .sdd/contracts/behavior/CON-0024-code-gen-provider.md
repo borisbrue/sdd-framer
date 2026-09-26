@@ -6,9 +6,10 @@ type: behavior
 format: markdown
 spec: SPEC-0008
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: "tool/sdd_cli/llm/"
 tests: ["TST-0028", "TST-0030"]
+deprecated_reason: "CodeGen-Pfad entfernt; Rollen nutzen get_role_provider (SPEC-0062)"
 ---
 
 # Contract: CodeGenProvider-Interface und Implementierungen
