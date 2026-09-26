@@ -1,0 +1,297 @@
+{
+  "spec_id": "SPEC-0055",
+  "generated_at": "2026-09-26T16:34:46Z",
+  "new_contracts": [
+    "CON-0217",
+    "CON-0218",
+    "CON-0219",
+    "CON-0220"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0055-001",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0217",
+      "conflicting_contract": "CON-0009",
+      "detail": "CON-0009 defines the directory layout under .sdd/holdout/ and HOL isolation. CON-0217 INV-01 adds a new subtree .sdd/holdout/roles/<rolle>/ and makes the directory alone decide whether a case is holdout, with no flag in case.yaml. Neither contract says whether CON-0009's structure allows this subtree, or whether holdout cases have to follow the HOL ID scheme or keep their role prefix (DEC-, TAU-, IMP-, REV-, SUP-, JDG-).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-04: .sdd/holdout/roles/ als eigener Namensraum; CON-0009 um Vermerk ergänzt.",
+        "resolved_at": "2026-09-26T16:39:21Z"
+      }
+    },
+    {
+      "id": "CF-0055-002",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0217",
+      "conflicting_contract": "CON-0064",
+      "detail": "CON-0064 isolates holdout content from agents and containers. CON-0217 requires `sdd role eval` and `sdd validate` to read and validate cases under .sdd/holdout/roles/. It is not specified which process may read holdout cases, or whether the role under evaluation (for example judge or supervisor) could see them. That could break the isolation guarantee.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-09: Holdout-Fälle liest nur sdd role eval; Eingaben an die geprüfte Rolle, Erwartungen nur an Checks.",
+        "resolved_at": "2026-09-26T16:39:22Z"
+      }
+    },
+    {
+      "id": "CF-0055-003",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0217",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0217 enforces role prefixes (DEC-, TAU-, IMP-, REV-, SUP-, JDG-) and relies on `sdd validate` rejecting invalid cases. CON-0016, the config.yaml schema, defines the configured document prefixes. The new prefixes and the roles path are not registered there, so validate and ID assignment by the CLI have no configured source for them.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Fall-IDs sind keine Dokument-IDs; Präfixe legt das Schema CON-0217 fest, vergeben von sdd role case new.",
+        "resolved_at": "2026-09-26T16:39:22Z"
+      }
+    },
+    {
+      "id": "CF-0055-004",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0218",
+      "conflicting_contract": "CON-0064",
+      "detail": "Per CON-0064 G-01, nothing in the implementation phase may read .sdd/holdout/. CON-0218 INV-03 lets a report list individual holdout cases with IDs when --include-holdout is set. It also says reports sit gitignored under .sdd/role-evals/, where an implementing agent can read them. So holdout cases can reach the implementing agent through the report. INV-05 already limits baseline.json to aggregates. CON-0218 should say who may use --include-holdout, or that such reports are kept away from agents.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0218 INV-03/06: Reports mit --include-holdout liegen unter .sdd/holdout/roles/<rolle>/reports/.",
+        "resolved_at": "2026-09-26T16:39:23Z"
+      }
+    },
+    {
+      "id": "CF-0055-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0218",
+      "conflicting_contract": "CON-0009",
+      "detail": "Role holdout cases apparently live under .sdd/holdout/roles/ (see CON-0219 INV-04). CON-0009 defines the directory layout and HOL isolation for .sdd/holdout/ and does not know about this subfolder. CON-0218 counts holdout cases in its aggregates without saying where they come from. Either CON-0009 needs updating or CON-0218/0217 need a note that roles/ is an exception to the HOL structure.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-04 und Vermerk in CON-0009.",
+        "resolved_at": "2026-09-26T16:39:24Z"
+      }
+    },
+    {
+      "id": "CF-0055-006",
+      "type": "field-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0218",
+      "conflicting_contract": "CON-0121",
+      "detail": "CON-0121 INV-01 (built on CON-0041) makes input_tokens and output_tokens required fields. CON-0218 INV-02 makes them nullable and adds reasoning_tokens. The null case is the normal one with the claude-cli provider, which reports usage: None. If eval token data is ever written to token-history, it breaks those required fields. Write down that the two are kept apart, or specify how they map.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Report ist ein eigenes Format; token_usage wird über die Usage-Senken nach CON-0207 geschrieben (0 bei unavailable).",
+        "resolved_at": "2026-09-26T16:39:25Z"
+      }
+    },
+    {
+      "id": "CF-0055-007",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0218",
+      "conflicting_contract": "CON-0190",
+      "detail": "INV-01 and INV-05 record a profile (name, provider, model) and a judge (provider, model), but nothing ties these fields to the provider enum and the provider consistency rules in CON-0190 / CON-0023. A report or baseline could name a provider the config does not allow, and then compare/accept would be comparing states that cannot be checked against each other. CON-0218 needs a depends_on entry or a reference to the provider enum.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Report hält die aufgelöste Belegung fest; gültige Provider prüft die Config (CON-0212/CON-0190) vor dem Lauf.",
+        "resolved_at": "2026-09-26T16:39:26Z"
+      }
+    },
+    {
+      "id": "CF-0055-008",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0218",
+      "conflicting_contract": "CON-0162",
+      "detail": "CON-0162 (evaluate JSON tier summary) already defines a JSON summary of evaluation and holdout results, with rates and aggregates. CON-0218 adds a second, parallel report format with its own aggregate fields (pass_at_1, pass_all, holdout, total). Either separate the two clearly (role eval vs. spec holdout evaluate) or share field names, so the web and PWA consumers don't have to handle two differently named aggregate models.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Rollen-Eval und Spec-Holdout-Evaluation sind getrennte Zwecke und Formate.",
+        "resolved_at": "2026-09-26T16:39:26Z"
+      }
+    },
+    {
+      "id": "CF-0055-009",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0009",
+      "detail": "CON-0009 schreibt vor, dass jedes Dokument in .sdd/holdout/ eine ID im Format HOL-NNNN hat (G-02) und die Pflichtfelder id, title, contract, spec und status trägt (G-03). CON-0219 legt Rollen-Fälle unter .sdd/holdout/roles/<rolle>/ ab, mit IDs wie SUP-xxx oder IMP-001, einem Ordner input/spec.md, einem test_command und einem Feld draft. Diese Fälle verletzen das Schema, sobald Holdout-Validierung oder Status-Code rekursiv über .sdd/holdout/ läuft. Lösung: CON-0009 so ändern, dass roles/ ausgenommen ist, oder die Rollen-Fälle außerhalb von .sdd/holdout/ ablegen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-04: HOL-Regeln (ID, Pflichtfelder, Klartext) gelten nicht in .sdd/holdout/roles/.",
+        "resolved_at": "2026-09-26T16:39:27Z"
+      }
+    },
+    {
+      "id": "CF-0055-010",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0009",
+      "detail": "Laut CON-0009 INV-03 ist 'sdd new holdout' der einzige offizielle Weg, Holdout-Dokumente anzulegen. CON-0219 legt zusätzlich über 'sdd role case new|capture|confirm' Fälle unter .sdd/holdout/ an. Das widerspricht INV-03 direkt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-04: Rollen-Fälle entstehen über sdd role case new|capture, HOL-Szenarien weiter nur über sdd new holdout.",
+        "resolved_at": "2026-09-26T16:39:28Z"
+      }
+    },
+    {
+      "id": "CF-0055-011",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0009",
+      "detail": "Nach CON-0009 G-04 darf der Body eines Holdout-Szenarios keinen ausführbaren Code enthalten, sondern nur Klartext. Rollen-Fälle bringen versteckte Tests, Stub- und Referenzcode, ein test_command und Mutanten mit (Checks hidden_tests_pass, red_against_stub, green_against_reference, mutation_kill_rate). Der Contract muss den Geltungsbereich von G-04 ausdrücklich auf HOL-Dokumente beschränken.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-04: Klartext-Regel G-04 gilt nur für HOL-Szenarien.",
+        "resolved_at": "2026-09-26T16:39:29Z"
+      }
+    },
+    {
+      "id": "CF-0055-012",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0064",
+      "detail": "Laut CON-0064 G-01 liest der Implementierungs-Skill .sdd/holdout/ nicht. 'sdd role eval implementer' schickt aber Eingaben aus Holdout-Fällen (input/spec.md) an die Rolle implementer, also an einen Code-Agenten. Die Isolationsregel muss unterscheiden: welche Fall-Eingaben an die geprüfte Rolle gehen dürfen, und welche Erwartungen und versteckten Tests sie nie sehen darf.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0219 INV-09 regelt, welche Bestandteile an Rolle, Checks und Judge gehen.",
+        "resolved_at": "2026-09-26T16:39:30Z"
+      }
+    },
+    {
+      "id": "CF-0055-013",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0010",
+      "detail": "Laut CON-0010 INV-01 liest der Evaluator ausschließlich aus .sdd/holdout/, und zwar ohne Unterverzeichnisse auszunehmen. CON-0219 verlangt dagegen, dass 'sdd holdout run' .sdd/holdout/roles/ ignoriert. Der Evaluator braucht deshalb eine ausdrückliche Ausnahme für roles/, und CON-0010 sollte sie nennen. Sonst werden Rollen-Fälle als HOL-Szenarien geparst oder gegen --base-url ausgeführt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0010 um Vermerk ergänzt; CON-0219 INV-04.",
+        "resolved_at": "2026-09-26T16:39:31Z"
+      }
+    },
+    {
+      "id": "CF-0055-014",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0010",
+      "detail": "Es gibt zwei parallele Eval-Mechanismen mit unterschiedlichen Regeln. CON-0010 legt genau 3 Läufe fest, eine 2-von-3-Mehrheit und ein fest eingestelltes Bewertungsmodell (claude-haiku-4-5). CON-0219 erlaubt beliebig viele Läufe über --runs N, bewertet über Checks und Rubriken und nutzt die konfigurierbare Rolle judge (llm.roles.judge). Offen bleibt, ob die LLM-Bewertung in CON-0010 künftig über die Rolle judge läuft.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Unterschiedliche Zwecke: Spec-Holdout (CON-0010) vs. Rollen-Eval; keine gemeinsame Regel nötig.",
+        "resolved_at": "2026-09-26T16:39:31Z"
+      }
+    },
+    {
+      "id": "CF-0055-015",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0219",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0219 setzt den Konfigurationsschlüssel llm.roles.judge voraus, der ein Profil referenziert, außerdem Modellprofile wie '--model lokal'. Das LLM-Konfigurationsschema in CON-0023 kennt weder llm.roles noch benannte Profile. Ohne eine Schema-Erweiterung, etwa in einem anderen SPEC-0055-Contract wie CON-0217 oder CON-0218, weist 'sdd config validate' (CON-0104/CON-0190) die Konfiguration unter Umständen ab.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.roles und llm.profiles sind in CON-0199/CON-0212 definiert; judge ergänzt die Rollennamen additiv.",
+        "resolved_at": "2026-09-26T16:39:32Z"
+      }
+    },
+    {
+      "id": "CF-0055-016",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0220",
+      "conflicting_contract": "CON-0009",
+      "detail": "CON-0009 applies the train/test principle: whatever is used for validation must not be used for training. CON-0220 blocks direct access (INV-04: no --include-holdout, no paths with a 'holdout' segment). However, in INV-01 the ratchet gives the tuning agent holdout.mean(A/B) and a reject reason on every iteration, for up to n=3 iterations. Changes made in the loop can therefore be tuned against the holdout score, so the holdout is indirectly overfitted. The contract should specify whether the skill may see the holdout score or only an aggregated accept/reject. It should also say whether the role-eval holdout is the same thing as HOL-NNNN documents under .sdd/holdout/. The same word 'holdout' is used for both.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Aggregiertes Holdout-Signal ist beabsichtigt (wie Holdout-Quote an S3); begrenzt durch n Iterationen und Ratchet.",
+        "resolved_at": "2026-09-26T16:39:33Z"
+      }
+    },
+    {
+      "id": "CF-0055-017",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0220",
+      "conflicting_contract": "CON-0064",
+      "detail": "CON-0064 G-01 says only the implementation skill must not read .sdd/holdout/. CON-0220 INV-04 adds the same kind of restriction for /sdd-role-tune, but uses a broader rule: any path containing the segment 'holdout'. If role-eval holdout cases live outside .sdd/holdout/ (for example .sdd/roles/<rolle>/holdout/), the two contracts have different isolation rules and nobody has a shared definition. A common rule is needed, or CON-0064 should be extended.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "Holdout-Fälle liegen unter .sdd/holdout/ (CON-0217 INV-01); beide Regeln decken sie.",
+        "resolved_at": "2026-09-26T16:39:34Z"
+      }
+    },
+    {
+      "id": "CF-0055-018",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0220",
+      "conflicting_contract": "CON-0057",
+      "detail": "CON-0057 describes the /sdd slash-command set (sdd-new, sdd-implement). CON-0220 adds /sdd-role-tune, including the 'same text in repo and blueprint apart from scope:' rule, but does not reference CON-0057 or extend it. As a result, the list of skills and the parity rule between repo and blueprint are split across two contracts.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0057 beschreibt den Befehlssatz von /sdd; /sdd-role-tune ergänzt ihn additiv.",
+        "resolved_at": "2026-09-26T16:39:35Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 18,
+    "high": 1,
+    "medium": 9,
+    "low": 8,
+    "affected_specs_count": 0
+  }
+}
