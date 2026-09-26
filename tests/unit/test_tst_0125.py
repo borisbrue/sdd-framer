@@ -45,18 +45,6 @@ class TestTST0125:
         errors = validate_schema(_valid_config())
         assert errors == []
 
-    def test_plaintext_api_key_fails_pattern(self):
-        data = _valid_config()
-        data["llm_pool"]["providers"][1]["api_key_env"] = "sk-ant-abc123"
-        errors = _validate_business_rules(data)
-        assert any("api_key_env" in e for e in errors)
-
-    def test_remote_without_api_key_env_fails(self):
-        data = _valid_config()
-        del data["llm_pool"]["providers"][1]["api_key_env"]
-        errors = _validate_business_rules(data)
-        assert any("api_key_env" in e for e in errors)
-
     def test_max_parallel_containers_zero_fails(self):
         data = _valid_config()
         data["docker"]["max_parallel_containers"] = 0
@@ -68,19 +56,6 @@ class TestTST0125:
         data["docker"]["resources"]["memory_limit"] = "1gb"
         errors = validate_schema(data)
         assert any("memory_limit" in e or "1gb" in e for e in errors)
-
-    def test_invalid_strategy_enum_fails(self):
-        data = _valid_config()
-        data["llm_pool"]["strategy"] = "random"
-        errors = _validate_business_rules(data)
-        assert any("strategy" in e for e in errors)
-
-    def test_duplicate_provider_ids_detected(self):
-        data = _valid_config()
-        dup = dict(data["llm_pool"]["providers"][0])
-        data["llm_pool"]["providers"].append(dup)
-        errors = _validate_business_rules(data)
-        assert any("Doppelte" in e or "doppelt" in e.lower() for e in errors)
 
     def test_registry_url_without_auth_env_fails(self):
         data = _valid_config()

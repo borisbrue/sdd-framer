@@ -84,7 +84,10 @@ def decide_cmd(run_id: str, command_json: str) -> None:
 
 @pipeline_group.command("status")
 @click.argument("run_id")
-def status_cmd(run_id: str) -> None:
+@click.option("--json", "as_json", is_flag=True,
+              help="Zustand und offene Anfrage als JSON (SPEC-0058 FR-05).")
+def status_cmd(run_id: str, as_json: bool) -> None:
+    from .pipeline import monitor
     from .pipeline.store import RunNotFound, RunStore
 
     cfg = _config()
@@ -93,6 +96,9 @@ def status_cmd(run_id: str) -> None:
     except RunNotFound as exc:
         console.print(f"[red]✗[/] {exc}")
         sys.exit(2)
+    if as_json:
+        click.echo(json.dumps(monitor.status(cfg.root, run_id), ensure_ascii=False, indent=2))
+        sys.exit(0)
     state = store.read_state()
     console.print(f"Run [cyan]{run_id}[/]: Status [bold]{state['status']}[/], "
                   f"Phase {state['phase']}")

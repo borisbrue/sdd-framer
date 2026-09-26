@@ -472,7 +472,7 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
         except Exception:
             pass
         bus.mark_active(spec_id)
-        bus.publish(spec_id, f"━━━ sdd evaluate {spec_id} ━━━")
+        bus.publish(spec_id, f"━━━ sdd holdout run {spec_id} ━━━")
         bus.publish(spec_id, f"  Ziel: {base_url}")
 
     sdd = _find_sdd()
@@ -481,7 +481,8 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
 
     def _run_in_background() -> None:
         proc = subprocess.Popen(
-            [sdd, "evaluate", "--base-url", base_url, "--spec", spec_id],
+            # SPEC-0058 FR-07: `sdd evaluate` ist seit SPEC-0044 entfernt.
+            [sdd, "holdout", "run", "--base-url", base_url, "--spec", spec_id],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, cwd=cwd, env=env,
         )
@@ -497,7 +498,7 @@ def trigger_evaluate(spec_id: str) -> dict[str, Any]:
         if bus:
             ok = proc.returncode == 0
             try:
-                bus.publish(spec_id, f"━━━ evaluate {'✓ PASS' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
+                bus.publish(spec_id, f"━━━ holdout run {'✓ PASS' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
             except Exception:
                 pass
 
@@ -526,7 +527,7 @@ def trigger_implement(spec_id: str) -> dict[str, Any]:
         except Exception:
             pass
         bus.mark_active(spec_id)
-        bus.publish(spec_id, f"━━━ sdd implement {spec_id} ━━━")
+        bus.publish(spec_id, f"━━━ sdd pipeline run {spec_id} ━━━")
 
     sdd = _find_sdd()
     env = _enriched_env()
@@ -535,7 +536,8 @@ def trigger_implement(spec_id: str) -> dict[str, Any]:
 
     def _run_in_background() -> None:
         proc = subprocess.Popen(
-            [sdd, "implement", spec_id],
+            # SPEC-0058 FR-07: `sdd implement` ist entfernt; die Pipeline setzt um.
+            [sdd, "pipeline", "run", spec_id],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, cwd=cwd, env=env,
         )
@@ -551,14 +553,14 @@ def trigger_implement(spec_id: str) -> dict[str, Any]:
         if bus:
             ok = proc.returncode == 0
             try:
-                bus.publish(spec_id, f"━━━ implement {'✓ OK' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
+                bus.publish(spec_id, f"━━━ pipeline run {'✓ OK' if ok else '✗ FAIL'} (exit {proc.returncode}) ━━━")
             except Exception:
                 pass
 
     threading.Thread(target=_run_in_background, daemon=True,
                      name=f"implement-{spec_id}").start()
 
-    return {"ok": True, "output": f"Implementierungsphase gestartet – führe /sdd-implement {spec_id} in Claude Code aus."}
+    return {"ok": True, "output": f"Pipeline gestartet (sdd pipeline run {spec_id}) – Fortschritt im Monitor."}
 
 
 @router.post("/specs/{spec_id}/gate-spec-draft")

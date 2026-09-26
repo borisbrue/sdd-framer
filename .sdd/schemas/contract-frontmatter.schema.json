@@ -5,6 +5,7 @@
   "type": "object",
   "required": ["id", "title", "type", "format", "spec", "version", "status"],
   "properties": {
+    "deprecated_reason": { "type": "string", "minLength": 1, "description": "SPEC-0058: Grund der Ablösung (sdd spec|contract deprecate)" },
     "id": {
       "type": "string",
       "pattern": "^CON-[0-9]{4,}$"

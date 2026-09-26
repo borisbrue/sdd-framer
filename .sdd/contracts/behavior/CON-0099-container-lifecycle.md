@@ -5,9 +5,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0026
 version: 0.2.0
-status: draft
+status: deprecated
 tests:
 - TST-0118
+deprecated_reason: "mit SPEC-0026 abgelöst: Distribution Engine ohne Codeerzeugung; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: Container-Lifecycle – Erstellung, Task-Zuweisung und Cleanup

@@ -1,7 +1,7 @@
 ---
 id: SPEC-0026
 title: LLM Task Distribution Engine
-status: implemented
+status: deprecated
 owner: Boris
 created: 2026-05-18
 updated: '2026-05-18'
@@ -36,6 +36,8 @@ tests:
 - TST-0120
 adrs: []
 started_at: '2026-05-18T22:01:47Z'
+deprecated_reason: "Distribution Engine ohne Codeerzeugung; abgelöst durch die Rollen-Pipeline"
+replaced_by: "SPEC-0053"
 ---
 # LLM Task Distribution Engine
 

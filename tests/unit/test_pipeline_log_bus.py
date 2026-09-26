@@ -34,7 +34,7 @@ def test_evaluate_meldet_sich_im_log_bus(umgebung):
     assert ergebnis["ok"] is True
     bus.mark_active.assert_called_once_with("SPEC-0007")
     kopf = [c.args[1] for c in bus.publish.call_args_list]
-    assert any("sdd evaluate SPEC-0007" in z for z in kopf), kopf
+    assert any("sdd holdout run SPEC-0007" in z for z in kopf), kopf  # SPEC-0058 FR-07
     thread.assert_called_once()
 
 
@@ -45,7 +45,7 @@ def test_implement_meldet_sich_im_log_bus(umgebung):
     trigger_implement("SPEC-0007")
     bus.mark_active.assert_called_once_with("SPEC-0007")
     kopf = [c.args[1] for c in bus.publish.call_args_list]
-    assert any("sdd implement SPEC-0007" in z for z in kopf), kopf
+    assert any("sdd pipeline run SPEC-0007" in z for z in kopf), kopf  # SPEC-0058 FR-07
 
 
 def test_kein_verweis_auf_das_nicht_importierte_modul():

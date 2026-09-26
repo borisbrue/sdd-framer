@@ -54,7 +54,7 @@ def _approved_doc(spec_id: str):
 
 def test_tc01_approved_spec_returns_202():
     """POST /orchestrate mit approved Spec → 202 + run_id (CON-0021 G-01)."""
-    with patch("routes.orchestrate.shutil.which", return_value=CLAUDE_BIN), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_doc(APPROVED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="execute-unlocked"), \
          patch("routes.orchestrate._run_pipeline_bg"):
@@ -70,7 +70,7 @@ def test_tc01_approved_spec_returns_202():
 
 def test_tc02_non_approved_spec_returns_422():
     """POST /orchestrate mit implemented Spec → 422 (CON-0021 G-01, INV-05)."""
-    with patch("routes.orchestrate.shutil.which", return_value=CLAUDE_BIN):
+    with patch("sdd_cli.llm.claude_available", return_value=True):
         res = client.post("/api/orchestrate", json={"spec_id": IMPLEMENTED_SPEC})
 
     assert res.status_code == 422
@@ -81,7 +81,7 @@ def test_tc02_non_approved_spec_returns_422():
 
 def test_tc03_unknown_spec_returns_404():
     """POST /orchestrate mit nicht existierender Spec → 404 (CON-0021 G-01)."""
-    with patch("routes.orchestrate.shutil.which", return_value=CLAUDE_BIN):
+    with patch("sdd_cli.llm.claude_available", return_value=True):
         res = client.post("/api/orchestrate", json={"spec_id": "SPEC-9999"})
 
     assert res.status_code == 404
@@ -91,7 +91,7 @@ def test_tc03_unknown_spec_returns_404():
 
 def test_tc04_double_start_returns_409():
     """Zweites POST für dieselbe Spec → 409 (CON-0021 G-01, INV-01)."""
-    with patch("routes.orchestrate.shutil.which", return_value=CLAUDE_BIN), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_doc(APPROVED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="execute-unlocked"), \
          patch("routes.orchestrate._run_pipeline_bg"):
@@ -103,7 +103,7 @@ def test_tc04_double_start_returns_409():
     orch._runs[run_id].status = "running"
     orch._active[APPROVED_SPEC] = run_id
 
-    with patch("routes.orchestrate.shutil.which", return_value=CLAUDE_BIN), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_doc(APPROVED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="execute-unlocked"), \
          patch("routes.orchestrate._run_pipeline_bg"):
@@ -117,7 +117,7 @@ def test_tc04_double_start_returns_409():
 
 def test_tc05_no_claude_returns_503():
     """shutil.which('claude') == None → 503 (CON-0021 INV-05)."""
-    with patch("routes.orchestrate.shutil.which", return_value=None):
+    with patch("sdd_cli.llm.claude_available", return_value=False):
         res = client.post("/api/orchestrate", json={"spec_id": APPROVED_SPEC})
 
     assert res.status_code == 503

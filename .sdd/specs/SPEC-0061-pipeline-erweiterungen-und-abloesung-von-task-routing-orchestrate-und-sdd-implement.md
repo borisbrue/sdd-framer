@@ -82,6 +82,9 @@ Aus dem Review von SPEC-0058 übernommen (angenommen 2026-09-26):
 - **FR-10:** SPEC-0045 wird `deprecated`; SPEC-0004 bekommt den Hinweis auf die Pipeline.
 - **FR-11:** Regel in `.sdd/architecture.yaml`: Provider-Aufrufe für Task-Arbeit nur unter
   `tool/sdd_cli/pipeline/**`.
+- **FR-12:** `sdd config test-llm` prüft die Modelle aus `llm.roles` (`--role <rolle>`) statt der
+  Provider aus dem abgelösten `llm_pool` (SPEC-0027); es meldet auch, ob Reasoning-Tokens
+  zurückkommen (Edge Case aus SPEC-0053).
 
 ## 5. Nicht-funktionale Anforderungen
 

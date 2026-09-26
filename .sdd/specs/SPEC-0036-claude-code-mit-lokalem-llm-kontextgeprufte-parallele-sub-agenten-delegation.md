@@ -2,7 +2,7 @@
 id: SPEC-0036
 title: Claude Code mit lokalem LLM – Kontextgeprüfte Parallele Sub-Agenten-Delegation
 type: feature
-status: implemented
+status: deprecated
 owner: borisbrue
 created: 2026-06-05
 updated: '2026-06-05'
@@ -35,6 +35,8 @@ tests:
 - TST-0151
 adrs: []
 started_at: '2026-06-05T09:40:56Z'
+deprecated_reason: "Lokaler Agent und DagScheduler nie angebunden; abgelöst durch die Rollen-Pipeline"
+replaced_by: "SPEC-0053"
 ---
 # Claude Code mit lokalem LLM – Kontextgeprüfte Parallele Sub-Agenten-Delegation
 

@@ -1,144 +1,97 @@
-"""Agent-DAG-Monitor API für SPEC-0037.
+"""Pipeline-Monitor der Web-UI (SPEC-0037, umgebaut in SPEC-0058 FR-06, CON-0211).
 
-FR-01: GET /api/orchestrate/runs — Run-Liste
-FR-02: GET /api/orchestrate/stream/{run_id} — SSE DagEvent-Stream
-FR-04: POST /api/orchestrate/command/{run_id} — SchedulerCommand
+GET  /api/orchestrate/runs              — Runs von `sdd pipeline run`
+GET  /api/orchestrate/stream/{run_id}   — SSE mit Task-Ereignissen im DagEvent-Format
+POST /api/orchestrate/command/{run_id}  — abgelöst (410), Entscheidungen über `sdd pipeline decide`
+
+Die Route liest Runs ausschließlich über `sdd_cli.pipeline.monitor` (ADR-0003); Pfade und
+Antwortformate bleiben, damit die gebaute Web-UI unverändert funktioniert.
 """
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
-import time
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).parents[4]))
-from sdd_cli.dag_command import build_command, get_command_queue
-from sdd_cli.dag_event import get_event_bus
+from sdd_cli.pipeline import monitor
 
 router = APIRouter()
 
-# ─── Run registry ─────────────────────────────────────────────────────────────
-
-@dataclass
-class DagRunEntry:
-    run_id: str
-    spec_id: str
-    status: str = "running"
-    started_at: float = field(default_factory=time.time)
+# CON-0211 INV-04: neue Ereignisse erscheinen spätestens nach diesem Abstand im Stream.
+POLL_SECONDS = 1.0
 
 
-_runs: dict[str, DagRunEntry] = {}
-_TTL = 3600.0
+def _root() -> Path:
+    from sdd_context import get_config
+
+    return get_config().root
 
 
-def register_run(run_id: str, spec_id: str) -> None:
-    _cleanup()
-    _runs[run_id] = DagRunEntry(run_id=run_id, spec_id=spec_id)
+def _dag_setting(key: str, default: int) -> int:
+    try:
+        from sdd_context import get_config
+
+        return int(get_config().raw.get("dag_monitor", {}).get(key, default))
+    except Exception:
+        return default
 
 
-def finish_run(run_id: str, status: str = "done") -> None:
-    entry = _runs.get(run_id)
-    if entry:
-        entry.status = status
-
-
-def _cleanup() -> None:
-    now = time.time()
-    stale = [k for k, v in _runs.items() if now - v.started_at > _TTL]
-    for k in stale:
-        _runs.pop(k, None)
-
-
-def _runs_list(max_history: int = 5) -> list[dict]:
-    _cleanup()
-    entries = sorted(_runs.values(), key=lambda e: e.started_at, reverse=True)
-    running = [e for e in entries if e.status == "running"]
-    done = [e for e in entries if e.status != "running"][:max_history]
-    return [
-        {"run_id": e.run_id, "spec_id": e.spec_id, "status": e.status, "started_at": e.started_at}
-        for e in running + done
-    ]
-
-
-# ─── Schema ───────────────────────────────────────────────────────────────────
-
-class CommandRequest(BaseModel):
-    command_type: str
-    task_id: str
-
-
-# ─── Endpoints ────────────────────────────────────────────────────────────────
-
-@router.get("/orchestrate/runs", summary="Laufende + abgeschlossene DAG-Runs (SPEC-0037 FR-01)")
+@router.get("/orchestrate/runs", summary="Pipeline-Runs (SPEC-0058 FR-06)")
 def list_runs() -> list[dict]:
-    try:
-        from sdd_context import get_config
-        max_h = get_config().raw.get("dag_monitor", {}).get("max_runs_history", 5)
-    except Exception:
-        max_h = 5
-    return _runs_list(max_h)
+    runs = monitor.list_runs(_root())
+    laufend = [r for r in runs if r["status"] in ("running", "paused")]
+    fertig = [r for r in runs if r["status"] not in ("running", "paused")]
+    return laufend + fertig[:_dag_setting("max_runs_history", 5)]
 
 
-@router.get("/orchestrate/stream/{run_id}", summary="SSE DagEvent-Stream (SPEC-0037 FR-02)")
+@router.get("/orchestrate/stream/{run_id}", summary="SSE-Stream der Task-Ereignisse eines Runs")
 async def stream_dag_events(run_id: str) -> StreamingResponse:
-    bus = get_event_bus()
-
+    root = _root()
     try:
-        from sdd_context import get_config
-        heartbeat = get_config().raw.get("dag_monitor", {}).get("sse_heartbeat_seconds", 15)
-    except Exception:
-        heartbeat = 15
+        monitor.task_events(root, run_id, 0)
+    except monitor.RunNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    heartbeat = _dag_setting("sse_heartbeat_seconds", 15)
 
-    async def _generate_with_heartbeat():
+    def _daten(ereignisse: list[dict]) -> str:
+        return "".join(f"data: {json.dumps(e, ensure_ascii=False)}\n\n" for e in ereignisse)
+
+    async def _generate():
         yield ": connected\n\n"
-
-        hb_queue: asyncio.Queue = asyncio.Queue()
-
-        async def _send_heartbeats():
-            while True:
-                await asyncio.sleep(heartbeat)
-                await hb_queue.put(None)
-
-        hb_task = asyncio.create_task(_send_heartbeats())
-        try:
-            async for event in bus.subscribe(run_id):
-                yield f"data: {event.model_dump_json()}\n\n"
-                while not hb_queue.empty():
-                    hb_queue.get_nowait()
-                    yield ": heartbeat\n\n"
-        except asyncio.CancelledError:
-            pass
-        finally:
-            hb_task.cancel()
+        offset, still = 0, 0.0
+        while True:
+            ereignisse, offset = monitor.task_events(root, run_id, offset)
+            if ereignisse:
+                yield _daten(ereignisse)
+            if not monitor.is_active(root, run_id):
+                # Ereignisse, die nach dem Lesen und vor dem Statuswechsel kamen, noch senden.
+                rest, offset = monitor.task_events(root, run_id, offset)
+                if rest:
+                    yield _daten(rest)
+                return
+            await asyncio.sleep(POLL_SECONDS)
+            still = 0.0 if ereignisse else still + POLL_SECONDS
+            if still >= heartbeat:
+                still = 0.0
+                yield ": heartbeat\n\n"
 
     return StreamingResponse(
-        _generate_with_heartbeat(),
+        _generate(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
     )
 
 
-@router.post(
-    "/orchestrate/command/{run_id}",
-    status_code=202,
-    summary="SchedulerCommand an laufenden Run senden (SPEC-0037 FR-04)",
-)
-def send_command(run_id: str, body: CommandRequest) -> dict[str, Any]:
-    try:
-        cmd = build_command(run_id=run_id, task_id=body.task_id, command_type=body.command_type)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
-
-    q = get_command_queue()
-    try:
-        q.enqueue_sync(cmd)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-    return {"queued": True, "run_id": run_id, "command_type": body.command_type, "task_id": body.task_id}
+@router.post("/orchestrate/command/{run_id}", summary="Abgelöst: sdd pipeline decide")
+def send_command(run_id: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
+    raise HTTPException(
+        status_code=410,
+        detail=f"Befehle an laufende Runs gibt es nicht mehr (SPEC-0058). Entscheidungen der "
+               f"Pipeline: sdd pipeline decide {run_id} --json '…'",
+    )

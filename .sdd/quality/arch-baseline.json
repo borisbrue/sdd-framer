@@ -18,7 +18,7 @@
       "file": "tool/sdd_cli/llm/providers/openai_compat.py",
       "symbol": "pathlib.Path.write_text",
       "reason": "CodeGen-Pfad (CON-0024) schreibt Workspace-Dateien selbst; die Pipeline löst ihn ab",
-      "fixed_by": "SPEC-0058"
+      "fixed_by": "SPEC-0061"
     },
     {
       "rule": "ARCH-01",
@@ -67,41 +67,6 @@
       "file": "tool/sdd_cli/web/api/routes/tests.py",
       "symbol": "pathlib.Path.write_text",
       "reason": "Web-API schreibt direkt, statt an die CLI zu delegieren; Behebung offen (eigene Spec nötig, SPEC-0059 Abschnitt 10)"
-    },
-    {
-      "rule": "ARCH-02",
-      "file": "tool/sdd_cli/llm/usage.py",
-      "symbol": "TOKEN_USAGE_TABLE",
-      "reason": "SQLite-Senke nutzt Tabellendefinition aus estimation.py (cli); gehört in eine Speicherschicht",
-      "fixed_by": "SPEC-0058"
-    },
-    {
-      "rule": "ARCH-02",
-      "file": "tool/sdd_cli/llm/usage.py",
-      "symbol": "init_token_usage_table_at",
-      "reason": "SQLite-Senke nutzt Tabellendefinition aus estimation.py (cli); gehört in eine Speicherschicht",
-      "fixed_by": "SPEC-0058"
-    },
-    {
-      "rule": "ARCH-04",
-      "file": "tool/sdd_cli/local_agent.py",
-      "symbol": "shutil.which",
-      "reason": "local_agent startet claude selbst statt über den Provider",
-      "fixed_by": "SPEC-0058"
-    },
-    {
-      "rule": "ARCH-04",
-      "file": "tool/sdd_cli/web/api/routes/commands.py",
-      "symbol": "shutil.which",
-      "reason": "Verfügbarkeitsprüfung der Web-API löst claude selbst auf; gehört als Funktion in die Factory",
-      "fixed_by": "SPEC-0058"
-    },
-    {
-      "rule": "ARCH-04",
-      "file": "tool/sdd_cli/web/api/routes/orchestrate.py",
-      "symbol": "shutil.which",
-      "reason": "Verfügbarkeitsprüfung der Web-API löst claude selbst auf; gehört als Funktion in die Factory",
-      "fixed_by": "SPEC-0058"
     }
   ]
 }

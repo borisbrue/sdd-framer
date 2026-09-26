@@ -113,7 +113,7 @@ def _approved_spec_doc(spec_id: str) -> MagicMock:
 
 def test_tc06_orchestrate_409_when_gate_not_passed():
     """POST /api/orchestrate → 409 wenn pipeline_phase != execute-unlocked (CON-0021 INV-07)."""
-    with patch("routes.orchestrate.shutil.which", return_value="/usr/bin/claude"), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_spec_doc(LOCKED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="contracts-review"):
         res = client.post("/api/orchestrate", json={"spec_id": LOCKED_SPEC})
@@ -124,7 +124,7 @@ def test_tc06_orchestrate_409_when_gate_not_passed():
 
 def test_tc06b_orchestrate_force_with_reason_succeeds():
     """POST /api/orchestrate mit force+override_reason → 202 trotz Gate (CON-0021 INV-07)."""
-    with patch("routes.orchestrate.shutil.which", return_value="/usr/bin/claude"), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_spec_doc(LOCKED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="contracts-review"), \
          patch("routes.orchestrate._run_pipeline_bg"), \
@@ -140,7 +140,7 @@ def test_tc06b_orchestrate_force_with_reason_succeeds():
 
 def test_tc06c_orchestrate_force_without_reason_rejected():
     """POST /api/orchestrate mit force aber ohne override_reason → 422 (CON-0025 INV-05)."""
-    with patch("routes.orchestrate.shutil.which", return_value="/usr/bin/claude"), \
+    with patch("sdd_cli.llm.claude_available", return_value=True), \
          patch("sdd_cli.frontmatter.parse_safe", return_value=_approved_spec_doc(LOCKED_SPEC)), \
          patch("routes.orchestrate._load_gate_phase", return_value="contracts-review"):
         res = client.post("/api/orchestrate", json={

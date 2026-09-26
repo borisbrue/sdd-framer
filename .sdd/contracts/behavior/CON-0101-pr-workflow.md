@@ -5,10 +5,11 @@ type: behavior
 format: gherkin
 spec: SPEC-0026
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: "contracts/behavior/pr-workflow.feature"
 tests:
 - TST-0120
+deprecated_reason: "mit SPEC-0026 abgelöst: Distribution Engine ohne Codeerzeugung; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: PR-Workflow – Branch, Commits, Tests, Merge und Spec-Abschluss

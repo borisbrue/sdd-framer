@@ -6,9 +6,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0035
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: ".sdd/contracts/behavior/subagent-delegation-behavior.feature"
 tests: ["TST-0141", "TST-0143"]
+deprecated_reason: "mit SPEC-0035 abgelöst: Sub-Agenten-Delegation nie an die CLI angebunden; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: Sub-Agenten-Delegations-Protokoll

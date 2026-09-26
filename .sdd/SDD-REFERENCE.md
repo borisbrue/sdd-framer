@@ -181,7 +181,7 @@ Für nicht-Claude-LLMs oder CI-Pipelines auch direkt nutzbar.
 | Befehl | Funktion |
 |--------|----------|
 | `sdd decompose SPEC-ID [--yes]` | Spec in klassifizierte Tasks zerlegen |
-| `sdd distribute SPEC-ID [--dry-run]` | Tasks an LLM-Pool verteilen + PR erstellen |
+| `sdd pipeline run SPEC-ID [--dry-run]` | Rollen-Pipeline: Tasks über die Modelle aus `llm.roles` umsetzen (ersetzt `sdd distribute`, SPEC-0058) |
 | `sdd task-status SPEC-ID` | Task-Status einer Spec anzeigen |
 
 ---
@@ -292,7 +292,7 @@ flowchart LR
 
     subgraph TRANSITION["Pfad B – Lokal-Autonom (Übergang ohne CI)"]
         T1[sdd spec start --auto\nlokal orchestrate triggern] --> T2[sdd decompose\nTask-Zerlegung]
-        T2 --> T3[sdd distribute\nLLM-Pool]
+        T2 --> T3[sdd pipeline run\nRollen]
         T3 --> T4[Build + Test\nim Container]
         T4 -->|grün| T5[PR erstellen]
         T4 -->|rot, retry| T3
@@ -305,7 +305,7 @@ flowchart LR
         A1[Push auf main\nSpec geändert] --> A2[GitHub Actions\nsdd-orchestrate.yml]
         A2 --> A3[sdd orchestrate\n--spec SPEC-ID]
         A3 --> A4[sdd decompose\nTask-Zerlegung]
-        A4 --> A5[sdd distribute\nLLM-Pool]
+        A4 --> A5[sdd pipeline run\nRollen]
         A5 --> A6[Build + Test\nim Container]
         A6 -->|grün| A7[PR erstellen]
         A6 -->|rot, retry| A5

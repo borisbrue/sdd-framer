@@ -6,9 +6,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0036
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: ".sdd/contracts/behavior/dag-scheduler-behavior.feature"
 tests: ["TST-0149"]
+deprecated_reason: "mit SPEC-0036 abgelöst: Lokaler Agent und DagScheduler nie angebunden; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: DagScheduler – Abhängigkeits- und Parallelitäts-Contract

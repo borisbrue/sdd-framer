@@ -7,7 +7,7 @@ Feature: Architekturprüfung für sdd-framer und Pre-Commit-Hook
     Given der Repo-Stand von sdd-framer mit .sdd/architecture.yaml und Baseline
     When ich "sdd arch check" ausführe
     Then ist der Exit-Code 0
-    And die Ausgabe listet ARCH-04 in tool/sdd_cli/local_agent.py als "warn (Baseline, SPEC-0058)"
+    And die Ausgabe listet ARCH-01 in tool/sdd_cli/llm/providers/openai_compat.py als "warn (Baseline, SPEC-0061)"
 
   Scenario: Jede Regel ist an ein akzeptiertes ADR gebunden
     Given die Regeln ARCH-01 bis ARCH-04 in .sdd/architecture.yaml

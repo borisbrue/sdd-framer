@@ -5,10 +5,11 @@ type: behavior
 format: gherkin
 spec: SPEC-0027
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: "contracts/behavior/llm-pool-configuration.feature"
 tests:
 - TST-0122
+deprecated_reason: "LLM-Pool-Schritt des Wizards mit SPEC-0058 entfernt; Modelle stehen in llm.roles"
 ---
 
 # Contract: LLM-Pool-Konfiguration – Provider-Einrichtung und Verbindungstest

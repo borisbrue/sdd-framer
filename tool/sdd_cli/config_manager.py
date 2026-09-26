@@ -15,11 +15,9 @@ from typing import Any
 import yaml
 
 _ARRAY_INDEX = re.compile(r"^(.+)\[(\d+)\]$")
-_ENV_VAR_NAME = re.compile(r"^[A-Z][A-Z0-9_]+$")
 _PLAINTEXT_KEY_PREFIXES = ("sk-", "ant-", "hf-")
 
 PLACEHOLDER_DESCRIPTION = "<PROJECT_DESCRIPTION>"
-STRATEGIES = ("cost_first", "quality_first", "local_first")
 COST_TIERS = ("cheap", "standard", "powerful")
 RUNTIMES = ("docker", "podman")
 
@@ -150,30 +148,6 @@ def _write_atomic(path: Path, data: dict) -> None:
 def _validate_business_rules(data: dict) -> list[str]:
     errors: list[str] = []
 
-    llm_pool = data.get("llm_pool", {})
-    if llm_pool:
-        strategy = llm_pool.get("strategy")
-        if strategy and strategy not in STRATEGIES:
-            errors.append(f"llm_pool.strategy muss einer von {STRATEGIES} sein, nicht '{strategy}'")
-
-        providers = llm_pool.get("providers") or []
-        seen_ids: set[str] = set()
-        for i, p in enumerate(providers):
-            pid = p.get("id", "")
-            if pid in seen_ids:
-                errors.append(f"Doppelte Provider-ID: '{pid}' (llm_pool.providers[{i}])")
-            seen_ids.add(pid)
-            if p.get("type") == "remote":
-                env = p.get("api_key_env", "")
-                if not env:
-                    errors.append(
-                        f"Remote-Provider '{pid}' braucht api_key_env (llm_pool.providers[{i}])"
-                    )
-                elif not _ENV_VAR_NAME.match(env):
-                    errors.append(
-                        f"api_key_env '{env}' für '{pid}' muss ein Env-Var-Name sein (z.B. ANTHROPIC_API_KEY)"
-                    )
-
     docker = data.get("docker", {})
     if docker:
         max_par = docker.get("max_parallel_containers")
@@ -188,7 +162,7 @@ def _validate_business_rules(data: dict) -> list[str]:
 
 
 def validate_schema(data: dict) -> list[str]:
-    """Validates the llm_pool and docker sections against JSON Schema."""
+    """Validiert config.yaml gegen das JSON-Schema und die Geschäftsregeln (docker)."""
     import jsonschema
 
     schema_path = (

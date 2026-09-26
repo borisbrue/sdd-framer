@@ -14,14 +14,13 @@ import yaml
 from .config_manager import (
     PLACEHOLDER_DESCRIPTION,
     RUNTIMES,
-    STRATEGIES,
     ConfigManager,
     ConfigValidationError,
     _validate_business_rules,
 )
 
-SECTIONS = ("project", "llm", "docker", "evaluator", "orchestrator")
-_KEY_PREFIX = "sk-", "ant-", "hf-"
+# Der Abschnitt "llm" (LLM-Pool, SPEC-0027) entfiel mit SPEC-0058; Modelle stehen in llm.roles.
+SECTIONS = ("project", "docker", "evaluator", "orchestrator")
 
 
 class WizardAbortError(Exception):
@@ -70,28 +69,6 @@ class ConfigWizard:
         if not desc:
             raise ConfigValidationError("Projektbeschreibung darf nicht leer sein")
         data.setdefault("project", {})["description"] = desc
-        return data
-
-    def _section_llm(self, data: dict, non_interactive: bool = False, **kwargs) -> dict:
-        if non_interactive:
-            strategy = kwargs.get("llm_strategy", data.get("llm_pool", {}).get("strategy", "cost_first"))
-            data.setdefault("llm_pool", {})["strategy"] = strategy
-            return data
-
-        print("\n── LLM-Pool ────────────────────────────────────────────")
-        strategy = _choice("Auswahlstrategie", STRATEGIES,
-                           default=data.get("llm_pool", {}).get("strategy", "cost_first"))
-        pool = data.get("llm_pool", {})
-        pool["strategy"] = strategy
-        providers = list(pool.get("providers") or [])
-        while True:
-            another = _confirm("Weiteren LLM-Provider hinzufügen?", default=True)
-            if not another:
-                break
-            p = _collect_provider(providers)
-            providers.append(p)
-        pool["providers"] = providers
-        data["llm_pool"] = pool
         return data
 
     def _section_docker(self, data: dict, non_interactive: bool = False, **kwargs) -> dict:
@@ -186,37 +163,6 @@ def _confirm(label: str, default: bool = True) -> bool:
     if not raw:
         return default
     return raw.startswith("j") or raw.startswith("y")
-
-
-def _collect_provider(existing: list[dict]) -> dict:
-    existing_ids = {p.get("id") for p in existing}
-    while True:
-        pid = _prompt("Provider-ID (einmalig, z.B. ollama-mistral)")
-        if pid in existing_ids:
-            print(f"  ID '{pid}' bereits vorhanden.")
-            continue
-        if pid:
-            break
-
-    ptype = _choice("Typ", ("local", "remote"), default="remote")
-    model = _prompt("Modell-Name", default="mistral:7b" if ptype == "local" else "claude-sonnet-4-6")
-    tier = _choice("Cost-Tier", ("cheap", "standard", "powerful"), default="cheap" if ptype == "local" else "standard")
-    max_tok = int(_prompt("Max-Kontext-Tokens", default="32000" if ptype == "local" else "200000"))
-
-    p: dict = {"id": pid, "type": ptype, "model": model, "cost_tier": tier, "max_context_tokens": max_tok}
-
-    if ptype == "local":
-        base_url = _prompt("Base-URL", default="http://localhost:11434")
-        p["base_url"] = base_url
-    else:
-        while True:
-            key_env = _prompt("API-Key Env-Var-Name (z.B. ANTHROPIC_API_KEY)")
-            if any(key_env.startswith(pfx) for pfx in _KEY_PREFIX):
-                print("  Sicherheit: Bitte keinen direkten API-Key eingeben, nur den Env-Var-Namen.")
-                continue
-            p["api_key_env"] = key_env
-            break
-    return p
 
 
 def _write_wizard(path: Path, data: dict) -> None:

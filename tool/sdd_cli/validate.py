@@ -208,9 +208,10 @@ def validate(config: SddConfig) -> Report:
                         f"from {cid} tests list."
                     ),
                 )
-        # Artifact-Datei muss existieren, wenn angegeben
+        # Artifact-Datei muss existieren, wenn angegeben – außer der Contract ist abgelöst
+        # (SPEC-0058: mit dem Code eines abgelösten Pfads verschwindet auch sein Artefakt).
         artifact = c.frontmatter.get("artifact")
-        if artifact:
+        if artifact and c.frontmatter.get("status") != "deprecated":
             artifact_path = config.root / artifact
             if not artifact_path.exists():
                 report.add(
