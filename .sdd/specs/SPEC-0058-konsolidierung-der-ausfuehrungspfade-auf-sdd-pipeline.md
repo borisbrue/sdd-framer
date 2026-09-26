@@ -1,12 +1,12 @@
 ---
 id: SPEC-0058
-title: "Konsolidierung der Ausführungspfade auf sdd pipeline"
+title: "Rückbau abgelöster Ausführungspfade und Pipeline-Monitor"
 type: feature
 status: draft
 owner: "Boris"
 created: 2026-09-25
-updated: 2026-09-25
-version: 0.1.0
+updated: 2026-09-26
+version: 0.2.0
 priority: medium
 tags: [refactoring, pipeline, cleanup, cli]
 depends_on: [SPEC-0053, SPEC-0059]
@@ -14,186 +14,165 @@ contracts: []
 tests: []
 ---
 
-# Konsolidierung der Ausführungspfade auf sdd pipeline
+# Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
-Über mehrere Specs sind in sdd-framer parallele Wege entstanden, eine Spec in Code umzusetzen. Sie
-überschneiden sich, sind teils nie verdrahtet und teils defekt:
+Über mehrere Specs sind in sdd-framer parallele Wege entstanden, eine Spec in Code umzusetzen.
+SPEC-0053 führt mit `sdd pipeline` einen allgemeinen Ablauf ein. Eine Bestandsaufnahme beim Review
+(2026-09-26) hat gezeigt, dass ein Teil der alten Pfade tot oder defekt ist und ohne
+Funktionsverlust wegfallen kann:
 
-| Pfad | Herkunft | Zustand heute |
-|------|----------|---------------|
-| `/sdd-implement` (Skill) | Blueprint | Claude implementiert selbst; ruft `sdd decompose`, `sdd task-route`, `sdd task-exec` |
-| `sdd task-exec`, `sdd task-route` | SPEC-0045 | Einzeltask lokal; Retry-Bug bei vorhandener Datei (BEFUND §2) |
-| `sdd task-loop` | SPEC-0045 (uncommittet) | headless TDD-Schleife mit Eskalation |
-| `sdd distribute`, `task-status` | SPEC-0026 | erzeugt **keinen** Code; `gh` ohne Absicherung; PR-Titel hart „SPEC-0026“ |
-| `sdd orchestrate` | SPEC-0004 | Dark Factory: Code in einem Schritt, Holdout-Eval, Retry, Auto-Merge; Web-Route `orchestrate` |
-| `sub_agent.py` | SPEC-0035 | nicht an die CLI angebunden; Token-Datensätze immer 0 |
-| `local_agent.py`, `DagScheduler` | SPEC-0036 | nicht an die CLI angebunden; setzt `ANTHROPIC_API_KEY` für einen Proxy |
-| `autopilot.py`, `dag_command.py` | SPEC-0037 | Autopilot nicht angebunden, importiert ein nicht existierendes Modul; DAG-Monitor in der Web-UI |
-| `review_pipeline.py`, `llm_pool.py` | SPEC-0026 | nur von `distribute` genutzt; Reviewer ohne Provider, wird übersprungen |
+| Pfad | Zeilen | Zustand heute |
+|------|-------:|---------------|
+| `sub_agent.py`, `local_agent.py` (SPEC-0035/0036) | 514 | nirgends importiert; `local_agent` setzt `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL` |
+| `autopilot.py` (SPEC-0037) | 310 | nirgends importiert; importiert ein nicht existierendes Modul, ruft entfernte Befehle auf |
+| `distribute` mit `dist_orchestrator.py`, `review_pipeline.py`, `llm_pool.py` (SPEC-0026) | 436 | erzeugt keinen Code; `llm_pool` aus der Config wird nie gelesen |
+| DAG-Monitor (`dag_command.py`, `dag_event.py`, Route `dag_monitor`) | ~400 | Route aktiv, aber niemand meldet Läufe an: die Seite ist immer leer |
+| Web-Routen `/specs/{id}/implement`, `/evaluate` | – | rufen die seit SPEC-0044 entfernten Befehle `sdd implement`/`sdd evaluate` auf: immer Exit 1 |
 
-Zusammen sind das rund 2700 Zeilen mit eigener Routing-, Retry-, Review- und Token-Logik. SPEC-0053
-führt mit `sdd pipeline` einen allgemeinen Ablauf mit Rollen, Gates, Supervisor und Protokoll ein.
-Diese Spec bildet jeden Pfad darauf ab oder entfernt ihn.
+Die lebendigen Pfade (`task_routing/` mit `task-route`/`task-exec`/`task-loop`, `sdd orchestrate`,
+`/sdd-implement`) brauchen zuerst neue Fähigkeiten der Pipeline. Sie übernimmt SPEC-0061.
 
 ## 2. Zielsetzung
 
-**Primärziel:** Es gibt genau einen Ausführungspfad, `sdd pipeline`. Jeder andere Einstieg (Skills,
-Web-UI, Dark Factory) ist eine Konfiguration dieses Pfads.
+**Primärziel:** Toter und defekter Code der alten Ausführungspfade ist entfernt; die Web-UI zeigt
+Pipeline-Runs an und startet sie über die CLI.
 
 **Erfolgskriterien (messbar):**
-- [ ] Kein Modul außerhalb von `tool/sdd_cli/pipeline/` enthält eigene Retry-, Routing- oder
-      Eskalationslogik für Tasks. Das prüft eine Regel in `architecture.yaml` von sdd-framer (SPEC-0054, SPEC-0059).
-- [ ] Die Module `sub_agent.py`, `local_agent.py`, `autopilot.py`, `dist_orchestrator.py`,
-      `review_pipeline.py`, `llm_pool.py` und `task_routing/` sind entfernt oder in die Pipeline
-      überführt. Die Testsuite ist danach grün.
-- [ ] `/sdd-implement`, `/sdd-supervise`, `sdd orchestrate` und die Web-UI schreiben alle in dasselbe
-      Run-Protokoll (`.sdd/runs/…`) und erscheinen in `sdd pipeline report`.
-- [ ] Kein Code liest oder setzt `ANTHROPIC_API_KEY` außer dem expliziten Provider `anthropic`.
+- [ ] `sub_agent.py`, `local_agent.py`, `autopilot.py`, `dist_orchestrator.py`, `review_pipeline.py`,
+      `llm_pool.py`, `dag_command.py` und `dag_event.py` sind entfernt; die Testsuite ist grün.
+- [ ] Kein Code in `tool/` setzt `ANTHROPIC_API_KEY` oder `ANTHROPIC_BASE_URL`.
+- [ ] Der Pipeline-Monitor der Web-UI zeigt einen Run von `sdd pipeline run` mit seinen Tasks.
+- [ ] Die Baseline enthält keinen Eintrag mehr mit `fixed_by: SPEC-0058`.
+- [ ] Netto-Reduktion des Codes; der PR weist Zeilen vorher/nachher aus.
 
 **Nicht-Ziele (explizit):**
-- Keine neuen Fähigkeiten über SPEC-0053 hinaus.
-- Die Holdout-Evaluation selbst (`evaluator.py`, `holdout_runner.py`) bleibt unverändert und wird nur
-  als Abschluss-Gate eingebunden.
-- Die VS-Code-Extension wird nicht angepasst. Der Fokus für Editor-Integration liegt künftig auf
-  sddit. Nutzt die Extension einen entfernten Befehl, bleibt der versteckte Verweis ihre Brücke.
+- Keine neuen Fähigkeiten der Pipeline (Session-Arbeitsrollen, `by_complexity`, `--auto`); das ist
+  SPEC-0061.
+- `task_routing/`, `sdd orchestrate`, `/sdd-implement` und der CodeGen-Pfad bleiben unverändert
+  (SPEC-0061).
+- Keine Anpassung der VS-Code-Extension; keine Änderung an den Quellen der Web-UI (die gebaute UI
+  bleibt, die Routen liefern ihr bisheriges Format).
 
 ## 3. Architektur & Design Patterns
 
-### Eine Pipeline, mehrere Belegungen
-Unterschiede zwischen den bisherigen Pfaden werden zu Konfiguration:
-
-| Einstieg | Belegung |
-|----------|----------|
-| `/sdd-supervise` | alle Arbeitsrollen = Modelle aus `llm.roles`, `supervisor: session` |
-| `/sdd-implement` | `test_author` und `implementer` = `session` (Claude Code schreibt im Dialog), übrige Rollen aus `llm.roles` |
-| `sdd orchestrate` (Dark Factory) | alle Rollen headless, `supervisor: claude-cli`, Abschluss-Schritte `finalize`, `holdout`, `automerge` aktiv |
-| Web-UI | startet `sdd pipeline run` und liest `events.jsonl` (DAG-Monitor) |
-
-Dafür akzeptiert jede Rolle (nicht nur `supervisor`) den Modus `session` mit dem Anfrage- und
-Antwortmechanismus aus SPEC-0053 FR-15. Bei Arbeitsrollen schreibt die Session die Dateien selbst,
-und die Pipeline prüft danach die Gates.
-
-### Routing nach Komplexität als Rollenoption
-Das Routing aus SPEC-0045 (`complexity_threshold`) wird eine Option der Rollenbelegung, statt eigene
-Befehle zu brauchen:
-
-```yaml
-llm:
-  roles:
-    implementer:
-      by_complexity: { low: qwen35-a3b-mlx, medium: qwen38-27b, high: session }
-```
-
-### Strangler Fig
-Alte Befehle werden zu versteckten Verweisen (bestehende Konvention in `main.py`, z. B.
-`test-run`), und die Module dahinter werden entfernt, sobald die Pipeline ihre Aufgabe übernommen
-hat. `sdd upgrade` migriert die Config.
+- **Adapter:** Abgelöste Befehle sind dünne Verweise ohne Logik; die Monitor-Route bildet
+  Pipeline-Ereignisse auf das bisherige `DagEvent`-Format der UI ab.
+- **Command** (SPEC-0053) und **Strategy** (Rollenbelegung) bleiben unverändert; sie tragen
+  SPEC-0061.
+- **Schichtung (ADR-0003):** Die Web-Schicht liest Runs nie direkt aus `.sdd/runs/`, sondern über
+  eine Leseschnittstelle der CLI-Schicht (`sdd_cli.pipeline.monitor`, DIP-Befund aus dem Review).
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** Jede Rolle akzeptiert `mode: session` (analog zum Supervisor-Modus aus SPEC-0053).
-  Arbeitsrollen im Modus `session` erhalten statt eines LLM-Aufrufs eine persistierte Anfrage
-  (Task, Kontext, erlaubte Pfade laut PathPolicy). Die Session schreibt die Dateien und bestätigt mit
-  `sdd pipeline decide RUN_ID --done TASK_ID`. Die Pipeline wertet danach die Gates aus, wie bei
-  jedem anderen Modus.
-- **FR-02:** `llm.roles.<rolle>.by_complexity` ordnet `low|medium|high` je ein Modellprofil zu. Die
-  Komplexität kommt aus der Task-Klassifikation des `decomposer`.
-- **FR-03:** `/sdd-implement` wird auf `sdd pipeline run` mit der Belegung aus Abschnitt 3
-  umgeschrieben. Die Schritte „decompose“, „task-route“ und „task-exec“ entfallen aus dem Skill.
-- **FR-04:** `sdd orchestrate` wird zu `sdd pipeline run --auto`. Das Flag aktiviert die
-  Abschluss-Schritte Finalize (PR), Holdout-Gate mit Retry-Kontext und Auto-Merge nach
-  Autonomie-Level. `sdd orchestrate` bleibt als versteckter Verweis bestehen. Die Web-Route
-  `orchestrate` startet die Pipeline.
-- **FR-05:** Folgende Befehle werden zu versteckten Verweisen:
-  - `task-exec` → `sdd pipeline run --task ID`
-  - `task-route` → `sdd pipeline run --dry-run`
-  - `task-loop` → `sdd pipeline run`
-  - `distribute` → `sdd pipeline run --auto`
-  - `task-status` → `sdd pipeline status`
-  - `decompose` → `sdd pipeline run --dry-run`
-- **FR-06:** Entfernt werden `sub_agent.py`, `local_agent.py`, `autopilot.py`, `dist_orchestrator.py`,
-  `review_pipeline.py`, `llm_pool.py`, `task_routing/` (Routing-Logik in FR-02 überführt) sowie
-  zugehörige Tests. Tests, die weiterhin gültiges Verhalten prüfen, werden auf die Pipeline
-  umgestellt.
-- **FR-07:** Der DAG-Monitor der Web-UI (`dag_command.py`, Route `dag_monitor`) liest
-  `events.jsonl` der Pipeline statt eigener Zustände.
-- **FR-08:** `sdd upgrade` migriert `task_routing`, `llm_pool` und `local_agent` aus `config.yaml`
-  nach `llm.roles` bzw. `llm.profiles`. Nicht abbildbare Einträge werden als Kommentar erhalten und
-  gemeldet.
-- **FR-09:** Die Specs SPEC-0026, SPEC-0035, SPEC-0036, SPEC-0037 und SPEC-0045 werden über den
-  Lifecycle der CLI auf `deprecated` gesetzt, mit Verweis auf SPEC-0053/SPEC-0058. SPEC-0004 bleibt
-  `implemented` und bekommt einen Hinweis, dass die Umsetzung jetzt in der Pipeline liegt.
-- **FR-10:** In `architecture.yaml` von sdd-framer kommt eine Regel, die das Ergebnis absichert:
-  Aufrufe von `get_code_gen_provider`/`get_completion_provider` für Task-Arbeit gibt es nur unter
-  `tool/sdd_cli/pipeline/**`.
+- **FR-01:** `sub_agent.py`, `local_agent.py` und `autopilot.py` werden entfernt, dazu
+  `SddConfig.autopilot_config()` und die zugehörigen Tests. Damit entfällt der einzige Code, der
+  `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL` setzt, und der ARCH-04-Baseline-Eintrag für
+  `local_agent.py`.
+- **FR-02:** `dist_orchestrator.py`, `review_pipeline.py` und `llm_pool.py` werden entfernt;
+  `sdd distribute` wird ein Verweis. Die Validierung von `llm_pool` in `config_manager.py` und der
+  Wizard-Schritt dafür entfallen. `sdd task-status` und `sdd decompose` bleiben.
+- **FR-03:** **Verweise.** Ein abgelöster Befehl nimmt seine bisherigen Argumente an, führt nichts
+  aus (keinen LLM-Aufruf, keinen Git-Vorgang), nennt den Ersatz und endet mit Exit 1, nach der
+  Konvention in `main.py` (`sdd implement`). Er wird in der Hilfe nicht mehr gelistet.
+- **FR-04:** `sdd upgrade` kommentiert die nicht mehr gelesenen Config-Blöcke `llm_pool`,
+  `local_agent` und `autopilot` aus (Inhalt bleibt als Kommentar erhalten) und meldet das.
+- **FR-05:** **Leseschnittstelle für Runs.** `sdd_cli.pipeline.monitor` liefert die Runs eines
+  Projekts (ID, Spec, Status, Phase, Zeitpunkt) und die Ereignisse eines Runs ab einem Offset. Die
+  Ereignisse eines Tasks werden auf das `DagEvent`-Format abgebildet (`task_id`, `status`, `agent`,
+  `model`, `details`). `sdd pipeline status RUN --json` gibt Zustand und offene Anfrage als JSON aus.
+- **FR-06:** **Pipeline-Monitor.** Die Routen `GET /orchestrate/runs` und
+  `GET /orchestrate/stream/{run_id}` lesen über FR-05 statt aus einem eigenen Ereignisbus. Der Stream
+  sendet neue Ereignisse, sobald sie in `events.jsonl` stehen, und endet, wenn der Run nicht mehr
+  läuft. Die Befehls-Route (`POST`) antwortet mit 410 und dem Hinweis auf `sdd pipeline decide`.
+  `dag_command.py` und `dag_event.py` werden entfernt.
+- **FR-07:** **Defekte Web-Routen.** `POST /specs/{id}/evaluate` startet `sdd holdout run
+  --base-url … --spec`; `POST /specs/{id}/implement` startet `sdd pipeline run` im Hintergrund.
+  Antwortformat (`{"ok", "output"}`) und Log-Stream bleiben wie bisher; der Run erscheint im
+  Monitor.
+- **FR-08:** **Baseline-Einträge.** Die Verfügbarkeitsprüfung von `claude` in den Web-Routen läuft
+  über eine Funktion der LLM-Schicht (`llm.claude_available()`), nicht über `shutil.which("claude")`
+  (ARCH-04). Tabellendefinition und Migration von `token_usage` liegen in der LLM-Schicht;
+  `estimation.py` nutzt sie (ARCH-02). Der ARCH-01-Eintrag des CodeGen-Pfads bekommt
+  `fixed_by: SPEC-0061`.
+- **FR-09:** **Lifecycle.** `sdd spec deprecate SPEC-XXXX --reason "…" [--replaced-by SPEC-YYYY]`
+  setzt `status: deprecated` und hält Grund und Nachfolger im Frontmatter und im Audit-Log fest.
+  SPEC-0026, SPEC-0035, SPEC-0036 und SPEC-0037 werden damit auf `deprecated` gesetzt (Nachfolger
+  SPEC-0053/SPEC-0058).
 
 ## 5. Nicht-funktionale Anforderungen
 
-| Kategorie   | Anforderung                                                               |
-|-------------|---------------------------------------------------------------------------|
-| Migration   | Versteckte Verweise bleiben mindestens zwei Minor-Versionen bestehen.     |
-| Umfang      | Netto-Reduktion des Codes; der Report zur Umsetzung weist Zeilen vorher/nachher aus. |
-| Keyfreiheit | Nach der Konsolidierung setzt kein Pfad `ANTHROPIC_API_KEY` oder `ANTHROPIC_BASE_URL`. |
+| Kategorie   | Anforderung |
+|-------------|-------------|
+| Migration   | Verweise bleiben mindestens zwei Minor-Versionen bestehen. |
+| Umfang      | Netto-Reduktion des Codes, im PR mit Zeilen vorher/nachher ausgewiesen. |
+| Keyfreiheit | Kein Pfad setzt `ANTHROPIC_API_KEY` oder `ANTHROPIC_BASE_URL`. |
+| Monitor     | Neue Ereignisse erscheinen im Stream spätestens 2 s nach dem Schreiben. |
 
 ## 6. Akzeptanzkriterien (Gherkin)
 
 ```gherkin
-Feature: Ein Ausführungspfad
+Feature: Rückbau und Pipeline-Monitor
 
   Scenario: Alter Befehl verweist auf die Pipeline
-    When ich "sdd task-exec SPEC-0900 t-1" ausführe
-    Then erscheint ein Hinweis auf "sdd pipeline run --task t-1"
-    And es wird kein LLM aufgerufen
+    When ich "sdd distribute SPEC-0900" ausführe
+    Then ist der Exit-Code 1
+    And die Ausgabe nennt "sdd pipeline run"
+    And es wird kein LLM aufgerufen und kein Git-Befehl ausgeführt
 
-  Scenario: sdd-implement nutzt die Pipeline
-    Given llm.roles.implementer.mode ist session
-    When /sdd-implement SPEC-0900 einen Task bearbeitet
-    Then enthält .sdd/runs/SPEC-0900/<run>/events.jsonl den Task mit role=implementer und mode=session
-    And die Gates aus SPEC-0054 wurden nach der Bearbeitung ausgewertet
+  Scenario: Monitor zeigt einen Pipeline-Run
+    Given ein Run von "sdd pipeline run SPEC-0900" mit zwei Tasks
+    When die Web-UI "/api/orchestrate/runs" abfragt
+    Then enthält die Antwort den Run mit Spec und Status
+    And der Stream des Runs liefert je Task Ereignisse im DagEvent-Format
 
-  Scenario: Config-Migration
-    Given config.yaml enthält task_routing.enabled true und llm.local_llm
+  Scenario: Config-Aufräumen
+    Given config.yaml enthält llm_pool und autopilot
     When ich "sdd upgrade" ausführe
-    Then enthält config.yaml llm.roles.implementer.by_complexity
-    And task_routing ist als migriert kommentiert
+    Then sind beide Blöcke auskommentiert und die Ausgabe meldet sie
+
+  Scenario: Spec wird abgelöst
+    When ich "sdd spec deprecate SPEC-0026 --reason 'abgelöst' --replaced-by SPEC-0053" ausführe
+    Then hat SPEC-0026 den Status deprecated und nennt SPEC-0053 als Nachfolger
 ```
 
 ## 7. Edge Cases & Fehlerfälle
 
-- Offene Runs aus `task-loop` oder `distribute` beim Upgrade: werden nicht migriert; `sdd upgrade`
-  meldet sie mit Pfad.
-- Die Web-UI eines älteren Projekts ruft die Route `orchestrate`: Sie funktioniert weiterhin über die
-  Pipeline.
-- Ein Session-Task wird nie bestätigt: `sdd pipeline status` zeigt ihn als `awaiting_session`;
-  `--resume` setzt dort fort.
+- Ein Projekt ohne `.sdd/runs/`: `/orchestrate/runs` liefert eine leere Liste, kein Fehler.
+- Ein Run wird während des Streams abgebrochen: der Stream endet mit dem letzten Zustand.
+- `sdd spec deprecate` auf eine Spec, von der andere nicht deprecated Specs abhängen: Warnung mit
+  den abhängigen Specs, keine Blockade.
+- `sdd upgrade` findet keinen der alten Blöcke: keine Änderung, keine Meldung.
 
 ## 8. Contracts (was wird garantiert)
 
-| Contract-ID | Typ      | Was wird garantiert?                                          |
-|-------------|----------|---------------------------------------------------------------|
-| CON-XXXX    | behavior | Verweise der abgelösten Befehle                               |
-| CON-XXXX    | data     | Config-Migration `task_routing`/`llm_pool`/`local_agent` → `llm.roles`/`llm.profiles` |
-| CON-XXXX    | behavior | Modus `session` für Arbeitsrollen                             |
+| Contract-ID | Typ      | Was wird garantiert? |
+|-------------|----------|----------------------|
+| CON-XXXX    | behavior | Verweise, Config-Aufräumen, `sdd spec deprecate` |
+| CON-XXXX    | behavior | Leseschnittstelle, Monitor-Routen und Web-Routen `implement`/`evaluate` |
 
 ## 9. Tests (wie wird verifiziert)
 
-| Test-ID  | Level       | Was prüft der Test?                                         |
-|----------|-------------|-------------------------------------------------------------|
-| TST-XXXX | unit        | `by_complexity`-Auflösung, Config-Migration                  |
-| TST-XXXX | integration | Session-Arbeitsrolle mit Fake-Session; `--auto` mit Fake-Finalize/Holdout |
-| TST-XXXX | acceptance  | Gherkin-Szenarien aus Abschnitt 6                           |
+| Test-ID  | Level       | Was prüft der Test? |
+|----------|-------------|---------------------|
+| TST-XXXX | acceptance  | Verweise, Upgrade, Deprecate |
+| TST-XXXX | acceptance  | Monitor und Web-Routen mit einem Pipeline-Run gegen den Fake-LLM-Server |
 
 ## 10. Offene Fragen
 
-- [x] `/sdd-implement` bleibt als eigener Skill mit fester Belegung (entschieden 2026-09-25).
-- [x] VS-Code-Extension → wird nicht angepasst; Fokus liegt auf sddit (entschieden 2026-09-25).
+- [x] Schnitt: Rückbau hier, Pipeline-Erweiterungen und lebendige Pfade in SPEC-0061
+      (entschieden 2026-09-26).
+- [x] Verweise führen nichts aus (Hinweis, Exit 1), entschieden 2026-09-26.
+- [x] DAG-Monitor wird auf das Pipeline-Protokoll umgebaut, nicht entfernt (entschieden 2026-09-26).
+- [x] `/sdd-implement` bleibt als eigener Skill (entschieden 2026-09-25, umgesetzt in SPEC-0061).
+- [x] VS-Code-Extension wird nicht angepasst (entschieden 2026-09-25).
 
 ## 11. Änderungshistorie
 
-| Datum      | Version | Autor         | Änderung            |
-|------------|---------|---------------|---------------------|
+| Datum      | Version | Autor         | Änderung |
+|------------|---------|---------------|----------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
+| 2026-09-26 | 0.2.0   | Boris, Claude | Review: geteilt in Rückbau (hier) und SPEC-0061; Verweise ohne Ausführung; Monitor auf Pipeline-Ereignisse; Baseline-Einträge; `sdd spec deprecate` |
