@@ -1,0 +1,19 @@
+{
+  "spec_id": "SPEC-0058",
+  "pipeline_phase": "spec-review",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-09-26T05:45:44Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-09-26T05:47:04Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

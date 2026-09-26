@@ -10,8 +10,8 @@ version: 0.2.0
 priority: medium
 tags: [refactoring, pipeline, cleanup, cli]
 depends_on: [SPEC-0053, SPEC-0059]
-contracts: []
-tests: []
+contracts: [CON-0210, CON-0211]
+tests: [TST-0239, TST-0240]
 ---
 
 # Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
@@ -151,15 +151,15 @@ Feature: Rückbau und Pipeline-Monitor
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | behavior | Verweise, Config-Aufräumen, `sdd spec deprecate` |
-| CON-XXXX    | behavior | Leseschnittstelle, Monitor-Routen und Web-Routen `implement`/`evaluate` |
+| CON-0210    | behavior | Verweise, Config-Aufräumen, `sdd spec deprecate` |
+| CON-0211    | behavior | Leseschnittstelle, Monitor-Routen und Web-Routen `implement`/`evaluate` |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | acceptance  | Verweise, Upgrade, Deprecate |
-| TST-XXXX | acceptance  | Monitor und Web-Routen mit einem Pipeline-Run gegen den Fake-LLM-Server |
+| TST-0239 | acceptance  | Verweise, Upgrade, Deprecate |
+| TST-0240 | acceptance  | Monitor und Web-Routen mit einem Pipeline-Run gegen den Fake-LLM-Server |
 
 ## 10. Offene Fragen
 
