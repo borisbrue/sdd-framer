@@ -6,9 +6,10 @@ type: data
 format: json-schema
 spec: SPEC-0036
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: ".sdd/contracts/data/local-agent-config.schema.json"
 tests: ["TST-0150"]
+deprecated_reason: "mit SPEC-0036 abgelöst: Lokaler Agent und DagScheduler nie angebunden; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: local_agent Konfigurationsschema

@@ -155,10 +155,7 @@ class SddConfig:
     def pattern_suggestions_max(self) -> int:
         return int(self.raw.get("pattern_suggestions", {}).get("max_suggestions", 4))
 
-    # ── SPEC-0037: Autopilot + DAG-Monitor ───────────────────────────────────
-
-    def autopilot_config(self) -> dict:
-        return self.raw.get("autopilot", {})
+    # ── Pipeline-Monitor der Web-UI (SPEC-0037, umgebaut in SPEC-0058) ────────
 
     def dag_monitor_sse_heartbeat(self) -> int:
         return int(self.raw.get("dag_monitor", {}).get("sse_heartbeat_seconds", 15))

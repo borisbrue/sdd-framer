@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0058",
+  "generated_at": "2026-09-26T05:45:12Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-09-26T05:45:12Z",
+      "acceptance_reason": "Rollenbelegung als Strategie; trägt die Belegungen von SPEC-0061 (by_complexity).",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Command",
+      "status": "accepted",
+      "decided_at": "2026-09-26T05:45:14Z",
+      "acceptance_reason": "Session-Anfragen von Arbeitsrollen folgen dem Command-Mechanismus aus SPEC-0053 (umgesetzt in SPEC-0061).",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-09-26T05:45:15Z",
+      "acceptance_reason": "Verweise alter Befehle und Monitor-Route (Pipeline-Ereignisse → DagEvent) als dünne Übersetzer ohne Logik.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Observer",
+      "status": "rejected",
+      "decided_at": "2026-09-26T05:45:16Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Kein Ereignisbus nötig: der Monitor liest events.jsonl über die Leseschnittstelle der CLI (FR-05).",
+      "refactoring_guru_url": null
+    }
+  ]
+}

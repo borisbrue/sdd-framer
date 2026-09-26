@@ -516,39 +516,12 @@ Der Entwickler bestätigt die Task-Liste interaktiv vor der Ausführung. Ergebni
 
 ---
 
-### `sdd distribute` — Tasks an LLM-Pool verteilen
+### `sdd distribute` — entfernt
 
-```bash
-sdd distribute <SPEC-XXXX> [--dry-run]
-```
-
-Vollautomatische Verteilung der Tasks an passende LLMs:
-
-1. Git-Branch `spec/SPEC-XXXX` anlegen
-2. Tasks anhand Klassifizierung dem optimalen LLM zuweisen (lokal bevorzugt, Kontext-Limit beachtet)
-3. Jeden Task in einem isolierten Container ausführen (ein oder mehrere Tasks pro Container)
-4. Ergebnis durch **ReviewPipeline** prüfen: Syntax → Unit-Tests → Claude-Review
-5. Bei Fehler: automatischer Retry mit erweitertem Fehlerkontext (max. 3 Versuche)
-6. Valide Tasks als Commit auf Branch; blockierte Tasks mit Entwickler-Benachrichtigung
-7. PR erstellen → Tests → Merge → `status: implemented`
-
-LLM-Pool in `config.yaml` konfigurieren (`llm_pool`-Abschnitt):
-
-```yaml
-llm_pool:
-  - id: ollama-mistral
-    type: local
-    model: mistral
-    cost_tier: cheap
-    max_context_tokens: 8192
-  - id: claude-sonnet
-    type: remote
-    model: claude-sonnet-4-6
-    cost_tier: powerful
-    max_context_tokens: 200000
-```
-
-`--dry-run`: Kein echter Git-Commit und kein PR — nur lokale Simulation.
+`sdd distribute` wurde mit SPEC-0058 entfernt (es erzeugte keinen Code; der `llm_pool` aus der
+Config wurde nie gelesen). Der Befehl verweist nur noch auf den Ersatz und endet mit Exit 1.
+Tasks setzt die Rollen-Pipeline um: [`sdd pipeline run`](#sdd-pipeline--rollen-pipeline-mit-supervisor),
+Modelle je Rolle stehen in `llm.roles`. Alte `llm_pool`-Blöcke kommentiert `sdd upgrade` aus.
 
 ---
 
@@ -880,10 +853,8 @@ tool/
       templates/       # HTML-Dashboard + systemd-Unit-Template
     task_model.py      # Task Dataclass + Enums (SPEC-0026)
     task_lifecycle.py  # State Machine – Zustandsübergänge
-    llm_pool.py        # LLM-Pool-Registry + Selector (Strategy)
-    decompose.py       # TaskDecomposer via LLM
-    review_pipeline.py # ReviewPipeline (Chain of Responsibility)
-    dist_orchestrator.py # DistributionOrchestrator (Mediator)
+    decompose.py       # TaskDecomposer über die Rolle decomposer
+    pipeline/          # Rollen-Pipeline (SPEC-0053): Rollen, PathPolicy, Runner, Mediator, Monitor
 
 web/
   api/                 # FastAPI – Web API

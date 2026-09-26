@@ -24,7 +24,9 @@ _CLAUDE_AVAILABLE: bool | None = None
 def _check_claude() -> bool:
     global _CLAUDE_AVAILABLE
     if _CLAUDE_AVAILABLE is None:
-        _CLAUDE_AVAILABLE = shutil.which("claude") is not None
+        from sdd_cli.llm import claude_available
+
+        _CLAUDE_AVAILABLE = claude_available()
     return _CLAUDE_AVAILABLE
 
 router = APIRouter()

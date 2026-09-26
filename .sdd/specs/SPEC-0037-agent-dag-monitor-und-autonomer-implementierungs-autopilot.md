@@ -2,7 +2,7 @@
 id: SPEC-0037
 title: Agent-DAG-Monitor und autonomer Implementierungs-Autopilot
 type: feature
-status: implemented
+status: deprecated
 owner: borisbrue
 created: 2026-06-05
 updated: '2026-06-05'
@@ -32,6 +32,8 @@ tests:
 - TST-0166
 adrs: []
 started_at: '2026-06-05T12:13:57Z'
+deprecated_reason: "Autopilot nie lauffähig; der Monitor liest seit SPEC-0058 das Pipeline-Protokoll"
+replaced_by: "SPEC-0058"
 ---
 # Agent-DAG-Monitor und autonomer Implementierungs-Autopilot
 

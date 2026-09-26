@@ -5,10 +5,11 @@ type: behavior
 format: gherkin
 spec: SPEC-0026
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: "contracts/behavior/task-lifecycle.feature"
 tests:
 - TST-0114
+deprecated_reason: "mit SPEC-0026 abgelöst: Distribution Engine ohne Codeerzeugung; abgelöst durch die Rollen-Pipeline"
 ---
 
 # Contract: Task-Lifecycle – Zustandsübergänge der Distribution Engine

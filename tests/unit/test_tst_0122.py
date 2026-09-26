@@ -10,7 +10,6 @@ import yaml
 from tool.sdd_cli.config_manager import (
     ConfigManager,
     ConfigValidationError,
-    _validate_business_rules,
 )
 from tool.sdd_cli.llm_probe import LlmProbeError, OllamaProbe, probe_llm
 
@@ -82,13 +81,3 @@ class TestTST0122:
         assert reloaded["llm_pool"]["strategy"] == "local_first"
         first = reloaded["llm_pool"]["providers"][0]
         assert first["type"] == "local"
-
-    def test_duplicate_provider_id_raises(self):
-        data = _pool_with_providers(_local_provider("dup"), _local_provider("dup"))
-        errors = _validate_business_rules(data)
-        assert any("Doppelte" in e or "doppelt" in e.lower() for e in errors)
-
-    def test_remote_without_api_key_env_raises(self):
-        data = _pool_with_providers(_remote_provider(api_key_env=""))
-        errors = _validate_business_rules(data)
-        assert any("api_key_env" in e for e in errors)

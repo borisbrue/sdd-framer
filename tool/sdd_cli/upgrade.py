@@ -60,8 +60,8 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
     """
     target = target.resolve()
     quelle = _quelle()
-    result: dict[str, list[Path]] = {"created": [], "updated": [], "skipped": [], "skills": [],
-                                     "roles_new": []}
+    result: dict[str, list] = {"created": [], "updated": [], "skipped": [], "skills": [],
+                               "roles_new": [], "obsolete_blocks": []}
 
     # Provider vor jeder Änderung prüfen: ein unbekannter Name bricht ab, bevor
     # etwas geschrieben ist, statt ein halbes Upgrade zu hinterlassen.
@@ -132,6 +132,12 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
         for datei in erstellt:
             print(f"  + {datei.relative_to(target)}")
 
+    # 6a. Nicht mehr gelesene Config-Blöcke auskommentieren (SPEC-0058 FR-04, CON-0210 INV-02).
+    for block in comment_out_obsolete_blocks(target / ".sdd" / "config.yaml"):
+        result["obsolete_blocks"].append(block)
+        if verbose:
+            print(f"  # config: {block} auskommentiert (SPEC-0058)")
+
     # 6. Rechnerlokale Dateien (config.local.yaml, Usage-DB) in die .gitignore eintragen;
     #    Projekte von vor SPEC-0060 kennen den Eintrag für die Usage-DB noch nicht.
     from .init import ignore_local_config
@@ -157,6 +163,44 @@ def upgrade_project(target: Path, verbose: bool = False) -> dict[str, list[Path]
             print(f"  ↺ {migriert.relative_to(target)} → token_usage")
 
     return result
+
+
+OBSOLETE_BLOCKS = ("llm_pool", "local_agent", "autopilot")
+OBSOLETE_PREFIX = "# [SPEC-0058] "
+
+
+def comment_out_obsolete_blocks(config_path: Path) -> list[str]:
+    """Kommentiert die Top-Level-Blöcke aus OBSOLETE_BLOCKS zeilengenau aus.
+
+    Ein Block reicht von seiner Schlüsselzeile bis vor die nächste Zeile, die in Spalte 0 mit
+    einem anderen Zeichen als Leerzeichen oder `-` beginnt (ein Kommentar in Spalte 0 gehört schon
+    zum nächsten Abschnitt); Leerzeilen am Ende bleiben unkommentiert. Alle anderen Zeilen bleiben byte-gleich (CON-0210 INV-02).
+    Gibt die Namen der auskommentierten Blöcke zurück.
+    """
+    if not config_path.is_file():
+        return []
+    zeilen = config_path.read_text(encoding="utf-8").splitlines(keepends=True)
+    gefunden: list[str] = []
+    i = 0
+    while i < len(zeilen):
+        kopf = zeilen[i].split(":", 1)[0]
+        if zeilen[i][:1].isalpha() and kopf in OBSOLETE_BLOCKS and ":" in zeilen[i]:
+            ende = i + 1
+            while ende < len(zeilen) and (zeilen[ende][:1] in (" ", "\t", "-")
+                                          or not zeilen[ende].strip()):
+                ende += 1
+            while ende > i + 1 and not zeilen[ende - 1].strip():
+                ende -= 1
+            for j in range(i, ende):
+                if zeilen[j].strip():
+                    zeilen[j] = OBSOLETE_PREFIX + zeilen[j]
+            gefunden.append(kopf)
+            i = ende
+        else:
+            i += 1
+    if gefunden:
+        config_path.write_text("".join(zeilen), encoding="utf-8")
+    return gefunden
 
 
 def migrate_ai_usage_json(target: Path) -> Path | None:

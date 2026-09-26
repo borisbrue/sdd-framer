@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-import shutil
 import sys
 import time
 from dataclasses import dataclass, field
@@ -222,7 +221,9 @@ def start_orchestrate(
 ) -> dict[str, str]:
     _cleanup()
 
-    if not shutil.which("claude"):
+    from sdd_cli.llm import claude_available
+
+    if not claude_available():
         raise HTTPException(
             status_code=503,
             detail="claude CLI nicht gefunden. Installiere Claude Code CLI und logge dich ein.",

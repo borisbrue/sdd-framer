@@ -1,5 +1,33 @@
 # Changelog
 
+## [Unreleased] – SPEC-0058: Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
+
+### Removed
+
+- `sub_agent.py`, `local_agent.py`, `autopilot.py` (nie angebunden; `local_agent` setzte als
+  einziger Code `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL`), `dist_orchestrator.py`,
+  `review_pipeline.py`, `llm_pool.py`, `dag_command.py`, `dag_event.py` samt Tests.
+- **`sdd distribute`** ist ein versteckter Verweis auf `sdd pipeline run` (führt nichts aus, Exit 1).
+- Wizard-Abschnitt `llm` (LLM-Pool) und die `llm_pool`-Regeln in `sdd config validate`.
+  Migration: `sdd upgrade` kommentiert die Blöcke `llm_pool`, `local_agent` und `autopilot` in
+  `config.yaml` aus (`# [SPEC-0058] …`) und meldet sie.
+
+### Added
+
+- `sdd spec deprecate SPEC-XXXX --reason … [--replaced-by …] [--keep CON-…]` und
+  `sdd contract deprecate CON-XXXX --reason …`: Ablösen über die CLI mit Audit-Eintrag.
+- `sdd pipeline status RUN --json`; Leseschnittstelle `sdd_cli.pipeline.monitor`.
+- `sdd_cli.llm.claude_available()` für Verfügbarkeitsprüfungen außerhalb der LLM-Schicht.
+
+### Changed
+
+- Der Monitor der Web-UI (`/api/orchestrate/runs`, `/stream/{run_id}`) zeigt Runs von
+  `sdd pipeline run` (Format unverändert); die Befehls-Route antwortet mit 410.
+- Web-Routen `/specs/{id}/implement` und `/evaluate` starten `sdd pipeline run` bzw.
+  `sdd holdout run` statt der entfernten Befehle.
+- Die Tabelle `token_usage` ist in `sdd_cli.llm.usage_table` definiert (ARCH-02).
+- SPEC-0026, SPEC-0035, SPEC-0036 und SPEC-0037 sind `deprecated`.
+
 ## [Unreleased] – SPEC-0059: Architekturregeln und ADRs für sdd-framer (Dogfooding)
 
 ### Added

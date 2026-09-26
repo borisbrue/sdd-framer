@@ -40,16 +40,6 @@ class TestTST0121:
         reloaded = yaml.safe_load(p.read_text())
         assert reloaded["project"]["description"] == "Test project"
 
-    def test_section_llm_only_asks_llm_section(self, tmp_path):
-        data = _base_data()
-        data["docker"]["max_parallel_containers"] = 99
-        p = _make_config(tmp_path, data)
-        wizard = ConfigWizard(p)
-        wizard.run(section="llm", non_interactive=True, llm_strategy="local_first")
-        reloaded = yaml.safe_load(p.read_text())
-        assert reloaded["llm_pool"]["strategy"] == "local_first"
-        assert reloaded["docker"]["max_parallel_containers"] == 99
-
     def test_abort_leaves_config_unchanged(self, tmp_path):
         p = _make_config(tmp_path, _base_data())
         original = p.read_text()

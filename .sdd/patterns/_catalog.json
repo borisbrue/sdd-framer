@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-25T19:55:00Z",
+  "last_updated": "2026-09-26T05:45:16Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -244,6 +244,27 @@
       "spec_id": "SPEC-0059",
       "accepted_at": "2026-09-25T19:55:00Z",
       "acceptance_reason": "Baseline als Schicht um das Regelergebnis (SPEC-0054 FR-07): bekannte Verstöße werden zu warn, neue bleiben error.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0058",
+      "accepted_at": "2026-09-26T05:45:12Z",
+      "acceptance_reason": "Rollenbelegung als Strategie; trägt die Belegungen von SPEC-0061 (by_complexity).",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Command",
+      "spec_id": "SPEC-0058",
+      "accepted_at": "2026-09-26T05:45:14Z",
+      "acceptance_reason": "Session-Anfragen von Arbeitsrollen folgen dem Command-Mechanismus aus SPEC-0053 (umgesetzt in SPEC-0061).",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0058",
+      "accepted_at": "2026-09-26T05:45:15Z",
+      "acceptance_reason": "Verweise alter Befehle und Monitor-Route (Pipeline-Ereignisse → DagEvent) als dünne Übersetzer ohne Logik.",
       "refactoring_guru_url": null
     }
   ]

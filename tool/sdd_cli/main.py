@@ -284,11 +284,14 @@ def upgrade(target: str, verbose: bool) -> None:
         console.print(f"  [green]+[/] {len(result['skills'])} Skill-Dateien nachgerüstet")
     if n_skipped > 0 and verbose:
         console.print(f"  [dim]○ {n_skipped} Dateien unverändert[/]")
+    for block in result.get("obsolete_blocks", []):
+        console.print(f"  [yellow]#[/] config.yaml: Block [cyan]{block}[/] auskommentiert "
+                      f"(wird seit SPEC-0058 nicht mehr gelesen).")
     for neu in result.get("roles_new", []):
         console.print(f"  [yellow]![/] Rolle lokal geändert – neue Version liegt in "
                       f"[cyan]{neu.relative_to(target_path)}[/]; bitte abgleichen.")
 
-    if n_created == 0 and n_updated == 0:
+    if n_created == 0 and n_updated == 0 and not result.get("obsolete_blocks"):
         console.print("[green]✓[/] Projekt ist bereits auf dem neuesten Stand.")
     else:
         console.print("\n[green]✓[/] Upgrade abgeschlossen.")
@@ -1579,6 +1582,34 @@ def spec_review(spec_id: str) -> None:
     console.print(f"\n[green]✓[/] Phase [bold]spec-review[/] abgeschlossen für [cyan]{spec_id}[/].")
 
 
+@spec_group.command("deprecate", help="Löst eine Spec samt ihren Contracts ab (Status deprecated).")
+@click.argument("spec_id")
+@click.option("--reason", required=True, help="Warum die Spec abgelöst wird.")
+@click.option("--replaced-by", "replaced_by", default=None, help="Nachfolger, z. B. SPEC-0053.")
+@click.option("--keep", "keep", multiple=True,
+              help="Contract der Spec, der aktiv bleibt (mehrfach angebbar).")
+def spec_deprecate_cmd(spec_id: str, reason: str, replaced_by: str | None,
+                       keep: tuple[str, ...]) -> None:
+    """SPEC-0058 FR-09, CON-0210 INV-03/INV-05."""
+    from .deprecation import DeprecationError, deprecate_spec
+
+    cfg = _ensure_project()
+    try:
+        r = deprecate_spec(cfg, spec_id, reason, replaced_by=replaced_by, keep=keep)
+    except DeprecationError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(2)
+    console.print(f"[green]✓[/] {spec_id}: {r.old_status} → deprecated"
+                  + (f" (Nachfolger {replaced_by})" if replaced_by else ""))
+    for cid in r.contracts:
+        console.print(f"  {cid} → deprecated")
+    for cid in r.kept:
+        console.print(f"  {cid} bleibt aktiv (--keep)")
+    if r.dependents:
+        console.print(f"[yellow]⚠[/] Noch aktive Specs hängen von {spec_id} ab: "
+                      f"{', '.join(r.dependents)}")
+
+
 @spec_group.command("approve", help="Genehmigt eine Spec (spec-approved + execute-unlocked).")
 @click.argument("spec_id")
 @click.option("--fr-coverage", default="",
@@ -1896,6 +1927,22 @@ def contract_propose(spec_id: str, contract_ids: tuple) -> None:
     # geschrieben, ist sie mit dem Vorschlag bereits erfüllt.
     for phase in g.evaluate_condition_phases(spec_id):
         console.print(f"[green]✓[/] Gate-Phase [bold]{phase}[/] erfüllt")
+
+
+@contract_group.command("deprecate", help="Löst einen einzelnen Contract ab (Status deprecated).")
+@click.argument("con_id")
+@click.option("--reason", required=True, help="Warum der Contract abgelöst wird.")
+def contract_deprecate_cmd(con_id: str, reason: str) -> None:
+    """SPEC-0058 FR-09, CON-0210 INV-05."""
+    from .deprecation import DeprecationError, deprecate_contract
+
+    cfg = _ensure_project()
+    try:
+        r = deprecate_contract(cfg, con_id, reason)
+    except DeprecationError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(2)
+    console.print(f"[green]✓[/] {con_id}: {r.old_status} → deprecated")
 
 
 @contract_group.command("analyze", help="Führt Konfliktanalyse für vorgeschlagene Contracts durch.")
@@ -3457,55 +3504,14 @@ def decompose(spec_id: str, yes: bool) -> None:
     console.print(f"[green]✓ {len(tasks)} Tasks gespeichert → {path}[/]")
 
 
-@cli.command("distribute", help="Verteilt Tasks einer Spec an LLMs und erstellt PR (SPEC-0026).")
+@cli.command("distribute", help="[Entfernt] Verwende sdd pipeline run.", hidden=True)
 @click.argument("spec_id")
-@click.option("--dry-run", is_flag=True, help="Kein echter Git-Commit, kein PR.")
+@click.option("--dry-run", is_flag=True, help="Ohne Wirkung; der Befehl wurde entfernt.")
 def distribute(spec_id: str, dry_run: bool) -> None:
-    cfg = _ensure_project()
-    from .decompose import TaskDecomposer
-    from .dist_orchestrator import DistributionOrchestrator
-    from .llm_pool import CostTier, LlmEntry, LlmPoolRegistry, LlmType
-
-    tasks = TaskDecomposer().load(spec_id, cfg)
-    if not tasks:
-        console.print(f"[red]✗ Keine Tasks für {spec_id}. Führe erst 'sdd decompose {spec_id}' aus.[/]")
-        raise SystemExit(1)
-
-    llm_pool_cfg = getattr(cfg, "llm_pool", []) or []
-    registry = LlmPoolRegistry()
-    for entry in llm_pool_cfg:
-        registry.register(LlmEntry(
-            id=entry.get("id", ""),
-            type=LlmType(entry.get("type", "remote")),
-            model=entry.get("model", ""),
-            cost_tier=CostTier(entry.get("cost_tier", "standard")),
-            max_context_tokens=int(entry.get("max_context_tokens", 100000)),
-        ))
-
-    if not registry.entries:
-        from .llm_pool import CostTier, LlmEntry, LlmType
-        registry.register(LlmEntry(
-            id="claude-code-cli",
-            type=LlmType.LOCAL,
-            model="claude-code",
-            cost_tier=CostTier.POWERFUL,
-            max_context_tokens=200000,
-        ))
-
-    orch = DistributionOrchestrator(cfg, registry, dry_run=dry_run)
-    console.print(f"[cyan]▶ Starte Distribution für {spec_id} ({len(tasks)} Tasks) …[/]")
-    report = orch.run(spec_id, tasks)
-
-    console.print("\n[bold]Report:[/]")
-    console.print(f"  Branch:    {report.branch}")
-    console.print(f"  Committed: {len(report.committed)}")
-    console.print(f"  Blocked:   {len(report.blocked)}")
-    if report.pr_url:
-        console.print(f"  PR:        {report.pr_url}")
-    if report.merged:
-        console.print(f"[green]✓ PR gemergt – {spec_id} implementiert.[/]")
-    elif report.error:
-        console.print(f"[red]✗ {report.error}[/]")
+    """Verweis (SPEC-0058 FR-02/FR-03, CON-0210): führt nichts aus."""
+    console.print(f"[yellow]⚠[/] 'sdd distribute' wurde entfernt (SPEC-0058). "
+                  f"Verwende: [cyan]sdd pipeline run {spec_id}[/]")
+    sys.exit(1)
 
 
 @cli.command("task-status", help="Zeigt Status aller Tasks einer Spec (SPEC-0026).")
@@ -3588,7 +3594,7 @@ def config_group() -> None:
 
 @config_group.command("wizard", help="Interaktiver Konfigurations-Wizard.")
 @click.option("--section", default=None,
-              help="Nur diese Section konfigurieren (project|llm|docker|evaluator|orchestrator).")
+              help="Nur diese Section konfigurieren (project|docker|evaluator|orchestrator).")
 @click.option("--non-interactive", "non_interactive", is_flag=True,
               help="Kein interaktiver Prompt – Werte aus Flags/Env-Vars.")
 def config_wizard_cmd(section: str | None, non_interactive: bool) -> None:

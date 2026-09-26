@@ -6,9 +6,10 @@ type: api
 format: openapi
 spec: SPEC-0037
 version: 0.1.0
-status: approved
+status: deprecated
 artifact: "tool/sdd_cli/web/api/routes/dag_monitor.py"
 tests: ["TST-0165"]
+deprecated_reason: "mit SPEC-0037 abgelöst: Autopilot nie lauffähig; der Monitor liest seit SPEC-0058 das Pipeline-Protokoll"
 ---
 
 # Contract: SSE-Endpoint /orchestrate/stream/{run_id}

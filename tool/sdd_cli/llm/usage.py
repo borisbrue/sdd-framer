@@ -100,7 +100,7 @@ class SqliteUsageSink:
         root = self.root_for(record)
         if root is None:
             return
-        from ..estimation import TOKEN_USAGE_TABLE, init_token_usage_table_at
+        from .usage_table import TOKEN_USAGE_TABLE, init_token_usage_table_at
 
         db = init_token_usage_table_at(root / ".sdd")
         u = record.usage

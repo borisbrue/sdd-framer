@@ -7,7 +7,7 @@ format: json-schema
 spec: SPEC-0037
 version: 0.1.0
 status: approved
-artifact: "tool/sdd_cli/dag_event.py"
+artifact: "tool/sdd_cli/pipeline/monitor.py"
 tests: ["TST-0162"]
 ---
 

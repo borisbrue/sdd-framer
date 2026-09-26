@@ -6,6 +6,8 @@
   "type": "object",
   "required": ["id", "title", "status", "owner", "created", "updated"],
   "properties": {
+    "deprecated_reason": { "type": "string", "minLength": 1, "description": "SPEC-0058: Grund der Ablösung (sdd spec|contract deprecate)" },
+    "replaced_by": { "type": "string", "pattern": "^SPEC-[0-9]{4}$", "description": "SPEC-0058: Nachfolger-Spec" },
     "id": {
       "type": "string",
       "pattern": "^SPEC-[0-9]{4,}$",

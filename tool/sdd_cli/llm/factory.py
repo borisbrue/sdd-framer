@@ -280,3 +280,14 @@ def get_role_provider(
     return RecordingCompletionProvider(inner, component=f"role:{role}", model=model,
                                        root=config.root)
 
+
+def claude_available() -> bool:
+    """Ob die claude-CLI auffindbar ist (SPEC-0058 FR-08, ARCH-04).
+
+    Aufgelöst wird das Programm nur im Provider `claude_cli`; Aufrufer außerhalb der LLM-Schicht
+    prüfen die Verfügbarkeit über diese Funktion.
+    """
+    from .providers.claude_cli import _find_claude
+
+    return _find_claude() is not None
+

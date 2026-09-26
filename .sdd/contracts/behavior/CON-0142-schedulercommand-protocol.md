@@ -6,9 +6,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0037
 version: 0.1.0
-status: approved
+status: deprecated
 artifact: "tool/sdd_cli/dag_commands.py"
 tests: ["TST-0163", "TST-0166"]
+deprecated_reason: "mit SPEC-0037 abgelöst: Autopilot nie lauffähig; der Monitor liest seit SPEC-0058 das Pipeline-Protokoll"
 ---
 
 # Contract: SchedulerCommand Protocol

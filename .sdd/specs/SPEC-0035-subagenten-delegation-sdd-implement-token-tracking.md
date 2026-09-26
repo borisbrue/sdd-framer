@@ -2,7 +2,7 @@
 id: SPEC-0035
 title: Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task
 type: feature
-status: implemented
+status: deprecated
 owner: borisbrue
 created: 2026-06-02
 updated: '2026-06-03'
@@ -26,6 +26,8 @@ tests:
 - TST-0143
 adrs: []
 started_at: '2026-06-03T06:12:32Z'
+deprecated_reason: "Sub-Agenten-Delegation nie an die CLI angebunden; abgelöst durch die Rollen-Pipeline"
+replaced_by: "SPEC-0053"
 ---
 # Sub-Agenten-Delegation in sdd-implement mit Token-Tracking pro Task
 

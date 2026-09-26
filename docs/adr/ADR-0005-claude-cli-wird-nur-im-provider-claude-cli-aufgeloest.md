@@ -38,8 +38,9 @@ Option A. ARCH-04 (`forbidden_call`): `shutil.which` mit dem Argument `claude` n
 
 ## Folgen
 
-`local_agent.py` und zwei Verfügbarkeitsprüfungen der Web-API stehen in der Baseline; SPEC-0058
-behebt sie.
+Die Verfügbarkeit prüfen Aufrufer außerhalb der LLM-Schicht mit `sdd_cli.llm.claude_available()`.
+Die Altlasten (`local_agent.py`, zwei Prüfungen der Web-API) hat SPEC-0058 behoben; die Baseline hat
+für ARCH-04 keinen Eintrag mehr.
 
 Maschinell geprüft durch `ARCH-04` in `.sdd/architecture.yaml` (`sdd arch check`, Pre-Commit-Hook).
 Bezug: AGENTS.md, Abschnitt „Architektur“.
