@@ -143,7 +143,7 @@ sdd new adr "Architekturentscheidung"
 sdd trace
 
 # Qualität messen (SPEC-0054)
-sdd quality init --preset python   # Sonden ins Projekt kopieren
+sdd stack apply python-cli --only quality   # Sonden ins Projekt kopieren (SPEC-0057)
 sdd quality doctor                  # Sonden prüfen
 sdd quality measure --spec SPEC-0054 --json
 sdd arch check                      # Architekturregeln

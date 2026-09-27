@@ -7,7 +7,7 @@ from pathlib import Path
 
 from sdd_cli.quality.parsers import parse_output
 
-PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/presets/quality/python"
+PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/stacks/python-cli/files/.sdd/quality"
 
 
 def _projekt(root: Path) -> list[str]:

@@ -29,4 +29,4 @@ def test_tabelle_ohne_json(qproject):
 
 def test_ohne_quality_yaml_exit_2(qproject):
     ergebnis = qproject.run("quality", "measure")
-    assert ergebnis.exit_code == 2 and "sdd quality init" in ergebnis.output
+    assert ergebnis.exit_code == 2 and "sdd stack apply" in ergebnis.output

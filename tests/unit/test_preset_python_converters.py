@@ -10,7 +10,7 @@ import pytest
 
 from sdd_cli.quality.parsers import parse_output
 
-PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/presets/quality/python"
+PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/stacks/python-cli/files/.sdd/quality"
 
 
 def _konvertiere(skript, eingabe, tmp_path, *args):

@@ -86,7 +86,8 @@ def quality_measure(spec_id, base_ref, as_json, out, reuse_test_run, judge) -> N
         ergebnis = measure(root, spec_id=spec_id, base_ref=base_ref,
                            reuse_test_run=reuse_test_run, judge=judge)
     except FileNotFoundError:
-        err.print("[red]✗[/] .sdd/quality.yaml fehlt. Lege sie an mit: sdd quality init --preset <name>")
+        err.print("[red]✗[/] .sdd/quality.yaml fehlt. Lege sie an mit: "
+                  "sdd stack apply <vorlage> --only quality")
         sys.exit(2)
     except QualityConfigError as exc:
         _config_fehler(exc.problems, ".sdd/quality.yaml bzw. quality:-Einstellungen")
@@ -128,7 +129,8 @@ def quality_doctor(as_json) -> None:
     try:
         eintraege = run_doctor(root)
     except FileNotFoundError:
-        err.print("[red]✗[/] .sdd/quality.yaml fehlt. Lege sie an mit: sdd quality init --preset <name>")
+        err.print("[red]✗[/] .sdd/quality.yaml fehlt. Lege sie an mit: "
+                  "sdd stack apply <vorlage> --only quality")
         sys.exit(2)
     except QualityConfigError as exc:
         _config_fehler(exc.problems, ".sdd/quality.yaml")
@@ -141,19 +143,17 @@ def quality_doctor(as_json) -> None:
     sys.exit(0 if all(e.ready for e in eintraege) else 1)
 
 
-@quality_group.command("init", help="Kopiert ein Preset (quality.yaml und Hilfsskripte) ins Projekt.")
-@click.option("--preset", required=True, help="Name des Presets.")
+@quality_group.command("init", help="Ersetzt durch Stack-Vorlagen: sdd stack apply <vorlage> "
+                                    "--only quality (SPEC-0057).")
+@click.option("--preset", required=True, help="Name des früheren Presets.")
 def quality_init(preset) -> None:
-    from .quality.presets import available_presets, install_preset
+    from .stacks import preset_alias
 
-    root = _root()
-    try:
-        result = install_preset(root, preset)
-    except KeyError:
-        err.print(f"[red]✗[/] Unbekanntes Preset {preset!r}. Verfügbar: "
-                  f"{', '.join(available_presets()) or '–'}")
-        sys.exit(2)
-    _schreibbericht(result)
+    vorlage = preset_alias(preset)
+    err.print("[yellow]![/] Presets sind durch Stack-Vorlagen ersetzt (SPEC-0057). Stattdessen:\n"
+              f"  sdd stack apply {vorlage} --only quality\n"
+              "Verfügbare Vorlagen: sdd stack list")
+    sys.exit(1)
 
 
 def _schreibbericht(result) -> None:

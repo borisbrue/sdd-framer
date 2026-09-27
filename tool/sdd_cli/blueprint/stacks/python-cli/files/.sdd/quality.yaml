@@ -1,7 +1,6 @@
-# sdd-Preset `python` (SPEC-0054). Nach `sdd quality init` gehört die Datei dem Projekt:
-# Befehle, Pfade und Normierungen dürfen und sollen angepasst werden.
+# Vorlage python-cli (SPEC-0057, früher Preset `python` aus SPEC-0054). Nach `sdd stack apply`
+# gehört die Datei dem Projekt: Befehle, Pfade und Normierungen dürfen angepasst werden.
 version: 1
-preset: python
 paths: ["**/*.py"]
 exclude: [".venv/**", "venv/**", "build/**", "dist/**", "**/__pycache__/**"]
 test_paths: ["tests/**"]

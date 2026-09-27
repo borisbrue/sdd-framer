@@ -1,4 +1,4 @@
-"""AST-Abhängigkeitsextraktor des sdd-Presets `python` → sdd-deps auf stdout (SPEC-0054 FR-14).
+"""AST-Abhängigkeitsextraktor der Vorlage python-cli → sdd-deps auf stdout (SPEC-0054 FR-14).
 
 Aufruf: `python3 .sdd/quality/extract_deps.py <dateien…>` im Projektverzeichnis.
 

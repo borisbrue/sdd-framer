@@ -1,4 +1,4 @@
-"""lizard `--csv` → sdd-metrics auf stdout (sdd-Preset `python`).
+"""lizard `--csv` → sdd-metrics auf stdout (Vorlage python-cli).
 
 Metriken: complexity_mean, complexity_max, complex_function_share (CCN > 10),
 long_function_share (Länge > 60 Zeilen).

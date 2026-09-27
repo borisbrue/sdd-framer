@@ -28,7 +28,7 @@ Feature: CLI für Qualitätsmessung und Architekturregeln
     Given .sdd/quality.yaml existiert nicht
     When ich "sdd quality measure" ausführe
     Then ist der Exit-Code 2
-    And die Ausgabe verweist auf "sdd quality init"
+    And die Ausgabe verweist auf "sdd stack apply"
 
   Scenario: measure mit ungültiger quality.yaml
     Given .sdd/quality.yaml verletzt quality-config.schema.json
@@ -69,18 +69,18 @@ Feature: CLI für Qualitätsmessung und Architekturregeln
     And die Ausgabe meldet für "types" "Befehl nicht gefunden"
     And für "complexity" "Normierung fehlt"
 
-  Scenario: init kopiert ein Preset ins Projekt
+  Scenario: init verweist auf die Stack-Vorlage
     Given .sdd/quality.yaml existiert nicht
     When ich "sdd quality init --preset python" ausführe
-    Then existieren .sdd/quality.yaml und die Hilfsskripte unter .sdd/quality/
-    And die Sondenbefehle rufen die Skripte unter .sdd/quality/ auf
+    Then ist der Exit-Code 1
+    And die Ausgabe nennt "sdd stack apply python-cli --only quality"
+    And .sdd/quality.yaml existiert weiterhin nicht
 
-  Scenario: init überschreibt keine vorhandene Datei
-    Given .sdd/quality.yaml existiert und weicht vom Preset ab
+  Scenario: init schreibt nichts
+    Given .sdd/quality.yaml existiert und weicht von der Vorlage ab
     When ich "sdd quality init --preset python" ausführe
-    Then ist .sdd/quality.yaml unverändert
-    And es existiert .sdd/quality.yaml.new
-    And die Ausgabe zeigt den Diff
+    Then ist der Exit-Code 1
+    And .sdd/quality.yaml ist unverändert und es gibt keine .new-Datei
 
   Scenario: arch check meldet Verstoß mit ADR
     Given Regel ARCH-01 mit adr ADR-0007 verbietet Abhängigkeiten von web nach core/writer.py

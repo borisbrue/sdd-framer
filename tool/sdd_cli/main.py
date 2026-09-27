@@ -50,12 +50,14 @@ def _register_quality_commands() -> None:
     from .pipeline_cli import pipeline_group
     from .quality_cli import arch_group, quality_group
     from .role_cli import role_group
+    from .stack_cli import stack_group
 
     cli.add_command(bench_group)
     cli.add_command(quality_group)
     cli.add_command(arch_group)
     cli.add_command(pipeline_group)
     cli.add_command(role_group)
+    cli.add_command(stack_group)
 
 
 _register_quality_commands()
@@ -173,14 +175,23 @@ def _check_gh_available() -> None:
 @click.option("--autonomous", is_flag=True,
               help="Aktiviert hands-off Bypass (defaultMode=bypassPermissions) in "
                    ".claude/settings.local.json – persönlich, nicht committed (SPEC-0051).")
+@click.option("--stack", "stack_name", default=None,
+              help="Wendet danach eine Stack-Vorlage an, z. B. python-cli (SPEC-0057).")
 def init(target: str, project_title: str, force: bool,
-         provider: str, force_skills: bool, autonomous: bool) -> None:
+         provider: str, force_skills: bool, autonomous: bool, stack_name: str | None) -> None:
     from .init import get_skill_provider
     try:
         prov = get_skill_provider(provider)
     except ValueError as exc:
         console.print(f"[red]✗[/] {exc}")
         sys.exit(1)
+    if stack_name:
+        from .stacks import StackError, find
+        try:
+            find(Path(target).resolve(), stack_name)
+        except StackError as exc:
+            console.print(f"[red]✗[/] {exc}")
+            sys.exit(2)
 
     title = project_title or Path(target).resolve().name
 
@@ -239,6 +250,12 @@ def init(target: str, project_title: str, force: bool,
                 console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
         else:
             console.print("  Jederzeit nachholen: [cyan]sdd config wizard[/]")
+
+    if stack_name:
+        from .stack_cli import run_apply
+        code = run_apply(Path(target).resolve(), stack_name, sets={}, yes=True)
+        if code:
+            sys.exit(code)
 
     _check_git_setup(Path(target).resolve())
     _check_gh_available()

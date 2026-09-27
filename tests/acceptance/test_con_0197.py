@@ -98,7 +98,7 @@ def test_tc04_measure_ohne_quality_yaml(qproject: QualityProject):
     """Scenario: measure ohne quality.yaml (CON-0197)."""
     ergebnis = qproject.run("quality", "measure")
     assert ergebnis.exit_code == 2
-    assert "sdd quality init" in ergebnis.output
+    assert "sdd stack apply" in ergebnis.output
 
 
 def test_tc05_measure_mit_ungueltiger_quality_yaml(qproject: QualityProject):
@@ -214,28 +214,22 @@ def test_tc10_doctor_meldet_probleme_je_sonde(qproject: QualityProject):
     assert any("complexity" in z and "Normierung fehlt" in z for z in zeilen)
 
 
-def test_tc11_init_kopiert_ein_preset_ins_projekt(qproject: QualityProject):
-    """Scenario: init kopiert ein Preset ins Projekt (CON-0197)."""
+def test_tc11_init_verweist_auf_die_stack_vorlage(qproject: QualityProject):
+    """Scenario: init verweist auf die Stack-Vorlage (CON-0197, SPEC-0057 FR-09)."""
     ergebnis = qproject.run("quality", "init", "--preset", "python")
-    assert ergebnis.exit_code == 0, ergebnis.output
-    daten = yaml.safe_load((qproject.root / ".sdd/quality.yaml").read_text())
-    assert schema_errors("quality_config", daten) == []
-    skripte = list((qproject.root / ".sdd/quality").glob("*"))
-    assert skripte
-    befehle = " ".join(s["command"] for s in daten["probes"].values())
-    assert ".sdd/quality/" in befehle
-    assert "sdd arch extract" not in befehle
+    assert ergebnis.exit_code == 1
+    assert "sdd stack apply python-cli --only quality" in ergebnis.output
+    assert not (qproject.root / ".sdd/quality.yaml").exists()
 
 
-def test_tc12_init_ueberschreibt_keine_vorhandene_datei(qproject: QualityProject):
-    """Scenario: init überschreibt keine vorhandene Datei (CON-0197)."""
+def test_tc12_init_schreibt_nichts(qproject: QualityProject):
+    """Scenario: init schreibt nichts (CON-0197, SPEC-0057 FR-09)."""
     eigen = "version: 1\nprobes:\n  x: {command: 'true > {out}', format: sarif}\n"
     qproject.write(".sdd/quality.yaml", eigen)
     ergebnis = qproject.run("quality", "init", "--preset", "python")
-    assert ergebnis.exit_code == 0
+    assert ergebnis.exit_code == 1
     assert (qproject.root / ".sdd/quality.yaml").read_text() == eigen
-    assert (qproject.root / ".sdd/quality.yaml.new").is_file()
-    assert "@@" in ergebnis.output or "---" in ergebnis.output
+    assert not list((qproject.root / ".sdd").rglob("*.new"))
 
 
 # ── sdd arch ──────────────────────────────────────────────────────────────────

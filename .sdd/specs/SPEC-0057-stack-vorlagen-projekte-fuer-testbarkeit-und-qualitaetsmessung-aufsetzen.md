@@ -6,7 +6,7 @@ status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-27
-version: 0.2.0
+version: 0.2.1
 priority: low
 tags: [stack, templates, language-agnostic, quality, init]
 depends_on: [SPEC-0054]
@@ -89,7 +89,6 @@ fremder Quellen).
 │   ├── .sdd/quality.yaml    # Sonden nach SPEC-0054 (Test-Sonde JUnit mit FR-Markern)
 │   ├── .sdd/quality/…       # Konverter und Extraktoren
 │   ├── .sdd/architecture.yaml, docs/adr/…
-│   ├── .sdd/Dockerfile      # Dev-Container mit Toolchain
 │   └── tests/…              # ein FR-markierter Skeleton-Test
 └── agents-md/<abschnitt>.md # Abschnitte für AGENTS.md
 ```
@@ -171,8 +170,9 @@ Wissen zur Sprache (DIP-Befund).
     Preset `python`.
   - `python-fastapi`: Schichten `domain`/`service`/`api`/`persistence`.
 
-  Beide enthalten einen FR-markierten Skeleton-Test, `architecture.yaml` mit ADR,
-  Dockerfile und AGENTS.md-Abschnitte.
+  Beide enthalten einen FR-markierten Skeleton-Test, `architecture.yaml` mit ADR und
+  AGENTS.md-Abschnitte. Ein Dockerfile liefern sie nicht: `sdd init` legt `.sdd/Dockerfile` bereits
+  an, eine Kopie aus der Vorlage ergäbe nur eine `.new`-Datei.
 - **FR-09:** **Presets abgelöst.** `blueprint/presets/quality/` entfällt. `sdd quality init
   --preset X` verweist auf `sdd stack apply X --only quality` (Hinweis, Exit 1, Konvention SPEC-0058).
   Bekannte Preset-Namen werden auf ihre Vorlage abgebildet (`python` → `python-cli`).
@@ -245,3 +245,4 @@ Feature: Stack-Vorlagen
 |------------|---------|---------------|----------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
 | 2026-09-27 | 0.2.0   | Boris, Claude | Review: Presets abgelöst, sprachneutrales verify, Memento mit Hashes, schlanker Umfang, Patterns |
+| 2026-09-27 | 0.2.1   | Boris, Claude | Umsetzung: Blueprint-Vorlagen ohne Dockerfile (kommt aus `sdd init`) |
