@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0056
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/bench-report-vergleich-und-config-apply-roles.feature"
 tests: ["TST-0253"]
 ---
 
 # Contract: Bench-Report, Vergleich und config apply-roles
 
-> **Spec:** SPEC-0056 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0056 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

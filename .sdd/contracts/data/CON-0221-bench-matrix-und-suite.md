@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0056
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/bench-matrix-und-suite.schema.json"
 tests: ["TST-0250"]
 ---
 
 # Contract: Bench-Matrix und Suite
 
-> **Spec:** SPEC-0056 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0056 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 

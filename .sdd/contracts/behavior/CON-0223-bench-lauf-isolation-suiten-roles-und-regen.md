@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0056
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/bench-lauf-isolation-suiten-roles-und-regen.feature"
 tests: ["TST-0252"]
 ---
 
 # Contract: Bench-Lauf, Isolation, Suiten roles und regen
 
-> **Spec:** SPEC-0056 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0056 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

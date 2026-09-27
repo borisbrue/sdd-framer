@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0056",
-  "generated_at": "2026-09-27T11:53:47Z",
+  "generated_at": "2026-09-27T11:59:06Z",
   "new_contracts": [
     "CON-0221",
     "CON-0222",
@@ -270,6 +270,81 @@
         "action": "acknowledged",
         "reason": "T_reason und estimated gehören nur zum Bench-Record; die Token-History bleibt unverändert.",
         "resolved_at": "2026-09-27T11:58:32Z"
+      }
+    },
+    {
+      "id": "CF-0056-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "§2 Zielsetzung",
+      "conflicting_contract": "SPEC-0011:§2 Zielsetzung",
+      "detail": "Beide Specs werten den Tokenverbrauch aus historischen Läufen aus; SPEC-0011 liest ihn aus `.sdd/evaluations.db`, SPEC-0056 aus `results.jsonl` mit Usage aus SPEC-0060. Wenn die Datenquellen nicht zusammengeführt oder klar abgegrenzt werden, entstehen zwei getrennte Token-Buchhaltungen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
+        "resolved_at": "2026-09-27T11:59:16Z"
+      }
+    },
+    {
+      "id": "CF-0056-R002",
+      "type": "conflict",
+      "severity": "low",
+      "new_contract": "§1 Kontext & Motivation",
+      "conflicting_contract": "SPEC-0011:§1 Kontext & Motivation",
+      "detail": "Beide Specs brauchen belastbare Token-Zahlen, aber der Default-Provider `claude-cli` liefert `usage: None`. SPEC-0056 fängt das über `source` (Schätzungen) aus SPEC-0060 ab; SPEC-0011 nennt diese Lücke nicht, sodass die Schätzungen beider Specs uneinheitlich ausfallen können.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
+        "resolved_at": "2026-09-27T11:59:17Z"
+      }
+    },
+    {
+      "id": "CF-0056-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "§3 Architektur & Design Patterns",
+      "conflicting_contract": "SPEC-0008:§1 Kontext & Motivation",
+      "detail": "Die Decorator-Provider-Hüllen aus SPEC-0056 (für Zählung, Drosselung über `max_concurrent` und `seed`) setzen auf der Provider-Abstraktion aus SPEC-0008 auf und müssen nach ADR-0004 über die Provider-Factory laufen. Sonst entsteht ein zweiter Weg, Provider zu erzeugen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
+        "resolved_at": "2026-09-27T11:59:17Z"
+      }
+    },
+    {
+      "id": "CF-0056-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "§3 Architektur & Design Patterns",
+      "conflicting_contract": "SPEC-0004:§2 Zielsetzung",
+      "detail": "Das Proxy-Muster für versteckte Tests in SPEC-0056 löst dasselbe Problem wie der Holdout-Mechanismus aus SPEC-0004 (heute Pipeline-Schritt `holdout`), nämlich Tests vor dem Modell verborgen zu halten. Es sollte diesen Mechanismus wiederverwenden statt eine zweite Implementierung zu bauen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
+        "resolved_at": "2026-09-27T11:59:18Z"
+      }
+    },
+    {
+      "id": "CF-0056-R005",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "§2 Zielsetzung",
+      "conflicting_contract": "SPEC-0006:§2 Zielsetzung",
+      "detail": "Die Suite `regen` bewertet die Qualität unter anderem über Testergebnisse der neu erzeugten Module. SPEC-0006 bietet mit `sdd test-run` und strukturierten Pass/Fail-Ergebnissen bereits eine Testausführung, die SPEC-0056 nutzen sollte, statt eine eigene Testauswertung zu bauen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
+        "resolved_at": "2026-09-27T11:59:19Z"
       }
     }
   ],

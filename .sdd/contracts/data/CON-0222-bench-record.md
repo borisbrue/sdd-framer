@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0056
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/bench-record.schema.json"
 tests: ["TST-0251"]
 ---
 
 # Contract: Bench-Record
 
-> **Spec:** SPEC-0056 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0056 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
