@@ -10,8 +10,25 @@ version: 0.2.0
 priority: low
 tags: [stack, templates, language-agnostic, quality, init]
 depends_on: [SPEC-0054]
-contracts: []
-tests: []
+contracts:
+- CON-0227
+- CON-0228
+- CON-0229
+tests:
+- TST-0256
+- TST-0257
+- TST-0258
+fr_test_map:
+  FR-01: [TST-0256]
+  FR-02: [TST-0257]
+  FR-03: [TST-0258]
+  FR-04: [TST-0258]
+  FR-05: [TST-0257]
+  FR-06: [TST-0257]
+  FR-07: [TST-0258]
+  FR-08: [TST-0256, TST-0258]
+  FR-09: [TST-0258]
+  FR-10: [TST-0258]
 ---
 
 # Stack-Vorlagen: Projekte für Testbarkeit und Qualitätsmessung aufsetzen
@@ -200,17 +217,17 @@ Feature: Stack-Vorlagen
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | data     | `stack.schema.json` und `stack:` in `config.yaml` |
-| CON-XXXX    | behavior | `sdd stack list|show|verify|diff` (lesend und prüfend) |
-| CON-XXXX    | behavior | `sdd stack apply|extract`, `sdd init --stack`, Verweis `quality init --preset` |
+| CON-0227    | data     | `stack.schema.json` und `stack:` in `config.yaml` |
+| CON-0228    | behavior | `sdd stack list|show|verify|diff` (lesend und prüfend) |
+| CON-0229    | behavior | `sdd stack apply|extract`, `sdd init --stack`, Verweis `quality init --preset` |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | unit        | Schema, Quellenkette, Platzhalter, AGENTS.md-Markierungen |
-| TST-XXXX | acceptance  | list/show/verify/diff |
-| TST-XXXX | acceptance  | apply/extract/init --stack/Verweis, Idempotenz, `.new`, Blueprint-Vorlagen grün |
+| TST-0256 | unit        | Schema, Quellenkette, Platzhalter, AGENTS.md-Markierungen |
+| TST-0257 | acceptance  | list/show/verify/diff |
+| TST-0258 | acceptance  | apply/extract/init --stack/Verweis, Idempotenz, `.new`, Blueprint-Vorlagen grün |
 
 ## 10. Offene Fragen
 
