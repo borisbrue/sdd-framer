@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0057",
+  "generated_at": "2026-09-27T14:19:05Z",
+  "patterns": [
+    {
+      "pattern_name": "Prototype",
+      "status": "accepted",
+      "decided_at": "2026-09-27T14:19:05Z",
+      "acceptance_reason": "Vorlage als Daten, die ins Projekt kopiert und dort weiterentwickelt wird.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "status": "accepted",
+      "decided_at": "2026-09-27T14:19:06Z",
+      "acceptance_reason": "Quellenkette Projekt → Nutzer → Blueprint.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "status": "accepted",
+      "decided_at": "2026-09-27T14:19:07Z",
+      "acceptance_reason": "stack: in config.yaml mit Version und Datei-Hashes als Bezugspunkt für diff.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "status": "accepted",
+      "decided_at": "2026-09-27T14:19:08Z",
+      "acceptance_reason": "Vorschau mit Dateiliste und Diff vor dem Anwenden aus Projekt- oder Nutzerquellen.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}
