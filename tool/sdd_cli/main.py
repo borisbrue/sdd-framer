@@ -46,10 +46,12 @@ def cli() -> None:
 
 
 def _register_quality_commands() -> None:
+    from .bench_cli import bench_group
     from .pipeline_cli import pipeline_group
     from .quality_cli import arch_group, quality_group
     from .role_cli import role_group
 
+    cli.add_command(bench_group)
     cli.add_command(quality_group)
     cli.add_command(arch_group)
     cli.add_command(pipeline_group)
@@ -3601,6 +3603,37 @@ def config_show_cmd(section: str | None) -> None:
     from .config_manager import ConfigManager
     mgr = ConfigManager(cfg.root / ".sdd" / "config.yaml")
     console.print(mgr.show(section=section))
+
+
+@config_group.command("apply-roles",
+                      help="Belegung aus einem Benchmark als llm.roles übernehmen (SPEC-0056).")
+@click.option("--from", "ordner", type=click.Path(path_type=Path), required=True,
+              help="Ergebnisordner von sdd bench run.")
+@click.option("--assignment", required=True, help="Name der Belegung.")
+@click.option("--yes", is_flag=True, help="Ohne Rückfrage schreiben.")
+def config_apply_roles_cmd(ordner: Path, assignment: str, yes: bool) -> None:
+    from .bench.runner import read_records
+    from .config_roles import ApplyError, plan_apply, write
+
+    cfg = _ensure_project()
+    if not (ordner / "results.jsonl").is_file():
+        console.print(f"[red]✗[/] {ordner}/results.jsonl fehlt.")
+        sys.exit(2)
+    try:
+        plan = plan_apply(cfg, read_records(ordner), assignment)
+    except ApplyError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        sys.exit(2)
+    if not plan.diff:
+        console.print("[green]✓[/] config.yaml enthält die Belegung bereits.")
+        return
+    print(plan.diff)
+    if not yes and not click.confirm("config.yaml so ändern?", default=False):
+        console.print("Nichts geändert.")
+        return
+    write(cfg, plan)
+    console.print("[green]✓[/] llm.roles übernommen: "
+                  + ", ".join(f"{r}={p}" for r, p in plan.roles.items()))
 
 
 @config_group.command("validate", help="Prüft config.yaml auf Pflichtfelder und Provider-Konsistenz (SPEC-0052).")

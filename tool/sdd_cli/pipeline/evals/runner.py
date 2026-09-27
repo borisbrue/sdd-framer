@@ -245,7 +245,8 @@ def setup(config: SddConfig, role: str, *, profile: str | None, version: Path | 
 
 class EvalRunner:
     def __init__(self, config: SddConfig, st: EvalSetup, *, eval_id: str | None = None,
-                 concurrency: int = 2) -> None:
+                 concurrency: int = 2, wrap: Any = None) -> None:
+        """`wrap(provider, binding, rolle)` legt Hüllen um die Provider (z. B. Benchmark-Zähler)."""
         self.config = config
         self.st = st
         self.eval_id = eval_id or f"eval-{secrets.token_hex(4)}"
@@ -255,6 +256,10 @@ class EvalRunner:
         self._provider = build_provider(config, st.binding, st.role_def)
         self._judge = (build_provider(config, st.judge_binding, st.judge_def)
                        if st.judge_def and st.judge_binding else None)
+        if wrap is not None:
+            self._provider = wrap(self._provider, st.binding, st.role_def.role)
+            if self._judge is not None:
+                self._judge = wrap(self._judge, st.judge_binding, "judge")
 
     def run(self, cases: list[Case], runs: int) -> list[CaseRuns]:
         ergebnisse = {c.id: CaseRuns(c) for c in cases}

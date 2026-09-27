@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased] – SPEC-0056: Benchmark-Strecke
+
+### Added
+
+- **`sdd bench init|run|report|compare`**: Modellbelegungen über Suiten vergleichen. Matrix mit
+  Belegungen, Varianten (`profil@variante`), Sweep, Wiederholungen, Stufenmodell `top_k` und
+  Budget; `--dry-run`, `--resume`. Suite-Arten `roles` (Rollen-Evals, `q_kind: eval`) und `regen`
+  (Module aus Unit-Tests neu schreiben, `q_kind: quality`), erweiterbar über eine Registry.
+- Report mit Q ± Streuung, Tokens je Rolle und gesamt (geschätzte markiert), Effizienz, Tokens je
+  erfüllter Anforderung, Pareto-Front mit und ohne Claude-Tokens, Signifikanzhinweis; HTML mit
+  Streudiagramm. `compare` warnt bei getauschtem Servermodell.
+- **`sdd config apply-roles`**: Belegung aus einem Benchmark mit Diff als `llm.roles` übernehmen.
+- Profil-Schlüssel `max_concurrent` und `seed` (an `openai-compat`); `bench/results/` in den
+  lokalen Ignores; `bench/suites/regen.yaml` mit sieben Modulen aus BEFUND-modelle §3.
+
+### Changed
+
+- `pipeline.facade` bietet `run_role`, `role_binding` und `measure_changed`; `EvalRunner` nimmt
+  Provider-Hüllen (`wrap`) an. SPEC-0063 (Suite `e2e`) ist als Folge-Spec angelegt.
+
 ## [Unreleased] – SPEC-0055: Rollen-Evals mit Golden Cases
 
 ### Added

@@ -185,6 +185,8 @@ Einziger Einstiegspunkt für alle LLM-gestützten Review-Operationen.
 | `sdd pipeline decide\|done\|status\|report RUN-ID` | Entscheidung bzw. Session-Ergebnis abgeben, Stand und Report |
 | `sdd role eval\|compare\|accept ROLLE …` | Rollen-Evals gegen Golden Cases, Ratchet-Vergleich, Übernahme mit Baseline (SPEC-0055) |
 | `sdd role case new\|capture\|confirm …` | Golden Cases anlegen, aus Pipeline-Runs übernehmen, bestätigen |
+| `sdd bench init\|run\|report\|compare …` | Benchmark: Modellbelegungen nach Qualität und Tokens vergleichen, Pareto-Front (SPEC-0056) |
+| `sdd config apply-roles --from ORDNER --assignment NAME` | Belegung aus einem Benchmark als `llm.roles` übernehmen (Diff, `--yes`) |
 | `sdd task-status SPEC-ID` | Task-Status einer Spec anzeigen |
 
 ---

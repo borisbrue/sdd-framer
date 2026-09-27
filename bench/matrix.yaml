@@ -1,0 +1,14 @@
+# Benchmark-Matrix von sdd-framer (SPEC-0056). Profile: .sdd/config.yaml → llm.profiles.
+# Aufruf: sdd bench run [--suite roles|regen] [--dry-run], danach sdd bench report bench/results/<ts>
+suites: [roles, regen]
+repetitions: 3
+top_k: 2
+profiles: [lokal]
+assignments:
+  - name: implementer-lokal
+    roles: {implementer: lokal}
+variants:
+  think: {thinking: true}
+  high: {reasoning_effort: high}
+# sweep: {role: implementer, profiles: [lokal, lokal@think]}
+budget: {max_tokens: 2000000, max_claude_tokens: 200000}

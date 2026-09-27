@@ -62,6 +62,8 @@ sdd_cli = [
     "blueprint/roles/*",
     "blueprint/roles/**/*",
     "blueprint/holdout/**/*",
+    "blueprint/bench/*",
+    "blueprint/bench/**/*",
     "blueprint/container/*",
     "web/api/*.py",
     "web/api/routes/*.py",

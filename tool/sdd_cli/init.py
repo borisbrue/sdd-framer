@@ -245,7 +245,7 @@ def _git_benutzername(target: Path) -> str | None:
 # Geheimnissen (#103), die Usage-Datenbank, in die jeder LLM-Aufruf schreibt (SPEC-0060), und die
 # Laufzeitartefakte von Testsonde (SPEC-0006) und Qualitätsmessung (SPEC-0054).
 LOCAL_IGNORES = (".sdd/config.local.yaml", ".sdd/evaluations.db", ".sdd/test-runs/",
-                 ".sdd/quality/runs/", ".sdd/role-evals/")
+                 ".sdd/quality/runs/", ".sdd/role-evals/", "bench/results/")
 
 
 def ignore_local_config(target: Path) -> bool:

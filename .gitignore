@@ -33,3 +33,4 @@ node_modules/
 .sdd/test-runs/
 .sdd/quality/runs/
 .sdd/role-evals/
+bench/results/

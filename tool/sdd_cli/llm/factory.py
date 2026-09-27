@@ -224,7 +224,8 @@ def get_role_provider(
             base_url=base_url, model=model, api_key=api_key or "lm-studio",
             temperature=float(params.get("temperature") or 0.0),
             enable_thinking=bool(params.get("thinking", True)),
-            top_p=params.get("top_p"), reasoning_effort=params.get("reasoning_effort"))
+            top_p=params.get("top_p"), reasoning_effort=params.get("reasoning_effort"),
+            seed=params.get("seed"))
     else:
         raise ValueError(f"llm.roles.{role}: Provider {provider!r} wird für Rollen nicht "
                          f"unterstützt (erlaubt: {', '.join(ROLE_PROVIDERS)}).")

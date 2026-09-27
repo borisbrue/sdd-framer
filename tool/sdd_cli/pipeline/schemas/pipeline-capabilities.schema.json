@@ -60,6 +60,13 @@
         "requests_per_minute": {
           "type": "number",
           "exclusiveMinimum": 0
+        },
+        "max_concurrent": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer"
         }
       },
       "description": "llm.profiles.<name>: eine Modellbelegung"
