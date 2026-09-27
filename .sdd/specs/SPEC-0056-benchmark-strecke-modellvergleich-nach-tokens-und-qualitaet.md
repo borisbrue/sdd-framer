@@ -2,7 +2,7 @@
 id: SPEC-0056
 title: "Benchmark-Strecke: Modellvergleich nach Tokens und Qualität"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-27
