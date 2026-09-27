@@ -10,8 +10,20 @@ version: 0.2.0
 priority: high
 tags: [benchmark, pipeline, fixture, quality]
 depends_on: [SPEC-0056, SPEC-0053, SPEC-0054, SPEC-0061]
-contracts: []
-tests: []
+contracts:
+- CON-0225
+- CON-0226
+tests:
+- TST-0254
+- TST-0255
+fr_test_map:
+  FR-01: [TST-0254]
+  FR-02: [TST-0255]
+  FR-03: [TST-0255]
+  FR-04: [TST-0255]
+  FR-05: [TST-0255]
+  FR-06: [TST-0255]
+  FR-07: [TST-0255]
 ---
 
 # Benchmark-Suite e2e: Fixture-Projekt mit ganzen Pipeline-Runs
@@ -152,15 +164,15 @@ Feature: Suite e2e
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | behavior | Pipeline-Budget (Config, Optionen, Zählung, Halt) |
-| CON-XXXX    | behavior | Suite e2e, Isolation, Messung, Fixture, Ausgänge im Report |
+| CON-0225    | behavior | Pipeline-Budget (Config, Optionen, Zählung, Halt) |
+| CON-0226    | behavior | Suite e2e, Isolation, Messung, Fixture, Ausgänge im Report |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level      | Was prüft der Test? |
 |----------|------------|---------------------|
-| TST-XXXX | acceptance | Pipeline-Budget mit Fake-LLM-Server |
-| TST-XXXX | acceptance | e2e mit Fake-LLM-Server auf einem Mini-Fixture; Fixture-Selbsttest (Referenz grün, Start rot) |
+| TST-0254 | acceptance | Pipeline-Budget mit Fake-LLM-Server |
+| TST-0255 | acceptance | e2e mit Fake-LLM-Server auf einem Mini-Fixture; Fixture-Selbsttest (Referenz grün, Start rot) |
 
 ## 10. Offene Fragen
 
