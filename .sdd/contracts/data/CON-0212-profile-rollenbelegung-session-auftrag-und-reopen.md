@@ -4,7 +4,7 @@ title: "Profile, Rollenbelegung, Session-Auftrag und reopen"
 type: data
 format: json-schema
 spec: SPEC-0061
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/data/profile-rollenbelegung-session-auftrag-und-reopen.schema.json"
 tests: ["TST-0241"]
@@ -89,3 +89,7 @@ llm:
 ## Seit SPEC-0055 (0.3.0)
 
 Profil-Schlüssel `requests_per_minute` (Zahl > 0): Höchstzahl der Aufrufe je Minute an den Endpunkt des Profils (SPEC-0055 FR-11, CON-0219 INV-08).
+
+## Seit SPEC-0056 (0.4.0)
+
+Profil-Schlüssel `max_concurrent` (gleichzeitige Aufrufe je Endpunkt) und `seed` (an Provider, die ihn kennen, z. B. `openai-compat`).

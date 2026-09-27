@@ -16,8 +16,8 @@ from .runner import extract_json, unknown_checks
 if TYPE_CHECKING:
     from ..config import SddConfig
 
-__all__ = ["JudgeUnavailable", "extract_json", "judge_provider", "role_config_issues",
-           "role_provider", "unknown_checks"]
+__all__ = ["JudgeUnavailable", "extract_json", "judge_provider", "measure_changed",
+           "role_binding", "role_config_issues", "role_provider", "run_role", "unknown_checks"]
 
 
 class JudgeUnavailable(Exception):
@@ -45,3 +45,29 @@ def judge_provider(config: SddConfig) -> tuple[Any, str]:
         return build_provider(config, bindung, rolle), bindung.model or bindung.provider
     except RoleConfigError as exc:
         raise JudgeUnavailable(str(exc)) from exc
+
+
+def run_role(role: RoleDefinition, provider: Any, sources: dict, *, run_id: str, attempt: int = 1,
+             params: dict | None = None, lead: str = "", check_context: dict | None = None,
+             task: dict | None = None) -> Any:
+    """Ein Rollenaufruf nach dem festen Ablauf des RoleRunner (Nonce, Schema, Gate-Checks), z. B.
+    für den Benchmark (SPEC-0056 FR-04). Ergebnis: RoleResult."""
+    from .runner import RoleRunner
+
+    return RoleRunner(run_id=run_id, spec_id="").run(
+        role, provider, sources, attempt=attempt, params=params, lead=lead,
+        check_context=check_context, task=task)
+
+
+def measure_changed(root: Any, raw_config: dict, changed: list[str]) -> dict[str, dict]:
+    """Architektur- und Lint-Gate auf geänderten Dateien (SPEC-0061 FR-07), für Messungen."""
+    from .gates import architecture_gate, lint_gate
+
+    return {g.gate: {"status": g.status, "reason": g.reason, "findings": g.findings}
+            for g in (architecture_gate(root, raw_config, changed),
+                      lint_gate(root, raw_config, changed))}
+
+
+def role_binding(config: SddConfig, role: RoleDefinition) -> Any:
+    """Aufgelöste Belegung einer Rolle (Provider, Modell, Endpunkt, Parameter), ohne Aufruf."""
+    return resolve_binding(config, role)

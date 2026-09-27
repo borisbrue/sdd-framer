@@ -313,8 +313,8 @@
       "status": "acknowledged",
       "resolution": {
         "action": "acknowledged",
-        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
-        "resolved_at": "2026-09-27T11:59:17Z"
+        "reason": "Die Hüllen umschließen Provider aus der Factory (ARCH-03); gebaut wird weiter nur dort.",
+        "resolved_at": "2026-09-27T11:59:40Z"
       }
     },
     {
@@ -328,8 +328,8 @@
       "status": "acknowledged",
       "resolution": {
         "action": "acknowledged",
-        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
-        "resolved_at": "2026-09-27T11:59:18Z"
+        "reason": "regen verbirgt ein entferntes Modul, kein HOL-Szenario; roles nutzt die Holdout-Isolation aus SPEC-0055 unverändert.",
+        "resolved_at": "2026-09-27T11:59:41Z"
       }
     },
     {
@@ -343,8 +343,8 @@
       "status": "acknowledged",
       "resolution": {
         "action": "acknowledged",
-        "reason": "Gewollt: sdd estimate (SPEC-0011) schätzt vor dem Lauf, der Benchmark misst; --dry-run nutzt frühere Bench-Ergebnisse.",
-        "resolved_at": "2026-09-27T11:59:19Z"
+        "reason": "regen führt den test_command der Suite im Arbeitsverzeichnis aus (wie die Checks aus SPEC-0055); sdd test run arbeitet auf dem Projekt und passt nicht zur Isolation.",
+        "resolved_at": "2026-09-27T11:59:42Z"
       }
     }
   ],

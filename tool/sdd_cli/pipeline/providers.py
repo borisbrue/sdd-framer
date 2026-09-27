@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 PROFILE_KEYS = frozenset({"provider", "model", "base_url", "api_key", "temperature", "top_p",
                           "max_output_tokens", "thinking", "reasoning_effort", "timeout_seconds",
-                          "requests_per_minute"})
+                          "requests_per_minute", "max_concurrent", "seed"})
 ROLE_KEYS = PROFILE_KEYS | {"mode", "profile", "by_complexity"}
 SESSION = "session"
 COMPLEXITIES = ("low", "medium", "high")

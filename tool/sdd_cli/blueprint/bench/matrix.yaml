@@ -1,0 +1,14 @@
+# Benchmark-Matrix (SPEC-0056). Profile stehen in .sdd/config.yaml unter llm.profiles.
+# Aufruf: sdd bench run --matrix bench/matrix.yaml [--suite roles] [--dry-run]
+suites: [roles]
+repetitions: 3
+# top_k: 2                      # Stufenmodell: nur die besten Profile je Rolle aus roles weiter
+profiles: []                    # z. B. [lokal, lokal@think, claude]
+assignments: []
+#  - name: alles-lokal
+#    roles: {"*": lokal, supervisor: claude}
+variants:
+  think: {thinking: true}
+  high: {reasoning_effort: high}
+# sweep: {role: implementer, profiles: [lokal, lokal@think]}
+# budget: {max_tokens: 2000000, max_claude_tokens: 200000}

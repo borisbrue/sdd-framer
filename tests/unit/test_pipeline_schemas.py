@@ -17,6 +17,8 @@ CONTRACT_SCHEMAS = {
     "pipeline-capabilities": "profile-rollenbelegung-session-auftrag-und-reopen",
     "role-case": "golden-case-case-yaml",
     "role-eval-report": "eval-report-und-baseline",
+    "bench-matrix": "bench-matrix-und-suite",
+    "bench-record": "bench-record",
 }
 
 

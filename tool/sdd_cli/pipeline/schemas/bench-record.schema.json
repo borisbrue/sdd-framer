@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sdd-framer.local/schemas/bench-record.schema.json",
+  "title": "Benchmark-Record",
+  "description": "SPEC-0056 / CON-0222. Eine Zeile in bench/results/<ts>/results.jsonl.",
+  "type": "object",
+  "required": [
+    "kind",
+    "run_id",
+    "suite",
+    "suite_kind",
+    "q_kind",
+    "assignment",
+    "roles",
+    "repetition",
+    "outcome",
+    "Q",
+    "tokens",
+    "T_in",
+    "T_out",
+    "T_reason",
+    "T_claude",
+    "duration_ms",
+    "sdd_version",
+    "created_at",
+    "artifacts"
+  ],
+  "properties": {
+    "kind": {
+      "const": "bench-record"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "suite": {
+      "type": "string"
+    },
+    "suite_kind": {
+      "type": "string"
+    },
+    "suite_version": {
+      "type": "string"
+    },
+    "q_kind": {
+      "enum": [
+        "eval",
+        "quality"
+      ]
+    },
+    "assignment": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "profile",
+          "provider"
+        ],
+        "properties": {
+          "profile": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object"
+          },
+          "server_model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "endpoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role_version": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "outcome": {
+      "enum": [
+        "completed",
+        "halted: budget",
+        "error"
+      ]
+    },
+    "error": {
+      "type": "string"
+    },
+    "Q": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "input",
+          "output",
+          "reasoning",
+          "calls",
+          "estimated"
+        ],
+        "properties": {
+          "input": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reasoning": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "calls": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "estimated": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "T_in": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "T_out": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "T_reason": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "T_claude": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "estimated": {
+      "type": "boolean"
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sdd_version": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "git_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "artifacts": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "pass_at_1": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "pass_all": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "holdout_Q": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "task": {
+      "type": "string"
+    },
+    "Q_req": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "Q_arch": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "Q_code": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "frs_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "frs_met": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed_attempts": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "q_kind": {
+            "const": "eval"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "role",
+          "profile",
+          "pass_at_1",
+          "pass_all"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "q_kind": {
+            "const": "quality"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "task",
+          "Q_req",
+          "Q_arch",
+          "Q_code",
+          "frs_total",
+          "frs_met",
+          "attempts",
+          "failed_attempts",
+          "git_sha"
+        ]
+      }
+    }
+  ]
+}

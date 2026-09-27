@@ -452,6 +452,36 @@ Profile können `requests_per_minute` setzen, um Endpunkte mit Rate-Limit zu sch
 
 ---
 
+### `sdd bench` — Modellbelegungen nach Qualität und Tokens vergleichen
+
+```bash
+sdd bench init                                   # bench/matrix.yaml, bench/suites/roles.yaml
+sdd bench run [--matrix bench/matrix.yaml] [--suite NAME] [--only BELEGUNG] [--repetitions N]
+              [--concurrency N] [--dry-run] [--resume bench/results/<ts>]
+sdd bench report bench/results/<ts> [--html] [--by role|assignment] [--exclude-reasoning]
+sdd bench compare bench/results/<a> bench/results/<b>
+sdd config apply-roles --from bench/results/<ts> --assignment NAME [--yes]
+```
+
+Die Matrix nennt Belegungen (Rolle → Profil aus `llm.profiles`, `profil@variante`, `*` für alle
+übrigen Rollen), einen optionalen Sweep über Profile einer Rolle, Wiederholungen, `top_k` für das
+Stufenmodell und ein Budget je Lauf (SPEC-0056). Suite-Arten:
+
+- **`roles`** misst jede Rolle × jedes Profil mit den Golden Cases (SPEC-0055, `q_kind: eval`).
+- **`regen`** entfernt Module aus einem Projekt am festen Commit und lässt sie von der Rolle
+  `implementer` aus ihren Unit-Tests neu schreiben; gemessen werden Tests, Architektur- und
+  Lint-Gate (`q_kind: quality`). Im sdd-framer-Repo: `bench/suites/regen.yaml`.
+
+Jeder Lauf arbeitet in einem temporären Verzeichnis und schreibt einen Record nach
+`bench/results/<ts>/results.jsonl` (lokal). Der Report zeigt je `q_kind` Q ± Streuung, Tokens
+(`T_in`, `T_out`, `T_reason`, `T_claude`, geschätzte mit `*`), Effizienz Q je 100 000 Tokens,
+Tokens je erfüllter Anforderung, die Pareto-Front mit und ohne Claude-Tokens und markiert
+Unterschiede unterhalb der Streuung als „nicht unterscheidbar“. `sdd config apply-roles`
+übernimmt eine Belegung mit Diff als `llm.roles` (Varianten als abgeleitete Profile). Profile
+können `max_concurrent` und `seed` setzen.
+
+---
+
 ### `sdd holdout run` — Holdout-Evaluation
 
 ```bash

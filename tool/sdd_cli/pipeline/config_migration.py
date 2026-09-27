@@ -167,3 +167,18 @@ def migrate_task_routing(config_path: Path) -> MigrationResult:
     config_path.write_text("".join(zeilen), encoding="utf-8")
     result.changed = True
     return result
+
+
+# Öffentliche Hilfen für zeilenbasiertes Schreiben (auch `sdd config apply-roles`, SPEC-0056).
+find_key = _find
+insert_block = _insert
+
+
+def comment_out_block(zeilen: list[str], pfad: tuple[str, ...], prefix: str) -> bool:
+    kopf = _find(zeilen, pfad)
+    if kopf is None:
+        return False
+    for i in range(kopf, _block_end(zeilen, kopf)):
+        if zeilen[i].strip():
+            zeilen[i] = prefix + zeilen[i]
+    return True

@@ -1,0 +1,19 @@
+# Suite regen (SPEC-0056 FR-04, Methode aus BEFUND-modelle-2026-09-24 §3): Module von sdd-framer
+# am festen Commit entfernen und von der Rolle implementer aus ihren Unit-Tests neu schreiben lassen.
+name: regen
+kind: regen
+version: "1"
+project: .
+commit: 96e622b1c7996aae23b45b112407e49125029338
+include: [tool, tests, pyproject.toml, .sdd/config.yaml, .sdd/architecture.yaml, .sdd/quality.yaml, .sdd/quality, docs/adr]
+test_command: "PYTHONPATH=tool {python} -m pytest -q -p no:cacheprovider -W ignore::DeprecationWarning --junitxml {junit} {tests}"
+attempts: 2
+timeout_seconds: 600
+tasks:
+  - {module: tool/sdd_cli/routing.py, tests: [tests/unit/test_tst_0147.py]}
+  - {module: tool/sdd_cli/holdout_status_fetcher.py, tests: [tests/unit/test_tst_0187.py]}
+  - {module: tool/sdd_cli/pipeline_jobs.py, tests: [tests/unit/test_pipeline_jobs.py]}
+  - {module: tool/sdd_cli/vision/challenge.py, tests: [tests/unit/test_tst_0204.py]}
+  - {module: tool/sdd_cli/config_validator.py, tests: [tests/unit/test_con0190_config_validation_rules.py]}
+  - {module: tool/sdd_cli/pattern_usage.py, tests: [tests/unit/test_tst_0217.py]}
+  - {module: tool/sdd_cli/guard.py, tests: [tests/unit/test_tst_0215.py]}

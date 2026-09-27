@@ -1,0 +1,6 @@
+# Suite roles (SPEC-0056 FR-03): Rollen-Evals mit den Golden Cases aus SPEC-0055.
+name: roles
+kind: roles
+version: "1"
+roles: [decomposer, test_author, implementer, reviewer, supervisor]
+runs: 1

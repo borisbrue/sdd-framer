@@ -44,6 +44,7 @@ class OpenAICompatCompletionProvider:
         enable_thinking: bool = True,
         top_p: float | None = None,
         reasoning_effort: str | None = None,
+        seed: int | None = None,
     ) -> None:
         self._base_url = base_url
         self._model = model
@@ -52,6 +53,7 @@ class OpenAICompatCompletionProvider:
         self._enable_thinking = enable_thinking
         self._top_p = top_p
         self._reasoning_effort = reasoning_effort
+        self._seed = seed
 
     def complete(
         self,
@@ -87,6 +89,8 @@ class OpenAICompatCompletionProvider:
             create_kwargs["timeout"] = timeout
         if self._top_p is not None:
             create_kwargs["top_p"] = self._top_p
+        if self._seed is not None:
+            create_kwargs["seed"] = self._seed  # SPEC-0056 FR-09, Reproduzierbarkeit
         extra_body: dict[str, Any] = {}
         if not self._enable_thinking:
             # Disables Qwen3/DeepSeek extended thinking mode. LM Studio reads the flat
