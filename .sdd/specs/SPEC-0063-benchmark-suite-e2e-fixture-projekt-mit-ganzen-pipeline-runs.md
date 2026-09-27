@@ -2,7 +2,7 @@
 id: SPEC-0063
 title: "Benchmark-Suite e2e: Fixture-Projekt mit ganzen Pipeline-Runs"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-09-27
 updated: 2026-09-27
