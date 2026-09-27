@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-27T07:51:34Z",
+  "last_updated": "2026-09-27T12:55:06Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -377,6 +377,34 @@
       "spec_id": "SPEC-0056",
       "accepted_at": "2026-09-27T07:51:34Z",
       "acceptance_reason": "results.jsonl als Fortschritt für --resume und Vergleichsstand für compare.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0063",
+      "accepted_at": "2026-09-27T12:55:03Z",
+      "acceptance_reason": "e2e als BenchTask mit dem festen Ablauf aus SPEC-0056.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "spec_id": "SPEC-0063",
+      "accepted_at": "2026-09-27T12:55:04Z",
+      "acceptance_reason": "Versteckte Akzeptanztests und Referenzlösung erst zur Messung im Arbeitsverzeichnis.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0063",
+      "accepted_at": "2026-09-27T12:55:05Z",
+      "acceptance_reason": "Zählung der Tokens aus der Usage-Erfassung des Pipeline-Laufs; Budget als allgemeines Pipeline-Feature.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0063",
+      "accepted_at": "2026-09-27T12:55:06Z",
+      "acceptance_reason": "Isolationsart als austauschbare Strategie (zunächst dir), erweiterbar ohne Änderung der Suite (OCP).",
       "refactoring_guru_url": null
     }
   ]
