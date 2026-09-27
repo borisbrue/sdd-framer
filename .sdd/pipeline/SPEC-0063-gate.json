@@ -1,0 +1,71 @@
+{
+  "spec_id": "SPEC-0063",
+  "pipeline_phase": "execute-unlocked",
+  "phase_history": [
+    {
+      "phase": "spec-draft",
+      "completed_at": "2026-09-27T12:55:08Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-review",
+      "completed_at": "2026-09-27T12:56:20Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-09-27T12:57:57Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0225",
+        "CON-0226"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-09-27T12:57:58Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-09-27T12:59:05Z",
+      "result": "ok",
+      "conflicts_found": 10,
+      "conflicts_high": 0
+    },
+    {
+      "phase": "tests-generated",
+      "completed_at": "2026-09-27T13:01:28Z",
+      "result": "ok",
+      "files_generated": [
+        "tests/acceptance/test_con_0225.py",
+        "tests/acceptance/test_con_0226.py"
+      ]
+    },
+    {
+      "phase": "regression-ok",
+      "completed_at": "2026-09-27T13:01:46Z",
+      "result": "ok"
+    },
+    {
+      "phase": "spec-approved",
+      "completed_at": "2026-09-27T13:02:12Z",
+      "result": "ok",
+      "consistency_check": {
+        "fr_coverage": "7/7",
+        "scenarios_covered": "",
+        "contracts_consistent": true,
+        "contracts_count": 2,
+        "tests_count": 2
+      }
+    },
+    {
+      "phase": "execute-unlocked",
+      "completed_at": "2026-09-27T13:02:12Z",
+      "result": "ok"
+    }
+  ],
+  "blocking_issues": [],
+  "conflict_report_ref": null,
+  "override": null
+}

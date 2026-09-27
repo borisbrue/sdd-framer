@@ -154,8 +154,9 @@ def markdown(ordner: Path, records: list[dict], *, by: str = "assignment",
         for name, eintraege in abschnitte.items():
             zeilen += [f"### {name}", "",
                        "| Eintrag | Q | Q_req | Q_arch | Q_code | T_in | T_out | T_reason | "
-                       "T_claude | Q/100k T | T je erf. FR | Fehlversuche | Pareto | Hinweis |",
-                       "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+                       "T_claude | Q/100k T | T je erf. FR | Fehlversuche | Ausgänge | Pareto | "
+                       "Hinweis |",
+                       "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
             for e in eintraege:
                 teile = [_fmt(*e.parts[t]) if t in e.parts else "–"
                          for t in ("Q_req", "Q_arch", "Q_code")]
@@ -167,7 +168,7 @@ def markdown(ordner: Path, records: list[dict], *, by: str = "assignment",
                     f"{_tok(e.t_reason, e.estimated)} | {_tok(e.t_claude, e.estimated)} | "
                     f"{_fmt(e.efficiency(exclude_reasoning=exclude_reasoning), None, 2)} | "
                     f"{_fmt(e.tokens_per_fr, None, 0)} | {e.failed_attempts:.1f} | "
-                    f"{pareto_text} | {'nicht unterscheidbar' if e.indistinct else ''} |")
+                    f"{_outcomes(e.records)} | {pareto_text} | {'nicht unterscheidbar' if e.indistinct else ''} |")
             zeilen.append("")
     if filtered:
         zeilen += ["## Gefiltert (Stufenmodell)", ""]
@@ -176,6 +177,14 @@ def markdown(ordner: Path, records: list[dict], *, by: str = "assignment",
     zeilen += ["`*` geschätzte Tokens (Provider ohne Usage). „nicht unterscheidbar“: Abstand zum "
                "besten Eintrag kleiner als die gepoolte Standardabweichung.", ""]
     return "\n".join(zeilen)
+
+
+def _outcomes(records: list[dict]) -> str:
+    """Zahl der Läufe je Ausgang (SPEC-0063 FR-06, CON-0226 INV-07)."""
+    zaehler: dict[str, int] = defaultdict(int)
+    for r in records:
+        zaehler[r.get("outcome", "?")] += 1
+    return ", ".join(f"{n}× {a}" for a, n in sorted(zaehler.items()))
 
 
 def html_report(ordner: Path, records: list[dict], md: str, *, by: str = "assignment") -> str:

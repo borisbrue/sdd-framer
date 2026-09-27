@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+todo.json
+.sdd/evaluations.db
+.sdd/config.local.yaml
+.bench-junit.xml
+.sdd/last-junit.xml

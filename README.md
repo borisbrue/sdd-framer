@@ -408,6 +408,9 @@ Weitere Möglichkeiten (SPEC-0061):
   S3-Anfrage (der Supervisor kann Tasks mit `reopen` erneut öffnen), danach PR und Auto-Merge nach
   Autonomie-Level.
 - **Modelle prüfen:** `sdd config test-llm [--role R | --profile P]`.
+- **Budget (SPEC-0063):** `pipeline.budget.max_tokens`/`max_claude_tokens` oder
+  `--max-tokens`/`--max-claude-tokens` halten einen Run mit Grund `budget` an, sobald die Usage des
+  Runs (Claude-Anteil: Rollen mit `claude-cli`/`anthropic`) die Grenze überschreitet.
 - **Belegung je Run (SPEC-0062):** `--session ROLLE` (mehrfach) setzt Rollen nur für diesen Run in
   den Modus `session`, ohne `config.yaml` zu ändern; `--steps` ersetzt `pipeline.auto_steps` für
   einen Run mit `--auto`. `/sdd-implement` nutzt
@@ -471,6 +474,11 @@ Stufenmodell und ein Budget je Lauf (SPEC-0056). Suite-Arten:
 - **`regen`** entfernt Module aus einem Projekt am festen Commit und lässt sie von der Rolle
   `implementer` aus ihren Unit-Tests neu schreiben; gemessen werden Tests, Architektur- und
   Lint-Gate (`q_kind: quality`). Im sdd-framer-Repo: `bench/suites/regen.yaml`.
+- **`e2e`** setzt ganze Specs eines Fixture-Projekts per `sdd pipeline run --auto` um (Kopie als
+  eigenes Git-Repo, Isolation `dir`) und misst danach mit versteckten Akzeptanztests (FR-Marker im
+  Testnamen, z. B. `test_spec0001_fr02_…`) und `sdd quality measure` (SPEC-0063). Der Blueprint
+  liefert das Fixture `todo-service` (Python-Standardbibliothek, drei Specs mit 3/6/10 FRs);
+  `sdd bench init` legt es mit `bench/suites/e2e.yaml` an.
 
 Jeder Lauf arbeitet in einem temporären Verzeichnis und schreibt einen Record nach
 `bench/results/<ts>/results.jsonl` (lokal). Der Report zeigt je `q_kind` Q ± Streuung, Tokens

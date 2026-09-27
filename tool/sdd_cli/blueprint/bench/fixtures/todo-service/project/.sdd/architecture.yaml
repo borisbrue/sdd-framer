@@ -1,0 +1,23 @@
+# Architekturregeln von todo-service (Format aus SPEC-0054 von sdd-framer).
+# Eine Datei gehört zur ersten Schicht, deren Muster passt (Reihenfolge ist Bedeutung).
+# Jede Regel ist an ein ADR in docs/adr/ gebunden.
+version: 1
+layers:
+  entry:              # Kompositionswurzel: verbindet CLI und Persistenz (ADR-0001)
+    - todo/__init__.py
+    - todo/__main__.py
+  domain: [todo/domain/**]
+  service: [todo/service/**]
+  persistence: [todo/persistence/**]
+  cli: [todo/cli/**]
+rules:
+  - id: ARCH-01
+    adr: ADR-0001
+    kind: allowed_dependencies
+    description: Einstieg → CLI → Service → Domäne; Persistenz → Domäne.
+    graph:
+      entry: [domain, service, persistence, cli]
+      cli: [service, domain]
+      service: [domain]
+      persistence: [domain]
+      domain: []

@@ -87,14 +87,12 @@
                 "$ref": "#/$defs/relpath"
               },
               "to": {
-                "oneOf": [
-                  {
-                    "$ref": "#/$defs/relpath"
-                  },
-                  {
-                    "type": "null"
-                  }
+                "type": [
+                  "string",
+                  "null"
                 ],
+                "minLength": 1,
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(^|/)\\.\\.(/|$)).+$",
                 "description": "import: importierte Datei; write: geschriebener Pfad; call: Datei der aufgerufenen Definition, falls auflösbar. null, wenn nicht auflösbar."
               },
               "kind": {

@@ -10,6 +10,7 @@ from __future__ import annotations
 import ast
 import io
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -46,6 +47,11 @@ class BenchTask:
     """Fester Ablauf; Unterklassen implementieren nur die Hooks."""
 
     q_kind = "quality"
+
+    @classmethod
+    def validate_suite(cls, suite: Suite, root: Path) -> None:
+        """Prüfung vor dem ersten Lauf (Exit 2 über BenchError)."""
+        return None
 
     def __init__(self, config: SddConfig, matrix: Matrix, job: Job, artifacts: Path) -> None:
         self.config, self.matrix, self.job, self.artifacts = config, matrix, job, artifacts
@@ -377,3 +383,229 @@ def jobs_for(suite: Suite, matrix: Matrix, *, only: str | None = None,
                     f"{suite.name}-{a.name}-r{n}"
                 jobs.append(Job(suite, rid, a.name, a.roles, n, {"task": t}))
     return jobs, gefiltert
+
+
+# ── Suite e2e (SPEC-0063, CON-0226) ──────────────────────────────────────────
+
+FR_MARKER = re.compile(r"(?:spec(\d{4})_)?fr(\d+)", re.IGNORECASE)
+
+
+def fr_status(junit: Path) -> tuple[int, int]:
+    """(erfüllte, alle) FRs aus den Markern der Testnamen; erfüllt = alle Tests grün (INV-04)."""
+    if not junit.is_file():
+        return 0, 0
+    try:
+        wurzel = ET.parse(junit).getroot()
+    except ET.ParseError:
+        return 0, 0
+    frs: dict[str, bool] = {}
+    for fall in wurzel.iter("testcase"):
+        treffer = FR_MARKER.search(fall.get("name", ""))
+        if not treffer or fall.find("skipped") is not None:
+            continue
+        spec, nummer = treffer.groups()
+        schluessel = (f"SPEC-{spec}/" if spec else "") + f"FR-{int(nummer):02d}"
+        gruen = fall.find("failure") is None and fall.find("error") is None
+        frs[schluessel] = frs.get(schluessel, True) and gruen
+    return sum(frs.values()), len(frs)
+
+
+@register("e2e")
+class E2ETask(BenchTask):
+    """Ganze Specs eines Fixtures per `sdd pipeline run` (Prozess) umsetzen und messen."""
+
+    q_kind = "quality"
+
+    @classmethod
+    def validate_suite(cls, suite: Suite, root: Path) -> None:
+        from .isolation import strategy
+
+        strategy(str(suite.data.get("isolation", "dir")))
+        fixture = root / str(suite.data["fixture"])
+        if not (fixture / "project").is_dir():
+            raise BenchError(f"Fixture {fixture} ohne project/.")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        from .isolation import strategy
+
+        self.strategy = strategy(str(self.job.suite.data.get("isolation", "dir")))
+        self.fixture = self.config.root / str(self.job.suite.data["fixture"])
+        self.start_sha = ""
+        self.runs: list[tuple[str, int]] = []
+
+    def execute(self) -> dict:
+        # Arbeitsverzeichnis kommt aus der Strategie statt aus mkdtemp (Template Method bleibt).
+        start = time.monotonic()
+        ausgang, fehler, messung = "completed", None, {}
+        self.workspace = None
+        try:
+            self.workspace, self.start_sha = self.strategy.create(self.fixture / "project")
+            self.prepare(self.workspace)
+            self.run(self.workspace)
+            messung = self.measure(self.workspace)
+        except BenchError:
+            raise
+        except Exception as exc:  # Endpunkt weg, Werkzeug fehlt: Ausgang error, Lauf zählt
+            ausgang, fehler = "error", f"{type(exc).__name__}: {exc}"
+        finally:
+            if self.workspace is not None:
+                self._collect_tokens(self.workspace)
+                self.teardown(self.workspace)
+        if self.meter.exceeded and ausgang == "completed":
+            ausgang = "halted: budget"
+        return self.record(ausgang, fehler, messung, int((time.monotonic() - start) * 1000))
+
+    def teardown(self, workspace: Path) -> None:
+        self.strategy.remove(workspace)
+
+    def prepare(self, workspace: Path) -> None:
+        import yaml
+
+        from .config import resolve_profile
+
+        pfad = workspace / ".sdd" / "config.yaml"
+        daten = yaml.safe_load(pfad.read_text(encoding="utf-8")) or {}
+        llm = daten.setdefault("llm", {})
+        profile, rollen = {}, {}
+        projekt_rollen = (self.config.raw.get("llm") or {}).get("roles") or {}
+        for rolle, ref in self.job.roles.items():
+            if ref == CONFIG:
+                if rolle in projekt_rollen:
+                    rollen[rolle] = projekt_rollen[rolle]
+                continue
+            profile[ref] = resolve_profile(self.config, self.matrix, ref)
+            rollen[rolle] = {"profile": ref}
+        rollen.setdefault("supervisor", {})
+        if isinstance(rollen["supervisor"], dict):
+            rollen["supervisor"] = {**rollen["supervisor"], "mode": "inline"}
+        llm["profiles"] = {**(llm.get("profiles") or {}), **profile}
+        llm["roles"] = rollen
+        pfad.write_text(yaml.safe_dump(daten, sort_keys=False, allow_unicode=True),
+                        encoding="utf-8")
+
+    def _pipeline(self, workspace: Path, spec: str) -> int:
+        import os
+
+        import sdd_cli
+
+        budget = self.matrix.budget
+        argv = [sys.executable, "-c", "from sdd_cli.main import cli; cli()", "pipeline", "run",
+                spec, "--auto", "--steps", ""]
+        if budget.get("max_tokens"):
+            rest = max(1, budget["max_tokens"] - self._used(workspace)["tokens"])
+            argv += ["--max-tokens", str(rest)]
+        if budget.get("max_claude_tokens"):
+            rest = max(1, budget["max_claude_tokens"] - self._used(workspace)["claude"])
+            argv += ["--max-claude-tokens", str(rest)]
+        env = {**os.environ, "PYTHONPATH": os.pathsep.join(
+            [str(Path(sdd_cli.__file__).resolve().parents[1]),
+             *filter(None, [os.environ.get("PYTHONPATH")])])}
+        zeitlimit = int(self.job.suite.data.get("run_timeout_seconds", 7200))
+        r = subprocess.run(argv, cwd=workspace, env=env, capture_output=True, text=True,
+                           timeout=zeitlimit)
+        self.artifacts.mkdir(parents=True, exist_ok=True)
+        (self.artifacts / f"pipeline-{spec}.log").write_text(
+            (r.stdout + r.stderr)[-20000:], encoding="utf-8")
+        return r.returncode
+
+    def _budget_halt(self, workspace: Path, spec: str) -> bool:
+        for state in (workspace / ".sdd" / "runs" / spec).glob("*/state.json"):
+            if json.loads(state.read_text(encoding="utf-8")).get("budget_halt"):
+                return True
+        return False
+
+    def run(self, workspace: Path) -> None:
+        for spec in self.job.suite.data["specs"]:
+            code = self._pipeline(workspace, spec)
+            self.runs.append((spec, code))
+            if self._budget_halt(workspace, spec):
+                self.meter.exceeded = True
+                break
+
+    def _usage_rows(self, workspace: Path) -> list[tuple]:
+        import sqlite3
+
+        db = workspace / ".sdd" / "evaluations.db"
+        if not db.is_file():
+            return []
+        try:
+            with sqlite3.connect(db) as con:
+                return con.execute(
+                    "SELECT component, COALESCE(input_tokens,0), COALESCE(output_tokens,0), "
+                    "COALESCE(reasoning_tokens,0), source, server_model FROM token_usage "
+                    "WHERE component LIKE 'role:%'").fetchall()
+        except sqlite3.Error:
+            return []
+
+    def _used(self, workspace: Path) -> dict[str, int]:
+        claude = {r for r, b in self.bindings().items() if b.get("provider") in CLAUDE_PROVIDERS}
+        gesamt = claude_n = 0
+        for komponente, ein, aus, _, _, _ in self._usage_rows(workspace):
+            gesamt += ein + aus
+            if komponente.removeprefix("role:") in claude:
+                claude_n += ein + aus
+        return {"tokens": gesamt, "claude": claude_n}
+
+    def _collect_tokens(self, workspace: Path) -> None:
+        from .meter import RoleTokens
+
+        for komponente, ein, aus, denk, quelle, modell in self._usage_rows(workspace):
+            rolle = komponente.removeprefix("role:")
+            t = self.meter.tokens.setdefault(rolle, RoleTokens())
+            t.calls += 1
+            t.input += ein
+            t.output += aus
+            t.reasoning += denk
+            if quelle in ("estimated", "unavailable") or (ein == 0 and aus == 0):
+                t.estimated = True
+            if modell:
+                self.meter.server_models[rolle] = modell
+
+    def measure(self, workspace: Path) -> dict:
+        overlay_dir = self.fixture / "hidden"
+        if overlay_dir.is_dir():
+            from ..pipeline.checks import overlay as copy_over
+
+            copy_over(overlay_dir, workspace)
+        junit = workspace / ".bench-junit.xml"
+        befehl = str(self.job.suite.data["test_command"]).format(python=sys.executable,
+                                                                 junit=str(junit))
+        try:
+            subprocess.run(befehl, shell=True, cwd=workspace, capture_output=True, text=True,
+                           timeout=int(self.job.suite.data.get("timeout_seconds", 900)))
+        except subprocess.TimeoutExpired:
+            pass
+        erfuellt, gesamt = fr_status(junit)
+        q_req = erfuellt / gesamt if gesamt else 0.0
+        q_arch, q_code = self._quality(workspace)
+        gewichte = {**DEFAULT_WEIGHTS, **(self.job.suite.data.get("weights") or {})}
+        teile = {"requirements": q_req, "architecture": q_arch, "code_quality": q_code}
+        vorhanden = {k: v for k, v in teile.items() if v is not None and gewichte.get(k)}
+        summe = sum(gewichte[k] for k in vorhanden)
+        q = sum(gewichte[k] * v for k, v in vorhanden.items()) / summe if summe else None
+        return {"Q": None if q is None else round(q, 4), "Q_req": round(q_req, 4),
+                "Q_arch": q_arch, "Q_code": q_code, "frs_total": gesamt, "frs_met": erfuellt}
+
+    def _quality(self, workspace: Path) -> tuple[float | None, float | None]:
+        try:
+            from ..quality.measure import measure
+
+            report = measure(workspace, base_ref=self.start_sha).report
+        except Exception:  # fehlende Sonde oder Konfiguration: Teilscores entfallen (Edge Case)
+            return None, None
+        kinder = {k.get("name"): k.get("score") for k in report.get("tree", {}).get(
+            "children", [])}
+        return kinder.get("architecture"), kinder.get("code_quality")
+
+    def defaults(self) -> dict:
+        return {"task": ",".join(self.job.suite.data.get("specs", [])), "Q_req": None,
+                "Q_arch": None, "Q_code": None, "frs_total": 0, "frs_met": 0,
+                "attempts": len(self.runs),
+                "failed_attempts": sum(1 for _, c in self.runs if c != 0),
+                "git_sha": self.start_sha or None}
+
+    def bindings(self) -> dict[str, dict]:
+        cfg = overlay(self.config, self.matrix, self.job.roles)
+        return {r: _binding_info(cfg, r, ref) for r, ref in self.job.roles.items()
+                if ref != CONFIG}
