@@ -25,7 +25,7 @@ Die Szenarien im Artifact (`.sdd/contracts/behavior/stack-apply-extract-init-sta
 ## Invarianten
 
 - **INV-01:** `apply` schreibt neue Dateien, lässt gleiche unberührt und legt für abweichende `<datei>.new` an (mit Diff in der Ausgabe); nichts wird überschrieben. Danach steht ein Eintrag nach CON-0227 in `stack:` (bestehender Eintrag derselben Vorlage wird ersetzt). Ein zweites `apply` derselben Version ändert keine Datei.
-- **INV-02:** AGENTS.md-Abschnitte stehen zwischen `<!-- sdd-stack:NAME:ABSCHNITT -->` und `<!-- /sdd-stack:NAME:ABSCHNITT -->`; vorhandene Abschnitte werden ersetzt, neue angehängt, der übrige Text bleibt byte-gleich. Fehlt AGENTS.md, wird sie mit den Abschnitten angelegt.
+- **INV-02:** AGENTS.md-Abschnitte stehen zwischen `<!-- sdd-stack:NAME:ABSCHNITT -->` und `<!-- /sdd-stack:NAME:ABSCHNITT -->`; vorhandene Abschnitte werden ersetzt, neue angehängt, der übrige Text bleibt byte-gleich; Pflichtabschnitte nach CON-0011 werden nie verändert. Fehlt AGENTS.md, wird sie mit den Abschnitten angelegt, und `sdd validate` meldet fehlende Pflichtabschnitte wie bisher.
 - **INV-03:** Platzhalterwerte: `--set` vor gespeicherten Werten vor Default; `project_name` ist ohne Angabe der Projekttitel. Fehlt ein Wert im nicht interaktiven Modus: Exit 2 vor dem Schreiben.
 - **INV-04:** Vorlagen aus Projekt- oder Nutzerquelle zeigen vor dem Schreiben die Dateiliste mit Diff und schreiben nur nach Bestätigung oder mit `--yes`; `--dry-run` zeigt dasselbe und schreibt nie. Beim Anwenden wird kein Befehl der Vorlage ausgeführt; fehlende Werkzeuge ergeben eine Warnung.
 - **INV-05:** `--only quality` wendet nur `.sdd/quality.yaml` und `.sdd/quality/**` an.

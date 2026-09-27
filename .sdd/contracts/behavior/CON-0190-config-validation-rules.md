@@ -4,7 +4,7 @@ title: Config-Validierungsregeln – Pflichtfelder, Provider-Enum, Provider-Kons
 type: behavior
 format: gherkin
 spec: SPEC-0052
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: contracts/behavior/con-0190-config-validation-rules.feature
 tests:
@@ -48,3 +48,7 @@ pytest-behave-Test abgedeckt sein.
 Neue Regelgruppe `quality` (Level `error`): ungültige `quality.gates`, negative Gewichte,
 `quality.architecture.threshold ≤ 0`, unbekannter `quality.finalize`-Modus sowie Schemaverstöße
 einer vorhandenen `.sdd/quality.yaml` (Pfad `quality.yaml:<feldpfad>`) – CON-0196 INV-07.
+
+## Erweiterung durch SPEC-0057
+
+Regelgruppe `stack`: `stack:` ist eine Liste; jeder Eintrag erfüllt `$defs/entry` aus CON-0227 (Name, Version, Quelle, Datei-Hashes). Verstöße sind Fehler von `sdd config validate` mit Exit-Semantik nach CON-0191.

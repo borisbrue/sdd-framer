@@ -1,0 +1,251 @@
+{
+  "spec_id": "SPEC-0057",
+  "generated_at": "2026-09-27T16:14:23Z",
+  "new_contracts": [
+    "CON-0227",
+    "CON-0228",
+    "CON-0229"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0057-001",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0227 sagt: 'sdd config validate meldet ungültige Einträge' unter `stack:`. CON-0190 kennt aber keine Regelgruppe `stack`. Anders als bei SPEC-0054 (Abschnitt 'Erweiterung durch SPEC-0054' für `quality`) fehlt ein Erweiterungsabschnitt. Damit ist offen, ob ein ungültiger stack-Eintrag als error (Exit 1) oder als warning (Exit 0) gilt und wie der Pfad im Issue aussieht (z. B. `stack[0].files.<pfad>`).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0190 um Regelgruppe stack erweitert (Vermerk).",
+        "resolved_at": "2026-09-27T16:17:45Z"
+      }
+    },
+    {
+      "id": "CF-0057-002",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0191",
+      "detail": "Das Ausgabeformat `{level, path, message}` und die Exit-Semantik für stack-Befunde sind in CON-0191 nicht beschrieben. Für `quality` gibt es einen solchen Abschnitt. Außerdem gilt in CON-0191 INV-01 nur Exit 0/1. CON-0227 legt für `sdd stack list|apply` bei ungültigen Vorlagen Exit 2 fest. Das sind zwar andere Befehle, aber dieselbe Schema-Verletzung endet dann je nach Befehl mit einem anderen Exit-Code. Das sollte ausdrücklich abgegrenzt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0190-Vermerk: Exit-Semantik nach CON-0191 für config validate; stack-Befehle nutzen Exit 2 für ungültige Eingaben wie andere Befehle.",
+        "resolved_at": "2026-09-27T16:17:46Z"
+      }
+    },
+    {
+      "id": "CF-0057-003",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 ist der Schema-Contract für config.yaml. CON-0227 führt dort den neuen Top-Level-Schlüssel `stack:` ein (immer eine Liste, INV-04), CON-0016 wird aber nicht erweitert. Lehnt das config.yaml-Schema unbekannte Schlüssel ab oder meldet es sie, würde eine Konfiguration mit `stack:`-Einträgen abgewiesen. Außerdem gäbe es zwei Quellen der Wahrheit für die config.yaml-Struktur.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "config.yaml lehnt unbekannte Top-Level-Schlüssel nicht ab; die Prüfung von stack: steht in CON-0190 (Erweiterung).",
+        "resolved_at": "2026-09-27T16:17:47Z"
+      }
+    },
+    {
+      "id": "CF-0057-004",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0106",
+      "detail": "CON-0106 beschreibt config.yaml-Sektionen (`llm_pool`, `docker`) als JSON-Schema. CON-0227 definiert mit `$defs/entry` eine weitere config.yaml-Sektion in einem eigenen Schema-Artefakt. Es ist nicht festgelegt, ob das Gesamt-Schema `$defs/entry` per `$ref` einbindet oder ob `stack` in einer separaten Datei getrennt validiert wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "stack: wird wie quality eigenständig geprüft (CON-0227 $defs/entry), ohne Gesamtschema.",
+        "resolved_at": "2026-09-27T16:17:47Z"
+      }
+    },
+    {
+      "id": "CF-0057-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0011",
+      "detail": "Laut INV-01 können Vorlagen optional `agents-md/*.md` mitbringen, die in AGENTS.md landen. CON-0011 legt Struktur und Vollständigkeit von AGENTS.md fest, die `sdd validate` prüft. Wo die Fragmente eingefügt werden, ob sie Pflichtabschnitte berühren dürfen und ob ein mehrfaches `apply` Abschnitte doppelt anlegt, beschreibt keiner der beiden Contracts.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0229 INV-02: Pflichtabschnitte nach CON-0011 bleiben unberührt.",
+        "resolved_at": "2026-09-27T16:17:48Z"
+      }
+    },
+    {
+      "id": "CF-0057-006",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0227",
+      "conflicting_contract": "CON-0069",
+      "detail": "Der Begriff 'Stack' ist schon belegt: CON-0069 meint damit den Compose-Stack (`sdd dev up/down`, `docker.compose_file`). CON-0227 verwendet 'stack' für Technologie-Vorlagen und legt dafür den config-Schlüssel `stack:` und das Kommando `sdd stack` an. Einen Kommando-Konflikt gibt es nicht, aber in Doku und Fehlermeldungen können die beiden Bedeutungen verwechselt werden. Ein Glossar-Eintrag würde das trennen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Begriff im Kontext eindeutig: sdd dev für den Container-Stack, sdd stack für Vorlagen.",
+        "resolved_at": "2026-09-27T16:17:49Z"
+      }
+    },
+    {
+      "id": "CF-0057-007",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0228",
+      "conflicting_contract": "CON-0069",
+      "detail": "CON-0069 (dev-stack-lifecycle) uses the term 'stack' for the container dev stack (`sdd dev …`). CON-0228 uses 'stack' for project templates (`.sdd/stacks/`, `sdd stack list/show/verify/diff`). The behaviours don't contradict each other, but the shared term can make users and agents confuse the two commands. CON-0228 should state that stack templates are not the dev container stack.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Wie CF-0057-006.",
+        "resolved_at": "2026-09-27T16:17:50Z"
+      }
+    },
+    {
+      "id": "CF-0057-008",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0228",
+      "conflicting_contract": "CON-0016",
+      "detail": "INV-01 adds a user source for stacks (`~/.config/sdd/stacks/`, overridable with `SDD_STACKS_HOME`). The config.yaml schema contract (CON-0016) has no matching setting, and nothing says whether `config.yaml` can change or turn off the source order. If that is intentional, CON-0228 should say that only the environment variable controls it.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Quellenreihenfolge ist fest (CON-0228 INV-01); SDD_STACKS_HOME ist nur für Tests und abweichende Nutzerverzeichnisse.",
+        "resolved_at": "2026-09-27T16:17:51Z"
+      }
+    },
+    {
+      "id": "CF-0057-009",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0228",
+      "conflicting_contract": "CON-0191",
+      "detail": "CON-0228 INV-02 uses exit code 2 for an unknown stack name. CON-0191 (sdd config validate) sets its own exit codes for validation failures. If `stack verify` failures and the unknown-name case don't follow the same exit-code scheme, CLI behaviour becomes inconsistent. The verify case should be spelled out: exit 1 for failed checks, exit 2 for usage or lookup errors.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Exit 2 für ungültige Eingaben, 1 für gescheiterte Prüfung entspricht der CLI-Konvention.",
+        "resolved_at": "2026-09-27T16:17:52Z"
+      }
+    },
+    {
+      "id": "CF-0057-010",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0197",
+      "detail": "CON-0197 says 'sdd quality init --preset NAME' copies a preset from presets/quality/<name>/ into the project and ends with exit 0. The .feature scenarios 'init kopiert ein Preset ins Projekt' and 'init überschreibt keine vorhandene Datei' with '--preset python' say the same. CON-0229 INV-08 says the same call does nothing, points to 'sdd stack apply python-cli --only quality', ends with exit 1, and removes blueprint/presets/quality/. CON-0197's exit-code table and its 'Preset' glossary entry also contradict this. CON-0197 (and its tests, e.g. tests/unit/test_cli_quality_init.py, tests/acceptance/test_con_0197.py) must be updated in the same PR, otherwise the contract tests are guaranteed to fail.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0197 um Vermerk ergänzt; init-Szenarien und Tests werden in der Umsetzung auf den Verweis umgestellt.",
+        "resolved_at": "2026-09-27T16:17:53Z"
+      }
+    },
+    {
+      "id": "CF-0057-011",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0192",
+      "detail": "CON-0192 says .sdd/quality.yaml is written only by 'sdd quality init' (as a preset copy or .new), and its example contains 'preset: python'. CON-0229 INV-01/INV-05 adds 'sdd stack apply' (incl. --only quality) as a second writer, and 'sdd stack extract' also produces a quality.yaml. It is unclear whether the 'preset' field stays, becomes obsolete, or should point to the stack template. The writer statement and the example in CON-0192 need to be adjusted.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0192 um Vermerk zu weiteren Schreibern ergänzt.",
+        "resolved_at": "2026-09-27T16:17:53Z"
+      }
+    },
+    {
+      "id": "CF-0057-012",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0229 INV-01 and the scenario 'Neues Projekt mit Vorlage' write a new top-level key 'stack:' (entries per CON-0227, with version and file hashes) into config.yaml. CON-0016 (config.yaml schema) does not know this key. If the schema forbids unknown keys, the written config fails validation.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Wie CF-0057-003.",
+        "resolved_at": "2026-09-27T16:17:54Z"
+      }
+    },
+    {
+      "id": "CF-0057-013",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0190 treats schema violations in config.yaml as validation errors. As long as the config schema has no 'stack:' key (CON-0227 format), 'sdd config validate' (CON-0191) would reject a project right after 'sdd init --stack' or 'sdd stack apply'. CON-0190 or the schema must accept 'stack:' and ideally check it against CON-0227.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0190-Erweiterung: config validate kennt stack:.",
+        "resolved_at": "2026-09-27T16:17:55Z"
+      }
+    },
+    {
+      "id": "CF-0057-014",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0011",
+      "detail": "CON-0229 INV-02 inserts AGENTS.md sections between '<!-- sdd-stack:NAME:ABSCHNITT -->' markers or creates AGENTS.md from scratch. CON-0011 defines required sections of AGENTS.md and treats sections containing only '<!-- ... -->' comments as empty. It is unclear whether an AGENTS.md created only from stack sections satisfies CON-0011's required sections, and whether the marker comments count toward 'empty'. It needs to be settled which contract governs the structure of a freshly created AGENTS.md.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0229 INV-02 präzisiert das Verhältnis zu CON-0011.",
+        "resolved_at": "2026-09-27T16:17:56Z"
+      }
+    },
+    {
+      "id": "CF-0057-015",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0229",
+      "conflicting_contract": "CON-0102",
+      "detail": "'sdd init --stack' (INV-06) and the placeholder resolution (INV-03: --set, stored values, defaults, project_name) overlap with the guided setup in CON-0102 (config wizard). It is unclear whether wizard values count as 'stored values' in INV-03, and in what order init, wizard and apply run.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der Config-Wizard setzt keine Platzhalterwerte; gespeicherte Werte sind nur die aus stack:.",
+        "resolved_at": "2026-09-27T16:17:57Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 15,
+    "high": 1,
+    "medium": 6,
+    "low": 8,
+    "affected_specs_count": 0
+  }
+}
