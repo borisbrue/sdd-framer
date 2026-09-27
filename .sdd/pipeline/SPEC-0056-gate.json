@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0056",
-  "pipeline_phase": "spec-review",
+  "pipeline_phase": "contracts-review",
   "phase_history": [
     {
       "phase": "spec-draft",
@@ -11,6 +11,29 @@
       "phase": "spec-review",
       "completed_at": "2026-09-27T07:54:30Z",
       "result": "ok"
+    },
+    {
+      "phase": "contracts-proposed",
+      "completed_at": "2026-09-27T11:51:43Z",
+      "result": "ok",
+      "proposed": [
+        "CON-0221",
+        "CON-0222",
+        "CON-0223",
+        "CON-0224"
+      ]
+    },
+    {
+      "phase": "contracts-draft",
+      "completed_at": "2026-09-27T11:51:45Z",
+      "result": "ok"
+    },
+    {
+      "phase": "contracts-review",
+      "completed_at": "2026-09-27T11:53:47Z",
+      "result": "ok",
+      "conflicts_found": 17,
+      "conflicts_high": 3
     }
   ],
   "blocking_issues": [],

@@ -25,7 +25,7 @@ Das Schema im Artifact ist verbindlich; `sdd bench run` lehnt ungültige Dateien
 ## Invarianten
 
 - **INV-01:** Eine Belegung ordnet Rollen einen Profilnamen aus `llm.profiles` zu, optional mit Variante (`profil@variante`); `*` gilt für alle nicht genannten Rollen der Pipeline. Der Profilname `claude` ist kein Sonderfall, sondern ein normales Profil (z. B. `provider: claude-cli`).
-- **INV-02:** Eine Variante ist ein Satz Profil-Parameter (CON-0212), der die Parameter des Profils überschreibt. Unbekannte Profile oder Varianten sind Fehler.
+- **INV-02:** Eine Variante ist ein Satz Profil-Parameter (CON-0212), der die Parameter des Profils überschreibt. Unbekannte Profile oder Varianten sind Fehler. Die Variante wirkt nur im Benchmark; in `config.yaml` entsteht daraus nie eine Rollenbelegung mit `profile` und eigenen Parametern zugleich (CON-0212 INV-01, siehe CON-0224 INV-07).
 - **INV-03:** `sweep` erzeugt je Profil eine Belegung `sweep-<profil>` (Rolle aus `sweep.role` mit dem Profil, übrige Rollen aus der ersten Belegung bzw. der Config). Belegungen haben eindeutige Namen.
 - **INV-04:** Eine Suite nennt `kind`; `sdd bench run` findet die Suite-Art über eine Registry (unbekannte Art: Exit 2). `kind: regen` verlangt `commit`, `test_command` und `tasks` mit Modul und Unit-Tests; `kind: roles` nennt optional `roles` (Default alle fünf Pipeline-Rollen) und `runs`.
 - **INV-05:** `budget.max_tokens` und `budget.max_claude_tokens` gelten je Lauf; `T_claude` zählt die Tokens aller Rollen mit Provider `claude-cli` oder `anthropic`.

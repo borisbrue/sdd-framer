@@ -1,0 +1,283 @@
+{
+  "spec_id": "SPEC-0056",
+  "generated_at": "2026-09-27T11:53:47Z",
+  "new_contracts": [
+    "CON-0221",
+    "CON-0222",
+    "CON-0223",
+    "CON-0224"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0056-001",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0221",
+      "conflicting_contract": "CON-0212",
+      "detail": "CON-0212 INV-01 verlangt für eine Rollenbelegung entweder `profile` oder eigene Parameter mit `provider`; das Negativbeispiel wertet `profile` und `provider` zugleich als Fehler. CON-0221 INV-02 definiert `profil@variante` als Profil plus überschreibende Profil-Parameter, also genau diese Kombination. Offen ist, ob eine aus Variante erzeugte Belegung die Validierung aus CON-0212/CON-0190 (`sdd config validate`) bestehen muss oder als eigenes, zusammengeführtes Profil gilt. CON-0221 sollte festlegen, dass die Variante vor der Belegung zu einem vollständigen Profil zusammengeführt wird und die Belegung danach CON-0212 INV-01 erfüllt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0221 INV-02 und CON-0224 INV-07: Varianten nur im Benchmark; apply-roles legt abgeleitete Profile an.",
+        "resolved_at": "2026-09-27T11:58:18Z"
+      }
+    },
+    {
+      "id": "CF-0056-002",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0222",
+      "conflicting_contract": "CON-0121",
+      "detail": "CON-0222 INV-01 records tokens per role, plus T_in/T_out/T_reason/T_claude and the duration, for each run. CON-0121 already defines a token-history schema per task. That leaves two places that persist token usage without any stated mapping between them. If `sdd token-history` and `bench report` count different things, their numbers can differ for the same run. CON-0222 should state whether bench records reuse the token-history data or collect it separately, and how the token fields map onto each other.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bench-Records und Token-History sind getrennte Sichten auf dieselbe Usage-Erfassung (SPEC-0060), CON-0222 INV-03.",
+        "resolved_at": "2026-09-27T11:58:19Z"
+      }
+    },
+    {
+      "id": "CF-0056-003",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0222",
+      "conflicting_contract": "CON-0129",
+      "detail": "CON-0129 adds `agent_type` and `model` to token history. CON-0222 describes a role's assignment differently: role, profile, provider, model, parameters, reported model name, endpoint and role version. `agent_type` and 'role' are not aligned, and nothing says which of `model` and 'reported model name' is authoritative. Joining records from the two schemas, as `compare` would need to, is therefore ambiguous.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Record nennt Rolle, Profil, Modell und gemeldetes Modell; die Token-History bleibt unverändert.",
+        "resolved_at": "2026-09-27T11:58:20Z"
+      }
+    },
+    {
+      "id": "CF-0056-004",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0222",
+      "conflicting_contract": "CON-0022",
+      "detail": "INV-01 makes the per-role token counts and T_in, T_out, T_reason and T_claude mandatory. The CompletionProvider interface does not guarantee usage data: the default `claude-cli` provider returns `usage: None`, and a reasoning-token count (T_reason) is not part of the interface at all. Under the contract as written, a keyless run would either produce invalid records or have to fill in fake zeros. CON-0222 should allow `null` or 'unknown' as a value, or CON-0022 should require providers to report usage.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0222 INV-03: ohne Usage geschätzt (estimated), fehlende Reasoning-Tokens zählen 0.",
+        "resolved_at": "2026-09-27T11:58:21Z"
+      }
+    },
+    {
+      "id": "CF-0056-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0222",
+      "conflicting_contract": "CON-0023",
+      "detail": "The assignment block in CON-0222 relies on the concepts profile, role and role version, and on the fields 'parameters' and 'endpoint'. The unified LLM configuration schema in CON-0023 defines provider and model, but it has no role profiles and no role versions. Without a contract that defines those concepts, the values of these mandatory fields are not specified.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Profile, Rollenbelegung und Rollenversion sind in CON-0199/CON-0212 definiert.",
+        "resolved_at": "2026-09-27T11:58:22Z"
+      }
+    },
+    {
+      "id": "CF-0056-006",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0222",
+      "conflicting_contract": "CON-0064",
+      "detail": "INV-02 allows `holdout_Q` in records under `bench/results/<ts>/results.jsonl`. The run-artifact path from INV-01 can also point to material produced from holdout runs. CON-0064 and CON-0009 require holdouts to stay isolated from the implementing agent. CON-0222 does not say that `holdout_Q` may only be an aggregate with no case details, or that the results directory is outside what agents can read. Without that, holdout information can reach agents through bench records.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0222 INV-02: holdout_Q nur als Aggregat, Artefakte ohne Holdout-Details.",
+        "resolved_at": "2026-09-27T11:58:23Z"
+      }
+    },
+    {
+      "id": "CF-0056-007",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0223",
+      "conflicting_contract": "CON-0121",
+      "detail": "The Budget scenario requires measured token counts (halted: budget above budget.max_tokens, with the measured count stored in the record). The claude-cli provider returns usage: None, which is why token history stays at zero today. The contract does not say what the budget check does when usage is unknown: skip the check, fail the run, or estimate. Under the default keyless setup the budget would never trigger.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0223 INV-05: Budget zählt gemeldete, sonst geschätzte Tokens.",
+        "resolved_at": "2026-09-27T11:58:24Z"
+      }
+    },
+    {
+      "id": "CF-0056-008",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0223",
+      "conflicting_contract": "CON-0064",
+      "detail": "The regen suite brings its own hiding of tests ('no prompt to implementer contains the marker'). The roles suite promises records 'without holdout IDs'. Both overlap with the existing holdout isolation. The contract does not say whether bench reuses the HOL mechanism or builds a second one. Two separate mechanisms can drift apart, for example if a holdout ID ends up in a prompt through the regen path.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "regen verbirgt ein entferntes Modul (kein HOL-Szenario); roles nutzt die Holdout-Isolation aus SPEC-0055 unverändert.",
+        "resolved_at": "2026-09-27T11:58:24Z"
+      }
+    },
+    {
+      "id": "CF-0056-009",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0223",
+      "conflicting_contract": "CON-0009",
+      "detail": "INV-01 allows writes only under bench/results/<ts>/, and .sdd/ must be byte-identical afterwards. CON-0009 fixes a holdout directory structure. It is unclear whether bench reads holdout data from there, or copies it into the temporary directory and so moves it out of HOL isolation.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0223 INV-03: Holdout-Fälle liest nur der Eval-Prozess, nichts wird kopiert.",
+        "resolved_at": "2026-09-27T11:58:25Z"
+      }
+    },
+    {
+      "id": "CF-0056-010",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0223",
+      "conflicting_contract": "CON-0106",
+      "detail": "The 'Invalid matrix' scenario (exit 2) checks profiles against llm.profiles. CON-0106 and CON-0023 describe llm_pool and a unified provider config but no llm.profiles section. Either the schema reference is missing or a config extension is not specified.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.profiles ist in CON-0212 definiert (llm_pool abgelöst, SPEC-0058).",
+        "resolved_at": "2026-09-27T11:58:26Z"
+      }
+    },
+    {
+      "id": "CF-0056-011",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0223",
+      "conflicting_contract": "CON-0191",
+      "detail": "An invalid profile in matrix.yaml gives exit code 2 here. CON-0191/CON-0190 set their own exit codes for config validation errors, including provider consistency. If sdd config validate reports the same missing profile with a different code, the CLI error semantics are inconsistent.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Exit 2 für ungültige Eingaben entspricht der CLI-Konvention; config validate bleibt unverändert.",
+        "resolved_at": "2026-09-27T11:58:27Z"
+      }
+    },
+    {
+      "id": "CF-0056-012",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0104",
+      "detail": "CON-0104 legt die Befehlsgruppe 'sdd config' fest (set/get/show/validate). CON-0224 fügt 'sdd config apply-roles' hinzu, das ebenfalls in config.yaml schreibt. Keiner der beiden Contracts regelt, ob apply-roles denselben Schreibpfad nutzt (Kommentare erhalten, atomar schreiben) oder ob danach automatisch 'config validate' läuft. Das Verhalten der Gruppe kann so auseinanderlaufen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0224 INV-07: Schreibweg zeilenbasiert wie die Config-Migration (SPEC-0062), Prüfung vor dem Schreiben.",
+        "resolved_at": "2026-09-27T11:58:28Z"
+      }
+    },
+    {
+      "id": "CF-0056-013",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0106",
+      "detail": "CON-0224 schreibt Profile unter 'llm.roles' in config.yaml. CON-0106 beschreibt das config.yaml-Schema für llm_pool und docker, kennt aber keinen Schlüssel 'llm.roles'. Wenn das Schema nicht erweitert wird, lehnt Schema-Validierung das Ergebnis von apply-roles ab oder lässt es ungeprüft durch. Außerdem muss geklärt werden, ob Rollen-Profile auf Einträge in llm_pool verweisen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "llm.roles ist in CON-0199/CON-0212 definiert; CON-0106 (llm_pool) ist durch SPEC-0058 abgelöst.",
+        "resolved_at": "2026-09-27T11:58:29Z"
+      }
+    },
+    {
+      "id": "CF-0056-014",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0190 legt Pflichtfelder, die erlaubten Provider-Werte und die Provider-Konsistenz fest. CON-0224 regelt nicht, ob die übernommenen Profile vor dem Schreiben gegen diese Regeln geprüft werden. Ein Profil mit unbekanntem Provider oder unbekanntem server_model könnte in config.yaml landen, obwohl 'sdd config validate' die Datei danach ablehnt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0224 INV-07: Prüfung mit den Regeln von config validate (CON-0190) vor dem Schreiben.",
+        "resolved_at": "2026-09-27T11:58:30Z"
+      }
+    },
+    {
+      "id": "CF-0056-015",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0023 beschreibt das einheitliche llm-Konfigurationsschema. CON-0224 setzt einen Unterschlüssel 'llm.roles' mit Profilen je Rolle voraus. Welche Felder ein Profil hat (provider, model, base_url, reasoning, …) und wie es sich zum Provider auf oberster Ebene verhält (wer gewinnt), ist in CON-0023 nicht festgelegt. Das Risiko: widersprüchliche Provider-Auflösung.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Profilfelder und Vorrang regelt CON-0212 INV-01/02.",
+        "resolved_at": "2026-09-27T11:58:30Z"
+      }
+    },
+    {
+      "id": "CF-0056-016",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0016",
+      "detail": "CON-0016 ist der allgemeine Schema-Contract für config.yaml. CON-0224 verlangt, dass apply-roles 'übrige Einträge und Kommentare unverändert' lässt. Das setzt Round-Trip-YAML voraus, etwa ruamel. CON-0016 und die übrigen config-Contracts legen das nicht fest, und mit PyYAML gehen Kommentare verloren.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0224 INV-07: zeilenbasiertes Schreiben erhält Kommentare, kein Round-Trip-YAML nötig.",
+        "resolved_at": "2026-09-27T11:58:31Z"
+      }
+    },
+    {
+      "id": "CF-0056-017",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0224",
+      "conflicting_contract": "CON-0129",
+      "detail": "CON-0224 wertet T_in, T_out, T_reason und T_claude sowie Effizienzwerte aus und markiert geschätzte Tokens (estimated: true). CON-0129/CON-0121 beschreiben die Token-History mit agent_type und model, sehen aber weder T_reason noch ein estimated-Flag vor. Unter dem claude-cli-Provider ist 'usage' außerdem None. Die Herkunft der Bench-Tokens ist also gegenüber der Token-History nicht geregelt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "T_reason und estimated gehören nur zum Bench-Record; die Token-History bleibt unverändert.",
+        "resolved_at": "2026-09-27T11:58:32Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 17,
+    "high": 3,
+    "medium": 11,
+    "low": 3,
+    "affected_specs_count": 0
+  }
+}
