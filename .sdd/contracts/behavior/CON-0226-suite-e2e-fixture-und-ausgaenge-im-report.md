@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0063
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/suite-e2e-fixture-und-ausgaenge-im-report.feature"
 tests: ["TST-0255"]
 ---
 
 # Contract: Suite e2e, Fixture und Ausgänge im Report
 
-> **Spec:** SPEC-0063 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0063 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0063",
-  "generated_at": "2026-09-27T12:59:05Z",
+  "generated_at": "2026-09-27T13:01:46Z",
   "new_contracts": [
     "CON-0225",
     "CON-0226"
@@ -159,6 +159,51 @@
         "action": "acknowledged",
         "reason": "Das Suite-Schema steht in CON-0221 (SPEC-0056); CON-0226 INV-01 erweitert es additiv.",
         "resolved_at": "2026-09-27T13:01:25Z"
+      }
+    },
+    {
+      "id": "CF-0063-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "FR-01",
+      "conflicting_contract": "SPEC-0011:Zielsetzung (Überraschungsschutz/Budget)",
+      "detail": "SPEC-0011 plant ein konfiguriertes Token-Budget, das vor dem Start warnt, und SPEC-0063 FR-01 führt ein allgemeines Token-Budget für Pipeline-Runs ein, das den Run anhält. Konfigurationsschlüssel und Semantik (Warnung vorab oder Abbruch mit Grund `budget`) sollten zusammengeführt oder klar voneinander abgegrenzt werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Getrennte Zwecke und Schlüssel: estimation.cost.budget_alert_usd warnt vor dem Lauf in USD, pipeline.budget hält einen Run nach Tokens.",
+        "resolved_at": "2026-09-27T13:02:09Z"
+      }
+    },
+    {
+      "id": "CF-0063-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Architektur (Proxy: hidden/)",
+      "conflicting_contract": "SPEC-0004:Holdout/Evaluation",
+      "detail": "Die versteckten Akzeptanztests unter `hidden/` lösen dasselbe Problem wie die Holdout-Szenarien aus SPEC-0004, nämlich Tests, die der Implementierer nicht sieht. Es sollte festgehalten werden, ob der Pipeline-Schritt `holdout` im e2e-Lauf ebenfalls läuft oder bewusst ausgeschlossen ist, damit die Bewertung nicht doppelt erfolgt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "hidden/ ist bench-intern; der Pipeline-Schritt holdout läuft im e2e-Lauf nicht (--steps leer).",
+        "resolved_at": "2026-09-27T13:02:10Z"
+      }
+    },
+    {
+      "id": "CF-0063-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterien (versteckte Akzeptanztests)",
+      "conflicting_contract": "SPEC-0006:Zielsetzung (sdd test-run)",
+      "detail": "Die Auswertung der versteckten Akzeptanztests mit FR-Markern ähnelt der spec-bezogenen Testausführung aus SPEC-0006 (`sdd test-run`). Hier ist zu prüfen, ob der e2e-Benchmark `sdd test-run` wiederverwendet oder eine eigene Auswertung braucht.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Messung läuft im isolierten Arbeitsverzeichnis mit JUnit und FR-Markern; sdd test run arbeitet auf dem Projekt.",
+        "resolved_at": "2026-09-27T13:02:10Z"
       }
     }
   ],

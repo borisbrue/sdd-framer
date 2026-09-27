@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0063
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/pipeline-budget.feature"
 tests: ["TST-0254"]
 ---
 
 # Contract: Pipeline-Budget
 
-> **Spec:** SPEC-0063 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0063 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

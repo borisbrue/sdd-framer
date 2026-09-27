@@ -2,7 +2,7 @@
 id: SPEC-0063
 title: "Benchmark-Suite e2e: Fixture-Projekt mit ganzen Pipeline-Runs"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-27
 updated: 2026-09-27
@@ -28,7 +28,7 @@ fr_test_map:
 
 # Benchmark-Suite e2e: Fixture-Projekt mit ganzen Pipeline-Runs
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** approved · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
