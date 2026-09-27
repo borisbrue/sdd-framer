@@ -1,6 +1,6 @@
 {
   "spec_id": "SPEC-0057",
-  "generated_at": "2026-09-27T16:14:23Z",
+  "generated_at": "2026-09-27T16:18:26Z",
   "new_contracts": [
     "CON-0227",
     "CON-0228",
@@ -238,6 +238,36 @@
         "action": "acknowledged",
         "reason": "Der Config-Wizard setzt keine Platzhalterwerte; gespeicherte Werte sind nur die aus stack:.",
         "resolved_at": "2026-09-27T16:17:57Z"
+      }
+    },
+    {
+      "id": "CF-0057-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0006:2. Zielsetzung",
+      "detail": "SPEC-0006 führt Tests pro Spec über einen eigenen pytest-Aufruf aus und wertet sie aus; die Stack-Vorlagen legen dagegen Test-Konventionen mit FR-markierten JUnit-Berichten fest, deshalb sollte geklärt werden, ob `sdd test-run` die Runner-Konfiguration der Vorlage nutzt oder weiter fest auf pytest verdrahtet bleibt.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "sdd test run bleibt unverändert; Vorlagen liefern nur die Sonden-Konvention (JUnit mit FR-Markern) nach SPEC-0054.",
+        "resolved_at": "2026-09-27T16:18:37Z"
+      }
+    },
+    {
+      "id": "CF-0057-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0015:1. Kontext & Motivation",
+      "detail": "SPEC-0015 plant eine LLM-gestützte Architekturprüfung, während SPEC-0057 ein Architektur-Gerüst mitliefert, das `sdd arch check` maschinell auswertet; es sollte festgelegt werden, welcher Mechanismus Architekturregeln maßgeblich prüft.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Maßgeblich für Architekturregeln ist architecture.yaml mit sdd arch check (SPEC-0054/0059); die Vorlage liefert nur das Gerüst.",
+        "resolved_at": "2026-09-27T16:18:38Z"
       }
     }
   ],

@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0057
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/stack-apply-extract-init-stack-und-preset-verweis.feature"
 tests: ["TST-0258"]
 ---
 
 # Contract: stack apply, extract, init --stack und Preset-Verweis
 
-> **Spec:** SPEC-0057 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0057 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

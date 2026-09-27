@@ -5,14 +5,14 @@ type: behavior
 format: gherkin
 spec: SPEC-0057
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/behavior/stack-list-show-verify-und-diff.feature"
 tests: ["TST-0257"]
 ---
 
 # Contract: stack list, show, verify und diff
 
-> **Spec:** SPEC-0057 · **Typ:** Verhalten (Gherkin) · **Status:** draft
+> **Spec:** SPEC-0057 · **Typ:** Verhalten (Gherkin) · **Status:** approved
 
 ## Zweck
 

@@ -2,7 +2,7 @@
 id: SPEC-0057
 title: "Stack-Vorlagen: Projekte für Testbarkeit und Qualitätsmessung aufsetzen"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-25
 updated: 2026-09-27
@@ -33,7 +33,7 @@ fr_test_map:
 
 # Stack-Vorlagen: Projekte für Testbarkeit und Qualitätsmessung aufsetzen
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** approved · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 

@@ -5,14 +5,14 @@ type: data
 format: json-schema
 spec: SPEC-0057
 version: 0.1.0
-status: draft
+status: approved
 artifact: ".sdd/contracts/data/stack-vorlage-und-stack-eintrag.schema.json"
 tests: ["TST-0256"]
 ---
 
 # Contract: Stack-Vorlage und stack-Eintrag
 
-> **Spec:** SPEC-0057 · **Typ:** Daten (JSON Schema) · **Status:** draft
+> **Spec:** SPEC-0057 · **Typ:** Daten (JSON Schema) · **Status:** approved
 
 ## Zweck
 
