@@ -10,8 +10,28 @@ version: 0.2.0
 priority: high
 tags: [benchmark, llm, local-llm, metrics, token-tracking, quality]
 depends_on: [SPEC-0053, SPEC-0054, SPEC-0055, SPEC-0061]
-contracts: []
-tests: []
+contracts:
+- CON-0221
+- CON-0222
+- CON-0223
+- CON-0224
+tests:
+- TST-0250
+- TST-0251
+- TST-0252
+- TST-0253
+fr_test_map:
+  FR-01: [TST-0250, TST-0252]
+  FR-02: [TST-0252]
+  FR-03: [TST-0252]
+  FR-04: [TST-0250, TST-0252]
+  FR-05: [TST-0252]
+  FR-06: [TST-0251, TST-0252]
+  FR-07: [TST-0253]
+  FR-08: [TST-0253]
+  FR-09: [TST-0252]
+  FR-10: [TST-0252]
+  FR-11: [TST-0253]
 ---
 
 # Benchmark-Strecke: Modellvergleich nach Tokens und Qualität
@@ -201,19 +221,19 @@ Feature: Benchmark-Strecke
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-XXXX    | data     | `bench-matrix.schema.json` und `bench-suite.schema.json` |
-| CON-XXXX    | data     | `bench-record.schema.json` |
-| CON-XXXX    | behavior | Lauf, Isolation, Suiten `roles`/`regen`, Budget, Resume |
-| CON-XXXX    | behavior | Kennzahlen, Pareto, Signifikanz, `report`, `compare`, `config apply-roles` |
+| CON-0221    | data     | `bench-matrix.schema.json` und `bench-suite.schema.json` |
+| CON-0222    | data     | `bench-record.schema.json` |
+| CON-0223    | behavior | Lauf, Isolation, Suiten `roles`/`regen`, Budget, Resume |
+| CON-0224    | behavior | Kennzahlen, Pareto, Signifikanz, `report`, `compare`, `config apply-roles` |
 
 ## 9. Tests (wie wird verifiziert)
 
 | Test-ID  | Level       | Was prüft der Test? |
 |----------|-------------|---------------------|
-| TST-XXXX | unit        | Matrix-Expansion, Schemas |
-| TST-XXXX | unit        | Kennzahlen, Pareto, Signifikanz aus Fixture-Records |
-| TST-XXXX | acceptance  | `sdd bench run` mit Fake-LLM-Server (Suiten, Isolation, Budget, Resume) |
-| TST-XXXX | acceptance  | `report`, `compare`, `config apply-roles` |
+| TST-0250 | unit        | Matrix-Expansion, Schemas |
+| TST-0251 | unit        | Records;, Pareto, Signifikanz aus Fixture-Records |
+| TST-0252 | acceptance  | `sdd bench run` mit Fake-LLM-Server (Suiten, Isolation, Budget, Resume) |
+| TST-0253 | acceptance  | Kennzahlen, Pareto, Signifikanz, `report`, `compare`, `config apply-roles` |
 
 ## 10. Offene Fragen
 
