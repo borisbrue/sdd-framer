@@ -72,7 +72,7 @@ def run_matrix(config: SddConfig, matrix: Matrix, *, suite: str | None = None,
     suiten = [suite] if suite else matrix.suites
     for name in suiten:
         s = load_suite(config.root, name)
-        task_class(s.kind)  # unbekannte Art: BenchError vor jedem Aufruf
+        task_class(s.kind).validate_suite(s, config.root)  # Fehler: BenchError vor jedem Aufruf
         erlaubt = (top_profiles(records, matrix.top_k)
                    if matrix.top_k and s.kind != "roles" else None)
         jobs, gefiltert = jobs_for(s, matrix, only=only, repetitions=repetitions,

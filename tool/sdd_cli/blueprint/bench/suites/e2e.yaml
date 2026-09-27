@@ -1,0 +1,11 @@
+# Suite e2e (SPEC-0063 FR-02 bis FR-05): ganze Specs des Fixtures todo-service per
+# `sdd pipeline run SPEC --auto --steps ""` umsetzen, danach versteckte Akzeptanztests (hidden/)
+# ausführen und mit `sdd quality measure` bewerten.
+name: e2e
+kind: e2e
+version: "1"
+fixture: bench/fixtures/todo-service
+specs: [SPEC-0001, SPEC-0002, SPEC-0003]
+test_command: "{python} .sdd/quality/run_tests.py --start tests/acceptance --junit {junit}"
+isolation: dir
+timeout_seconds: 900

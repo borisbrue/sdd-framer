@@ -1,0 +1,19 @@
+# Qualitätsmessung von todo-service (SPEC-0054 von sdd-framer), nur Python-Standardbibliothek.
+# - tests: unittest-Discovery über tests/ mit JUnit-Ausgabe; FR-Marker als <property name="fr">.
+# - deps:  AST-Abhängigkeitsextraktor für sdd arch check.
+version: 1
+paths: ["todo/**/*.py"]
+exclude: ["**/__pycache__/**", ".venv/**", "venv/**"]
+test_paths: ["tests/**"]
+probes:
+  tests:
+    command: "PY=$(command -v python3 || command -v python); $PY .sdd/quality/run_tests.py --start tests --junit {out}"
+    format: junit
+    role: tests
+    fr_marker: property
+    timeout_seconds: 600
+    version_command: "python3 --version"
+  imports:
+    command: "PY=$(command -v python3 || command -v python); $PY .sdd/quality/extract_deps.py {paths} > {out}"
+    format: sdd-deps
+    role: deps

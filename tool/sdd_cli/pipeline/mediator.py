@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 from .. import __version__
 from ..gate import ExecutionGate
+from . import budget as budget_mod
 from . import gates as task_gates_mod
 from . import steps as auto_steps_mod
 from .context import ContextError, ProjectContext
@@ -129,8 +130,13 @@ class PipelineSupervisor:
               max_tasks: int | None = None, task_id: str | None = None, auto: bool = False,
               base_url: str | None = None, session: tuple[str, ...] | list[str] = (),
               steps: list[str] | None = None, run_id: str | None = None,
+              budget: dict | None = None,
               notify: Callable[[str], None] | None = None) -> RunOutcome:
         cls._check_run_options(session, steps, auto)
+        budget_fehler = [*budget_mod.option_errors(budget or {}),
+                         *(m for _, _, m in budget_mod.issues(config.raw))]
+        if budget_fehler:
+            raise PipelineError("Budget ungültig: " + "; ".join(budget_fehler))
         ctx = ProjectContext(config.root, spec_id)
         try:
             status = ctx.status
@@ -165,6 +171,8 @@ class PipelineSupervisor:
             optionen.update(auto=True, base_url=base_url)
         if steps is not None:
             optionen["steps"] = list(steps)
+        if budget and any(v is not None for v in budget.values()):
+            optionen["budget"] = {k: v for k, v in budget.items() if v is not None}
         if session:
             optionen["session"] = sorted(set(session))
             for rolle in optionen["session"]:
@@ -329,7 +337,27 @@ class PipelineSupervisor:
             self.config.raw)
 
     def provider(self, binding: RoleBinding, role_def: RoleDefinition) -> Any:
-        return build_provider(self.config, binding, role_def)
+        return budget_mod.GuardedProvider(build_provider(self.config, binding, role_def),
+                                          self._halted_by_budget)
+
+    # Budget (SPEC-0063 FR-01, CON-0225) ─────────────────────────────────────
+    def _halted_by_budget(self) -> bool:
+        return bool(self.state.get("budget_halt"))
+
+    def check_budget(self) -> None:
+        """Nach einem Rollenaufruf: Budget überschritten → Run hält (INV-03)."""
+        if self.state.get("status") != "running" or self._halted_by_budget():
+            return
+        run = self.store.read_run()
+        grenzen = budget_mod.limits(self.config.raw, (run.get("options") or {}).get("budget"))
+        if not grenzen:
+            return
+        stand = budget_mod.usage(self.config.root, self.store.run_id,
+                                 budget_mod.claude_roles(run.get("roles") or {}))
+        grenze = budget_mod.exceeded(grenzen, stand)
+        if grenze:
+            self.state["budget_halt"] = grenze
+            self.halt(budget_mod.REASON, limit=grenze, **stand)
 
     def log_role_call(self, ergebnis: RoleResult, binding: RoleBinding, *,
                       task_id: str | None = None, outcome: str | None = None,
@@ -343,6 +371,7 @@ class PipelineSupervisor:
                          call_id=ergebnis.call_id, attempt=ergebnis.attempt,
                          outcome=outcome or ergebnis.outcome, prompt_hash=ergebnis.prompt_hash,
                          detail={**info, **(detail or {})})
+        self.check_budget()
 
     def log_decision(self, request: dict, command: Any, *, source: str,
                      errors: list[str]) -> None:

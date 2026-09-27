@@ -1,0 +1,69 @@
+# sdd-Konfiguration des Benchmark-Fixtures todo-service (SPEC-0063 FR-05 von sdd-framer).
+# Rollen und Profile (llm.roles, llm.profiles) setzt `sdd bench run` in der Kopie je Belegung.
+version: 1.0.0
+project:
+  name: todo-service
+  description: Aufgabenverwaltung als Python-Paket (Standardbibliothek) mit CLI
+  owners: [Bench]
+ids:
+  spec_prefix: SPEC
+  contract_prefix: CON
+  test_prefix: TST
+  adr_prefix: ADR
+  holdout_prefix: HOL
+  padding: 4
+spec_lifecycle:
+- draft
+- review
+- approved
+- in-progress
+- implemented
+- deprecated
+contract_formats:
+  api:
+  - openapi
+  data:
+  - json-schema
+  behavior:
+  - gherkin
+  - markdown
+validation:
+  # Die Fixture-Specs legen Service-API, Dateiformat und CLI direkt fest (keine Contracts).
+  require_contract_per_spec: false
+  require_test_per_contract: true
+  fail_on_orphans: false
+  allowed_statuses_for_implementation:
+  - approved
+  - implemented
+compliance:
+  # Die FR-Abdeckung misst der Benchmark mit versteckten Akzeptanztests; Tests entstehen erst im
+  # Pipeline-Run, daher gibt es im Startstand weder fr_test_map noch TST-Dokumente.
+  fr_coverage_check: false
+  task_completion_check: true
+  type_aware_test_check: false
+  route_registration_check: false
+  post_commit_hook: false
+adr:
+  output_dir: docs/adr
+traceability:
+  output_format: markdown
+  output_path: docs/traceability.md
+test_runner:
+  # Kein pytest: unittest aus der Standardbibliothek (Testsonde siehe .sdd/quality.yaml).
+  command: python3 .sdd/quality/run_tests.py --start tests --junit .sdd/last-junit.xml
+  extra_args: []
+  timeout_per_spec: 300
+solid_gate:
+  enabled: true
+  mode: warn
+llm:
+  timeout_seconds: 600
+  # Keyfreier Betrieb: Komponenten laufen über die Claude-Code-CLI (`claude --print`).
+  completion:
+    provider: claude-cli
+  analyzer:
+    provider: claude-cli
+  evaluator:
+    provider: claude-cli
+  orchestrator:
+    provider: claude-cli

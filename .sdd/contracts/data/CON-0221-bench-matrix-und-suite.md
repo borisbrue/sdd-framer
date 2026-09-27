@@ -4,7 +4,7 @@ title: "Bench-Matrix und Suite"
 type: data
 format: json-schema
 spec: SPEC-0056
-version: 0.1.0
+version: 0.2.0
 status: approved
 artifact: ".sdd/contracts/data/bench-matrix-und-suite.schema.json"
 tests: ["TST-0250"]
@@ -29,3 +29,7 @@ Das Schema im Artifact ist verbindlich; `sdd bench run` lehnt ungültige Dateien
 - **INV-03:** `sweep` erzeugt je Profil eine Belegung `sweep-<profil>` (Rolle aus `sweep.role` mit dem Profil, übrige Rollen aus der ersten Belegung bzw. der Config). Belegungen haben eindeutige Namen.
 - **INV-04:** Eine Suite nennt `kind`; `sdd bench run` findet die Suite-Art über eine Registry (unbekannte Art: Exit 2). `kind: regen` verlangt `commit`, `test_command` und `tasks` mit Modul und Unit-Tests; `kind: roles` nennt optional `roles` (Default alle fünf Pipeline-Rollen) und `runs`.
 - **INV-05:** `budget.max_tokens` und `budget.max_claude_tokens` gelten je Lauf; `T_claude` zählt die Tokens aller Rollen mit Provider `claude-cli` oder `anthropic`.
+
+## Seit SPEC-0063 (0.2.0)
+
+`kind: e2e` verlangt `fixture`, `specs` und `test_command`; optional `isolation` (Default `dir`) und `run_timeout_seconds` (CON-0226 INV-01).

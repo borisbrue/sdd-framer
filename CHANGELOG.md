@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased] – SPEC-0063: Benchmark-Suite e2e und Pipeline-Budget
+
+### Added
+
+- Suite-Art **`e2e`** für `sdd bench run`: ganze Specs eines Fixtures per `sdd pipeline run --auto`
+  in einer Git-Kopie umsetzen, Messung mit versteckten Akzeptanztests (FR-Marker) und
+  `sdd quality measure`; Tokens je Rolle aus der Usage der Runs. Isolation als Strategie (`dir`).
+- Fixture **`todo-service`** im Blueprint (Python-Standardbibliothek, Schichten, drei Specs mit
+  3/6/10 FRs, versteckte Tests, Referenzlösung) und `bench/suites/e2e.yaml`.
+- **Pipeline-Budget**: `pipeline.budget` bzw. `--max-tokens`/`--max-claude-tokens`; der Run hält mit
+  Grund `budget`. `sdd config validate` prüft die Werte.
+
+### Changed
+
+- Der Bench-Report nennt je Eintrag die Zahl der Läufe je Ausgang.
+
 ## [Unreleased] – SPEC-0056: Benchmark-Strecke
 
 ### Added

@@ -158,6 +158,10 @@ class RolesCheck(ConfigCheck):
         config = SddConfig(root=self._root or Path.cwd(), raw=raw)
         issues.extend(ConfigIssue(level, pfad, meldung)
                       for level, pfad, meldung in role_config_issues(config))
+        from .pipeline.budget import issues as budget_issues
+
+        issues.extend(ConfigIssue(level, pfad, meldung)
+                      for level, pfad, meldung in budget_issues(raw))
 
 
 class ConfigValidator:

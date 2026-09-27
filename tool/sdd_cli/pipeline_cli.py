@@ -55,11 +55,16 @@ def pipeline_group() -> None:
 @click.option("--steps", default=None, metavar="LISTE",
               help="Abschluss-Schritte für --auto, kommagetrennt (überschreibt "
                    "pipeline.auto_steps).")
+@click.option("--max-tokens", type=int, default=None,
+              help="Token-Budget des Runs (überschreibt pipeline.budget.max_tokens).")
+@click.option("--max-claude-tokens", type=int, default=None,
+              help="Budget für Rollen mit claude-cli/anthropic.")
 @click.option("--run-id", "run_id", default=None, hidden=True,
               help="Vorgegebene Run-ID (Web-Adapter, SPEC-0062 FR-03).")
 def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int | None,
             task_id: str | None, auto: bool, base_url: str | None, session: tuple[str, ...],
-            steps: str | None, run_id: str | None = None) -> None:
+            steps: str | None, max_tokens: int | None = None,
+            max_claude_tokens: int | None = None, run_id: str | None = None) -> None:
     from .pipeline.mediator import PipelineError, PipelineSupervisor
 
     cfg = _config()
@@ -84,6 +89,8 @@ def run_cmd(spec_id: str, dry_run: bool, resume_id: str | None, max_tasks: int |
                                                max_tasks=max_tasks, task_id=task_id, auto=auto,
                                                base_url=base_url, session=session,
                                                steps=schritte, run_id=run_id,
+                                               budget={"max_tokens": max_tokens,
+                                                       "max_claude_tokens": max_claude_tokens},
                                                notify=console.print)
     except PipelineError as exc:
         console.print(f"[red]✗[/] {exc}")
