@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-26T16:26:07Z",
+  "last_updated": "2026-09-27T07:51:34Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -349,6 +349,34 @@
       "spec_id": "SPEC-0055",
       "accepted_at": "2026-09-26T16:26:07Z",
       "acceptance_reason": "baseline.json als Schnappschuss des übernommenen Stands; compare und accept arbeiten dagegen.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0056",
+      "accepted_at": "2026-09-27T07:51:31Z",
+      "acceptance_reason": "BenchTask mit festem Ablauf prepare → run → measure → teardown; Suite-Arten über eine Registry (kind).",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0056",
+      "accepted_at": "2026-09-27T07:51:32Z",
+      "acceptance_reason": "Zählen, Budget, seed, Rate-Limit und Tokenschätzung als Hüllen um den Provider.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "spec_id": "SPEC-0056",
+      "accepted_at": "2026-09-27T07:51:33Z",
+      "acceptance_reason": "Versteckte Tests und Referenzlösung erst zur Messung sichtbar.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "spec_id": "SPEC-0056",
+      "accepted_at": "2026-09-27T07:51:34Z",
+      "acceptance_reason": "results.jsonl als Fortschritt für --resume und Vergleichsstand für compare.",
       "refactoring_guru_url": null
     }
   ]

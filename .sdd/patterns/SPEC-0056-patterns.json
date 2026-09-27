@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0056",
+  "generated_at": "2026-09-27T07:51:31Z",
+  "patterns": [
+    {
+      "pattern_name": "Template Method",
+      "status": "accepted",
+      "decided_at": "2026-09-27T07:51:31Z",
+      "acceptance_reason": "BenchTask mit festem Ablauf prepare → run → measure → teardown; Suite-Arten über eine Registry (kind).",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "status": "accepted",
+      "decided_at": "2026-09-27T07:51:32Z",
+      "acceptance_reason": "Zählen, Budget, seed, Rate-Limit und Tokenschätzung als Hüllen um den Provider.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "status": "accepted",
+      "decided_at": "2026-09-27T07:51:33Z",
+      "acceptance_reason": "Versteckte Tests und Referenzlösung erst zur Messung sichtbar.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "status": "accepted",
+      "decided_at": "2026-09-27T07:51:34Z",
+      "acceptance_reason": "results.jsonl als Fortschritt für --resume und Vergleichsstand für compare.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}

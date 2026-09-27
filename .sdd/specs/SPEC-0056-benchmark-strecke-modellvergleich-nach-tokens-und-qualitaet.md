@@ -5,169 +5,165 @@ type: feature
 status: draft
 owner: "Boris"
 created: 2026-09-25
-updated: 2026-09-25
-version: 0.1.0
+updated: 2026-09-27
+version: 0.2.0
 priority: high
 tags: [benchmark, llm, local-llm, metrics, token-tracking, quality]
-depends_on: [SPEC-0053, SPEC-0054, SPEC-0055]
+depends_on: [SPEC-0053, SPEC-0054, SPEC-0055, SPEC-0061]
 contracts: []
 tests: []
 ---
 
 # Benchmark-Strecke: Modellvergleich nach Tokens und Qualität
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
 
 ## 1. Kontext & Motivation
 
 Die Modellwahl erfolgt heute aus einmaligen, handgeschriebenen Untersuchungen
 (BEFUND-modelle-2026-09-24). Die Skripte dazu liegen nicht im Repo, die Ergebnisse sind nicht
-wiederholbar, und sie messen isolierte Codeaufgaben, nicht das Verhalten in der
-sdd-Pipeline. Welche Kombination aus Modellen und Rollen **pro verbrauchtem Token** die beste
-Codequalität, Architekturtreue und Anforderungserfüllung liefert, lässt sich nicht beantworten.
+wiederholbar. Welche Modellbelegung **pro verbrauchtem Token** die beste Qualität liefert, lässt sich
+nicht beantworten.
 
-Diese Spec macht daraus eine wiederholbare Strecke im Repo. Sie nutzt die Pipeline (SPEC-0053) als
-Prüfling, die Qualitätsmessung (SPEC-0054) als Messgerät und die Rollen-Evals (SPEC-0055) als
-schnelle Vorstufe.
+Diese Spec macht daraus eine wiederholbare Strecke im Repo. Sie nutzt die Rollen-Evals (SPEC-0055)
+als schnelle Vorstufe und die Qualitätsmessung (SPEC-0054) als Messgerät. Die teuerste Stufe, ganze
+Pipeline-Runs auf einem Fixture-Projekt, ist nach SPEC-0063 abgespalten (Review 2026-09-27).
+
+Bestand:
+
+| Baustein | Stand | Nutzung hier |
+|----------|-------|--------------|
+| Profile `llm.profiles`, `requests_per_minute` | vorhanden (SPEC-0061, SPEC-0055) | Belegungen der Matrix; neue Profil-Schlüssel `max_concurrent`, `seed` |
+| Rollen-Evals `pipeline.evals` | vorhanden (SPEC-0055) | Suite `roles` |
+| Qualitätsmessung `quality.measure` | vorhanden (SPEC-0054) | Messung der Suite `regen` |
+| Usage mit `server_model`, `source` | vorhanden (SPEC-0060) | Tokens, Modellnamen, Schätzungen |
+| Module aus BEFUND §3 | 7 von 8 vorhanden (`dag_event` seit SPEC-0058 entfernt) | Suite `regen` für sdd-framer |
 
 ## 2. Zielsetzung
 
 **Primärziel:** `sdd bench run` vergleicht beliebige Modellbelegungen über eine feste Aufgabenmenge
-und zeigt je Belegung Qualität (drei Dimensionen) gegen Tokenverbrauch (Input, Output, Reasoning)
-inklusive Pareto-Front.
+und zeigt je Belegung Qualität gegen Tokenverbrauch (Input, Output, Reasoning) mit Pareto-Front.
 
 **Erfolgskriterien (messbar):**
-- [ ] Die Methode von BEFUND-modelle §3 (Module aus Tests regenerieren) ist als Suite `regen`
-      reproduzierbar: Zwei Läufe mit gleicher Konfiguration unterscheiden sich im Mittel um höchstens
-      die gemessene Streuung.
-- [ ] Ein Report beantwortet für jede Rolle: welches Profil hat die höchste Qualität, welches das
-      beste Verhältnis Qualität/Token, und welche Profile liegen auf der Pareto-Front.
-- [ ] Jede Kennzahl im Report ist bis zum einzelnen Lauf (`events.jsonl`, Quality-Report)
-      zurückverfolgbar.
-- [ ] Ein Benchmark-Lauf verändert weder das Projekt-Worktree noch `.sdd/` des Projekts.
+- [ ] Die Methode von BEFUND-modelle §3 ist als Suite `regen` reproduzierbar: Zwei Läufe mit gleicher
+      Konfiguration unterscheiden sich im Mittel um höchstens die gemessene Streuung.
+- [ ] Ein Report beantwortet je Rolle: welches Profil hat die höchste Qualität, welches das beste
+      Verhältnis Qualität/Token, und welche Profile liegen auf der Pareto-Front.
+- [ ] Jede Kennzahl im Report ist bis zum einzelnen Lauf zurückverfolgbar.
+- [ ] `sdd bench run|report|compare` verändern weder das Projekt-Worktree noch `.sdd/` des Projekts.
 
 **Nicht-Ziele (explizit):**
 - Kein öffentliches Leaderboard, kein Upload von Ergebnissen.
 - Kein Hosting oder Laden von Modellen; die Endpunkte müssen laufen.
-- Keine reinen Durchsatzmessungen (TTFT, tok/s, Prefill), außer als Nebenmetrik aus den
-  Pipeline-Läufen. Dafür bleibt `sdd config test-llm` zuständig.
+- Keine reinen Durchsatzmessungen (TTFT, tok/s); dafür bleibt `sdd config test-llm` zuständig.
+- Keine ganzen Pipeline-Runs und kein Fixture-Projekt (SPEC-0063).
 
 ## 3. Architektur & Design Patterns
 
-### Suite → Aufgabe → Lauf
+Angenommen (Review 2026-09-27): **Template Method** (BenchTask), **Decorator** (Provider-Hüllen),
+**Proxy** (versteckte Tests), **Memento** (`results.jsonl` als Fortschritt und Vergleichsstand).
+
+### Ablage im Projekt
 ```
 bench/
-├── suites/
-│   ├── roles.yaml        # Stufe 1: Golden Cases aus SPEC-0055 (billig, schnell)
-│   ├── regen.yaml        # Stufe 2: Module aus versteckten Tests regenerieren (BEFUND §3)
-│   └── e2e.yaml          # Stufe 3: ganze Spec per `sdd pipeline run` auf Fixture-Projekt
-├── fixtures/
-│   └── todo-service/     # kleines Referenzprojekt: .sdd/, AGENTS.md, architecture.yaml,
-│                         # Specs, Contracts, versteckte Akzeptanztests, Referenzlösung
-├── matrix.yaml           # welche Profile in welcher Rolle, Wiederholungen, Parameter-Varianten
-└── results/<ts>/         # results.jsonl, report.md, report.html, runs/<lauf-id>/…
+├── matrix.yaml               # Profile, Belegungen, Varianten, Sweep, Wiederholungen, Budget
+├── suites/<name>.yaml        # Suite: kind (roles | regen | …), Aufgaben, Gewichte
+└── results/<ts>/             # results.jsonl, report.md, report.html, runs/<lauf-id>/ (gitignored)
 ```
+`sdd bench init` legt `bench/` aus den Vorlagen des Blueprints an (Matrix-Beispiel, Suite `roles`);
+im sdd-framer-Repo liegt zusätzlich `bench/suites/regen.yaml` mit den Modulen aus BEFUND §3.
 
 `matrix.yaml`:
 ```yaml
-suite: e2e
+suites: [roles, regen]
 repetitions: 3
-profiles: [qwen35-a3b-mlx, qwen38-27b, gpt-oss-120b, claude-cli]   # aus llm.profiles
-assignments:                          # je Zeile eine Belegung (Kandidat)
+top_k: 2                                # Stufenmodell: beste Profile je Rolle aus roles → regen
+assignments:
   - name: all-qwen38
-    roles: { decomposer: qwen38-27b@think, test_author: qwen38-27b, implementer: qwen38-27b,
-             reviewer: qwen35-a3b-mlx, supervisor: claude-cli }
-  - name: gptoss-decompose
-    roles: { decomposer: gpt-oss-120b@high, implementer: qwen38-27b, "*": qwen35-a3b-mlx,
-             supervisor: claude-cli }
-variants:                             # Profil-Suffixe
-  think: { thinking: true }
-  high:  { reasoning_effort: high }
-sweep:                                # optional: kartesisches Produkt für eine Rolle
-  role: implementer
-  profiles: [qwen35-a3b-mlx, qwen38-27b, gpt-oss-120b]
+    roles: {decomposer: "qwen38-27b@think", "*": qwen35-a3b, supervisor: claude}
+variants:
+  think: {thinking: true}
+  high: {reasoning_effort: high}
+sweep: {role: implementer, profiles: [qwen35-a3b, qwen38-27b, gpt-oss-120b]}
+budget: {max_tokens: 2000000, max_claude_tokens: 200000}
 ```
 
-### Stufenmodell (Kosten sparen)
-Stufe 1 (Rollen-Evals) filtert Profile je Rolle vor. Nur die besten `top_k` je Rolle gehen in
-Stufe 2 und 3. Der Report weist die Filterung aus.
+### Template Method: BenchTask und Suite-Registry
+Jede Suite-Art ist ein `BenchTask` mit festem Ablauf `prepare(workspace)` → `run(assignment)` →
+`measure()` → `teardown()` und wird über `kind` in einer Registry gefunden (OCP-Befund). `measure()`
+ist je Art festgelegt und liefert einen `q_kind`: `roles` → `eval` (Score nach SPEC-0055),
+`regen` → `quality` (Tests plus SPEC-0054). Report, Pareto-Front, Signifikanz und `compare`
+vergleichen nur Records mit gleichem `q_kind` (LSP-Befund).
 
-### Messung pro Lauf
-Jeder Lauf erzeugt einen `BenchRecord`:
-- **Kosten:** Tokens je Rolle (Input, Output, Reasoning), Aufrufe, Fehlversuche,
-  Supervisor-Eingriffe, Eskalationen, Wandzeit.
-- **Qualität:** der Quality-Report aus SPEC-0054 auf dem Endstand, gemessen gegen versteckte Tests
-  und die Referenz-`architecture.yaml`.
-- **Ausgang:** `completed`, `halted` oder `error`.
+### Decorator: Provider-Hüllen
+Um jeden Provider eines Laufs legen sich Hüllen für Zählung (Tokens je Rolle, Aufrufe), Budget
+(`BudgetExceeded` → Ausgang `halted: budget`), Rate-Limit und Parallelität je Endpunkt
+(`requests_per_minute`, `max_concurrent`) und Schätzung fehlender Usage (`estimated: true`).
+`seed` setzt der Provider selbst, wenn er ihn kennt (`openai-compat`).
 
-Ein Lauf, der anhält, zählt mit dem erreichten Stand; es gibt keinen Ausschluss aus der Wertung.
+### Proxy: versteckte Tests und Referenz
+Versteckte Tests und Referenzlösung liegen außerhalb des Arbeitsverzeichnisses und werden erst in
+`measure()` eingespielt, nach dem letzten Rollenaufruf.
 
-### Kennzahlen
-- `Q`: Gesamtscore nach SPEC-0054 (Gewichte aus der Suite, Default 0,5 / 0,25 / 0,25).
-- `Q_req`, `Q_arch`, `Q_code`: Teilscores.
-- `T`: Gesamttokens, zusätzlich `T_in`, `T_out`, `T_reason` und `T_claude` (Anteil Supervisor).
-- Effizienz: `Q / (T / 1e5)` und **Tokens je erfülltem FR**.
-- Stabilität: Standardabweichung von `Q` über Wiederholungen, `pass^k` der Anforderungen.
-- Pareto-Front über (Q ↑, T ↓), getrennt nach „mit Claude-Tokens“ und „nur lokale Tokens“.
-
-### Template Method: `BenchTask`
-`prepare(workspace)` → `run(assignment)` → `measure()` → `teardown()`. Jede Suite-Art
-implementiert nur `prepare` und `run`. Messung und Protokoll sind gemeinsam.
+### Schichten
+Paket `tool/sdd_cli/bench/` (Schicht `cli`), CLI `tool/sdd_cli/bench_cli.py` (`entry`).
+Rollenaufrufe nur über `pipeline.facade` (neue Funktion `run_role`) bzw. `pipeline.evals`
+(ARCH-05), keine Subprozesse.
 
 ## 4. Funktionale Anforderungen
 
-- **FR-01:** `sdd bench run --matrix bench/matrix.yaml [--suite NAME] [--only ASSIGNMENT]
-  [--repetitions N] [--concurrency N] [--dry-run]` führt die Matrix aus und schreibt nach
-  `bench/results/<ts>/`. `--dry-run` zeigt Zahl der Läufe, geschätzte Tokens (aus früheren
-  Ergebnissen oder `sdd estimate`) und geschätzte Dauer.
-- **FR-02:** Jede Aufgabe läuft in einem frischen Arbeitsverzeichnis (git worktree bzw. kopiertes
-  Fixture), optional im Dev-Container (`bench.isolation: dir|container`, Default `dir`). Versteckte
-  Tests und Referenzlösung werden erst zur Messung in das Verzeichnis kopiert, nach Abschluss aller
-  Rollenaufrufe. Kein Rollenkontext enthält sie.
-- **FR-03:** Suite `roles` führt `sdd role eval` (SPEC-0055) für jede Rolle × jedes Profil aus und
-  übernimmt die Ergebnisse als `BenchRecord` mit `Q = Eval-Score`.
-- **FR-04:** Suite `regen` entfernt die in der Suite gelisteten Module aus einer eingefrorenen
-  Kopie eines Projekts (Default: sdd-framer zu einem festen Commit). Die Rolle `implementer`
-  erzeugt sie aus den vorhandenen Unit-Tests neu; gemessen wird mit den Tests und SPEC-0054 auf
-  den regenerierten Dateien.
-- **FR-05:** Suite `e2e` führt `sdd pipeline run` (SPEC-0053) für die gelisteten Specs eines Fixture-
-  Projekts mit der jeweiligen Belegung aus und misst den Endstand mit
-  `sdd quality measure --spec … --diff <start>` plus versteckten Akzeptanztests.
-- **FR-06:** Jeder Lauf schreibt einen `BenchRecord` nach `results.jsonl`
-  (Schema `bench-record.schema.json`) mit allen Kennzahlen aus Abschnitt 3, der Belegung,
-  Profilparametern, Rollenversionen, Suite-Version, sdd-Version, Git-SHA des Fixtures, Endpunkt,
-  vom Server gemeldetem Modellnamen und Zeitstempeln.
-- **FR-07:** `sdd bench report <ergebnisordner> [--html] [--by role|assignment]` erzeugt:
-  - Tabelle je Belegung: Q, Q_req, Q_arch, Q_code (Mittel ± Std), T_in, T_out, T_reason,
-    T_claude, Tokens je erfülltem FR, Fehlversuche, Eingriffe.
-  - Je Rolle (aus `sweep` oder Stufe 1): Rangliste der Profile nach Q und nach Effizienz.
-  - Pareto-Diagramm Q gegen T (HTML: interaktiv, Markdown: Tabelle der Front).
-  - Signifikanzhinweis: Unterschiede kleiner als die gepoolte Standardabweichung werden als
-    „nicht unterscheidbar“ markiert.
-- **FR-08:** `sdd bench compare <ergebnis-a> <ergebnis-b>` vergleicht zwei Benchmark-Läufe, etwa vor
-  und nach einer Rollen-Änderung oder einem Modell-Update, je Belegung mit Delta und
-  Signifikanzhinweis.
-- **FR-09:** Reproduzierbarkeit:
-  - Jeder LLM-Aufruf trägt einen Cache-Nonce.
-  - `seed` wird gesetzt, sofern der Provider ihn unterstützt.
-  - Rate-Limits und parallele Anfragen werden je Profil beachtet (`rate_limit_per_minute`,
-    `max_concurrent`).
-  - Nach einem Abbruch setzt `--resume <ergebnisordner>` die fehlenden Läufe fort.
-- **FR-10:** Der Blueprint liefert die Suiten `roles` und `regen` sowie das Fixture `todo-service`
-  mit mindestens drei Specs unterschiedlicher Größe (klein: 3 FRs, mittel: 6 FRs, groß: 10 FRs
-  mit Schichtregeln) samt versteckten Akzeptanztests und Referenzlösung.
-- **FR-11:** Die Ergebnisse von `sdd bench` können als Empfehlung in `config.yaml` übernommen werden:
-  `sdd bench apply <ergebnisordner> --assignment NAME` schreibt die Belegung als
-  `llm.roles`-Block (mit Rückfrage und Diff; ohne `--yes` keine Änderung).
+- **FR-01:** **`sdd bench run`** `--matrix bench/matrix.yaml [--suite NAME] [--only ASSIGNMENT]
+  [--repetitions N] [--concurrency N] [--dry-run] [--resume ORDNER]` expandiert die Matrix
+  (Varianten `profil@variante`, `*`-Belegung, Sweep) und führt je Suite, Belegung und Wiederholung
+  einen Lauf aus; Ergebnisse nach `bench/results/<ts>/`. `--dry-run` zeigt Zahl der Läufe und
+  geschätzte Tokens aus früheren Ergebnissen.
+- **FR-02:** **Isolation.** Jeder Lauf arbeitet in einem frischen temporären Verzeichnis (Kopie bzw.
+  `git worktree` am festen Commit der Suite). Versteckte Tests und Referenz werden erst zur Messung
+  eingespielt; kein Rollenkontext enthält sie. Projekt-Worktree und `.sdd/` bleiben unverändert.
+- **FR-03:** **Suite `roles`** (`kind: roles`) führt für jede Rolle × jedes Profil der Matrix die
+  Rollen-Evals aus SPEC-0055 aus (sichtbare und Holdout-Fälle, Holdout nur aggregiert) und schreibt
+  je Rolle und Profil einen Record mit `q_kind: eval`.
+- **FR-04:** **Suite `regen`** (`kind: regen`) nennt ein Projekt (Pfad, Default das eigene), einen
+  festen Commit, eine Liste `{module, tests}` und einen `test_command`. Je Modul: Modul im
+  Arbeitsverzeichnis entfernen, die Rolle `implementer` erzeugt es aus Task (Pfad, Zweck aus dem
+  Modul-Docstring) und den Unit-Tests neu (bis zu `attempts` Versuche mit Testausgabe als
+  Rückmeldung), Messung mit den Tests und SPEC-0054 auf den erzeugten Dateien (`q_kind: quality`).
+- **FR-05:** **Stufenmodell.** Mit `top_k` gehen je Rolle nur die besten Profile aus `roles` in die
+  folgenden Suiten; der Report weist die Filterung aus.
+- **FR-06:** **Record.** Jeder Lauf schreibt einen Record nach `results.jsonl`
+  (`bench-record.schema.json`): Suite, Art, `q_kind`, Belegung, Profilparameter, Rollenversionen,
+  Wiederholung, Ausgang (`completed`, `halted: budget`, `error`), `Q` und Teilscores, Tokens je Rolle
+  (`T_in`, `T_out`, `T_reason`, `T_claude`, `estimated`), Aufrufe, Fehlversuche, Wandzeit,
+  Endpunkt, gemeldeter Modellname, Git-SHA, sdd-Version, Verweis auf die Laufartefakte. Pflichtfelder
+  hängen vom `q_kind` ab (ISP-Befund).
+- **FR-07:** **`sdd bench report <ordner> [--html] [--by role|assignment] [--exclude-reasoning]`**
+  erzeugt je `q_kind`: Tabelle je Belegung (Q, Teilscores als Mittel ± Std, Tokens, Tokens je
+  erfülltem FR, Fehlversuche), Rangliste je Rolle nach Q und nach Effizienz `Q / (T / 1e5)`,
+  Pareto-Front über (Q ↑, T ↓) getrennt „mit Claude-Tokens“ und „nur lokale Tokens“,
+  Signifikanzhinweis (Unterschiede kleiner als die gepoolte Standardabweichung: „nicht
+  unterscheidbar“). Geschätzte Tokens tragen ein Sternchen.
+- **FR-08:** **`sdd bench compare <a> <b>`** vergleicht zwei Ergebnisordner je Belegung und
+  `q_kind` mit Delta und Signifikanzhinweis und warnt, wenn der gemeldete Modellname eines Profils
+  abweicht.
+- **FR-09:** **Reproduzierbarkeit und Kosten.** Cache-Nonce je Aufruf (RoleRunner), `seed` aus dem
+  Profil, Rate-Limit und `max_concurrent` je Endpunkt, `--resume` setzt fehlende Läufe fort (ein
+  `error`-Lauf wird wiederholt, zählt aber nicht doppelt), Budget `max_tokens`/`max_claude_tokens`
+  je Lauf.
+- **FR-10:** **Vorlagen.** Der Blueprint liefert `bench/matrix.yaml` (Beispiel ohne Profile) und
+  `bench/suites/roles.yaml`; `sdd bench init` legt sie an, ohne Vorhandenes zu überschreiben.
+  `bench/results/` steht in den lokalen Ignores. Das sdd-framer-Repo erhält `bench/suites/regen.yaml`
+  mit den sieben Modulen aus BEFUND §3.
+- **FR-11:** **`sdd config apply-roles --from <ordner> --assignment NAME [--yes]`** (Konfiguration,
+  nicht `sdd bench`) zeigt den `llm.roles`-Block der Belegung als Diff gegen `config.yaml` und
+  schreibt ihn nur mit `--yes` bzw. nach Bestätigung (SRP-Befund).
 
 ## 5. Nicht-funktionale Anforderungen
 
-| Kategorie         | Anforderung                                                               |
-|-------------------|---------------------------------------------------------------------------|
-| Isolation         | Kein Lauf verändert das Projekt; `bench/results/` ist per `.gitignore` ausgeschlossen, Reports können gezielt eingecheckt werden. |
-| Geheimnisse       | API-Keys stehen nur in Env-Variablen oder `~/.config/sdd/*.env`, nie in `results.jsonl` oder Reports. |
-| Keyfreiheit       | Claude nur über `claude-cli`; der Benchmark verlangt keinen `ANTHROPIC_API_KEY`. |
-| Kostenkontrolle   | `bench.budget.max_tokens` und `max_claude_tokens` brechen einen Lauf kontrolliert ab (Ausgang `halted: budget`). |
+| Kategorie         | Anforderung |
+|-------------------|-------------|
+| Isolation         | `run`, `report` und `compare` schreiben nur nach `bench/results/`. |
+| Geheimnisse       | API-Keys stehen nur in Env-Variablen oder der Config, nie in Records oder Reports. |
+| Keyfreiheit       | Claude nur über `claude-cli`; kein `ANTHROPIC_API_KEY` nötig. |
 | Laufzeit          | Suite `roles` für 5 Rollen × 4 Profile × 3 Wiederholungen unter 60 min gegen einen lokalen Endpunkt mit ≥ 30 tok/s. |
 
 ## 6. Akzeptanzkriterien (Gherkin)
@@ -183,61 +179,53 @@ Feature: Benchmark-Strecke
     And markiert die Profile auf der Pareto-Front
 
   Scenario: Versteckte Tests bleiben verborgen
-    Given die Suite e2e mit Fixture todo-service
+    Given die Suite regen
     When ein Lauf die Rolle implementer aufruft
-    Then enthält kein Rollenkontext Dateien aus den versteckten Akzeptanztests
+    Then enthält kein Rollenkontext die Referenzlösung des entfernten Moduls
 
   Scenario: Budget
-    Given bench.budget.max_claude_tokens ist 50000
+    Given budget.max_claude_tokens ist 50000
     When ein Lauf 50000 Claude-Tokens überschreitet
-    Then endet der Lauf mit halted: budget
-    And der BenchRecord enthält den bis dahin gemessenen Stand
+    Then endet der Lauf mit halted: budget und der Record enthält den gemessenen Stand
 ```
 
 ## 7. Edge Cases & Fehlerfälle
 
-- Endpunkt fällt mitten im Lauf aus: Lauf endet mit `error`, wird bei `--resume` wiederholt und
-  zählt nicht doppelt.
-- Modell auf dem Server ausgetauscht (gleicher Name, andere Quantisierung): Der vom Server
-  gemeldete Modellname und, soweit verfügbar, Metadaten (`/v1/models`) werden im Record
-  gespeichert. `compare` warnt bei Abweichung.
-- Thinking-Modelle erzeugen sehr viele Reasoning-Tokens: `T_reason` wird getrennt ausgewiesen und
-  optional in der Effizienz ausgeklammert (`--exclude-reasoning`), um den Einfluss sichtbar zu machen.
-- Provider liefert keine Usage: Tokens werden mit dem Tokenizer-Schätzer ermittelt und als
-  `estimated: true` markiert. Im Report werden solche Werte mit Sternchen gekennzeichnet.
+- Endpunkt fällt mitten im Lauf aus: Ausgang `error`, `--resume` wiederholt ihn, ohne doppelt zu zählen.
+- Modell auf dem Server ausgetauscht: gemeldeter Modellname im Record, `compare` warnt.
+- Thinking-Modelle: `T_reason` getrennt; `--exclude-reasoning` klammert ihn in der Effizienz aus.
+- Provider ohne Usage: Tokens geschätzt (`estimated: true`), im Report mit Sternchen.
+- Unterschiedliche `q_kind` in einem Ordner: getrennte Abschnitte, nie ein gemeinsames Ranking.
 
 ## 8. Contracts (was wird garantiert)
 
-| Contract-ID | Typ      | Was wird garantiert?                                           |
-|-------------|----------|----------------------------------------------------------------|
-| CON-XXXX    | data     | `bench-matrix.schema.json` (Matrix, Belegungen, Varianten, Sweep) |
-| CON-XXXX    | data     | `bench-suite.schema.json` (Suite und Aufgaben)                 |
-| CON-XXXX    | data     | `bench-record.schema.json`                                     |
-| CON-XXXX    | behavior | Kennzahlen-Formeln, Pareto-Bestimmung, Signifikanzhinweis      |
-| CON-XXXX    | behavior | Isolation versteckter Tests und Referenzlösungen               |
+| Contract-ID | Typ      | Was wird garantiert? |
+|-------------|----------|----------------------|
+| CON-XXXX    | data     | `bench-matrix.schema.json` und `bench-suite.schema.json` |
+| CON-XXXX    | data     | `bench-record.schema.json` |
+| CON-XXXX    | behavior | Lauf, Isolation, Suiten `roles`/`regen`, Budget, Resume |
+| CON-XXXX    | behavior | Kennzahlen, Pareto, Signifikanz, `report`, `compare`, `config apply-roles` |
 
 ## 9. Tests (wie wird verifiziert)
 
-| Test-ID  | Level       | Was prüft der Test?                                                |
-|----------|-------------|--------------------------------------------------------------------|
-| TST-XXXX | unit        | Kennzahlen, Pareto-Front, Signifikanzmarkierung aus Fixture-Records |
-| TST-XXXX | unit        | Matrix-Expansion (Varianten, Sweep, `*`-Belegung)                  |
-| TST-XXXX | integration | `sdd bench run` mit FakeProvidern auf Mini-Suite, Resume, Budget   |
-| TST-XXXX | acceptance  | Gherkin-Szenarien aus Abschnitt 6                                  |
+| Test-ID  | Level       | Was prüft der Test? |
+|----------|-------------|---------------------|
+| TST-XXXX | unit        | Matrix-Expansion, Schemas |
+| TST-XXXX | unit        | Kennzahlen, Pareto, Signifikanz aus Fixture-Records |
+| TST-XXXX | acceptance  | `sdd bench run` mit Fake-LLM-Server (Suiten, Isolation, Budget, Resume) |
+| TST-XXXX | acceptance  | `report`, `compare`, `config apply-roles` |
 
 ## 10. Offene Fragen
 
-- [ ] Welches Fixture-Projekt ist realistisch genug? Vorschlag: `todo-service` (Python, FastAPI,
-      Schichten Domain/Service/API/Persistenz) plus die Suite `regen` auf sdd-framer. Weil die
-      Messung sprachneutral über Sonden läuft (SPEC-0054), kann später jedes Projekt mit einer
-      Stack-Vorlage (SPEC-0057) als weiteres Fixture dienen.
-- [ ] Wo laufen die Benchmarks dauerhaft: lokal gegen den MLX-Server (192.168.0.149) und/oder gegen
-      mittwald (LiteLLM → vLLM)? Beides ist über Profile möglich; Default-Profile im Blueprint
-      bleiben leer.
-- [ ] Soll eine GitHub-Action den Benchmark nächtlich gegen einen selbst gehosteten Runner fahren?
+- [x] Umfang: Engine mit `roles` und `regen`; `e2e` und Fixture in SPEC-0063 (2026-09-27).
+- [x] Übernahme in die Config: `sdd config apply-roles` (2026-09-27).
+- [x] Vergleichbarkeit: `q_kind` trennt Eval- und Qualitätsscores (2026-09-27).
+- [ ] Wo laufen die Benchmarks dauerhaft (lokal gegen den MLX-Server, mittwald über LiteLLM)?
+      Beides über Profile möglich; Default-Profile im Blueprint bleiben leer.
 
 ## 11. Änderungshistorie
 
-| Datum      | Version | Autor         | Änderung            |
-|------------|---------|---------------|---------------------|
+| Datum      | Version | Autor         | Änderung |
+|------------|---------|---------------|----------|
 | 2026-09-25 | 0.1.0   | Boris, Claude | Initiale Erstellung |
+| 2026-09-27 | 0.2.0   | Boris, Claude | Review: e2e nach SPEC-0063, `config apply-roles`, `q_kind`, Suite-Registry, Patterns |
