@@ -238,12 +238,14 @@ class LcovParser:
 
 class _SddFormatParser:
     fmt = ""
+    definition = ""  # $defs-Zweig des Austauschschemas
 
     def parse(self, path: Path, root: Path, **options: object) -> ProbeResult:
         daten = _load_json(path)
         if not isinstance(daten, dict) or daten.get("format") != self.fmt:
             raise ParseError(f"Datei ist nicht im Format {self.fmt}")
-        fehler = next(iter(validator("exchange-formats").iter_errors(daten)), None)
+        fehler = next(iter(validator("exchange-formats", self.definition).iter_errors(daten)),
+                      None)
         if fehler is not None:
             raise ParseError(f"{self.fmt} verletzt das Schema: {fehler.message}")
         return self._build(daten)
@@ -254,6 +256,7 @@ class _SddFormatParser:
 
 class SddDepsParser(_SddFormatParser):
     fmt = "sdd-deps"
+    definition = "deps"
 
     def _build(self, daten: dict) -> DepsGraph:
         return DepsGraph(
@@ -266,6 +269,7 @@ class SddDepsParser(_SddFormatParser):
 
 class SddMetricsParser(_SddFormatParser):
     fmt = "sdd-metrics"
+    definition = "metrics"
 
     def _build(self, daten: dict) -> MetricsResult:
         return MetricsResult([Metric(m["name"], float(m["value"]), m.get("scope", "project"),
@@ -274,6 +278,7 @@ class SddMetricsParser(_SddFormatParser):
 
 class SddFindingsParser(_SddFormatParser):
     fmt = "sdd-findings"
+    definition = "findings"
 
     def _build(self, daten: dict) -> FindingsResult:
         return FindingsResult([Finding(f["rule"], f["message"], f["file"], f["line"],

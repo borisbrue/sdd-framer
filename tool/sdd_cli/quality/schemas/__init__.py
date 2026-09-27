@@ -19,8 +19,16 @@ def load_schema(name: str) -> dict:
     return json.loads((_DIR / f"{name}.schema.json").read_text(encoding="utf-8"))
 
 
-def validator(name: str) -> Draft202012Validator:
-    return Draft202012Validator(load_schema(name))
+@cache
+def validator(name: str, definition: str | None = None) -> Draft202012Validator:
+    """Validator für ein Schema oder, mit `definition`, nur für einen `$defs`-Zweig.
+
+    Der Zweig vermeidet das `oneOf` über alle Formate; bei großen Sonden-Ausgaben (Abhängigkeits-
+    graph) ist das der teure Teil von `sdd arch check` (CON-0209, Laufzeit)."""
+    schema = load_schema(name)
+    if definition is None:
+        return Draft202012Validator(schema)
+    return Draft202012Validator({"$ref": f"#/$defs/{definition}", "$defs": schema["$defs"]})
 
 
 def error_path(error) -> str:

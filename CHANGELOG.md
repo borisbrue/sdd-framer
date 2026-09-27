@@ -15,6 +15,8 @@
 ### Changed
 
 - Der Bench-Report nennt je Eintrag die Zahl der Läufe je Ausgang.
+- `sdd arch check` validiert Sonden-Ausgaben gegen den Zweig ihres Formats (Validator gecacht) und
+  `edges[].to` ohne `oneOf` (gleichwertig); hält die Laufzeitgrenze aus CON-0209 auch im Container.
 
 ## [Unreleased] – SPEC-0056: Benchmark-Strecke
 
