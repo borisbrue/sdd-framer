@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-27T14:19:08Z",
+  "last_updated": "2026-09-28T08:46:58Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -433,6 +433,34 @@
       "spec_id": "SPEC-0057",
       "accepted_at": "2026-09-27T14:19:08Z",
       "acceptance_reason": "Vorschau mit Dateiliste und Diff vor dem Anwenden aus Projekt- oder Nutzerquellen.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Builder",
+      "spec_id": "SPEC-0064",
+      "accepted_at": "2026-09-28T08:46:55Z",
+      "acceptance_reason": "Setzt die S3-Fakten in fester Reihenfolge zusammen: erst facts.tasks, dann daraus facts.frs[].tasks; beide Sichten können nicht auseinanderlaufen.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "spec_id": "SPEC-0064",
+      "accepted_at": "2026-09-28T08:46:56Z",
+      "acceptance_reason": "S3 liest nur Schnappschüsse des Runs (state.json, Task-Schnappschuss tasks.json aus der S1-Freigabe) und erzeugt keinen eigenen Zustand.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "spec_id": "SPEC-0064",
+      "accepted_at": "2026-09-28T08:46:57Z",
+      "acceptance_reason": "Feste Feldliste (Allowlist) entscheidet, was aus den Task-Daten in die Supervisor-Anfrage gelangt; keine Holdout-Pfade.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0064",
+      "accepted_at": "2026-09-28T08:46:58Z",
+      "acceptance_reason": "Bildet Task-Schnappschuss und state.json auf das eine Format aus CON-0202 ab.",
       "refactoring_guru_url": null
     }
   ]
