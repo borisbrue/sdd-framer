@@ -2,7 +2,7 @@
 id: SPEC-0064
 title: "S3-Fakten mit Tasks und FR-Zuordnung"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-09-28
 updated: 2026-09-28
