@@ -1,0 +1,4 @@
+[
+  "S1 approve: Die Zerlegung deckt alle fünf FRs ab; Einlesen und Trennzeichenerkennung liegen gemeinsam in einem Task.",
+  "S2 retry_with_hint: Der Export schrieb zunächst Latin-1; Hinweis auf encoding='utf-8' gegeben, danach grün."
+]

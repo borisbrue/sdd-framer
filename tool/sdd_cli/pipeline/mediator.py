@@ -43,7 +43,7 @@ from .providers import (
 )
 from .roles import DEFAULT_ROLES, RoleDefinition, RoleError, load_role
 from .runner import RoleResult, RoleRunner
-from .store import RunStore, now
+from .store import APPROVED_TASKS, RunStore, now
 
 if TYPE_CHECKING:
     from ..config import SddConfig
@@ -567,6 +567,7 @@ class PipelineSupervisor:
         roh = request["facts"]["tasks"]
         tasks = to_tasks(self.store.spec_id, roh, run_id=self.store.run_id)
         TaskDecomposer().save(tasks, self.config)
+        self.store.write_approved_tasks(request["request_id"], [t.to_dict() for t in tasks])
         self.state["tasks"] = [{"task_id": t.id, "state": "pending", "attempts": 0}
                                for t in topological(tasks)]
         self.transition(frm="decompose", to="tasks", reason="S1 approve")
@@ -971,16 +972,23 @@ class PipelineSupervisor:
 
     # Phase acceptance und finalize ───────────────────────────────────────────
     def _acceptance(self) -> RunOutcome | None:
+        from .s3_facts import S3FactsBuilder, SnapshotMissing
+
+        try:
+            fakten = S3FactsBuilder().tasks(self.store.read_approved_tasks(),
+                                            self.state.get("tasks") or [])
+        except SnapshotMissing as exc:
+            return self.halt(f"Abnahme nicht möglich: {exc}", file=APPROVED_TASKS)
         probe = self.ctx.run_tests()
-        facts = {"frs": self.ctx.fr_status(probe), "gate_results": [probe.summary()]}
+        fakten.frs(self.ctx.fr_status(probe)).gate_results([probe.summary()])
         optionen = self.options()
         if optionen.get("auto") and "holdout" in self.auto_steps():
             base_url = optionen.get("base_url") or (
                 (self.config.raw.get("evaluator") or {}).get("base_url"))
             ergebnis = auto_steps_mod.holdout_step(self.config, self.store.spec_id, base_url)
             self.store.event("gate", detail=ergebnis.event_detail())
-            facts["holdout"] = auto_steps_mod.holdout_facts(ergebnis)
-        request = new_request("S3", facts)
+            fakten.holdout(auto_steps_mod.holdout_facts(ergebnis))
+        request = new_request("S3", fakten.build())
         antwort = self.ask(request)
         if isinstance(antwort, RunOutcome):
             return antwort

@@ -1,0 +1,189 @@
+{
+  "spec_id": "SPEC-0064",
+  "generated_at": "2026-09-28T09:09:03Z",
+  "new_contracts": [
+    "CON-0202",
+    "CON-0230"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0064-001",
+      "type": "scope-overlap",
+      "severity": "high",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 (Pipeline Phase State JSON Schema) legt bereits einen persistierten Pipeline-Zustand fest. CON-0202 `state.json` (`$defs/state`) beschreibt ebenfalls den aktuellen Zustand des Automaten. So gibt es zwei Quellen der Wahrheit für den Pipeline-Zustand, mit möglicherweise abweichenden Phasen- und Statuswerten und Dateiorten. Klären, ob CON-0030 abgelöst oder als Teilmenge referenziert wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehende Abgrenzung aus SPEC-0053: CON-0202 INV-08 hält die Spec-Phasen in .sdd/pipeline/<SPEC>-gate.json (CON-0030), state.json nur den Zustand eines Runs. SPEC-0064 ändert daran nichts.",
+        "resolved_at": "2026-09-28T09:08:29Z"
+      }
+    },
+    {
+      "id": "CF-0064-002",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 definiert die Phasen-State-Machine des Execution Gates. CON-0202 persistiert in `state.json`/`events.jsonl` Übergänge und Gate-Ereignisse eines eigenen Automaten (SPEC-0053). Wenn Zustandsnamen oder erlaubte Übergänge voneinander abweichen, sind Events und Gate-Logik nicht deckungsgleich.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Wie CF-0064-001: CON-0202 INV-08 trennt Gate-Phasen (CON-0025) vom Run-Automaten; SPEC-0064 fügt nur S3-Fakten und eine Schnappschussdatei hinzu.",
+        "resolved_at": "2026-09-28T09:08:30Z"
+      }
+    },
+    {
+      "id": "CF-0064-003",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0096",
+      "detail": "`state.json` führt den Zustand aller Tasks. CON-0096 definiert bereits das Task-Schema (IDs, Status, Klassifizierung). Ohne `$ref` auf CON-0096 drohen abweichende Task-Statuswerte und Feldnamen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "state.tasks[].task_id verweist laut CON-0202 INV-08 auf Tasks nach CON-0096; die neuen S3-Felder grenzt CON-0230 INV-06 ab.",
+        "resolved_at": "2026-09-28T09:08:31Z"
+      }
+    },
+    {
+      "id": "CF-0064-004",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 liefert über `GET /api/pipeline/{run_id}` den Run-Status. Unklar ist, ob die `run_id` dort dieselbe ist wie der Verzeichnisname unter `.sdd/runs/<SPEC>/<run_id>/` und ob die Antwort aus `state.json` abgeleitet wird. Format und Herkunft der `run_id` sind nicht abgestimmt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Betrifft CON-0021 und das Run-Verzeichnis aus SPEC-0053, nicht die S3-Fakten; von SPEC-0064 nicht berührt.",
+        "resolved_at": "2026-09-28T09:08:32Z"
+      }
+    },
+    {
+      "id": "CF-0064-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0129",
+      "detail": "`run.json` protokolliert je Rolle Provider und Modell, `events.jsonl` jeden Rollenaufruf. CON-0121/CON-0129 erfassen `agent_type` und `model` in der Token-History. Das ist eine doppelte Erfassung derselben Metadaten, bei der die Benennung (Rolle vs. `agent_type`) auseinanderlaufen kann.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehend seit SPEC-0060 (CON-0202 INV-09: Tokens nur in token_usage); SPEC-0064 ergänzt keine Metadaten zu Rollen oder Modellen.",
+        "resolved_at": "2026-09-28T09:08:33Z"
+      }
+    },
+    {
+      "id": "CF-0064-006",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0062",
+      "detail": "CON-0062 (in-progress-spec-schema) hält den Laufzustand einer Spec fest. Der Run-Zustand in `state.json` überschneidet sich damit. Die Zuständigkeit (Spec-Ebene vs. Run-Ebene) sollte abgegrenzt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehend: CON-0202 INV-08 trennt Spec-Ebene und Run-Ebene; SPEC-0064 fügt nur Run-Dateien und S3-Fakten hinzu.",
+        "resolved_at": "2026-09-28T09:08:34Z"
+      }
+    },
+    {
+      "id": "CF-0064-007",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0124",
+      "detail": "`events.jsonl` protokolliert Gates. CON-0124 verlangt eine Testpflicht vor dem Übergang eines Tasks nach `passed`. Es ist nicht festgelegt, ob dieses Gate als Event erscheint und ob es den Task-Übergang in `state.json` blockiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Betrifft Gates und Task-Übergänge aus SPEC-0053/CON-0124; SPEC-0064 ändert weder Gates noch Übergänge.",
+        "resolved_at": "2026-09-28T09:08:35Z"
+      }
+    },
+    {
+      "id": "CF-0064-008",
+      "type": "field-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0230",
+      "conflicting_contract": "CON-0123",
+      "detail": "CON-0123 liest die Kanban-Daten aus `.sdd/runs/{spec_id}/{run_id}/tasks.json`. CON-0230 INV-01 und CON-0202 legen genau diese Datei im Run-Verzeichnis `.sdd/runs/<SPEC>/<run_id>/` als S1-Schnappschuss (`$defs/task_snapshot` mit `request_id`) neu fest. Eine Datei hat damit zwei Bedeutungen und zwei Schemas. Außerdem wird sie nur bei S1-Freigabe bzw. nach `redecompose` geschrieben, nicht bei jedem Statuswechsel, sodass das Kanban-Board veraltete Stände zeigen kann. Nötig ist entweder ein anderer Dateiname oder eine Anpassung von CON-0123, die den Laufzeitstatus aus `state.json` liest.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "Schnappschuss heißt approved-tasks.json (Spec 0.2.1, CON-0202, CON-0230 INV-07); tasks.json des TaskRepository (CON-0123) bleibt unberührt.",
+        "resolved_at": "2026-09-28T09:08:26Z"
+      }
+    },
+    {
+      "id": "CF-0064-009",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0230",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 beschreibt einen Task mit `id` als UUID4, `status` (Enum aus CON-0095) und `retry_count`. CON-0230 und `$defs/s3_task` verwenden kurze IDs (`T01`–`T04`) sowie `state` (`done`, `red`) und `attempts`. `fr_ids` und `test_file` kommen in CON-0096 nicht vor. Offen bleibt, ob das zwei getrennte Task-Modelle sein sollen (Distribution und Pipeline-Run) oder ob beide zusammengehören. Das sollte ausdrücklich abgegrenzt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0230 INV-06 grenzt die Modelle ab: id/title/test_file aus Tasks nach CON-0096, fr_ids nach CON-0203, state/attempts aus dem Run-Automaten (CON-0202).",
+        "resolved_at": "2026-09-28T09:08:27Z"
+      }
+    },
+    {
+      "id": "CF-0064-010",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0230",
+      "conflicting_contract": "CON-0124",
+      "detail": "Laut CON-0124 muss vor dem Übergang eines Tasks nach `passed` ein Test vorliegen. CON-0230 verlangt für `reopen`, dass der Task wieder auf `red` steht, und zeigt erledigte Tasks als `done`. Wie `passed` zu `done` und zurück zu `red` passt, ist nicht festgelegt. Beim Wiedereröffnen eines schon abgenommenen Tasks könnten sich die beiden Zustandsmodelle widersprechen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0230 INV-06: state/attempts sind Laufzustände des Run-Automaten, nicht der Task-Status nach CON-0095; reopen setzt wie seit SPEC-0061 FR-09 den Laufzustand auf red.",
+        "resolved_at": "2026-09-28T09:08:28Z"
+      }
+    },
+    {
+      "id": "CF-0064-011",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0230",
+      "conflicting_contract": "CON-0097",
+      "detail": "CON-0097 regelt, wie `sdd decompose` Tasks aus einer Spec ableitet. CON-0230 hält fest, dass bei S1 genau die vorgeschlagenen Tasks mit ihren `fr_ids` im Schnappschuss landen. Ob die Zerlegung nach CON-0097 überhaupt `fr_ids` pro Task liefert, sichert keiner der beiden Contracts zu. Ohne dieses Feld wäre `facts.frs[].tasks` immer leer.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0230 INV-06 verweist auf CON-0203 (fr_ids im Task) und CON-0200 (fr_ids Pflicht in der Decomposer-Ausgabe).",
+        "resolved_at": "2026-09-28T09:08:28Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 11,
+    "high": 2,
+    "medium": 4,
+    "low": 5,
+    "affected_specs_count": 0
+  }
+}
