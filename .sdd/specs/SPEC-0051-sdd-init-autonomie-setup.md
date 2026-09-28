@@ -2,7 +2,7 @@
 id: SPEC-0051
 title: sdd init Autonomie-Setup – Guardrail standardmäßig, opt-in Bypass, Guardrail-Härtung
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-23
 updated: '2026-06-23'
