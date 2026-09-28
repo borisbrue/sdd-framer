@@ -3,7 +3,7 @@ id: SPEC-0049
 title: Pattern-Nutzung in der UI – akzeptierte Design-Patterns mit Code-Fundstellen
   anzeigen
 type: feature
-status: in-progress
+status: implemented
 owner: Boris
 created: 2026-06-23
 updated: '2026-06-23'
