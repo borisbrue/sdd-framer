@@ -164,6 +164,28 @@ class RolesCheck(ConfigCheck):
                       for level, pfad, meldung in budget_issues(raw))
 
 
+class StackCheck(ConfigCheck):
+    """SPEC-0057 FR-08: Regelgruppe `stack` – jeder Eintrag erfüllt CON-0227 `$defs/entry`."""
+
+    def run(self, raw: dict, issues: list[ConfigIssue]) -> None:
+        if "stack" not in raw or raw["stack"] is None:
+            return
+        if not isinstance(raw["stack"], list):
+            issues.append(ConfigIssue("error", "stack", "muss eine Liste sein"))
+            return
+        from .stacks import errors
+
+        namen: set[str] = set()
+        for i, eintrag in enumerate(raw["stack"]):
+            issues.extend(ConfigIssue("error", f"stack[{i}]", fehler)
+                          for fehler in errors("entry", eintrag))
+            name = eintrag.get("name") if isinstance(eintrag, dict) else None
+            if name in namen:
+                issues.append(ConfigIssue("error", f"stack[{i}].name",
+                                          f"Vorlage {name!r} ist doppelt eingetragen"))
+            namen.add(name)
+
+
 class ConfigValidator:
     _CHECKS: list[ConfigCheck] = [
         RequiredFieldsCheck(),
@@ -171,6 +193,7 @@ class ConfigValidator:
         OpenAiCompatCheck(),
         HuggingFaceCheck(),
         AnthropicCheck(),
+        StackCheck(),
     ]
 
     def __init__(self, raw: dict, root: Path | None = None) -> None:

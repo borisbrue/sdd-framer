@@ -28,7 +28,7 @@ from tests.support.pipeline_project import (
 
 T1 = task("Start", ["FR-01"], "src/start.sh")
 T2 = task("Stop", ["FR-02"], "src/stop.sh", deps=["Start"])
-PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/presets/quality/python"
+PRESET = Path(__file__).resolve().parents[2] / "tool/sdd_cli/blueprint/stacks/python-cli/files/.sdd/quality"
 
 
 @pytest.fixture()

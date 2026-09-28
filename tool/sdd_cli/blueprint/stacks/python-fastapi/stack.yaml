@@ -1,0 +1,16 @@
+name: python-fastapi
+version: 1.0.0
+description: "Python-Webdienst mit FastAPI, Schichten domain/service/persistence/api, pytest mit FR-Markern"
+languages: [python]
+requires:
+  - {tool: python3, version_command: "python3 --version", min: "3.11", install_hint: "Python ≥ 3.11 installieren (z. B. uv python install 3.12)"}
+  - {tool: pytest, version_command: "python3 -m pytest --version", install_hint: "uv pip install pytest"}
+  - {tool: fastapi, version_command: "python3 -c \"import fastapi; print(fastapi.__version__)\"", install_hint: "uv pip install fastapi"}
+  - {tool: httpx, version_command: "python3 -c \"import httpx; print(httpx.__version__)\"", install_hint: "uv pip install httpx (für fastapi.testclient)"}
+  - {tool: uvicorn, version_command: "python3 -c \"import uvicorn; print(uvicorn.__version__)\"", install_hint: "uv pip install uvicorn", optional: true}
+  - {tool: ruff, version_command: "ruff --version", install_hint: "uv tool install ruff", optional: true}
+  - {tool: mypy, version_command: "mypy --version", install_hint: "uv tool install mypy", optional: true}
+  - {tool: lizard, version_command: "lizard --version", install_hint: "uv tool install lizard", optional: true}
+placeholders:
+  - {name: project_name, description: "Projektname (Default: Projekttitel)"}
+  - {name: package_name, default: "app", description: "Name des Python-Pakets"}

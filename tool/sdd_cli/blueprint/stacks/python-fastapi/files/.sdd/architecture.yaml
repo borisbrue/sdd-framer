@@ -1,0 +1,19 @@
+# Schichten der Vorlage python-fastapi (SPEC-0057). Jede Regel ist an ein ADR gebunden.
+version: 1
+layers:
+  entry: ["{{package_name}}/__init__.py", "{{package_name}}/__main__.py"]
+  domain: ["{{package_name}}/domain/**"]
+  service: ["{{package_name}}/service/**"]
+  persistence: ["{{package_name}}/persistence/**"]
+  api: ["{{package_name}}/api/**"]
+rules:
+  - id: ARCH-01
+    adr: ADR-0001
+    kind: allowed_dependencies
+    description: "api → service → domain; persistence → domain; entry verdrahtet alles."
+    graph:
+      entry: [domain, service, persistence, api]
+      api: [service, domain]
+      service: [domain]
+      persistence: [domain]
+      domain: []

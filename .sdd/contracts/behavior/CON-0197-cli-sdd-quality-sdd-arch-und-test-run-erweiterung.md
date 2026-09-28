@@ -4,7 +4,7 @@ title: "CLI sdd quality, sdd arch und Test-Run-Erweiterung"
 type: behavior
 format: gherkin
 spec: SPEC-0054
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/behavior/cli-sdd-quality-sdd-arch-und-test-run-erweiterung.feature"
 tests: ["TST-0226"]
@@ -106,3 +106,7 @@ Die Szenarien im Artifact
 | Preset | Vorlage aus `presets/quality/<name>/` im Blueprint: `quality.yaml` und Hilfsskripte |
 | Baseline | `.sdd/quality/arch-baseline.json` mit bekannten Verstößen; Format und Semantik regelt CON-0198 |
 | Run-Report | persistiertes Ergebnis von `sdd test run` (SPEC-0006) |
+
+## Seit SPEC-0057
+
+`sdd quality init --preset NAME` kopiert nichts mehr, sondern verweist auf `sdd stack apply <vorlage> --only quality` (Hinweis, Exit 1; CON-0229 INV-08). Die Szenarien zu `init` sind entsprechend angepasst; `blueprint/presets/quality/` gibt es nicht mehr.

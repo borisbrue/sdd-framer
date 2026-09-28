@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-27T12:55:06Z",
+  "last_updated": "2026-09-27T14:19:08Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -405,6 +405,34 @@
       "spec_id": "SPEC-0063",
       "accepted_at": "2026-09-27T12:55:06Z",
       "acceptance_reason": "Isolationsart als austauschbare Strategie (zunächst dir), erweiterbar ohne Änderung der Suite (OCP).",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Prototype",
+      "spec_id": "SPEC-0057",
+      "accepted_at": "2026-09-27T14:19:05Z",
+      "acceptance_reason": "Vorlage als Daten, die ins Projekt kopiert und dort weiterentwickelt wird.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "spec_id": "SPEC-0057",
+      "accepted_at": "2026-09-27T14:19:06Z",
+      "acceptance_reason": "Quellenkette Projekt → Nutzer → Blueprint.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Memento",
+      "spec_id": "SPEC-0057",
+      "accepted_at": "2026-09-27T14:19:07Z",
+      "acceptance_reason": "stack: in config.yaml mit Version und Datei-Hashes als Bezugspunkt für diff.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "spec_id": "SPEC-0057",
+      "accepted_at": "2026-09-27T14:19:08Z",
+      "acceptance_reason": "Vorschau mit Dateiliste und Diff vor dem Anwenden aus Projekt- oder Nutzerquellen.",
       "refactoring_guru_url": null
     }
   ]

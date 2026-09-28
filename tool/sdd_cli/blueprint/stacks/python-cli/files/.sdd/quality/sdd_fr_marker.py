@@ -1,4 +1,4 @@
-"""pytest-Plugin des sdd-Presets `python` (SPEC-0054 FR-14).
+"""pytest-Plugin der Vorlage python-cli (SPEC-0054 FR-14).
 
 `@pytest.mark.fr("FR-03")` ordnet einen Test einer Anforderung zu. Das Plugin schreibt die
 Zuordnung als JUnit-Property `fr`, die `sdd quality measure` auswertet.

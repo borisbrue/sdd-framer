@@ -1,5 +1,29 @@
 # Changelog
 
+## [Unreleased] – SPEC-0057: Stack-Vorlagen
+
+### Added
+
+- **`sdd stack list|show|apply|verify|diff|extract`**: Vorlagen richten ein Projekt für Tests mit
+  FR-Markern, Qualitätsmessung und Architekturregeln ein. Quellen in dieser Reihenfolge: Projekt
+  (`.sdd/stacks/`), Nutzer (`~/.config/sdd/stacks/`, `SDD_STACKS_HOME`), Blueprint.
+- `apply` überschreibt nie (abweichende Dateien als `.new` mit Diff), pflegt markierte
+  AGENTS.md-Abschnitte und hält Version, Quelle, Platzhalterwerte und Datei-Hashes unter `stack:`
+  in `config.yaml` fest. Projekt- und Nutzervorlagen zeigen vorher eine Vorschau (`--yes`,
+  `--dry-run`); `--only quality` beschränkt auf `.sdd/quality.yaml` und `.sdd/quality/`.
+- `verify` prüft Werkzeuge, Sonden, mindestens einen FR-markierten Test, `sdd arch check` und die
+  Prüfpunkte der Vorlage; `diff` vergleicht Projekt, angewendeten Stand und aktuelle Vorlage;
+  `extract` macht aus einem Projekt eine eigene Vorlage.
+- **`sdd init --stack NAME`** und die Blueprint-Vorlagen **`python-cli`** und **`python-fastapi`**
+  (Schichten mit ADR und Regel, Skeleton-Test mit FR-Marker).
+- `sdd config validate` prüft die Regelgruppe `stack`.
+
+### Changed
+
+- **`sdd quality init --preset X`** schreibt nichts mehr, sondern nennt
+  `sdd stack apply <vorlage> --only quality` (`python` → `python-cli`) und endet mit Exit 1.
+  `blueprint/presets/` entfällt; das Preset `python` lebt in der Vorlage `python-cli` weiter.
+
 ## [Unreleased] – SPEC-0063: Benchmark-Suite e2e und Pipeline-Budget
 
 ### Added

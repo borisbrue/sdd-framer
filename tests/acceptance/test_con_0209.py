@@ -148,7 +148,7 @@ def _hook_projekt(root: Path, *, architektur: bool = True, config: dict | None =
                                           encoding="utf-8")
     mp = pytest.MonkeyPatch()
     mp.chdir(root)
-    CliRunner().invoke(cli, ["quality", "init", "--preset", "python"])
+    CliRunner().invoke(cli, ["stack", "apply", "python-cli", "--only", "quality", "--yes"])
     mp.undo()
     qpfad = root / ".sdd/quality.yaml"
     quality = yaml.safe_load(qpfad.read_text(encoding="utf-8"))

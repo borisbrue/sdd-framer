@@ -194,6 +194,7 @@ sdd trace
 > | `sdd level` | `sdd autonomy level` |
 > | `sdd set-level` | `sdd autonomy set-level` |
 > | `sdd contract review` | `sdd contract analyze` |
+> | `sdd quality init --preset X` | `sdd stack apply <vorlage> --only quality` (SPEC-0057) |
 >
 > **Ersatzlos entfallen:**
 >
@@ -211,9 +212,11 @@ sdd trace
 
 ```bash
 sdd init [--path <verzeichnis>] [--name <titel>] [--provider claude|lm-studio] [--force]
+         [--stack <vorlage>]
 ```
 
-Erzeugt die vollständige SDD-Ordnerstruktur mit Schemas, Templates und `config.yaml`.
+Erzeugt die vollständige SDD-Ordnerstruktur mit Schemas, Templates und `config.yaml`. Mit
+`--stack` wird danach eine Stack-Vorlage angewendet (siehe `sdd stack`).
 
 ---
 
@@ -224,6 +227,31 @@ sdd upgrade [--path <verzeichnis>] [--verbose]
 ```
 
 Synchronisiert Schemas und Templates mit der aktuellen Paketversion.
+
+---
+
+### `sdd stack` — Projekt für Tests und Qualitätsmessung einrichten
+
+```bash
+sdd stack list                                  # Vorlagen aus Projekt, Nutzer, Blueprint
+sdd stack show <vorlage>
+sdd stack apply <vorlage> [--set NAME=WERT] [--only quality] [--yes] [--dry-run]
+sdd stack verify                                # Checkliste, Exit 1 bei Lücken
+sdd stack diff [<vorlage>]                      # Projekt vs. angewendeter Stand vs. Vorlage
+sdd stack extract <name> [--to user|project]    # eigene Einrichtung als Vorlage sichern
+```
+
+Eine Vorlage (SPEC-0057) ist ein Verzeichnis mit `stack.yaml`, `files/` und optional
+`agents-md/`. Sie bringt `.sdd/quality.yaml` mit Sonden, `.sdd/architecture.yaml` mit ADR, einen
+FR-markierten Skeleton-Test und einen AGENTS.md-Abschnitt mit. Gesucht wird in `.sdd/stacks/`,
+dann `~/.config/sdd/stacks/` (`SDD_STACKS_HOME`), dann im Blueprint (`python-cli`,
+`python-fastapi`).
+
+- `apply` überschreibt nichts: abweichende Dateien erscheinen als `<datei>.new` mit Diff. Der
+  angewendete Stand steht mit Datei-Hashes unter `stack:` in `config.yaml`. Vorlagen aus Projekt
+  oder Nutzerverzeichnis zeigen vorher eine Vorschau und brauchen eine Bestätigung oder `--yes`.
+- `verify` führt nur Deklariertes aus: Versionsbefehle aus `requires`, die Sonden
+  (`sdd quality doctor`), `sdd arch check` und die Prüfpunkte der Vorlage.
 
 ---
 

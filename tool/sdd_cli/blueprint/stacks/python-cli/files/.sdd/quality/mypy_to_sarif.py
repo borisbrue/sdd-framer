@@ -1,4 +1,4 @@
-"""mypy `--output json` (eine JSON-Zeile je Befund) → SARIF 2.1.0 auf stdout (sdd-Preset `python`)."""
+"""mypy `--output json` (eine JSON-Zeile je Befund) → SARIF 2.1.0 auf stdout (Vorlage python-cli)."""
 from __future__ import annotations
 
 import json

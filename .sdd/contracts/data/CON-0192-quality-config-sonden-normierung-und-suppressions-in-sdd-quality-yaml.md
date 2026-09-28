@@ -4,7 +4,7 @@ title: "Quality-Config: Sonden, Normierung und Suppressions in .sdd/quality.yaml
 type: data
 format: json-schema
 spec: SPEC-0054
-version: 0.2.0
+version: 0.3.0
 status: approved
 artifact: ".sdd/contracts/data/quality-config-sonden-normierung-und-suppressions-in-sdd-quality-yaml.schema.json"
 tests: ["TST-0221"]
@@ -96,3 +96,7 @@ probes:
 - Schema: `.sdd/contracts/data/quality-config-sonden-normierung-und-suppressions-in-sdd-quality-yaml.schema.json`
   (JSON Schema Draft 2020-12), angewendet auf die geparste YAML-Datei.
 - INV-03 und INV-05 bis INV-09 prüft `sdd quality doctor` bzw. `ProbeRun` zur Laufzeit.
+
+## Seit SPEC-0057
+
+`.sdd/quality.yaml` schreiben auch `sdd stack apply` (auch mit `--only quality`) und `sdd stack extract` (in eine Vorlage); überschrieben wird nie, abweichende Dateien entstehen als `.new` (CON-0229 INV-01). Das Feld `preset` bleibt optional.
