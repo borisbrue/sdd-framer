@@ -28,7 +28,7 @@ und Schnittstelle für den Dialogmodus.
 | `decisions.jsonl` | `$defs/decision` je Zeile | jede Entscheidung mit Quelle und Gültigkeit |
 | `pending-decision.json` | `$defs/pending_decision` | offene Anfrage mit `request_id` |
 | `requests/<request_id>.json` | `$defs/pending_decision` | beantwortete Anfragen (Archiv) |
-| `tasks.json` | `$defs/task_snapshot` | bei S1 freigegebene Tasks (SPEC-0064 FR-01) |
+| `approved-tasks.json` | `$defs/task_snapshot` | bei S1 freigegebene Tasks (SPEC-0064 FR-01) |
 
 ## Invarianten
 
@@ -55,13 +55,13 @@ und Schnittstelle für den Dialogmodus.
   `token_usage` (SPEC-0060). Jedes Ereignis `role_call` nennt `role`, `attempt`, `outcome` und eine
   `call_id`; dieselbe `call_id` steht im `context_json` der Usage-Zeile.
 - **INV-10 (SPEC-0064):** Bei jeder S1-Freigabe (`approve`) schreibt die Pipeline die
-  freigegebenen Tasks atomar als `tasks.json` (`$defs/task_snapshot`, mit der `request_id` der
+  freigegebenen Tasks atomar als `approved-tasks.json` (`$defs/task_snapshot`, mit der `request_id` der
   S1-Anfrage); eine Freigabe nach `redecompose` ersetzt die Datei. Nur die Pipeline schreibt sie.
 - **INV-11 (SPEC-0064):** `allowed_commands` einer S3-Anfrage ist `accept_frs`, `reopen`, `halt`.
   An S3 enthält `facts` zusätzlich `tasks` (je Task aus `state.json`, in dieser Reihenfolge, genau
   die Felder von `$defs/s3_task`) und `frs` mit `tasks` je FR (`$defs/s3_fr`: IDs der Tasks, deren
   `fr_ids` die FR enthalten, in der Reihenfolge von `facts.tasks`; ohne Task `[]`).
-- **INV-12 (SPEC-0064):** `facts.tasks` stammt ausschließlich aus `tasks.json` und `state.json`;
+- **INV-12 (SPEC-0064):** `facts.tasks` stammt ausschließlich aus `approved-tasks.json` und `state.json`;
   andere Felder der Tasks (Beschreibung, `allowed_paths`, Inhalte) gelangen nicht in die Anfrage.
 - **INV-06:** `run.json` nennt je Rolle `role_version`; `warnings` enthält u. a. die Warnung bei
   gleichem Modell für Reviewer und Implementierer (SPEC-0053 FR-04).

@@ -2,11 +2,11 @@
 id: SPEC-0064
 title: "S3-Fakten mit Tasks und FR-Zuordnung"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-09-28
 updated: 2026-09-28
-version: 0.2.0
+version: 0.2.1
 priority: medium
 tags: [pipeline, supervisor, s3]
 depends_on: [SPEC-0053, SPEC-0055, SPEC-0061]
@@ -16,11 +16,19 @@ contracts:
 tests:
 - TST-0231
 - TST-0259
+fr_test_map:
+  FR-01: [TST-0259]
+  FR-02: [TST-0231, TST-0259]
+  FR-03: [TST-0231, TST-0259]
+  FR-04: [TST-0259]
+  FR-05: [TST-0231]
+  FR-06: [TST-0259]
+  FR-07: [TST-0259]
 ---
 
 # S3-Fakten mit Tasks und FR-Zuordnung
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.2.0
+> **Status:** draft · **Owner:** Boris · **Version:** 0.2.1
 
 ## 1. Kontext & Motivation
 
@@ -61,7 +69,7 @@ Die S3-Fakten entstehen in einem eigenen Modul der Pipeline aus zwei Schnappsch�
 
 | Pattern | Rolle in dieser Spec |
 |---------|----------------------|
-| **Memento** | Bei der S1-Freigabe schreibt die Pipeline die freigegebenen Tasks als `tasks.json` ins Run-Verzeichnis (bei `redecompose` neu). S3 liest nur diesen Schnappschuss und `state.json` und erzeugt keinen eigenen Zustand; nach `reopen` zeigen `state` und `attempts` automatisch den neuen Stand. |
+| **Memento** | Bei der S1-Freigabe schreibt die Pipeline die freigegebenen Tasks als `approved-tasks.json` ins Run-Verzeichnis (bei `redecompose` neu). S3 liest nur diesen Schnappschuss und `state.json` und erzeugt keinen eigenen Zustand; nach `reopen` zeigen `state` und `attempts` automatisch den neuen Stand. |
 | **Adapter** | Bildet Task-Schnappschuss (Aufgabenbeschreibung) und `state.json` (Laufzeitstand) auf das eine Format `s3_task` aus CON-0202 ab. |
 | **Proxy (Allowlist)** | Eine feste Feldliste (`id`, `title`, `fr_ids`, `test_file`, `state`, `attempts`) entscheidet, was in die Anfrage gelangt; weitere Felder der Task (etwa Beschreibung, `allowed_paths`) bleiben draußen. Erweiterungen nur über diese Liste. |
 | **Builder** | Setzt die S3-Fakten in fester Reihenfolge zusammen: `tasks`, daraus `frs[].tasks`, dann `gate_results` und optional `holdout`. Beide Sichten hängen an derselben Task-Liste. |
@@ -73,14 +81,16 @@ für „unbekannt“ (SOLID-L). Ein eigener Snapshot gehört dem Run; fehlt er, 
 ## 4. Funktionale Anforderungen
 
 - **FR-01:** **Task-Schnappschuss.** Bei der S1-Freigabe (`approve`) schreibt die Pipeline die
-  freigegebenen Tasks als `tasks.json` ins Run-Verzeichnis; eine spätere Freigabe nach
-  `redecompose` ersetzt ihn. Die Datei wird nur von der Pipeline geschrieben.
+  freigegebenen Tasks als `approved-tasks.json` ins Run-Verzeichnis; eine spätere Freigabe nach
+  `redecompose` ersetzt ihn. Die Datei wird nur von der Pipeline geschrieben. Der Name
+  unterscheidet sie von `tasks.json` des `TaskRepository` (Kanban, CON-0123) im selben
+  Verzeichnis.
 - **FR-02:** **`facts.tasks` an S3.** Die S3-Anfrage enthält je Task aus `state.json` (in dieser
   Reihenfolge) genau die Felder `id`, `title`, `fr_ids`, `test_file`, `state` und `attempts`.
   `fr_ids` ist immer eine Liste (ohne FR: `[]`), `test_file` ist ein Pfad oder `null`.
 - **FR-03:** **Task-IDs je FR.** Jeder Eintrag in `facts.frs` erhält `tasks`: die IDs der Tasks,
   deren `fr_ids` die FR enthalten, in der Reihenfolge von `facts.tasks`; ohne Task `[]`.
-- **FR-04:** **Fehlender Schnappschuss.** Fehlt `tasks.json` oder fehlt darin eine Task aus
+- **FR-04:** **Fehlender Schnappschuss.** Fehlt `approved-tasks.json` oder fehlt darin eine Task aus
   `state.json`, stellt die Pipeline keine S3-Anfrage, sondern hält den Run mit einem Grund, der die
   Datei nennt (`halted`, Exit wie bei anderen Halts).
 - **FR-05:** **Contract-Fehler behoben.** CON-0202 nimmt `reopen` in `allowed_commands` auf
@@ -117,26 +127,26 @@ Feature: S3-Fakten mit Tasks
     Then ist die Entscheidung gültig und T03 steht wieder auf red
 
   Scenario: Schnappschuss fehlt
-    Given tasks.json fehlt im Run-Verzeichnis
+    Given approved-tasks.json fehlt im Run-Verzeichnis
     When die Pipeline die Abnahme erreicht
-    Then hält der Run mit einem Grund, der tasks.json nennt
+    Then hält der Run mit einem Grund, der approved-tasks.json nennt
 ```
 
 ## 7. Edge Cases & Fehlerfälle
 
 - FR ohne Task (Zerlegung lückenhaft): `tasks: []`.
 - Task ohne `fr_ids` (z. B. `config`, `doc`): erscheint in `facts.tasks` mit `fr_ids: []`.
-- `tasks.json` fehlt oder enthält eine Task aus `state.json` nicht: Halt (FR-04), keine
+- `approved-tasks.json` fehlt oder enthält eine Task aus `state.json` nicht: Halt (FR-04), keine
   Teilfakten.
 - Nach `reopen` wird S3 erneut angefragt; `state` und `attempts` zeigen den neuen Stand.
 - Runs, die vor dieser Spec gestartet wurden und schon hinter S1 stehen, haben kein
-  `tasks.json`; sie halten an S3 mit Hinweis (Neustart des Runs nötig).
+  `approved-tasks.json`; sie halten an S3 mit Hinweis (Neustart des Runs nötig).
 
 ## 8. Contracts (was wird garantiert)
 
 | Contract-ID | Typ      | Was wird garantiert? |
 |-------------|----------|----------------------|
-| CON-0202    | data     | `reopen` in `allowed_commands`; `$defs/task_snapshot` für `tasks.json`; an S3 `facts.tasks` (`s3_task`) und `facts.frs[].tasks` |
+| CON-0202    | data     | `reopen` in `allowed_commands`; `$defs/task_snapshot` für `approved-tasks.json`; an S3 `facts.tasks` (`s3_task`) und `facts.frs[].tasks` |
 | CON-0230    | behavior | Schnappschuss bei S1, Aufbau der S3-Fakten, Halt ohne Schnappschuss, `reopen` mit Task-IDs aus den Fakten, Anleitung und Golden Cases |
 
 ## 9. Tests (wie wird verifiziert)
@@ -158,3 +168,4 @@ Feature: S3-Fakten mit Tasks
 |------------|---------|---------------|---------------------|
 | 2026-09-28 | 0.1.0   | Boris, Claude | Initiale Erstellung |
 | 2026-09-28 | 0.2.0   | Boris, Claude | Review: Task-Schnappschuss, Halt statt Null-Semantik, Contract-Fehler als eigene FR, Patterns |
+| 2026-09-28 | 0.2.1   | Boris, Claude | contract analyze: Schnappschuss heißt `approved-tasks.json` (Kollision mit Kanban-`tasks.json`), Abgrenzung der Task-Modelle in CON-0230 |

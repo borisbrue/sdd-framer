@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sdd-framer.local/schemas/pipeline-run.schema.json",
   "title": "SDD Pipeline-Run-Verzeichnis",
-  "description": "SPEC-0053 / CON-0202. $defs je Datei unter .sdd/runs/<SPEC>/<run_id>/; events.jsonl und decisions.jsonl enthalten je Zeile ein Objekt. SPEC-0064: tasks.json ($defs/task_snapshot), S3-Fakten mit Tasks.",
+  "description": "SPEC-0053 / CON-0202. $defs je Datei unter .sdd/runs/<SPEC>/<run_id>/; events.jsonl und decisions.jsonl enthalten je Zeile ein Objekt. SPEC-0064: approved-tasks.json ($defs/task_snapshot), S3-Fakten mit Tasks.",
   "$defs": {
     "run": {
       "type": "object",
@@ -495,7 +495,7 @@
     },
     "task_snapshot": {
       "type": "object",
-      "description": "SPEC-0064 FR-01: tasks.json im Run-Verzeichnis, die bei S1 freigegebenen Tasks (Felder je Task nach CON-0096).",
+      "description": "SPEC-0064 FR-01: approved-tasks.json im Run-Verzeichnis, die bei S1 freigegebenen Tasks (Felder je Task nach CON-0096).",
       "required": [
         "spec_id",
         "request_id",

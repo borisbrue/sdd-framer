@@ -16,7 +16,7 @@ tags: [pipeline, supervisor]
 
 ## Was wird geprüft?
 
-Schnappschuss `tasks.json` bei S1, Aufbau von `facts.tasks` und `facts.frs[].tasks` an S3, Halt
+Schnappschuss `approved-tasks.json` bei S1, Aufbau von `facts.tasks` und `facts.frs[].tasks` an S3, Halt
 ohne Schnappschuss, `reopen` mit Task-IDs aus den Fakten, Anleitung und Golden Cases.
 
 ## Verknüpfung mit Contract

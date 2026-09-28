@@ -6,7 +6,7 @@ Feature: S3-Abnahme mit Task-Fakten
   Scenario: Schnappschuss bei der Freigabe
     Given ein Run, dessen Zerlegung drei Tasks vorschlägt
     When der Supervisor an S1 approve entscheidet
-    Then steht im Run-Verzeichnis tasks.json mit diesen drei Tasks und der request_id der S1-Anfrage
+    Then steht im Run-Verzeichnis approved-tasks.json mit diesen drei Tasks und der request_id der S1-Anfrage
 
   Scenario: Abnahme nennt Tasks und ihre FRs
     Given ein Run mit den Tasks T01 (FR-01), T02 (FR-02) und T03 (FR-03), alle erledigt
@@ -28,12 +28,12 @@ Feature: S3-Abnahme mit Task-Fakten
     And die nächste S3-Anfrage zeigt für T03 den neuen Stand
 
   Scenario: Schnappschuss fehlt
-    Given tasks.json fehlt im Run-Verzeichnis
+    Given approved-tasks.json fehlt im Run-Verzeichnis
     When die Pipeline die Abnahme erreicht
-    Then hält der Run mit einem Grund, der tasks.json nennt
+    Then hält der Run mit einem Grund, der approved-tasks.json nennt
     And es gibt keine offene S3-Anfrage
 
   Scenario: Neue Zerlegung ersetzt den Schnappschuss
-    Given ein Run mit freigegebenem tasks.json
+    Given ein Run mit freigegebenem approved-tasks.json
     When der Supervisor an S2 redecompose entscheidet und die neue Zerlegung an S1 freigibt
-    Then enthält tasks.json die neuen Tasks
+    Then enthält approved-tasks.json die neuen Tasks
