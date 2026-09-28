@@ -40,7 +40,7 @@ Die Szenarien im Artifact (`.sdd/contracts/behavior/s3-abnahme-mit-task-fakten.f
   `facts.frs[].tasks` als Quelle der `task_ids`. Die S3-Golden-Cases enthalten beide Felder, und
   ihre Beschreibungen verweisen für die Zuordnung auf die Fakten, nicht auf die Historie.
 - **INV-06:** Abgrenzung der Task-Modelle: `id`, `title` und `test_file` stammen aus den Tasks nach
-  CON-0096 (bei Pipeline-Runs UUIDs; `T01` in den Szenarien dient nur der Lesbarkeit), `fr_ids`
+  CON-0096 (bei Pipeline-Runs `T01`, `T02`, … in der Reihenfolge der freigegebenen Zerlegung), `fr_ids`
   nach CON-0203 (Pflicht in der Rollenausgabe des Decomposers, CON-0200). `state` und `attempts`
   sind der Laufzustand des Run-Automaten (CON-0202 `$defs/state`), nicht der Task-Status nach
   CON-0095; `reopen` setzt wie bisher den Laufzustand auf `red` (SPEC-0061 FR-09).

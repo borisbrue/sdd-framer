@@ -33,6 +33,9 @@ class RunNotFound(Exception):
     """Der Run existiert nicht."""
 
 
+APPROVED_TASKS = "approved-tasks.json"
+
+
 def _atomic_write(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
@@ -121,6 +124,21 @@ class RunStore:
             ziel = self.dir / "requests" / f"{request_id}.json"
             ziel.parent.mkdir(parents=True, exist_ok=True)
             os.replace(pfad, ziel)
+
+    # ── Task-Schnappschuss der S1-Freigabe (SPEC-0064 FR-01, CON-0202 INV-10) ──
+    def write_approved_tasks(self, request_id: str, tasks: list[dict]) -> None:
+        _atomic_write(self.dir / APPROVED_TASKS,
+                      {"spec_id": self.spec_id, "request_id": request_id, "tasks": tasks})
+
+    def read_approved_tasks(self) -> dict | None:
+        pfad = self.dir / APPROVED_TASKS
+        if not pfad.is_file():
+            return None
+        try:
+            daten = json.loads(pfad.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        return daten if isinstance(daten, dict) else None
 
     # ── Session-Aufträge an Arbeitsrollen (SPEC-0061 FR-01, CON-0212 INV-05) ──
     def write_work(self, request: dict, snapshot: dict) -> None:

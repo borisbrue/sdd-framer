@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] – SPEC-0064: S3-Fakten mit Tasks
+
+### Added
+
+- Die Abnahme-Anfrage (S3) der Pipeline enthält `facts.tasks` (je Task `id`, `title`, `fr_ids`,
+  `test_file`, `state`, `attempts`) und je FR in `facts.frs[].tasks` die zuständigen Task-IDs.
+  Der Supervisor übernimmt `task_ids` für `reopen` von dort, statt sie aus der Historie zu erraten.
+- Bei der S1-Freigabe schreibt die Pipeline die freigegebenen Tasks als `approved-tasks.json` ins
+  Run-Verzeichnis (neu nach `redecompose`). Fehlt der Schnappschuss, hält der Run vor S3 mit
+  Hinweis; Runs, die vor diesem Stand hinter S1 lagen, müssen neu gestartet werden.
+- Golden Case `SUP-009` (zwei rote FRs, Zuordnung nur über die Fakten); SUP-004 und SUP-005
+  tragen die neuen Fakten. Rolle `supervisor` 1.2.0 und `/sdd-supervise` 0.3.0 nennen sie.
+
+### Fixed
+
+- CON-0202 erlaubt `reopen` in `allowed_commands`; bisher verletzte jede S3-Anfrage das Schema.
+
 ## [Unreleased] – SPEC-0057: Stack-Vorlagen
 
 ### Added

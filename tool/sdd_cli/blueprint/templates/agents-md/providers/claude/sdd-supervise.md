@@ -1,4 +1,4 @@
-<!-- skill: sdd-supervise | version: 0.2.0 | sdd-blueprint: true | updated: 2026-09-26 -->
+<!-- skill: sdd-supervise | version: 0.3.0 | sdd-blueprint: true | updated: 2026-09-28 -->
 
 # /sdd-supervise – Claude Code als Supervisor der Rollen-Pipeline
 
@@ -40,7 +40,9 @@ sdd pipeline status <run_id>
 ```
 Lies `.sdd/runs/<SPEC>/<run_id>/pending-decision.json`: `point`, `task_id`, `allowed_commands`
 und `facts` (Tasks, FR-Abdeckung, Gate-Ergebnisse, Fehler, Tokenstand; mit `--auto` auch
-`holdout` mit Quote und Szenarien – nur Ergebnisse, nie Holdout-Inhalte).
+`holdout` mit Quote und Szenarien – nur Ergebnisse, nie Holdout-Inhalte). An S3 nennt
+`facts.tasks` jede Task des Runs (`id`, `title`, `fr_ids`, `test_file`, `state`, `attempts`) und
+`facts.frs[].tasks` je FR die zuständigen Task-IDs.
 
 ## Schritt 4: Entscheiden
 Nur Commands aus `allowed_commands`; `point` und `task_id` übernimmst du aus der Anfrage.
@@ -53,7 +55,7 @@ Nur Commands aus `allowed_commands`; `point` und `task_id` übernimmst du aus de
 | S2 | Modell ist überfordert | `reassign` (`task_id`, `role`, `model`) |
 | S2 | Task ist falsch geschnitten | `redecompose` |
 | S3 Abnahme | je FR `erfüllt`, `teilweise` oder `fehlt` mit Beleg | `accept_frs` |
-| S3 | Tests oder Holdout-Ergebnis (`facts.holdout`) zeigen ein behebbares Problem | `reopen` (`task_ids`, `hint`) |
+| S3 | Tests oder Holdout-Ergebnis (`facts.holdout`) zeigen ein behebbares Problem | `reopen` (`task_ids` aus `facts.frs[].tasks`, `hint`) |
 | jederzeit | grundsätzliches Problem | `halt` (erst nach Rückfrage beim Nutzer) |
 
 ```bash
@@ -63,6 +65,8 @@ Beispiel S3:
 ```bash
 sdd pipeline decide <run_id> --json '{"point": "S3", "command": "accept_frs", "reason": "…",
   "frs": [{"id": "FR-01", "status": "erfüllt", "evidence": "tests/unit/test_x.py"}]}'
+sdd pipeline decide <run_id> --json '{"point": "S3", "command": "reopen", "reason": "…",
+  "task_ids": ["T03"], "hint": "Grenzwert 100,00 € einschließen (FR-03)"}'
 ```
 - Exit 3: nächste Anfrage → zurück zu Schritt 3.
 - Exit 2: Command ungültig → Meldung lesen, korrigieren, erneut senden.

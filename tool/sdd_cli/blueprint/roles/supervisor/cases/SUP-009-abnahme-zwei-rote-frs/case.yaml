@@ -1,0 +1,22 @@
+id: SUP-009
+role: supervisor
+title: 'S3: zwei rote FRs – reopen der zuständigen Tasks'
+description: 'Bei der Abnahme sind FR-02 (Semikolon als Trennzeichen) und FR-04
+  (Umlaute im Export) rot; die fehlschlagenden Tests stehen in gate_results. Welche Tasks
+  zuständig sind, steht nur in facts.frs[].tasks: FR-02 gehört zu T01, FR-04 zu T03 – die
+  Task-Nummern folgen nicht den FR-Nummern. Richtig ist reopen mit task_ids [T01, T03] und
+  einem Hinweis zu beiden Fehlern, nicht accept_frs und nicht halt.'
+origin: blueprint
+timeout_seconds: 120
+expect:
+  checks:
+  - json_schema: {}
+  - decision_matches: {}
+  - reason_mentions:
+      terms:
+      - FR-02
+      - FR-04
+      - Semikolon
+      - Umlaut
+      - UTF-8
+      all: false

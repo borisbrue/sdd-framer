@@ -427,7 +427,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^FR-\\d+$"
+            "pattern": "^FR-[0-9]+[a-z]?$"
           }
         },
         "test_file": {
@@ -468,7 +468,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^FR-\\d+$"
+          "pattern": "^FR-[0-9]+[a-z]?$"
         },
         "status": {
           "enum": [

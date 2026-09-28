@@ -8,12 +8,46 @@
     "halt"
   ],
   "facts": {
-    "gate_results": [
+    "tasks": [
       {
-        "probe": "tests",
-        "status": "ok",
-        "tests": 14,
-        "failed": []
+        "id": "T01",
+        "title": "Zwischensumme",
+        "fr_ids": [
+          "FR-01"
+        ],
+        "test_file": "tests/test_zwischensumme.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T02",
+        "title": "Mengenprüfung",
+        "fr_ids": [
+          "FR-02"
+        ],
+        "test_file": "tests/test_zwischensumme.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T03",
+        "title": "Rabattstaffel",
+        "fr_ids": [
+          "FR-03"
+        ],
+        "test_file": "tests/test_rabatt.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T04",
+        "title": "Gesamtpreis mit Versand",
+        "fr_ids": [
+          "FR-04"
+        ],
+        "test_file": "tests/test_gesamt.py",
+        "state": "done",
+        "attempts": 0
       }
     ],
     "frs": [
@@ -22,6 +56,9 @@
         "status": "grün",
         "tests": [
           "tests/test_zwischensumme.py"
+        ],
+        "tasks": [
+          "T01"
         ]
       },
       {
@@ -29,6 +66,9 @@
         "status": "grün",
         "tests": [
           "tests/test_zwischensumme.py"
+        ],
+        "tasks": [
+          "T02"
         ]
       },
       {
@@ -36,6 +76,9 @@
         "status": "grün",
         "tests": [
           "tests/test_rabatt.py"
+        ],
+        "tasks": [
+          "T03"
         ]
       },
       {
@@ -43,7 +86,18 @@
         "status": "grün",
         "tests": [
           "tests/test_gesamt.py"
+        ],
+        "tasks": [
+          "T04"
         ]
+      }
+    ],
+    "gate_results": [
+      {
+        "probe": "tests",
+        "status": "ok",
+        "tests": 14,
+        "failed": []
       }
     ],
     "holdout": {

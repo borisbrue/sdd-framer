@@ -3,7 +3,7 @@ role: supervisor
 title: 'S3: Holdout zeigt Grenzfehler in einem Task – reopen'
 description: 'Alle sichtbaren Tests sind grün, aber das Holdout-Szenario ''Rabatt
   bei Warenwert genau 100,00 €'' scheitert: der Rabatt wird mit > statt ≥ geprüft
-  (FR-03 verlangt einschließlich). Laut Historie gehört FR-03 zu T03. Richtig ist
+  (FR-03 verlangt einschließlich). Laut facts.frs gehört FR-03 zu T03. Richtig ist
   reopen mit task_ids [T03] und konkretem Hinweis, nicht accept_frs (auch nicht mit
   ''teilweise'') und nicht halt.'
 origin: blueprint

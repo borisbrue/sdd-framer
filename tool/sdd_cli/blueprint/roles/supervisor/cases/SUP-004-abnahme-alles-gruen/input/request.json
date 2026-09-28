@@ -8,12 +8,46 @@
     "halt"
   ],
   "facts": {
-    "gate_results": [
+    "tasks": [
       {
-        "probe": "tests",
-        "status": "ok",
-        "tests": 17,
-        "failed": []
+        "id": "T01",
+        "title": "CSV-Parser",
+        "fr_ids": [
+          "FR-01"
+        ],
+        "test_file": "tests/test_csv_import.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T02",
+        "title": "Validierung",
+        "fr_ids": [
+          "FR-02"
+        ],
+        "test_file": "tests/test_validate.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T03",
+        "title": "Duplikaterkennung",
+        "fr_ids": [
+          "FR-03"
+        ],
+        "test_file": "tests/test_merge.py",
+        "state": "done",
+        "attempts": 0
+      },
+      {
+        "id": "T04",
+        "title": "Unterbefehl import",
+        "fr_ids": [
+          "FR-04"
+        ],
+        "test_file": "tests/test_cli_import.py",
+        "state": "done",
+        "attempts": 0
       }
     ],
     "frs": [
@@ -23,6 +57,9 @@
         "tests": [
           "tests/test_csv_import.py",
           "tests/test_cli_import.py"
+        ],
+        "tasks": [
+          "T01"
         ]
       },
       {
@@ -30,6 +67,9 @@
         "status": "grün",
         "tests": [
           "tests/test_validate.py"
+        ],
+        "tasks": [
+          "T02"
         ]
       },
       {
@@ -37,6 +77,9 @@
         "status": "grün",
         "tests": [
           "tests/test_merge.py"
+        ],
+        "tasks": [
+          "T03"
         ]
       },
       {
@@ -44,7 +87,18 @@
         "status": "grün",
         "tests": [
           "tests/test_cli_import.py"
+        ],
+        "tasks": [
+          "T04"
         ]
+      }
+    ],
+    "gate_results": [
+      {
+        "probe": "tests",
+        "status": "ok",
+        "tests": 17,
+        "failed": []
       }
     ],
     "holdout": {
