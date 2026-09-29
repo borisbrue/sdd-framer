@@ -108,6 +108,22 @@ class ProjectContext:
             zeilen.append(f"… {rest} weitere Dateien")
         return "\n".join(zeilen)
 
+    def current_files(self, patterns: list[str], exclude: list[str]) -> str:
+        """Inhalt der vorhandenen Dateien, die auf `patterns` passen (HF-0012).
+
+        Für den Implementer: Er liefert Dateien vollständig und muss dafür ihren aktuellen Stand
+        kennen. `.sdd/` (und damit Holdouts) und die Testdatei des Tasks gehören nie dazu."""
+        dateien = collect_files(self.root, list(patterns),
+                                [".sdd/**", "**/holdout/**", *exclude])
+        teile = []
+        for rel in dateien:
+            try:
+                inhalt = (self.root / rel).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            teile.append(f"### {rel}\n\n```\n{inhalt}\n```")
+        return "\n\n".join(teile)
+
     def read(self, rel: str) -> str | None:
         pfad = self.root / rel
         return pfad.read_text(encoding="utf-8") if pfad.is_file() else None

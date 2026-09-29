@@ -19,8 +19,8 @@ DEFAULT_ROLES = ("decomposer", "test_author", "implementer", "reviewer", "superv
 ALL_ROLES = (*DEFAULT_ROLES, "judge")
 
 # Geschlossene Liste der Kontextquellen (FR-03, CON-0199 INV-01); `.sdd/holdout/` ist keine.
-CONTEXT_SOURCES = ("spec", "contracts", "agents_md", "repo_map", "task", "test_file",
-                   "test_output", "diff", "gate_results", "review", "history")
+CONTEXT_SOURCES = ("spec", "contracts", "agents_md", "repo_map", "current_files", "task",
+                   "test_file", "test_output", "diff", "gate_results", "review", "history")
 DEFAULT_BUDGET = 4000  # Tokens je Quelle, wenn die Rolle kein Budget nennt
 
 

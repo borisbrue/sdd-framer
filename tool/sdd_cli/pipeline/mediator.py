@@ -653,6 +653,9 @@ class PipelineSupervisor:
             return self._sources(task, mem, test_output=mem.test_output)
         if role == "implementer":
             return self._sources(task, mem, repo_map=self.ctx.repo_map(),
+                                 current_files=self.ctx.current_files(
+                                     task.get("allowed_paths") or [],
+                                     exclude=[task["test_file"]] if task.get("test_file") else []),
                                  test_file=self.ctx.read(task.get("test_file") or "") or "",
                                  test_output=mem.test_output, review=mem.review)
         return self._sources(task, mem, diff=mem.diff or "(Diff nicht verfügbar)",

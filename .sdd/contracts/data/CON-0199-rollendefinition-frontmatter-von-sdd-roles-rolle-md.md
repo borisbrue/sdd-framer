@@ -4,7 +4,7 @@ title: "Rollendefinition: Frontmatter von .sdd/roles/<rolle>.md"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/data/rollendefinition-frontmatter-von-sdd-roles-rolle-md.schema.json"
 tests: ["TST-0228"]
@@ -23,7 +23,9 @@ System-Prompt. Die Modellwahl steht nicht hier, sondern in `llm.roles.<rolle>`.
 ## Invarianten
 
 - **INV-01:** `inputs` stammt aus der geschlossenen Liste `spec`, `contracts`, `agents_md`,
-  `repo_map`, `task`, `test_file`, `test_output`, `diff`, `gate_results`, `review`, `history`.
+  `repo_map`, `current_files`, `task`, `test_file`, `test_output`, `diff`, `gate_results`, `review`,
+  `history`. `current_files` (HF-0012) ist der Inhalt der vorhandenen Dateien aus `allowed_paths`
+  des Tasks, ohne dessen Testdatei, ohne `.sdd/` und ohne Holdouts.
   `.sdd/holdout/` ist nie eine Quelle.
 - **INV-02:** `output_schema` zeigt für jede Rolle auf ein Schema: Arbeitsrollen auf CON-0200
   (`…#/$defs/<rolle>`), `supervisor` auf das Command-Schema aus CON-0201. Es gibt keinen Sonderfall;
