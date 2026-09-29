@@ -5,7 +5,7 @@ title: "`sdd init` integriert Skill-Dateien-Check und GitHub-Actions-Rückfrage"
 type: behavior
 format: markdown
 spec: SPEC-0044
-version: 0.1.1
+version: 0.2.0
 status: approved
 artifact: "contracts/behavior/sdd-init-scaffolding.md"
 tests:
@@ -29,6 +29,16 @@ eigenständigen Befehle `sdd new agents-md` und `sdd new github-workflow` entfal
 - Fehlen sie, werden sie automatisch angelegt (analog zur `REQUIRED_DIRS`-Logik)
 - Kein manueller Aufruf von `sdd new agents-md` nötig
 - `sdd upgrade` enthält die Nachrüst-Logik für bestehende Projekte
+- `sdd upgrade` ersetzt eine vorhandene Skill-Datei, wenn ihre Kopfzeile
+  `sdd-blueprint: true` trägt und die Version älter ist als die des Blueprints.
+  Ein vorangestelltes Frontmatter (`scope:`) bleibt erhalten. Dateien ohne diese
+  Kopfzeile gelten als eigene und werden nie angefasst.
+
+> **v0.2.0 (2026-09-11, #134):** Die Nachrüstung kam mit #129. Vorher stand sie
+> nur in der Hilfe. Das Ersetzen älterer Blueprint-Fassungen ist neu: Ein Projekt
+> behielt sonst auf Dauer Skills, die auf entfernte Befehle zeigten und die
+> Gate-Kette nicht kannten; nur `sdd init --force-skills` half, und das
+> überschrieb auch eigene Dateien.
 
 ### GitHub-Actions-Workflow
 - `sdd init` fragt interaktiv: "GitHub-Actions-Workflow anlegen? (ja/nein)"
@@ -76,4 +86,16 @@ Feature: sdd init Scaffolding-Integration
     When ich `sdd upgrade` aufrufe
     Then werden fehlende Skill-Dateien nachgerüstet
     And es erscheint keine GitHub-Actions-Frage
+
+  Scenario: sdd upgrade ersetzt eine ältere Blueprint-Fassung
+    Given .claude/commands/sdd-review.md trägt "version: 0.4.0 | sdd-blueprint: true"
+    And das Blueprint liefert sdd-review.md in Version 0.6.0
+    When ich `sdd upgrade` aufrufe
+    Then enthält .claude/commands/sdd-review.md die Fassung 0.6.0
+    And ein vorangestelltes Frontmatter bleibt erhalten
+
+  Scenario: sdd upgrade lässt eigene Skill-Dateien in Ruhe
+    Given .claude/commands/sdd-review.md ohne die Kopfzeile "sdd-blueprint: true"
+    When ich `sdd upgrade` aufrufe
+    Then bleibt die Datei byte-gleich
 ```
