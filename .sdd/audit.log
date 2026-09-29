@@ -95,3 +95,4 @@
 2026-09-29T10:13:52Z  hotfix.start  HF-0012  'Implementer sieht den Inhalt bestehender Dateien nicht: die Rolle muss Dateien in allowed_paths vollständig liefern, bekommt deren aktuellen Inhalt aber nicht; beim Erweitern (z. B. neue Klasse in bestehendem Modul) geht bestehender Code verloren und die Tests früherer Specs werden rot'
 2026-09-29T10:45:56Z  hotfix.finalize  HF-0012  commit=1208bd9
 2026-09-29T10:46:14Z  hotfix.start  HF-0013  'S2 kann einen falschen Test nicht zurückgeben: retry_with_hint protokolliert den Übergang nach retry, lässt den Task-Zustand aber unverändert (bei red läuft wieder nur der Implementer); kein S2-Command schickt einen Task an den Test-Autor zurück'
+2026-09-29T11:42:03Z  hotfix.finalize  HF-0013  commit=9c28ff7
