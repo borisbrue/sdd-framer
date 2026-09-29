@@ -1,7 +1,7 @@
 ---
 scope: pipeline-supervision
 ---
-<!-- skill: sdd-supervise | version: 0.3.0 | sdd-blueprint: true | updated: 2026-09-28 -->
+<!-- skill: sdd-supervise | version: 0.4.0 | sdd-blueprint: true | updated: 2026-09-29 -->
 
 # /sdd-supervise – Claude Code als Supervisor der Rollen-Pipeline
 
@@ -55,6 +55,8 @@ Nur Commands aus `allowed_commands`; `point` und `task_id` übernimmst du aus de
 | S1 Zerlegung | Tasks decken alle FRs ab, sinnvoll geschnitten, testbar | `approve` |
 | S1 | Lücken, zu grob, falsche Pfade | `revise` mit konkreter Begründung |
 | S2 Eskalation | Fehler ist mit einem Hinweis lösbar | `retry_with_hint` (`task_id`, `hint`) |
+| S2 | Der Test selbst ist falsch (widerspricht der Spec) | `retry_with_hint` mit `"stage": "test"` |
+| S2 | Review-Befund, den du teilst | `retry_with_hint` mit `"stage": "implementation"` |
 | S2 | Modell ist überfordert | `reassign` (`task_id`, `role`, `model`) |
 | S2 | Task ist falsch geschnitten | `redecompose` |
 | S3 Abnahme | je FR `erfüllt`, `teilweise` oder `fehlt` mit Beleg | `accept_frs` |

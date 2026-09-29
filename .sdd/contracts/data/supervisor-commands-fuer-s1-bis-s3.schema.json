@@ -80,6 +80,13 @@
         "hint": {
           "type": "string",
           "minLength": 1
+        },
+        "stage": {
+          "enum": [
+            "test",
+            "implementation"
+          ],
+          "description": "HF-0013: test = zurück an den Test-Autor (der Test ist falsch); implementation = zurück an den Implementer (z. B. nach Review-Befund); ohne Angabe = die aktuelle Stufe wiederholt mit dem Hinweis."
         }
       }
     },
