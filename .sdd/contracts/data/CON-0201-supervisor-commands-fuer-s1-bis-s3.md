@@ -4,7 +4,7 @@ title: "Supervisor-Commands fuer S1 bis S3"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/data/supervisor-commands-fuer-s1-bis-s3.schema.json"
 tests: ["TST-0230"]
@@ -38,6 +38,11 @@ und protokolliert es in `decisions.jsonl`. Dasselbe Format gilt für `inline` un
 - **INV-07:** `redecompose` ruft den decomposer erneut für die ganze Spec auf. Er bekommt als
   Kontextquelle `history` die Begründung und die Liste der bereits erledigten Tasks; erledigte
   Tasks bleiben erhalten, offene werden durch die neue Zerlegung ersetzt.
+- **INV-08 (HF-0013):** `retry_with_hint` setzt `attempts` der Task auf 0 und gibt den Hinweis
+  über `history` weiter. Mit `stage: test` geht die Task an den Test-Autor zurück (Zustand
+  `retry`; für einen falschen Test), mit `stage: implementation` an den Implementer (Zustand
+  `red`; etwa nach einem Review-Befund). Ohne `stage` bleibt der Zustand, die aktuelle Stufe wird
+  mit dem Hinweis wiederholt.
 - **INV-05:** Die Tabelle aus INV-02 ist die Obergrenze. Die offene Anfrage (CON-0202) nennt mit
   `allowed_commands` die in der konkreten Situation wirksame Teilmenge (z. B. kein `revise` mehr
   nach `max_revisions`). Ein Command ist nur gültig, wenn es dem Schema entspricht und in dieser

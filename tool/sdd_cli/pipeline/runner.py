@@ -28,6 +28,7 @@ CHARS_PER_TOKEN = 4
 DEFAULT_MAX_OUTPUT = 8000
 SOURCE_TITLES = {
     "spec": "Spec", "contracts": "Contracts", "agents_md": "AGENTS.md", "repo_map": "Dateien",
+    "current_files": "Aktueller Inhalt der Dateien aus allowed_paths",
     "task": "Task", "test_file": "Testdatei", "test_output": "Testausgabe", "diff": "Diff",
     "gate_results": "Gate-Ergebnisse", "review": "Review", "history": "history",
 }

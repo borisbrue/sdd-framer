@@ -484,9 +484,15 @@ class PipelineSupervisor:
             return self._reopen(command)
         task_state = self._task_state(command.get("task_id") or request.get("task_id"))
         if name == "retry_with_hint":
+            # HF-0013: `stage` wählt die Stufe: `test` = Test-Autor (falscher Test),
+            # `implementation` = Implementer (z. B. nach Review-Befund); ohne Angabe wiederholt
+            # die aktuelle Stufe mit dem Hinweis.
             task_state["attempts"] = 0
-            self.transition(frm=task_state["state"], to="retry", task_id=task_state["task_id"],
+            ziel = {"test": "retry", "implementation": "red"}.get(command.get("stage") or "",
+                                                                  task_state["state"])
+            self.transition(frm=task_state["state"], to=ziel, task_id=task_state["task_id"],
                             reason=command["reason"])
+            task_state["state"] = ziel
         elif name == "reassign":
             task_state.setdefault("assignment", {})[command["role"]] = command["model"]
             task_state["attempts"] = 0
@@ -653,6 +659,9 @@ class PipelineSupervisor:
             return self._sources(task, mem, test_output=mem.test_output)
         if role == "implementer":
             return self._sources(task, mem, repo_map=self.ctx.repo_map(),
+                                 current_files=self.ctx.current_files(
+                                     task.get("allowed_paths") or [],
+                                     exclude=[task["test_file"]] if task.get("test_file") else []),
                                  test_file=self.ctx.read(task.get("test_file") or "") or "",
                                  test_output=mem.test_output, review=mem.review)
         return self._sources(task, mem, diff=mem.diff or "(Diff nicht verfügbar)",
