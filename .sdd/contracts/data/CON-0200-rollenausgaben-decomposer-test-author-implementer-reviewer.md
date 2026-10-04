@@ -4,7 +4,7 @@ title: "Rollenausgaben: decomposer, test_author, implementer, reviewer"
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/data/rollenausgaben-decomposer-test-author-implementer-reviewer.schema.json"
 tests: ["TST-0229"]
@@ -28,8 +28,9 @@ und ein gezählter Fehlversuch.
 - **INV-02 (decomposer):** `allowed_paths` sind die Globs, die der Task schreiben darf; sie sind
   die Grundlage der PathPolicy (CON-0204).
 - **INV-03 (test_author):** Genau eine Testdatei je Antwort mit mindestens einer FR.
-- **INV-04 (implementer):** Mindestens eine Datei; alle Pfade relativ ohne `..`. Ob der Pfad
-  erlaubt ist, entscheidet die PathPolicy, nicht dieses Schema.
+- **INV-04 (implementer):** Alle Pfade relativ ohne `..`. Ob der Pfad erlaubt ist, entscheidet
+  die PathPolicy, nicht dieses Schema. `files: []` bedeutet „keine Änderung nötig“ (SPEC-0066
+  FR-02, CON-0232 INV-03).
 - **INV-05 (reviewer):** `verdict: fail` verlangt mindestens einen Befund mit Kategorie
   `requirement|architecture|quality|test`, Datei und Begründung.
 - **INV-06 (Übernahme in das Task-Modell):** Der Mediator macht aus jeder decomposer-Task genau

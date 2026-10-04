@@ -239,6 +239,14 @@ def _task_count(env: CheckEnv) -> CheckResult:
     return ok()
 
 
+def _task_type_present(env: CheckEnv) -> CheckResult:
+    """Mindestens `min` Tasks vom Typ `type` (SPEC-0065 FR-04: Prüf-Tasks als `test`)."""
+    typ, mindestens = env.params.get("type", "test"), env.params.get("min", 1)
+    n = sum(1 for t in _tasks(env) if (t.get("type") or "code") == typ)
+    return ok() if n >= mindestens else fail([f"{n} Tasks vom Typ {typ!r}, erwartet mindestens "
+                                              f"{mindestens}"])
+
+
 def _index(tasks: list[dict], muster: str) -> int | None:
     import re
 
@@ -458,6 +466,8 @@ REGISTRY: dict[str, CheckSpec] = {s.name: s for s in (
     CheckSpec("test_file_per_code_task", _test_file_per_code_task, _BEIDE),
     CheckSpec("test_file_matches_task", _test_file_matches_task, _BEIDE),
     CheckSpec("task_count", _task_count, _EVAL, params={"min": _INT, "max": _INT}),
+    CheckSpec("task_type_present", _task_type_present, _EVAL,
+              params={"type": {"type": "string"}, "min": _INT}),
     CheckSpec("ordered_before", _ordered_before, _EVAL,
               params={"first": {"type": "string"}, "then": {"type": "string"}}),
     CheckSpec("max_complexity", _max_complexity, _EVAL,

@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased] – SPEC-0065: Rollenkontext beim Erweitern bestehenden Codes
+
+### Added
+
+- Neue Kontextquelle `dependency_api`: öffentliche Schnittstellen (Signaturen, Felder, kurze
+  Konstanten, erste Docstring-Zeile, keine Rümpfe) der Dateien erledigter Abhängigkeiten eines
+  Tasks. Extraktoren je Dateiendung im Paket `pipeline/extractors/` (mitgeliefert: Python über
+  `ast`); Dateien ohne Extraktor erscheinen nur mit ihrem Pfad.
+- Der Test-Autor bekommt `current_files` (8000 Tokens) und `dependency_api` (4000), der
+  Implementer zusätzlich `dependency_api` (4000). Rollen `test_author` 1.1.0 (nur bestehende
+  Namen, keine Mocks für Projektklassen), `implementer` 1.2.0, `decomposer` 1.1.0 (reine
+  Absicherung bestehenden Verhaltens als Task vom Typ `test`).
+- Check `task_type_present {type, min}` für Rollen-Evals; Golden Cases `DEC-009` (Schichtregel
+  absichern) und `TAU-009` (Umbenennen im bestehenden Service, Falle Mock statt Ablage).
+
+### Changed
+
+- CON-0200 0.4.0: Implementer-Ausgabe erlaubt `files: []` im Schema (Verhalten folgt mit
+  SPEC-0066).
+
 ## [Unreleased] – SPEC-0064: S3-Fakten mit Tasks
 
 ### Added

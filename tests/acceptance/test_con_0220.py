@@ -41,6 +41,15 @@ def _report(faelle: dict[str, tuple[float, bool]], *, holdout=0.5, schema="role-
     return daten
 
 
+def _versionen() -> tuple[str, str, str]:
+    """Blueprint-Version des Decomposers, nach Minor-Bump und danach nach Patch-Bump."""
+    from sdd_cli.pipeline.roles import load_blueprint_role
+
+    major, minor, _ = (int(x) for x in load_blueprint_role("decomposer").version.split("."))
+    return (load_blueprint_role("decomposer").version, f"{major}.{minor + 1}.0",
+            f"{major}.{minor + 1}.1")
+
+
 def _cli(*args: str):
     from sdd_cli.main import cli
 
@@ -123,11 +132,12 @@ def test_tc05_uebernahme_einer_prompt_aenderung(projekt):
     assert ergebnis.exit_code == 0, ergebnis.output
     rolle = (projekt / ".sdd/roles/decomposer.md").read_text(encoding="utf-8")
     kopf = yaml.safe_load(rolle.split("---", 2)[1])
-    assert kopf["version"] == "1.1.0" and "Zusatzregel" in rolle
+    alt, neu, _ = _versionen()
+    assert kopf["version"] == neu and "Zusatzregel" in rolle
     basis = json.loads((projekt / ".sdd/roles/decomposer/baseline.json").read_text())
-    assert basis["role_version"] == "1.1.0" and basis["cases"]["DEC-002"]["score"] == 0.6
+    assert basis["role_version"] == neu and basis["cases"]["DEC-002"]["score"] == 0.6
     changelog = (projekt / ".sdd/roles/decomposer/CHANGELOG.md").read_text(encoding="utf-8")
-    assert "1.0.0 → 1.1.0" in changelog and "→ 0.7666" in changelog
+    assert f"{alt} → {neu}" in changelog and "→ 0.7666" in changelog
 
 
 def test_tc06_uebernahme_ohne_accept(projekt):
@@ -158,7 +168,7 @@ def test_tc07_erzwungene_uebernahme(projekt):
                     "--reason", "Rubrik ersetzt")
     assert ergebnis.exit_code == 0, ergebnis.output
     basis = json.loads((projekt / ".sdd/roles/decomposer/baseline.json").read_text())
-    assert basis["forced"] == {"reason": "Rubrik ersetzt"} and basis["role_version"] == "1.1.1"
+    assert basis["forced"] == {"reason": "Rubrik ersetzt"} and basis["role_version"] == _versionen()[2]
     assert "Rubrik ersetzt" in (projekt / ".sdd/roles/decomposer/CHANGELOG.md").read_text()
 
 

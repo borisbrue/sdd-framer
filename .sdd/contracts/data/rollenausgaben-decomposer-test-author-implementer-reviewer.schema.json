@@ -168,7 +168,7 @@
       "properties": {
         "files": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "type": "object",
             "required": [
@@ -186,7 +186,8 @@
                 "type": "string"
               }
             }
-          }
+          },
+          "description": "SPEC-0066 FR-02: leere Liste = keine Änderung nötig; dann wird nichts geschrieben und das GREEN-Gate prüft den bestehenden Stand."
         },
         "explanation": {
           "type": "string",

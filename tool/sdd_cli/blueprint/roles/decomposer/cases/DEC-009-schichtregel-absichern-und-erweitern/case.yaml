@@ -1,0 +1,20 @@
+id: DEC-009
+role: decomposer
+title: "Neue Funktion plus Absicherung einer bestehenden Schichtregel"
+description: >-
+  Bestehendes Paket todo/ mit Domain, Ablage und Service. FR-01 und FR-02 verlangen neues
+  Verhalten (Fälligkeit setzen, überfällige Todos auflisten). FR-03 verlangt nur einen Test
+  für eine Regel, die der Code schon erfüllt (Domain importiert weder Service noch Ablage).
+  Falle: FR-03 als `code`-Task zerlegen; der Test wäre sofort grün und das RED-Gate scheitert.
+  Richtig ist ein Task vom Typ `test` (SPEC-0065 FR-04).
+origin: blueprint
+timeout_seconds: 60
+expect:
+  checks:
+    - json_schema: {}
+    - fr_coverage: {min: 1.0}
+    - acyclic: {}
+    - deps_resolvable: {}
+    - test_file_per_code_task: {}
+    - task_type_present: {type: test, min: 1}
+    - task_count: {min: 2, max: 6}

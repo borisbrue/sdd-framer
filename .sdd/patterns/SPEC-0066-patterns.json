@@ -1,0 +1,22 @@
+{
+  "spec_id": "SPEC-0066",
+  "generated_at": "2026-10-04T10:01:08Z",
+  "patterns": [
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-10-04T10:01:08Z",
+      "acceptance_reason": "Übersetzt die Ausgabe des Reviewers in das feste Schema facts.review aus CON-0202; ohne vorheriges Review entsteht kein Feld.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "status": "accepted",
+      "decided_at": "2026-10-04T10:01:09Z",
+      "acceptance_reason": "Erweitert die bestehende Usage-Erfassung (SPEC-0063) um Cache-Tokens, anbieterneutral; der Report liest sie auf demselben Weg wie Input- und Output-Tokens.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}

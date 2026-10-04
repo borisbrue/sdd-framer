@@ -54,6 +54,13 @@ def test_inv06_unbekannte_felder():
     assert schema_errors("role_definition", {**GUELTIG, "model": "qwen"})
 
 
+def test_dependency_api_ist_quelle_mit_budget():
+    """CON-0199 0.5.0 (SPEC-0065 FR-02): Schnittstellen erledigter Abhängigkeiten."""
+    rolle = {**GUELTIG, "inputs": ["spec", "dependency_api"],
+             "input_budgets": {"dependency_api": 4000}}
+    assert schema_errors("role_definition", rolle) == []
+
+
 def test_budget_nur_fuer_bekannte_quellen():
     assert schema_errors("role_definition", {**GUELTIG, "input_budgets": {"holdout": 10}})
 
