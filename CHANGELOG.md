@@ -1,8 +1,18 @@
 # Changelog
 
-## [Unreleased] – SPEC-0066: S2-Fakten, Versuche je Stufe und Token-Report
+## [0.2.0] – 2026-10-04
 
-### Added
+Die rollenbasierte Pipeline (`sdd pipeline`) ist der einzige Ausführungspfad. Arbeitsrollen
+(Decomposer, Test-Autor, Implementer, Reviewer) laufen über beliebige Provider, Claude
+entscheidet als Supervisor an S1 bis S3. Dazu kommen Rollen-Evals mit Golden Cases, eine
+Benchmark-Strecke, Stack-Vorlagen und die Usage-Erfassung aller Provider.
+
+**Entfernt (inkompatibel):** `task_routing`, `sdd orchestrate`, der CodeGen-Pfad und der alte
+Ablauf von `/sdd-implement` (SPEC-0058, SPEC-0062). Bestehende Projekte: `sdd upgrade`.
+
+### SPEC-0066: S2-Fakten, Versuche je Stufe und Token-Report
+
+#### Added
 
 - S2-Anfragen nach einer Review-Ablehnung enthalten `facts.review` (Urteil und Befunde des
   letzten Reviews, höchstens 20, Begründung je höchstens 600 Zeichen). Der Supervisor muss den
@@ -11,7 +21,7 @@
 - `sdd pipeline report` zeigt Cache-Read und Cache-Write je Rolle und nennt Rollen ohne
   Usage-Werte; der Claude-Anteil rechnet Input, Output und beide Cache-Werte ein.
 
-### Changed
+#### Changed
 
 - Versuche zählen je Stufe: S2 kommt, wenn die anstehende Stufe oder `review` `max_attempts`
   erreicht. Eine Review-Ablehnung beginnt eine neue Runde (setzt `implementation` auf 0);
@@ -20,9 +30,9 @@
 - Der Implementer darf `files: []` liefern („nichts zu ändern“): Das GREEN-Gate prüft den
   bestehenden Stand, das Review bekommt den Diff der Task gegen ihren Ausgangsstand.
 
-## [Unreleased] – SPEC-0065: Rollenkontext beim Erweitern bestehenden Codes
+### SPEC-0065: Rollenkontext beim Erweitern bestehenden Codes
 
-### Added
+#### Added
 
 - Neue Kontextquelle `dependency_api`: öffentliche Schnittstellen (Signaturen, Felder, kurze
   Konstanten, erste Docstring-Zeile, keine Rümpfe) der Dateien erledigter Abhängigkeiten eines
@@ -35,14 +45,14 @@
 - Check `task_type_present {type, min}` für Rollen-Evals; Golden Cases `DEC-009` (Schichtregel
   absichern) und `TAU-009` (Umbenennen im bestehenden Service, Falle Mock statt Ablage).
 
-### Changed
+#### Changed
 
 - CON-0200 0.4.0: Implementer-Ausgabe erlaubt `files: []` im Schema (Verhalten folgt mit
   SPEC-0066).
 
-## [Unreleased] – SPEC-0064: S3-Fakten mit Tasks
+### SPEC-0064: S3-Fakten mit Tasks
 
-### Added
+#### Added
 
 - Die Abnahme-Anfrage (S3) der Pipeline enthält `facts.tasks` (je Task `id`, `title`, `fr_ids`,
   `test_file`, `state`, `attempts`) und je FR in `facts.frs[].tasks` die zuständigen Task-IDs.
@@ -53,13 +63,13 @@
 - Golden Case `SUP-009` (zwei rote FRs, Zuordnung nur über die Fakten); SUP-004 und SUP-005
   tragen die neuen Fakten. Rolle `supervisor` 1.2.0 und `/sdd-supervise` 0.3.0 nennen sie.
 
-### Fixed
+#### Fixed
 
 - CON-0202 erlaubt `reopen` in `allowed_commands`; bisher verletzte jede S3-Anfrage das Schema.
 
-## [Unreleased] – SPEC-0057: Stack-Vorlagen
+### SPEC-0057: Stack-Vorlagen
 
-### Added
+#### Added
 
 - **`sdd stack list|show|apply|verify|diff|extract`**: Vorlagen richten ein Projekt für Tests mit
   FR-Markern, Qualitätsmessung und Architekturregeln ein. Quellen in dieser Reihenfolge: Projekt
@@ -75,15 +85,15 @@
   (Schichten mit ADR und Regel, Skeleton-Test mit FR-Marker).
 - `sdd config validate` prüft die Regelgruppe `stack`.
 
-### Changed
+#### Changed
 
 - **`sdd quality init --preset X`** schreibt nichts mehr, sondern nennt
   `sdd stack apply <vorlage> --only quality` (`python` → `python-cli`) und endet mit Exit 1.
   `blueprint/presets/` entfällt; das Preset `python` lebt in der Vorlage `python-cli` weiter.
 
-## [Unreleased] – SPEC-0063: Benchmark-Suite e2e und Pipeline-Budget
+### SPEC-0063: Benchmark-Suite e2e und Pipeline-Budget
 
-### Added
+#### Added
 
 - Suite-Art **`e2e`** für `sdd bench run`: ganze Specs eines Fixtures per `sdd pipeline run --auto`
   in einer Git-Kopie umsetzen, Messung mit versteckten Akzeptanztests (FR-Marker) und
@@ -93,15 +103,15 @@
 - **Pipeline-Budget**: `pipeline.budget` bzw. `--max-tokens`/`--max-claude-tokens`; der Run hält mit
   Grund `budget`. `sdd config validate` prüft die Werte.
 
-### Changed
+#### Changed
 
 - Der Bench-Report nennt je Eintrag die Zahl der Läufe je Ausgang.
 - `sdd arch check` validiert Sonden-Ausgaben gegen den Zweig ihres Formats (Validator gecacht) und
   `edges[].to` ohne `oneOf` (gleichwertig); hält die Laufzeitgrenze aus CON-0209 auch im Container.
 
-## [Unreleased] – SPEC-0056: Benchmark-Strecke
+### SPEC-0056: Benchmark-Strecke
 
-### Added
+#### Added
 
 - **`sdd bench init|run|report|compare`**: Modellbelegungen über Suiten vergleichen. Matrix mit
   Belegungen, Varianten (`profil@variante`), Sweep, Wiederholungen, Stufenmodell `top_k` und
@@ -114,14 +124,14 @@
 - Profil-Schlüssel `max_concurrent` und `seed` (an `openai-compat`); `bench/results/` in den
   lokalen Ignores; `bench/suites/regen.yaml` mit sieben Modulen aus BEFUND-modelle §3.
 
-### Changed
+#### Changed
 
 - `pipeline.facade` bietet `run_role`, `role_binding` und `measure_changed`; `EvalRunner` nimmt
   Provider-Hüllen (`wrap`) an. SPEC-0063 (Suite `e2e`) ist als Folge-Spec angelegt.
 
-## [Unreleased] – SPEC-0055: Rollen-Evals mit Golden Cases
+### SPEC-0055: Rollen-Evals mit Golden Cases
 
-### Added
+#### Added
 
 - **`sdd role eval|compare|accept`** und **`sdd role case new|capture|confirm`**: Rollen gegen
   Golden Cases messen (Score, Streuung, `pass@1`, `pass^k`, Tokens je Fall), Kandidaten nach der
@@ -137,15 +147,15 @@
   die Komponente `evaluator` in `sdd quality --judge`.
 - Skill **`/sdd-role-tune`**; Profil-Schlüssel `requests_per_minute`.
 
-### Changed
+#### Changed
 
 - Alle Scanner von `.sdd/holdout/` lassen `.sdd/holdout/roles/` aus; Rollendateien dürfen nur
   gate-fähige Checks nennen (`sdd validate`).
 - Das Run-Protokoll nennt gescheiterte Checks eines Rollenaufrufs (`failed_checks`).
 
-## [Unreleased] – SPEC-0062: Ein Ausführungspfad
+### SPEC-0062: Ein Ausführungspfad
 
-### Added
+#### Added
 
 - `sdd pipeline run --session ROLLE` (mehrfach): Rollen nur für diesen Run im Modus `session`,
   `config.yaml` bleibt unverändert; `--steps holdout,finalize,automerge` ersetzt
@@ -157,7 +167,7 @@
 - Architekturregel ARCH-05 (ADR-0006) mit Schicht `pipeline`: Interna der Pipeline nur in
   `pipeline` und `entry`, sonst `pipeline.facade`.
 
-### Changed
+#### Changed
 
 - `/sdd-implement` 1.0.0: Vorbedingungen, Review, Holdout-Anlage, dann
   `sdd pipeline run SPEC --auto --session test_author --session implementer --session supervisor`
@@ -169,7 +179,7 @@
 - `sdd start --auto` und `sdd maintenance --auto-pr` starten `sdd pipeline run --auto`.
 - GitHub-Action-Vorlage ruft `sdd pipeline run $SPEC --auto`; `ANTHROPIC_API_KEY` ist optional.
 
-### Removed
+#### Removed
 
 - `task_routing/`, `orchestrator.py`, `llm_probe.py` und der CodeGen-Pfad (`CodeGenProvider`,
   `get_code_gen_provider`, `ClaudeCliCodeGenProvider`, `OpenAICompatCodeGenProvider`).
@@ -178,9 +188,9 @@
 - SPEC-0045 (CON-0171 bis CON-0174) sowie CON-0012, CON-0024, CON-0033, CON-0063, CON-0113 und
   CON-0164 sind deprecated.
 
-## [Unreleased] – SPEC-0061: Pipeline-Fähigkeiten
+### SPEC-0061: Pipeline-Fähigkeiten
 
-### Added
+#### Added
 
 - Arbeitsrollen im Modus `session` (`llm.roles.<rolle>.mode: session`): Auftrag in
   `pending-work.json`, Exit 3, Bestätigung mit **`sdd pipeline done RUN [--json]`**. Rollenvertrag:
@@ -193,16 +203,16 @@
 - Gates pro Task (`pipeline.task_gates`: `tests`, `architecture`, `lint`); Task-Typen `test`,
   `config`, `doc` ohne RED-Zwang.
 
-### Changed
+#### Changed
 
 - `sdd config test-llm` prüft Rollen und Profile (`--role`, `--profile`) statt des abgelösten
   `llm_pool`; `--id` entfällt.
 - Default-Rolle `supervisor` 1.1.0 (kennt `reopen`); lokal angepasste Rollen bekommen beim
   `sdd upgrade` eine `supervisor.md.new`.
 
-## [Unreleased] – SPEC-0058: Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
+### SPEC-0058: Rückbau abgelöster Ausführungspfade und Pipeline-Monitor
 
-### Removed
+#### Removed
 
 - `sub_agent.py`, `local_agent.py`, `autopilot.py` (nie angebunden; `local_agent` setzte als
   einziger Code `ANTHROPIC_API_KEY`/`ANTHROPIC_BASE_URL`), `dist_orchestrator.py`,
@@ -212,14 +222,14 @@
   Migration: `sdd upgrade` kommentiert die Blöcke `llm_pool`, `local_agent` und `autopilot` in
   `config.yaml` aus (`# [SPEC-0058] …`) und meldet sie.
 
-### Added
+#### Added
 
 - `sdd spec deprecate SPEC-XXXX --reason … [--replaced-by …] [--keep CON-…]` und
   `sdd contract deprecate CON-XXXX --reason …`: Ablösen über die CLI mit Audit-Eintrag.
 - `sdd pipeline status RUN --json`; Leseschnittstelle `sdd_cli.pipeline.monitor`.
 - `sdd_cli.llm.claude_available()` für Verfügbarkeitsprüfungen außerhalb der LLM-Schicht.
 
-### Changed
+#### Changed
 
 - Der Monitor der Web-UI (`/api/orchestrate/runs`, `/stream/{run_id}`) zeigt Runs von
   `sdd pipeline run` (Format unverändert); die Befehls-Route antwortet mit 410.
@@ -228,9 +238,9 @@
 - Die Tabelle `token_usage` ist in `sdd_cli.llm.usage_table` definiert (ARCH-02).
 - SPEC-0026, SPEC-0035, SPEC-0036 und SPEC-0037 sind `deprecated`.
 
-## [Unreleased] – SPEC-0059: Architekturregeln und ADRs für sdd-framer (Dogfooding)
+### SPEC-0059: Architekturregeln und ADRs für sdd-framer (Dogfooding)
 
-### Added
+#### Added
 
 - `.sdd/architecture.yaml` mit den Regeln ARCH-01 bis ARCH-04 und den ADRs ADR-0002 bis ADR-0005
   (CLI einziger Schreiber, Schichtrichtung, Provider nur über die Factory, `claude` nur im
@@ -242,14 +252,14 @@
   existiert und `.py`-Dateien gestaged sind; `quality.arch_pre_commit: false` schaltet das ab.
 - `sdd arch check` zeigt bei Baseline-Treffern die Spec, die sie behebt (`warn (Baseline, SPEC-0058)`).
 
-### Changed
+#### Changed
 
 - Rollen-Provider der Pipeline entstehen in der Factory (`llm.factory.get_role_provider`);
   `pipeline/providers.py` importiert nichts mehr aus `llm/providers/`.
 
-## [Unreleased] – SPEC-0053: Rollenbasierte Pipeline mit Claude als Supervisor
+### SPEC-0053: Rollenbasierte Pipeline mit Claude als Supervisor
 
-### Added
+#### Added
 
 - **`sdd pipeline run SPEC [--dry-run] [--resume RUN] [--max-tasks N]`**, **`decide`**,
   **`status`**, **`report`**: Rollen `decomposer`, `test_author`, `implementer`, `reviewer` arbeiten
@@ -266,16 +276,16 @@
   (`allowed_paths`) schreiben. Auch der CodeGen-Pfad von `openai-compat` nutzt sie.
 - Skill **`/sdd-supervise`**: Claude Code als Supervisor im Dialog (`mode: session`).
 
-### Changed
+#### Changed
 
 - `sdd decompose` holt Provider und Prompt aus der Rolle `decomposer`; Tasks tragen `fr_ids` und
   `allowed_paths` (Task-Schema additiv erweitert, CON-0203).
 - `openai-compat` schützt `tests/` im CodeGen-Pfad nicht mehr pauschal; maßgeblich ist die
   PathPolicy (`.sdd/`, `specs/`, `contracts/`, `pipeline.protected_paths`).
 
-## [Unreleased] – SPEC-0060: Usage-Erfassung aller LLM-Provider
+### SPEC-0060: Usage-Erfassung aller LLM-Provider
 
-### Changed
+#### Changed
 
 - Jeder Provider aus `get_completion_provider`/`get_code_gen_provider` ist vom Usage-Decorator
   umhüllt (`sdd_cli.llm.usage`): jeder Aufruf erzeugt genau einen Datensatz in `token_usage`,
@@ -295,7 +305,9 @@
   Migration: `sdd upgrade` übernimmt `ai_usage.json` einmalig (Kontext `origin: web`) und
   benennt die Datei in `ai_usage.json.migrated` um.
 
-## [Unreleased] – SPEC-0044: CLI & Skill Consolidation
+## [0.1.63] – 2026-09-11
+
+### SPEC-0044: CLI & Skill Consolidation
 
 ### Removed
 
