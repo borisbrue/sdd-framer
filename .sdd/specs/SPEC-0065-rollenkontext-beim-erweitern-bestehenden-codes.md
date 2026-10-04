@@ -2,7 +2,7 @@
 id: SPEC-0065
 title: "Rollenkontext beim Erweitern bestehenden Codes"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-10-04
 updated: 2026-10-04
