@@ -87,6 +87,22 @@ class _Result(unittest.TestResult):
             self._add(test, status, self._exc_info_to_string(err, test))
 
 
+def _datei(test: unittest.TestCase) -> str | None:
+    """Quelldatei eines Tests.
+
+    Scheitert ein Testmodul beim Import, meldet unittest einen Platzhalter aus `unittest.loader`
+    (`_FailedTest`), dessen Methodenname der Modulname ist; die Datei ergibt sich dann aus diesem
+    Namen und nicht aus der Klasse des Platzhalters."""
+    if type(test).__module__ == "unittest.loader":
+        basis = (getattr(test, "_testMethodName", "") or "").replace(".", os.sep)
+        for kandidat in (basis + ".py", os.path.join(basis, "__init__.py")):
+            if basis and os.path.isfile(kandidat):
+                return kandidat
+        return None
+    modul = sys.modules.get(type(test).__module__)
+    return getattr(modul, "__file__", None)
+
+
 def _junit(cases: list[dict], dauer: float) -> ET.Element:
     fehler = sum(1 for c in cases if c["status"] == "error")
     rot = sum(1 for c in cases if c["status"] == "failure")
@@ -102,8 +118,7 @@ def _junit(cases: list[dict], dauer: float) -> ET.Element:
         name = getattr(test, "_testMethodName", None) or teile[-1]
         tc = ET.SubElement(suite, "testcase", classname=classname, name=name,
                            time=f"{c['time']:.3f}")
-        modul = sys.modules.get(type(test).__module__)
-        datei = getattr(modul, "__file__", None)
+        datei = _datei(test)
         if datei:
             tc.set("file", os.path.relpath(datei))
         marker = _markers(test)
