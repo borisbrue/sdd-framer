@@ -43,6 +43,7 @@ from .providers import (
 )
 from .roles import DEFAULT_ROLES, RoleDefinition, RoleError, load_role
 from .runner import RoleResult, RoleRunner
+from .s2_facts import review_facts
 from .store import APPROVED_TASKS, RunStore, now
 
 if TYPE_CHECKING:
@@ -50,6 +51,9 @@ if TYPE_CHECKING:
 
 MAX_REVISIONS = 2
 MAX_ATTEMPTS = 3
+# Stufen einer Task und ihre Rollen (SPEC-0066 FR-03): Versuche zählen je Stufe.
+STAGES = ("test", "implementation", "review")
+STAGE_OF_ROLE = {"test_author": "test", "implementer": "implementation", "reviewer": "review"}
 MAX_REOPEN = 2
 WRITING_ROLES = ("test_author", "implementer")
 JSON_ROLES = ("decomposer", "reviewer")  # Session-Ergebnis kommt als --json (FR-02)
@@ -76,6 +80,11 @@ class _TaskMemory:
     review: Any = None
     diff: str = ""
     changed: list[str] = field(default_factory=list)
+    # Ausgangsstand der vom Implementer geschriebenen Dateien; das Review sieht den Diff der
+    # Task dagegen, auch wenn der letzte Versuch nichts geändert hat (SPEC-0066 FR-02).
+    baseline: dict[str, str | None] = field(default_factory=dict)
+    last_stage: str = ""
+    last_review: Any = None
 
 
 class InlineSource:
@@ -487,7 +496,7 @@ class PipelineSupervisor:
             # HF-0013: `stage` wählt die Stufe: `test` = Test-Autor (falscher Test),
             # `implementation` = Implementer (z. B. nach Review-Befund); ohne Angabe wiederholt
             # die aktuelle Stufe mit dem Hinweis.
-            task_state["attempts"] = 0
+            self._reset_attempts(task_state)
             ziel = {"test": "retry", "implementation": "red"}.get(command.get("stage") or "",
                                                                   task_state["state"])
             self.transition(frm=task_state["state"], to=ziel, task_id=task_state["task_id"],
@@ -495,7 +504,7 @@ class PipelineSupervisor:
             task_state["state"] = ziel
         elif name == "reassign":
             task_state.setdefault("assignment", {})[command["role"]] = command["model"]
-            task_state["attempts"] = 0
+            self._reset_attempts(task_state)
             self.transition(frm=task_state["state"], to="reassigned", role=command["role"],
                             task_id=task_state["task_id"], reason=command["reason"])
         self.save()
@@ -636,18 +645,41 @@ class PipelineSupervisor:
                 self._set(st, "red", reason=f"Task-Typ {typ}: ohne test_author")
                 self.save()
                 continue
-            if st["attempts"] >= self.max_attempts:
+            if self._exhausted(st):
                 stopp = self._escalate(st, task, mem)
                 if stopp is not None or self.state["phase"] != "tasks":
                     return stopp
                 continue
-            st["attempts"] += 1
+            stufe = STAGE_OF_ROLE[self._role_for(st)]
+            zaehler = self._stage_attempts(st)
+            zaehler[stufe] += 1
+            st["attempts"] = zaehler[stufe]
+            mem.last_stage = stufe
             self.save()
             stopp = self._stage(st, task, mem)
             if stopp is not None:
                 return stopp
         self.notify(f"  ✓ {task['id']} {task['title']}")
         return None
+
+    @staticmethod
+    def _stage_attempts(st: dict) -> dict[str, int]:
+        """Versuche je Stufe (SPEC-0066 FR-03); fehlt das Feld (Run vor SPEC-0066), gelten 0."""
+        zaehler = st.setdefault("stage_attempts", {})
+        for stufe in STAGES:
+            zaehler.setdefault(stufe, 0)
+        return zaehler
+
+    @staticmethod
+    def _reset_attempts(st: dict) -> None:
+        st["stage_attempts"] = dict.fromkeys(STAGES, 0)
+        st["attempts"] = 0
+
+    def _exhausted(self, st: dict) -> bool:
+        """S2, wenn die anstehende Stufe oder `review` (Zahl der Runden) max_attempts erreicht."""
+        zaehler = self._stage_attempts(st)
+        anstehend = STAGE_OF_ROLE[self._role_for(st)]
+        return max(zaehler[anstehend], zaehler["review"]) >= self.max_attempts
 
     def _role_for(self, st: dict) -> str:
         if st["state"] in ("pending", "retry", "reassigned"):
@@ -717,11 +749,16 @@ class PipelineSupervisor:
         self.transition(frm=alt, to=neu, task_id=st["task_id"], reason=reason)
 
     def _escalate(self, st: dict, task: dict, mem: _TaskMemory) -> RunOutcome | None:
-        request = new_request("S2", {"task": {k: task.get(k) for k in (
+        fakten = {"task": {k: task.get(k) for k in (
             "id", "title", "fr_ids", "test_file", "allowed_paths")}, "state": st["state"],
             "attempts": st["attempts"], "errors": mem.feedback[-6:],
             "gate_results": [{"probe": "tests", "output": mem.test_output[-2000:]}]
-            if mem.test_output else []}, task_id=st["task_id"])
+            if mem.test_output else []}
+        # SPEC-0066 FR-01: scheiterte der letzte Versuch am Review, sieht S2 dessen Befunde.
+        review = review_facts(mem.last_review) if mem.last_stage == "review" else None
+        if review is not None:
+            fakten["review"] = review
+        request = new_request("S2", fakten, task_id=st["task_id"])
         antwort = self.ask(request)
         if isinstance(antwort, RunOutcome):
             return antwort
@@ -832,6 +869,8 @@ class PipelineSupervisor:
         if ergebnis.ok:
             vorher: dict[str, str | None] | None
             if session_files is None:
+                # `files: []` (SPEC-0066 FR-02): nichts zu schreiben, die PathPolicy hat nichts
+                # zu prüfen; das GREEN-Gate prüft den bestehenden Stand.
                 vorher = self._write("implementer", task, ergebnis.output["files"], ergebnis)
                 geaendert = [f["path"] for f in ergebnis.output["files"]]
                 if vorher is None:
@@ -858,7 +897,9 @@ class PipelineSupervisor:
                         mem.feedback.extend(f"{g.gate}-Gate: {'; '.join(g.findings[:3])}"
                                             for g in blockiert)
                 if gruen:
-                    mem.diff = self._diff(vorher) if vorher else ""
+                    for pfad, alt in vorher.items():
+                        mem.baseline.setdefault(pfad, alt)
+                    mem.diff = self._diff(mem.baseline) if mem.baseline else ""
                     mem.changed = list(geaendert)
                     self._set(st, "green")
                 else:
@@ -896,12 +937,16 @@ class PipelineSupervisor:
 
     def _apply_reviewer(self, st: dict, task: dict, mem: _TaskMemory, ergebnis: RoleResult,
                         binding: RoleBinding) -> None:
+        mem.last_review = ergebnis.output if ergebnis.ok else None
         if ergebnis.ok and ergebnis.output["verdict"] == "pass":
             self._set(st, "reviewed")
             st["attempts"] = 0
         elif ergebnis.ok:
             mem.review = ergebnis.output["findings"]
             mem.feedback.append("Review: fail")
+            # Neue Runde (SPEC-0066 FR-03): `review` begrenzt die Runden, nicht der Implementer.
+            self._stage_attempts(st)["implementation"] = 0
+            st["attempts"] = 0
             self._set(st, "red", reason="Review fail")
         else:
             mem.feedback.extend(ergebnis.problems[:3])
@@ -1032,7 +1077,7 @@ class PipelineSupervisor:
             return self.halt(f"max_reopen ({self.max_reopen}) erreicht")
         for task_id in command["task_ids"]:
             st = self._task_state(task_id)
-            st["attempts"] = 0
+            self._reset_attempts(st)
             self._set(st, "red", reason=f"reopen: {command['hint']}")
         self.state["phase"] = "tasks"
         self.transition(frm="acceptance", to="tasks", reason="S3 reopen")

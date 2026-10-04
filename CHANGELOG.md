@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased] – SPEC-0066: S2-Fakten, Versuche je Stufe und Token-Report
+
+### Added
+
+- S2-Anfragen nach einer Review-Ablehnung enthalten `facts.review` (Urteil und Befunde des
+  letzten Reviews, höchstens 20, Begründung je höchstens 600 Zeichen). Der Supervisor muss den
+  Reviewer nicht mehr von Hand aufrufen.
+- `state.json` führt je Task `stage_attempts` (`test`, `implementation`, `review`).
+- `sdd pipeline report` zeigt Cache-Read und Cache-Write je Rolle und nennt Rollen ohne
+  Usage-Werte; der Claude-Anteil rechnet Input, Output und beide Cache-Werte ein.
+
+### Changed
+
+- Versuche zählen je Stufe: S2 kommt, wenn die anstehende Stufe oder `review` `max_attempts`
+  erreicht. Eine Review-Ablehnung beginnt eine neue Runde (setzt `implementation` auf 0);
+  `retry_with_hint`, `reassign` und `reopen` setzen alle Zähler zurück. Bisher führte eine
+  Ablehnung nach zwei Implementer-Fehlversuchen sofort zu S2.
+- Der Implementer darf `files: []` liefern („nichts zu ändern“): Das GREEN-Gate prüft den
+  bestehenden Stand, das Review bekommt den Diff der Task gegen ihren Ausgangsstand.
+
 ## [Unreleased] – SPEC-0065: Rollenkontext beim Erweitern bestehenden Codes
 
 ### Added

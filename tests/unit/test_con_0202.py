@@ -111,3 +111,28 @@ def test_inv10_task_schnappschuss():
     assert def_errors("pipeline_run", "task_snapshot", gueltig) == []
     assert def_errors("pipeline_run", "task_snapshot", {**gueltig, "request_id": ""})
     assert def_errors("pipeline_run", "task_snapshot", {"spec_id": "SPEC-0900", "tasks": []})
+
+
+def test_inv13_s2_review_mit_befunden():
+    """SPEC-0066 FR-01: facts.review an S2 hat die Form von $defs/s2_review."""
+    anfrage = {"request_id": "req-2", "point": "S2", "created_at": TS, "task_id": "T01",
+               "allowed_commands": ["retry_with_hint", "halt"],
+               "facts": {"gate_results": [], "review": {"verdict": "fail", "findings": [
+                   {"category": "quality", "file": "src/a.py", "line": 4, "reason": "r"}]}}}
+    assert def_errors("pipeline_run", "pending_decision", anfrage) == []
+    befund = anfrage["facts"]["review"]["findings"][0]
+    zu_lang = {**befund, "reason": "x" * 601}
+    anfrage["facts"]["review"]["findings"] = [zu_lang]
+    assert def_errors("pipeline_run", "pending_decision", anfrage)
+    anfrage["facts"]["review"]["findings"] = [befund] * 21
+    assert def_errors("pipeline_run", "pending_decision", anfrage)
+
+
+def test_inv14_stage_attempts_optional_und_geschlossen():
+    """SPEC-0066 FR-03: Stufenzähler je Task; fehlen sie (alter Run), ist state.json gültig."""
+    task = {"task_id": "T01", "state": "red", "attempts": 1}
+    assert def_errors("pipeline_run", "state", {**STATE, "tasks": [task]}) == []
+    mit = {**task, "stage_attempts": {"test": 1, "implementation": 1, "review": 0}}
+    assert def_errors("pipeline_run", "state", {**STATE, "tasks": [mit]}) == []
+    falsch = {**task, "stage_attempts": {"deploy": 1}}
+    assert def_errors("pipeline_run", "state", {**STATE, "tasks": [falsch]})

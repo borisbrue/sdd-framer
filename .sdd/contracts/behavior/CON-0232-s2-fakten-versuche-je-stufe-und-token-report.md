@@ -32,7 +32,8 @@ sind **ausführbare Spezifikation**.
   Befunde, Begründung je höchstens 600 Zeichen). Sonst fehlt `facts.review`.
 - **INV-02:** Jede Task zählt Versuche je Stufe in `state.json` (`stage_attempts` mit `test`,
   `implementation`, `review`); jeder Lauf der Rolle einer Stufe ist ein Versuch, auch ein
-  ungültiger. S2 wird ausgelöst, sobald eine Stufe `max_attempts` erreicht. Eine
+  ungültiger. S2 wird ausgelöst, sobald die anstehende Stufe oder `review` `max_attempts`
+  erreicht; der Zähler einer abgeschlossenen Stufe löst S2 nicht mehr aus. Eine
   Review-Ablehnung beginnt eine neue Runde: Sie setzt `implementation` auf 0; `review` begrenzt
   die Zahl der Runden. `attempts` ist die Zahl der Versuche der aktuellen Stufe.
   `retry_with_hint`, `reassign` und `reopen` setzen alle Stufenzähler und `attempts` auf 0.
