@@ -96,3 +96,5 @@
 2026-09-29T10:45:56Z  hotfix.finalize  HF-0012  commit=1208bd9
 2026-09-29T10:46:14Z  hotfix.start  HF-0013  'S2 kann einen falschen Test nicht zurückgeben: retry_with_hint protokolliert den Übergang nach retry, lässt den Task-Zustand aber unverändert (bei red läuft wieder nur der Implementer); kein S2-Command schickt einen Task an den Test-Autor zurück'
 2026-09-29T11:42:03Z  hotfix.finalize  HF-0013  commit=9c28ff7
+2026-10-04T07:44:47Z  hotfix.start  HF-0014  'sdd finalize ignoriert einen fehlgeschlagenen git add/commit (z. B. ohne Git-Identität): der Report nennt den alten HEAD als Commit und die Spec wird trotzdem implemented (#142)'
+2026-10-04T07:58:41Z  hotfix.finalize  HF-0014  commit=582bbb6

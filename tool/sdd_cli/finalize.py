@@ -153,8 +153,24 @@ class SpecFinalizer:
             status = _git(["status", "--porcelain"], cwd=root)
             if status.stdout.strip():
                 msg = commit_msg or f"feat({spec_id}): implementiert via sdd finalize"
-                _git(["add", "-A"], cwd=root)
-                _git(["commit", "-m", msg], cwd=root)
+                # Ein fehlgeschlagener add/commit (z. B. ohne Git-Identitaet) brach
+                # nicht ab: rev-parse lieferte den alten HEAD, die Spec wurde
+                # trotzdem implemented (#142).
+                for args in (["add", "-A"], ["commit", "-m", msg]):
+                    result = _git(args, cwd=root)
+                    if result.returncode != 0:
+                        meldung = (f"git {args[0]} fehlgeschlagen:\n"
+                                   f"{(result.stdout + result.stderr).strip()}")
+                        return FinalizeReport(
+                            spec_id=spec_id,
+                            branch=effective_branch,
+                            commit_hash=None,
+                            tests_passed=False,
+                            test_output=meldung,
+                            pr_url=None,
+                            pr_path=None,
+                            error=meldung,
+                        )
             head = _git(["rev-parse", "HEAD"], cwd=root)
             commit_hash = head.stdout.strip() or None
         else:

@@ -67,8 +67,11 @@ def test_finalize_blockiert(qproject, monkeypatch):
     import subprocess
 
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=qproject.root, check=True)
-    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q",
-                    "--allow-empty", "-m", "x"], cwd=qproject.root, check=True)
+    # Identitaet im Repo, nicht per -c: finalize committet selbst und bricht
+    # ohne Identitaet ab, bevor die Quality-Gates greifen (HF-0014).
+    for args in (["config", "user.email", "t@t"], ["config", "user.name", "t"],
+                 ["commit", "-q", "--allow-empty", "-m", "x"]):
+        subprocess.run(["git", *args], cwd=qproject.root, check=True)
     from sdd_cli.config import load_config
 
     report = SpecFinalizer(load_config(qproject.root)).run("SPEC-0900", skip_container=True)
