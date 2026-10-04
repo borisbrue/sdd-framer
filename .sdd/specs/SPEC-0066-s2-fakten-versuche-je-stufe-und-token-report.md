@@ -2,7 +2,7 @@
 id: SPEC-0066
 title: "S2-Fakten, Versuche je Stufe und Token-Report"
 type: feature
-status: approved
+status: implemented
 owner: "Boris"
 created: 2026-10-04
 updated: 2026-10-04
