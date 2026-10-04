@@ -104,3 +104,4 @@
 2026-10-04T10:03:01Z  hotfix.finalize  HF-0016  commit=63b5126
 2026-10-04T10:04:29Z  hotfix.start  HF-0017  'sdd start legt für TST-Artefakte ohne .py-Endung (z. B. .rs) pytest-Platzhalter an und lässt das LLM pytest hineinschreiben; cargo test bricht ab (#141)'
 2026-10-04T10:18:05Z  hotfix.finalize  HF-0017  commit=e12eee4
+2026-10-04T12:39:46Z  hotfix.start  HF-0018  'Fixture-Testsonde todo-service ordnet Importfehler unittest/loader.py zu: ein Test, dessen Modul beim Laden scheitert, erscheint als unittest.loader._FailedTest mit Datei unittest/loader.py; das RED-Gate findet den neuen Test nie und die Task eskaliert'
