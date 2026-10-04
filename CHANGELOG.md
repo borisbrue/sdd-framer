@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.1] – 2026-10-04
+
+### Fixed
+
+- Hotfix-Records folgen CON-0119 (#132): `sdd hotfix start` schreibt `commit: ""`,
+  `finalize` den vollen 40-Zeichen-Hash. `sdd status` und `sdd hotfix list` zeigen 7 Zeichen.
+  Ältere Records (`null`, Kurzhash) bleiben lesbar. Schema-Datei und TST-0138 sind neu.
+- Reste der entfernten `sdd dev`-Gruppe (#128):
+  - Der Web-Chat kennt keine `dev build/up/down`-Intents mehr.
+  - Die Remote-API erlaubt `dev` nicht mehr. Bisher löste jeder Aufruf bei VAPID einen Push
+    `build_failed` aus.
+  - Das Log-Panel verweist auf „Container starten“; das UI-Bundle ist neu gebaut.
+  - CON-0069 ist deprecated. CON-0070, 0074, 0075 und 0077 beschreiben den heutigen Stand.
+
 ## [0.2.0] – 2026-10-04
 
 Die rollenbasierte Pipeline (`sdd pipeline`) ist der einzige Ausführungspfad. Arbeitsrollen
