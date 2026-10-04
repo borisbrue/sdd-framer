@@ -106,3 +106,4 @@
 2026-10-04T10:18:05Z  hotfix.finalize  HF-0017  commit=e12eee4
 2026-10-04T12:39:46Z  hotfix.start  HF-0018  'Fixture-Testsonde todo-service ordnet Importfehler unittest/loader.py zu: ein Test, dessen Modul beim Laden scheitert, erscheint als unittest.loader._FailedTest mit Datei unittest/loader.py; das RED-Gate findet den neuen Test nie und die Task eskaliert'
 2026-10-04T12:52:10Z  hotfix.finalize  HF-0018  commit=aae8917
+2026-10-04T15:56:31Z  hotfix.start  HF-0019  'Hotfix-Records verletzen CON-0119: start() schreibt commit null statt leeren String, finalize() schreibt den Kurzhash statt des vollen 40-Zeichen-Hashes; Schema-Datei und TST-0138 fehlen (#132)'
