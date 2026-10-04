@@ -1,0 +1,95 @@
+{
+  "spec_id": "SPEC-0065",
+  "generated_at": "2026-10-04T10:55:23Z",
+  "new_contracts": [
+    "CON-0199",
+    "CON-0231"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0065-001",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0199 says the model choice for a role does not belong in the role frontmatter and lives in `llm.roles.<rolle>` instead. CON-0023 (llm configuration schema, unified provider config) is the contract that governs the `llm` section of config.yaml. Its title and status give no sign that it defines a `roles` map. If CON-0023 does not define `llm.roles.<rolle>`, a role's model reference points at a config key that no contract defines.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehend seit SPEC-0053/SPEC-0061: llm.roles und llm.profiles definiert CON-0212; SPEC-0065 ergänzt nur eine Kontextquelle in CON-0199 und berührt die Modellwahl nicht.",
+        "resolved_at": "2026-10-04T10:54:59Z"
+      }
+    },
+    {
+      "id": "CF-0065-002",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0190 holds the config validation rules (required fields, provider enum, provider consistency). It does not mention role entries under `llm.roles`. That leaves `sdd config validate` (CON-0191) unable to reject an `llm.roles.<rolle>` entry that names a role with no `.sdd/roles/<rolle>.md` file, or a provider that doesn't exist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehend: sdd config validate prüft llm.roles über role_config_issues (SPEC-0053 FR-04, SPEC-0061); von SPEC-0065 nicht berührt.",
+        "resolved_at": "2026-10-04T10:55:00Z"
+      }
+    },
+    {
+      "id": "CF-0065-003",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0199",
+      "conflicting_contract": "CON-0106",
+      "detail": "CON-0106 also describes the `llm_pool` section of config.yaml, which assigns models. With CON-0199 adding `llm.roles.<rolle>` as a second place to pick a model, no contract says which one wins: the role assignment or the pool or provider default.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Bestehend: llm_pool ist seit SPEC-0062 durch llm.roles/llm.profiles abgelöst (Migration in sdd upgrade); SPEC-0065 ändert an der Modellwahl nichts.",
+        "resolved_at": "2026-10-04T10:55:01Z"
+      }
+    },
+    {
+      "id": "CF-0065-004",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0231",
+      "conflicting_contract": "CON-0061",
+      "detail": "CON-0231 INV-05 has the decomposer create tasks of type `test` that only cover existing behaviour and change no code. Tests like that pass right away, so they never have a red phase. CON-0061 G-01 (and the pipeline's RED gate that follows from it) requires tests to fail before implementation (Red → Green). Neither contract says whether `test` tasks skip the red phase or how passing immediately counts. Without that rule, such tasks get stuck at the RED gate or escalate.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0231 INV-05 ergänzt: Tasks vom Typ test haben keine rote Phase, ihr Test muss sofort grün sein (Gate test, SPEC-0061 FR-06); danach Review ohne Implementer.",
+        "resolved_at": "2026-10-04T10:54:58Z"
+      }
+    },
+    {
+      "id": "CF-0065-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0231",
+      "conflicting_contract": "CON-0097",
+      "detail": "CON-0097 (SPEC-0026) defines how `sdd decompose` sets each task's type (complexity/context_size/type). CON-0231 INV-05 adds a classification rule for the `decomposer` role (\"secures existing behaviour only\" → `test`). The two don't contradict each other, and `test` is allowed in the CON-0096 enum. But the classification logic now lives in two contracts. CON-0097 should point to CON-0231 INV-05, or the rule should be stated in one place only.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0231 INV-05 stellt klar: die Regel gilt für die Rolle decomposer der Pipeline; die Klassifikation von sdd decompose (CON-0097) bleibt unverändert.",
+        "resolved_at": "2026-10-04T10:54:59Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 5,
+    "high": 0,
+    "medium": 2,
+    "low": 3,
+    "affected_specs_count": 0
+  }
+}

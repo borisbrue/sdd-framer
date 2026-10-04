@@ -2,7 +2,7 @@
 id: SPEC-0065
 title: "Rollenkontext beim Erweitern bestehenden Codes"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-10-04
 updated: 2026-10-04
@@ -16,6 +16,12 @@ contracts:
 tests:
 - TST-0228
 - TST-0260
+fr_test_map:
+  FR-01: [TST-0260]
+  FR-02: [TST-0260]
+  FR-03: [TST-0260]
+  FR-04: [TST-0260]
+  FR-05: [TST-0228, TST-0260]
 ---
 
 # Rollenkontext beim Erweitern bestehenden Codes
