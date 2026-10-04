@@ -4,7 +4,7 @@ title: "push-notification-payload"
 type: data
 format: json-schema
 spec: SPEC-0023
-version: 0.1.0
+version: 0.2.0
 status: draft
 tests: [TST-0108]
 ---
@@ -49,9 +49,12 @@ interface PushPayload {
 
 ## Trigger-Mapping (SddRunService)
 
+> **v0.2.0 (2026-10-04, #128):** Die Zeilen zu `sdd dev build` sind entfernt, weil es den Befehl
+> seit SPEC-0044 nicht mehr gibt. `build_done` bleibt im Typ für bestehende Empfänger, wird aber
+> nicht mehr ausgelöst. Das Image baut `sdd start` bei Bedarf; einen eigenen Push gibt es
+> dafür nicht.
+
 | Command | Exit-Code | `type` |
 |---|---|---|
 | `sdd orchestrate` | 0 | `orchestrate_done` |
 | `sdd orchestrate` | ≠0 | `build_failed` |
-| `sdd dev build` | 0 | `build_done` |
-| `sdd dev build` | ≠0 | `build_failed` |

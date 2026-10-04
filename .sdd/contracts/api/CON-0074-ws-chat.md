@@ -4,7 +4,7 @@ title: "ws-chat"
 type: api
 format: openapi
 spec: SPEC-0023
-version: 0.1.0
+version: 0.2.0
 status: draft
 tests: [TST-0105]
 ---
@@ -36,13 +36,15 @@ der Claude-Antwort.
 
 ## Intents (IntentParser)
 
+> **v0.2.0 (2026-10-04, #128):** Die Intents `dev build`, `dev up` und `dev down` sind entfernt.
+> Sie riefen die seit SPEC-0044 entfernte `sdd dev`-Gruppe auf, und der Chat lieferte nur die
+> click-Fehlermeldung. Jeder Intent zeigt auf einen existierenden Befehl. `orchestrate` ist
+> ein Adapter auf `sdd pipeline run SPEC --auto` (CON-0216 INV-05); TST-0105 prüft das.
+
 | Muster | Command |
 |---|---|
 | `orchestrate <SPEC-ID>` | `sdd orchestrate --spec <SPEC-ID>` |
 | `start <SPEC-ID>` | `sdd start <SPEC-ID>` |
-| `dev build` | `sdd dev build` |
-| `dev up` | `sdd dev up` |
-| `dev down` | `sdd dev down` |
 | `status` | `sdd validate` |
 
 ## Endpoint

@@ -22,7 +22,7 @@ _MAX_HISTORY = 20
 _MODEL = "claude-sonnet-4-6"
 _SYSTEM_PROMPT = (
     "Du bist ein SDD-Assistent. Du kennst alle sdd-CLI-Commands: "
-    "orchestrate, start, validate, dev, contract, spec, estimate. "
+    "orchestrate, start, validate, contract, spec, estimate. "
     "Du hilfst dem Nutzer, SDD-Specs zu erstellen und zu orchestrieren."
 )
 
@@ -76,36 +76,17 @@ class _StartHandler(_IntentHandler):
         return ParsedIntent("start", [m.group(1).upper()]) if m else None
 
 
-class _DevBuildHandler(_IntentHandler):
-    def _match(self, text: str) -> ParsedIntent | None:
-        return ParsedIntent("dev", ["build"]) if text.lower() == "dev build" else None
-
-
-class _DevUpHandler(_IntentHandler):
-    def _match(self, text: str) -> ParsedIntent | None:
-        return ParsedIntent("dev", ["up"]) if text.lower() == "dev up" else None
-
-
-class _DevDownHandler(_IntentHandler):
-    def _match(self, text: str) -> ParsedIntent | None:
-        return ParsedIntent("dev", ["down"]) if text.lower() == "dev down" else None
-
-
 class _StatusHandler(_IntentHandler):
     def _match(self, text: str) -> ParsedIntent | None:
         return ParsedIntent("validate", []) if text.lower() == "status" else None
 
 
 def _build_parser() -> _IntentHandler:
+    # `dev build/up/down` entfielen mit der `sdd dev`-Gruppe (SPEC-0044, #128): Ein Intent
+    # muss auf einen existierenden Befehl zeigen, sonst liefert der Chat nur den click-Fehler.
     return _OrchestrateHandler(
         _StartHandler(
-            _DevBuildHandler(
-                _DevUpHandler(
-                    _DevDownHandler(
-                        _StatusHandler()
-                    )
-                )
-            )
+            _StatusHandler()
         )
     )
 

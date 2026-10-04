@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from routes.remote import router
 
-ALLOWLIST = {"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"}
+ALLOWLIST = {"orchestrate", "start", "validate", "contract", "spec", "estimate"}
 
 
 class _AsyncLines:
@@ -67,8 +67,21 @@ def _parse_sse(text: str) -> list[dict]:
 class TestTST0106:
     # CON-0075 G-09: Command-Allowlist enthält genau die spezifizierten Commands
     def test_allowlist_contains_specified_commands(self) -> None:
-        expected = {"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"}
-        assert expected == ALLOWLIST
+        from routes.remote import _ALLOWLIST
+
+        expected = {"orchestrate", "start", "validate", "contract", "spec", "estimate"}
+        assert expected == ALLOWLIST == _ALLOWLIST
+
+    # #128: Jeder erlaubte Befehl existiert und ist sichtbar (`orchestrate` über sdd_argv)
+    def test_allowlist_zeigt_auf_existierende_befehle(self) -> None:
+        from routes.remote import _ALLOWLIST, _PUSH_TRIGGER_CMDS, sdd_argv
+
+        from sdd_cli.main import cli
+
+        for cmd in _ALLOWLIST:
+            befehl = cli.commands.get(sdd_argv(cmd, ["SPEC-0001"])[0])
+            assert befehl is not None and not befehl.hidden, cmd
+        assert _PUSH_TRIGGER_CMDS <= _ALLOWLIST and "dev" not in _PUSH_TRIGGER_CMDS
 
     # CON-0075 G-09: Unbekannte Commands sind nicht in der Allowlist
     def test_unknown_commands_not_in_allowlist(self) -> None:

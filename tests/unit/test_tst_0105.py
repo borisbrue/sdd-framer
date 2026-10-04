@@ -155,7 +155,7 @@ class TestTST0105:
             client = TestClient(_make_app())
             with client.websocket_connect("/ws/chat") as ws:
                 ws.send_json({"auth": "tok"})
-                ws.send_json({"text": "dev build"})
+                ws.send_json({"text": "start SPEC-0001"})
                 frame = ws.receive_json()   # first frame = command_output
         assert frame.get("type") == "command_output"
         assert "line" in frame
@@ -195,7 +195,7 @@ class TestTST0105:
             client = TestClient(_make_app())
             with client.websocket_connect("/ws/chat") as ws:
                 ws.send_json({"auth": "tok"})
-                ws.send_json({"text": "dev build"})
+                ws.send_json({"text": "start SPEC-0001"})
                 frames = []
                 while True:
                     f = ws.receive_json()
@@ -209,3 +209,26 @@ class TestTST0105:
         assert first_cmd is not None, "No command_output frame received"
         assert first_delta is not None, "No delta frame received"
         assert first_cmd < first_delta
+
+
+# #128: Jeder Intent zeigt auf einen existierenden, sichtbaren Befehl (oder einen Adapter aus
+# routes.remote.sdd_argv); `dev build/up/down` riefen die entfernte `sdd dev`-Gruppe auf.
+@pytest.mark.parametrize("text", ["orchestrate SPEC-0001", "start SPEC-0001", "status"])
+def test_intent_zeigt_auf_existierenden_befehl(text):
+    from routes.chat import _intent_parser
+    from routes.remote import sdd_argv
+
+    from sdd_cli.main import cli
+
+    intent = _intent_parser.handle(text)
+    assert intent is not None
+    befehl = cli.commands.get(sdd_argv(intent.cmd, intent.args)[0])
+    assert befehl is not None and not befehl.hidden, intent
+
+
+@pytest.mark.parametrize("text", ["dev build", "dev up", "dev down"])
+def test_dev_intents_gibt_es_nicht_mehr(text):
+    from routes.chat import _intent_parser
+
+    assert _intent_parser.handle(text) is None
+

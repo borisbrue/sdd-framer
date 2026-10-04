@@ -4,9 +4,9 @@ Feature: LogStreamer und LogEventBus
     Given log_stream.enabled ist true
     And log_stream.max_lines ist 500
 
-  Scenario: Automatischer Start nach sdd dev up
+  Scenario: Automatischer Start nach Container-Start über die Web-API
     Given Container "sdd-dev-spec-0022" wird gestartet
-    When "sdd dev up SPEC-0022" erfolgreich abgeschlossen ist
+    When "POST /api/specs/SPEC-0022/start" erfolgreich abgeschlossen ist
     Then ist LogStreamer für SPEC-0022 aktiv
     And ein Thread liest "docker logs --follow sdd-dev-spec-0022"
 
@@ -38,8 +38,8 @@ Feature: LogStreamer und LogEventBus
     Then bleibt LogStreamer aktiv
     And Client-2 empfängt weiterhin Log-Zeilen
 
-  Scenario: sdd dev down stoppt LogStreamer sauber
+  Scenario: detach stoppt LogStreamer sauber
     Given LogStreamer für SPEC-0022 ist aktiv
-    When "sdd dev down SPEC-0022" ausgeführt wird
+    When LogStreamer.detach(SPEC-0022) aufgerufen wird
     Then stoppt LogStreamer.detach(SPEC-0022) den Log-Thread
     And kein Zombie-Prozess bleibt übrig

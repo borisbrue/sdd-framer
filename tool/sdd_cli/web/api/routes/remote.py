@@ -22,8 +22,10 @@ router = APIRouter()
 # Patched in tests via: patch("routes.remote._exec", ...)
 _exec = asyncio.create_subprocess_exec
 
-_PUSH_TRIGGER_CMDS = frozenset({"orchestrate", "dev"})
-_ALLOWLIST = frozenset({"orchestrate", "start", "validate", "dev", "contract", "spec", "estimate"})
+# `dev` entfiel mit SPEC-0044 (#128); der Aufruf scheiterte immer und löste bei VAPID jedes Mal
+# einen Push `build_failed` aus.
+_PUSH_TRIGGER_CMDS = frozenset({"orchestrate"})
+_ALLOWLIST = frozenset({"orchestrate", "start", "validate", "contract", "spec", "estimate"})
 
 
 def sdd_argv(cmd: str, args: list[str]) -> list[str]:

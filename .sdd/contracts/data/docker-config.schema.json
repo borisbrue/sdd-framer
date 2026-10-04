@@ -47,7 +47,7 @@
         "enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable automatic log streaming after sdd dev up/start"
+          "description": "Enable automatic log streaming after a container start via the web API (POST /api/specs/{id}/start)"
         },
         "max_lines": {
           "type": "integer",

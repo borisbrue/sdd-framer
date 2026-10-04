@@ -4,7 +4,7 @@ title: "sdd-run-api"
 type: api
 format: openapi
 spec: SPEC-0023
-version: 0.1.0
+version: 0.2.0
 status: draft
 tests: [TST-0106]
 ---
@@ -18,6 +18,11 @@ tests: [TST-0106]
 Führt einen beliebigen `sdd`-Command als Subprocess aus und streamt den Output
 via Server-Sent Events. Nach Abschluss wird optional eine Push-Notification gesendet.
 
+
+> **v0.2.0 (2026-10-04, #128):** `dev` ist aus Allowlist und Push-Triggern entfernt. Der Befehl
+> scheiterte seit SPEC-0044 immer und löste bei konfiguriertem VAPID jedes Mal einen Push
+> `build_failed` aus.
+
 ## Garantien
 
 | ID | Garantie |
@@ -28,9 +33,9 @@ via Server-Sent Events. Nach Abschluss wird optional eine Push-Notification gese
 | G-04 | SSE-Event pro Zeile: `data: {"type": "line", "data": "...", "stream": "stdout"\|"stderr"}` |
 | G-05 | Abschluss-Event: `data: {"type": "done", "exit_code": 0\|-1}` |
 | G-06 | Bei Abschluss: PushStore.broadcast wird aufgerufen wenn cmd in Push-Trigger-Liste |
-| G-07 | Push-Trigger-Commands: `orchestrate`, `dev` (alle Sub-Commands) |
+| G-07 | Push-Trigger-Commands: `orchestrate` |
 | G-08 | Content-Type der Response: `text/event-stream` |
-| G-09 | Command-Allowlist: `orchestrate`, `start`, `validate`, `dev`, `contract`, `spec`, `estimate` |
+| G-09 | Command-Allowlist: `orchestrate`, `start`, `validate`, `contract`, `spec`, `estimate`; jeder Eintrag ist ein existierender Befehl (`orchestrate` über den Adapter `sdd_argv`) |
 
 ## Request-Body
 
