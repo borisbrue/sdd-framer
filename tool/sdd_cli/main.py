@@ -2487,6 +2487,11 @@ def start_cmd(ctx: click.Context, spec_id: str, auto: bool, base_url: str | None
         console.print("[bold]Übersprungen (bereits vorhanden):[/]")
         for p in result.stubs_skipped:
             console.print(f"  [yellow]~[/] {p.relative_to(cfg.root)}")
+    if result.stubs_unsupported:
+        console.print("[bold]Nicht angelegt (Stubs gibt es nur für pytest/.py):[/]")
+        for p in result.stubs_unsupported:
+            console.print(f"  [yellow]-[/] {p.relative_to(cfg.root)}  "
+                          f"[dim]Test selbst schreiben[/]")
 
     console.print()
     if result.stubs_placeholder:
