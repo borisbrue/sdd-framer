@@ -91,7 +91,7 @@ def start(repo_root: Path, description: str) -> str:
         "description": description,
         "status": "open",
         "created": _now_date(),
-        "commit": None,
+        "commit": "",  # CON-0119 INV-04: leer, solange offen
     }
     _write_hf(_hf_path(repo_root, hf_id), data)
     _append_audit(repo_root, f"hotfix.start  {hf_id}  {description!r}")
@@ -128,7 +128,8 @@ def finalize(repo_root: Path, hf_id: str) -> str:
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "git commit fehlgeschlagen")
 
-    commit_hash = _git(["rev-parse", "--short", "HEAD"], cwd=repo_root).stdout.strip()
+    # CON-0119 INV-04: der volle Hash; für die Anzeige kürzt short_commit().
+    commit_hash = _git(["rev-parse", "HEAD"], cwd=repo_root).stdout.strip()
     data["status"] = "done"
     data["commit"] = commit_hash
     _write_hf(path, data)
@@ -145,6 +146,13 @@ def abort(repo_root: Path, hf_id: str) -> None:
     data["status"] = "aborted"
     _write_hf(path, data)
     _append_audit(repo_root, f"hotfix.abort  {hf_id}")
+
+
+def short_commit(commit: str | None) -> str:
+    """Anzeigeform eines Commits: 7 Zeichen, „—“ ohne Commit.
+
+    Records vor #132 tragen `null` bzw. einen Kurzhash (CON-0119 INV-06); beides bleibt lesbar."""
+    return commit[:7] if commit else "—"
 
 
 def list_hotfixes(repo_root: Path, status_filter: str | None = None) -> list[dict]:

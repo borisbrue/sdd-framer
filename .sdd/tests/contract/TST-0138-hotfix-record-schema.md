@@ -5,7 +5,7 @@ title: "Hotfix Record Schema"
 level: contract
 spec: SPEC-0031
 contract: CON-0119
-status: planned
+status: implemented
 framework: "pytest+jsonschema"
 artifact: "tests/contract/test_tst_0138_hotfix_record_schema.py"
 tags: []
