@@ -101,3 +101,4 @@
 2026-10-04T09:32:49Z  hotfix.start  HF-0015  'sdd finalize: PR-Base, Diff und Merge-Anleitung fest auf main (scheitert in Repos mit master), vorhandenes PR-Dokument wird durch das leere Template überschrieben (#138)'
 2026-10-04T09:46:03Z  hotfix.finalize  HF-0015  commit=2691d78
 2026-10-04T09:49:37Z  hotfix.start  HF-0016  'sdd review contract: Hinweise auf 200 Zeichen gekürzt und bei --spec gar nicht ausgegeben (#139); jedes needs_revision hängt einen weiteren LLM-Review-Notes-Block an den Contract, den das nächste Review mitliest (#140)'
+2026-10-04T10:03:01Z  hotfix.finalize  HF-0016  commit=63b5126
