@@ -3007,6 +3007,7 @@ def review_contract_group_cmd(con_id: str | None, spec_id: str | None) -> None:
                 result = review_contract(cfg, cid)
                 verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
                 console.print(f"  [{verdict_color}]{result.llm_verdict}[/]")
+                _print_review_notes(result)
             except Exception as exc:
                 console.print(f"  [red]✗[/] {exc}")
         return
@@ -3026,8 +3027,21 @@ def review_contract_group_cmd(con_id: str | None, spec_id: str | None) -> None:
         sys.exit(1)
     verdict_color = "green" if result.llm_verdict == "approved" else "yellow"
     console.print(f"  Bewertung: [{verdict_color}]{result.llm_verdict}[/]")
-    if result.notes:
-        console.print(f"  Hinweise: {result.notes[:200]}")
+    _print_review_notes(result)
+
+
+def _print_review_notes(result) -> None:
+    """Hinweise vollstaendig ausgeben. Vorher nach 200 Zeichen abgeschnitten, im
+    --spec-Zweig gar nicht; nachlesbar waren sie nirgends vollstaendig (#139)."""
+    if not result.notes:
+        return
+    from rich.markdown import Markdown
+    from rich.padding import Padding
+
+    console.print("  Hinweise:")
+    console.print(Padding(Markdown(result.notes), (0, 0, 0, 4)))
+    if result.llm_verdict == "needs_revision":
+        console.print("  [dim]Auch im Contract unter „## LLM Review Notes“.[/]")
 
 
 # ─────────────────────────────────────────────────────────────────────────────

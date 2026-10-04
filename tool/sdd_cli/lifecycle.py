@@ -219,7 +219,9 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
         if spec_doc:
             spec_text = spec_doc.path.read_text(encoding="utf-8")
 
-    contract_text = contract_doc.path.read_text(encoding="utf-8")
+    # Alte Review-Notizen gehoeren nicht in den Prompt: das naechste Review las
+    # sie als Teil des Contracts und wertete veraltete Punkte als Blocker (#140).
+    contract_text = _ohne_review_notes(contract_doc.path.read_text(encoding="utf-8"))
     artifact_rel = contract_doc.frontmatter.get("artifact", "")
     artifact_text = ""
     if artifact_rel and "<" not in artifact_rel:
@@ -249,10 +251,12 @@ def review_contract(config: SddConfig, con_id: str) -> ContractReviewResult:
         except Exception:
             pass
 
+    # Ein Block statt einer wachsenden Historie: jede Runde haengte bisher einen
+    # weiteren "## LLM Review Notes"-Abschnitt an (#140). FR-07 bleibt erfuellt.
     if verdict == "needs_revision" and notes:
-        with contract_doc.path.open("a", encoding="utf-8") as fh:
-            fh.write(f"\n## LLM Review Notes\n\n{notes}\n")
+        _schreibe_review_notes(contract_doc.path, notes)
     elif verdict == "approved":
+        _schreibe_review_notes(contract_doc.path, None)
         # SPEC-0044 FR-07 und CON-0170 G-01 verlangen beides: die TST-Anlage
         # entfernen UND den Status setzen. Gebaut war nur die entfernende
         # Haelfte — der Docstring sagte die zweite zu, der Code loeste sie nie
@@ -279,6 +283,29 @@ def _find_doc_by_id(base_dir: Path, artifact_id: str) -> Document | None:
         if doc and doc.frontmatter.get("id") == artifact_id:
             return doc
     return None
+
+
+_REVIEW_NOTES = re.compile(r"^## LLM Review Notes[ \t]*$", re.MULTILINE)
+
+
+def _ohne_review_notes(text: str) -> str:
+    """Contract-Text ohne den Review-Block (ab der ersten Ueberschrift bis Dateiende).
+
+    Der Block steht laut FR-07 am Ende; die Notizen selbst enthalten oft eigene
+    ##-Ueberschriften, deshalb endet er nicht an der naechsten Ueberschrift.
+    """
+    m = _REVIEW_NOTES.search(text)
+    return text if m is None else text[: m.start()].rstrip("\n") + "\n"
+
+
+def _schreibe_review_notes(contract_path: Path, notes: str | None) -> None:
+    """Ersetzt den Review-Block; notes=None entfernt ihn."""
+    original = contract_path.read_text(encoding="utf-8")
+    text = _ohne_review_notes(original)
+    if notes:
+        text += f"\n## LLM Review Notes\n\n{notes}\n"
+    if text != original:
+        contract_path.write_text(text, encoding="utf-8")
 
 
 def _inject_generated_by(tst_text: str) -> str:
