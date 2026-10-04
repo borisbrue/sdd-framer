@@ -1,0 +1,21 @@
+{
+  "id": "T03",
+  "title": "Todo umbenennen",
+  "description": "Ergänze TodoService.rename(todo_id, title) in todo/service.py gemäß FR-01 bis FR-03. Domain (todo/domain.py) und Ablage (todo/repository.py) sind erledigt und bleiben unverändert.",
+  "type": "code",
+  "complexity": "low",
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03"
+  ],
+  "dependencies": [
+    "Todo-Fachobjekte",
+    "Ablage im Speicher"
+  ],
+  "test_file": "tests/test_service_rename.py",
+  "test_command": "python3 -m unittest discover -s tests -t .",
+  "allowed_paths": [
+    "todo/service.py"
+  ]
+}

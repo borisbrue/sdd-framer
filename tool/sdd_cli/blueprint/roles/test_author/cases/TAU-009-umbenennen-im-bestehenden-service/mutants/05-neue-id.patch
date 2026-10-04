@@ -1,0 +1,11 @@
+--- a/todo/service.py
++++ b/todo/service.py
+@@ -29,7 +29,7 @@
+     def rename(self, todo_id: int, title: str) -> Todo:
+         """Neuer Titel für ein bestehendes Todo; ID und Erledigt-Status bleiben."""
+         todo = self._get(todo_id)
+-        umbenannt = replace(todo, title=clean_title(title))
++        umbenannt = replace(todo, id=self._repo.next_id(), title=clean_title(title))
+         self._repo.save(umbenannt)
+         return umbenannt
+ 

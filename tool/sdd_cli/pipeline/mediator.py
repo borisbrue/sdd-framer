@@ -654,14 +654,25 @@ class PipelineSupervisor:
             return "test_author"
         return "implementer" if st["state"] == "red" else "reviewer"
 
+    def _done_dependencies(self, task: dict) -> list[dict]:
+        """Abhängigkeiten des Tasks (per Titel oder ID), die in diesem Run erledigt sind."""
+        deps = set(task.get("dependencies") or [])
+        if not deps:
+            return []
+        erledigt = {t["task_id"] for t in self.state["tasks"] if t["state"] == "done"}
+        return [t for t in self._load_tasks().values()
+                if t["id"] in erledigt and (t["id"] in deps or t.get("title") in deps)]
+
     def _sources_for(self, role: str, task: dict, mem: _TaskMemory) -> dict:
+        if role in ("test_author", "implementer"):
+            bestand = {"current_files": self.ctx.current_files(
+                           task.get("allowed_paths") or [],
+                           exclude=[task["test_file"]] if task.get("test_file") else []),
+                       "dependency_api": self.ctx.dependency_api(self._done_dependencies(task))}
         if role == "test_author":
-            return self._sources(task, mem, test_output=mem.test_output)
+            return self._sources(task, mem, test_output=mem.test_output, **bestand)
         if role == "implementer":
-            return self._sources(task, mem, repo_map=self.ctx.repo_map(),
-                                 current_files=self.ctx.current_files(
-                                     task.get("allowed_paths") or [],
-                                     exclude=[task["test_file"]] if task.get("test_file") else []),
+            return self._sources(task, mem, repo_map=self.ctx.repo_map(), **bestand,
                                  test_file=self.ctx.read(task.get("test_file") or "") or "",
                                  test_output=mem.test_output, review=mem.review)
         return self._sources(task, mem, diff=mem.diff or "(Diff nicht verfügbar)",

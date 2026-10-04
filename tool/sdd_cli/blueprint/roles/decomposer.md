@@ -1,6 +1,6 @@
 ---
 role: decomposer
-version: 1.0.0
+version: 1.1.0
 purpose: "Zerlegt eine freigegebene Spec in testbare, abhängigkeitsgeordnete Tasks."
 inputs: [spec, contracts, agents_md, repo_map, history]
 input_budgets: {spec: 12000, contracts: 8000, agents_md: 3000, repo_map: 2000, history: 2000}
@@ -20,6 +20,9 @@ Regeln:
 - `allowed_paths` nennt die Dateien oder Globs, die der Task schreiben darf. Nie `.sdd/`,
   `specs/` oder `contracts/`; die Testdatei gehört nicht dazu.
 - `dependencies` nennt die Titel anderer Tasks dieser Zerlegung; keine Zyklen.
+- Ein Task, der nur bestehendes Verhalten absichern soll (der Code erfüllt die Anforderung
+  schon, es fehlt nur der Test), hat den Typ `test`: Sein Test ist sofort grün, es gibt keine
+  Implementierung.
 - `complexity` ist `low`, `medium` oder `high`.
 - Beachte die Architekturregeln aus AGENTS.md.
 - Liegt unter „history“ eine Rückmeldung vor (Check-Fehler oder Begründung des Supervisors),

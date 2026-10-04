@@ -124,6 +124,31 @@ class ProjectContext:
             teile.append(f"### {rel}\n\n```\n{inhalt}\n```")
         return "\n\n".join(teile)
 
+    def dependency_api(self, tasks: list[dict]) -> str:
+        """Öffentliche Schnittstellen der Dateien erledigter Abhängigkeiten (SPEC-0065 FR-02).
+
+        Je vorhandene Datei aus den `allowed_paths` der übergebenen Tasks die Signaturen ohne
+        Rümpfe; was öffentlich ist, entscheidet der Extraktor (`signatures`). Testdateien,
+        `.sdd/` und Holdouts gehören nie dazu."""
+        from .signatures import api_of
+
+        teile, gesehen = [], set()
+        for task in tasks:
+            tests = [task["test_file"]] if task.get("test_file") else []
+            for rel in collect_files(self.root, list(task.get("allowed_paths") or []),
+                                     [".sdd/**", "**/holdout/**", *tests]):
+                if rel in gesehen:
+                    continue
+                gesehen.add(rel)
+                try:
+                    inhalt = (self.root / rel).read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    inhalt = None
+                api = api_of(rel, inhalt) if inhalt is not None else "(Datei nicht lesbar)"
+                kopf = f"### {rel} ({task.get('id', '?')} {task.get('title', '')})".rstrip()
+                teile.append(f"{kopf}\n\n```\n{api}\n```")
+        return "\n\n".join(teile)
+
     def read(self, rel: str) -> str | None:
         pfad = self.root / rel
         return pfad.read_text(encoding="utf-8") if pfad.is_file() else None

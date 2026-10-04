@@ -55,7 +55,8 @@ def test_inv03_test_author_braucht_fr():
 def test_inv04_implementer_ohne_pfadflucht():
     assert def_errors("role_outputs", "implementer",
                       {"files": [{"path": "../x.py", "content": ""}], "explanation": "e"})
-    assert def_errors("role_outputs", "implementer", {"files": [], "explanation": "e"})
+    # SPEC-0066 FR-02 (CON-0200 0.4.0): `files: []` heißt „keine Änderung nötig“.
+    assert not def_errors("role_outputs", "implementer", {"files": [], "explanation": "e"})
 
 
 def test_inv05_fail_braucht_befund():
