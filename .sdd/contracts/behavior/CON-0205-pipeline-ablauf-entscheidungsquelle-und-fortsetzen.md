@@ -4,7 +4,7 @@ title: "Pipeline-Ablauf, Entscheidungsquelle und Fortsetzen"
 type: behavior
 format: gherkin
 spec: SPEC-0053
-version: 0.3.0
+version: 0.4.0
 status: approved
 artifact: ".sdd/contracts/behavior/pipeline-ablauf-entscheidungsquelle-und-fortsetzen.feature"
 tests: ["TST-0234"]
@@ -40,7 +40,8 @@ Fake-Providern abgedeckt sein.
 - **INV-01:** Der Supervisor wird nur an S1, S2 und S3 gefragt; S1 erst, wenn alle Rollen-Checks
   der Zerlegung bestanden sind.
 - **INV-02:** `max_revisions` (Default 2) begrenzt Neuzerlegungen in S1; `max_attempts` (Default 3)
-  begrenzt Versuche je Task vor S2.
+  begrenzt die Versuche je Stufe einer Task (Test-Autor, Implementer, Review) vor S2 (SPEC-0066,
+  CON-0232 INV-02).
 - **INV-03:** Eine ungültige Entscheidung wird einmal neu angefragt; die zweite ungültige führt zu
   `halt`. Beide stehen mit `valid: false` in `decisions.jsonl`.
 - **INV-04:** `inline` und `session` unterscheiden sich nur darin, wann die Antwort eintrifft:

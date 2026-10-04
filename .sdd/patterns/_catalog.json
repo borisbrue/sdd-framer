@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-28T08:46:58Z",
+  "last_updated": "2026-10-04T10:01:09Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -461,6 +461,34 @@
       "spec_id": "SPEC-0064",
       "accepted_at": "2026-09-28T08:46:58Z",
       "acceptance_reason": "Bildet Task-Schnappschuss und state.json auf das eine Format aus CON-0202 ab.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Strategy",
+      "spec_id": "SPEC-0065",
+      "accepted_at": "2026-10-04T10:00:50Z",
+      "acceptance_reason": "Jede Kontextquelle (current_files, dependency_api) ist eine austauschbare Strategie; Rollendateien wählen per Namen. Signatur-Extraktoren je Dateiendung als Strategien (Python mitgeliefert, sprachneutraler Kern).",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "spec_id": "SPEC-0065",
+      "accepted_at": "2026-10-04T10:00:52Z",
+      "acceptance_reason": "Allowlist-Proxy aus SPEC-0064 vor jedem Dateizugriff der Kontextquellen: schließt Holdouts, .sdd/ und die Testdatei aus und kürzt nach Budget mit Hinweis.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0066",
+      "accepted_at": "2026-10-04T10:01:08Z",
+      "acceptance_reason": "Übersetzt die Ausgabe des Reviewers in das feste Schema facts.review aus CON-0202; ohne vorheriges Review entsteht kein Feld.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Decorator",
+      "spec_id": "SPEC-0066",
+      "accepted_at": "2026-10-04T10:01:09Z",
+      "acceptance_reason": "Erweitert die bestehende Usage-Erfassung (SPEC-0063) um Cache-Tokens, anbieterneutral; der Report liest sie auf demselben Weg wie Input- und Output-Tokens.",
       "refactoring_guru_url": null
     }
   ]

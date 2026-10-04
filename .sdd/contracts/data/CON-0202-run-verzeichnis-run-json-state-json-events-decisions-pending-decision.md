@@ -4,7 +4,7 @@ title: "Run-Verzeichnis: run.json, state.json, events, decisions, pending-decisi
 type: data
 format: json-schema
 spec: SPEC-0053
-version: 0.5.0
+version: 0.6.0
 status: approved
 artifact: ".sdd/contracts/data/run-verzeichnis-run-json-state-json-events-decisions-pending-decision.schema.json"
 tests: ["TST-0231"]
@@ -63,6 +63,11 @@ und Schnittstelle für den Dialogmodus.
   `fr_ids` die FR enthalten, in der Reihenfolge von `facts.tasks`; ohne Task `[]`).
 - **INV-12 (SPEC-0064):** `facts.tasks` stammt ausschließlich aus `approved-tasks.json` und `state.json`;
   andere Felder der Tasks (Beschreibung, `allowed_paths`, Inhalte) gelangen nicht in die Anfrage.
+- **INV-13 (SPEC-0066):** An S2 enthält `facts` das Feld `review` (`$defs/s2_review`), wenn der
+  letzte Versuch der Task ein Review mit `verdict: fail` war; sonst fehlt es (CON-0232 INV-01).
+- **INV-14 (SPEC-0066):** Jede Task in `state.json` kann `stage_attempts` mit den Zählern `test`,
+  `implementation` und `review` führen; `attempts` ist die Zahl der Versuche der aktuellen Stufe
+  (CON-0232 INV-02).
 - **INV-06:** `run.json` nennt je Rolle `role_version`; `warnings` enthält u. a. die Warnung bei
   gleichem Modell für Reviewer und Implementierer (SPEC-0053 FR-04).
 

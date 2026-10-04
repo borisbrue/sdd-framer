@@ -1,0 +1,22 @@
+{
+  "spec_id": "SPEC-0065",
+  "generated_at": "2026-10-04T10:00:50Z",
+  "patterns": [
+    {
+      "pattern_name": "Strategy",
+      "status": "accepted",
+      "decided_at": "2026-10-04T10:00:50Z",
+      "acceptance_reason": "Jede Kontextquelle (current_files, dependency_api) ist eine austauschbare Strategie; Rollendateien wählen per Namen. Signatur-Extraktoren je Dateiendung als Strategien (Python mitgeliefert, sprachneutraler Kern).",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Proxy",
+      "status": "accepted",
+      "decided_at": "2026-10-04T10:00:52Z",
+      "acceptance_reason": "Allowlist-Proxy aus SPEC-0064 vor jedem Dateizugriff der Kontextquellen: schließt Holdouts, .sdd/ und die Testdatei aus und kürzt nach Budget mit Hinweis.",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    }
+  ]
+}
