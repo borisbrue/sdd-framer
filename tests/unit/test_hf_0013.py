@@ -114,15 +114,17 @@ def test_stage_implementation_nach_review_befund(tmp_path, monkeypatch, llm):
                  abnahme(FR_01="erfüllt"))
     llm.antworte("test_author", rot_test(t1))
     llm.antworte("implementer", *[implementierung(t1)] * 5)
-    llm.antworte("reviewer", review(ok=False), review(), review())
+    # SPEC-0066 FR-03: erst die dritte Ablehnung (Grenze der Runden) eskaliert an S2.
+    llm.antworte("reviewer", review(ok=False), review(ok=False), review(ok=False), review())
     ergebnis = projekt.run("pipeline", "run", "SPEC-0900")
     zustaende = [(e.get("from"), e.get("to"), (e.get("detail") or {}).get("reason"))
                  for e in projekt.jsonl("events.jsonl")
                  if e.get("type") == "transition" and e.get("task_id") == "T01"]
     assert ergebnis.exit_code == 0, ergebnis.output
-    # Der S2-Beschluss (Begründung "begründet" aus command()) schickt die grüne Task zurück an
-    # den Implementer; der Test-Autor läuft nicht erneut.
-    assert ("green", "red", "begründet") in zustaende
+    # Der S2-Beschluss (Begründung "begründet" aus command()) lässt die Task beim Implementer;
+    # der Test-Autor läuft nicht erneut.
+    assert ("red", "red", "begründet") in zustaende
+    assert len(llm.aufrufe("implementer")) == 4
     assert len(llm.aufrufe("test_author")) == 1
 
 

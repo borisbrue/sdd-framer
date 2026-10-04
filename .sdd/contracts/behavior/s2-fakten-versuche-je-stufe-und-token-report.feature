@@ -17,7 +17,7 @@ Feature: S2-Fakten, Versuche je Stufe und Token-Report
     Given max_attempts ist 3 und das Review lehnt einmal ab
     When der Implementer danach grün liefert und das Review zustimmt
     Then gibt es keine S2-Anfrage
-    And state.json zeigt stage_attempts mit review 1
+    And state.json zeigt stage_attempts mit test 1, implementation 1 und review 2
 
   Scenario: Implementer meldet keine Änderung
     Given der Stand einer Task ist bereits grün

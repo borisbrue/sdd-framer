@@ -198,19 +198,29 @@ def report_cmd(run_id: str) -> None:
     table = Table(title=f"Pipeline-Report {run_id}")
     table.add_column("Rolle", no_wrap=True, min_width=11)
     for spalte in ("Modell", "Aufrufe", "Fehler", "Input-T", "Output-T", "Reasoning-T",
-                   "Dauer (s)"):
+                   "Cache-R", "Cache-W", "Dauer (s)"):
         table.add_column(spalte, justify="left" if spalte == "Modell" else "right")
     for z in zeilen["roles"]:
         table.add_row(z["role"], z["model"], str(z["calls"]), str(z["failures"]),
                       f"{z['input_tokens']:,}", f"{z['output_tokens']:,}",
-                      f"{z['reasoning_tokens']:,}", f"{z['duration_ms'] / 1000:.1f}")
+                      f"{z['reasoning_tokens']:,}", f"{z['cache_read_tokens']:,}",
+                      f"{z['cache_write_tokens']:,}", f"{z['duration_ms'] / 1000:.1f}")
     console.print(table)
     console.print(f"Supervisor-Eingriffe: {zeilen['interventions']} "
                   f"(davon ungültig: {zeilen['invalid_decisions']})")
-    console.print(f"Claude-Anteil an den Tokens: {zeilen['claude_share']:.0%}")
+    console.print(f"Claude-Anteil an den Tokens (inkl. Cache): {zeilen['claude_share']:.0%}")
+    if zeilen["roles_without_usage"]:
+        console.print("Ohne Usage-Werte (als 0 gezählt): "
+                      + ", ".join(zeilen["roles_without_usage"]))
     if zeilen["warnings"]:
         console.print("[yellow]Warnungen:[/] " + "; ".join(zeilen["warnings"]))
     sys.exit(0)
+
+
+def token_sum(zeile: dict) -> int:
+    """Input, Output, Cache-Read und Cache-Write einer Rolle (SPEC-0066 FR-04)."""
+    return sum(zeile.get(k, 0) for k in ("input_tokens", "output_tokens", "cache_read_tokens",
+                                         "cache_write_tokens"))
 
 
 def build_report(root: Path, store) -> dict:
@@ -218,7 +228,9 @@ def build_report(root: Path, store) -> dict:
     run = store.read_run()
     rollen: dict[str, dict] = defaultdict(lambda: {"calls": 0, "failures": 0, "input_tokens": 0,
                                                     "output_tokens": 0, "reasoning_tokens": 0,
-                                                    "duration_ms": 0})
+                                                    "cache_read_tokens": 0,
+                                                    "cache_write_tokens": 0, "duration_ms": 0})
+    ohne_usage: set[str] = set()
     for e in store.read_jsonl("events.jsonl"):
         if e["type"] == "role_call":
             r = rollen[e["role"]]
@@ -234,13 +246,17 @@ def build_report(root: Path, store) -> dict:
                 r["input_tokens"] += z["input_tokens"] or 0
                 r["output_tokens"] += z["output_tokens"] or 0
                 r["reasoning_tokens"] += z["reasoning_tokens"] or 0
+                r["cache_read_tokens"] += z["cache_read_tokens"] or 0
+                r["cache_write_tokens"] += z["cache_write_tokens"] or 0
                 r["duration_ms"] += z["duration_ms"] or 0
+                if dict(z).get("source") == "unavailable":
+                    ohne_usage.add(rolle)
     belegung = run.get("roles", {})
     gesamt = claude = 0
     ergebnis = []
     for rolle, r in sorted(rollen.items()):
         info = belegung.get(rolle, {})
-        tokens = r["input_tokens"] + r["output_tokens"]
+        tokens = token_sum(r)
         gesamt += tokens
         if info.get("provider") in CLAUDE_PROVIDERS:
             claude += tokens
@@ -248,6 +264,7 @@ def build_report(root: Path, store) -> dict:
                          **r})
     entscheidungen = store.read_jsonl("decisions.jsonl")
     return {"roles": ergebnis, "claude_share": (claude / gesamt) if gesamt else 0.0,
+            "roles_without_usage": sorted(ohne_usage),
             "interventions": sum(d.get("valid", False) for d in entscheidungen),
             "invalid_decisions": sum(not d.get("valid", False) for d in entscheidungen),
             "warnings": run.get("warnings", [])}
@@ -267,7 +284,7 @@ def _dry_run_summary(cfg, spec_id: str, run_id: str) -> None:
                       ", ".join(t.dependencies) or "—")
     console.print(table)
     report = build_report(cfg.root, RunStore.open(cfg.root, run_id))
-    tokens = sum(r["input_tokens"] + r["output_tokens"] for r in report["roles"])
+    tokens = sum(token_sum(r) for r in report["roles"])
     console.print(f"Tokens bisher: {tokens:,}")
     code = sum(1 for t in tasks if t.type.value in ("code", "test"))
     console.print(f"Geschätzte Rollenaufrufe: test_author ≥ {code}, implementer ≥ {code}, "

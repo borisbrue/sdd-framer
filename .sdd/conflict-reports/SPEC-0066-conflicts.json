@@ -1,0 +1,430 @@
+{
+  "spec_id": "SPEC-0066",
+  "generated_at": "2026-10-04T11:54:22Z",
+  "new_contracts": [
+    "CON-0200",
+    "CON-0202",
+    "CON-0205",
+    "CON-0232"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0066-001",
+      "type": "dependency-gap",
+      "severity": "high",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0204",
+      "detail": "INV-02 nennt CON-0204 (PathPolicy) als Grundlage für allowed_paths. CON-0204 fehlt aber in der Workspace-Liste. Damit ist die Referenz nicht auflösbar, solange der Contract nicht existiert, und verletzt Invariante 3 (alle Referenzen zeigen auf existierende Dokumente).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Falsch-positiv: CON-0204 (PathPolicy) existiert und ist approved; die Analyse sah ihn nur nicht in ihrer Liste.",
+        "resolved_at": "2026-10-04T11:53:46Z"
+      }
+    },
+    {
+      "id": "CF-0066-002",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0096",
+      "detail": "CON-0096 legt bereits ein Task-Schema für Distribution-Tasks fest. Die decomposer-Ausgabe in CON-0200 definiert Tasks neu, mit fr_ids, dependencies als Titel-Referenzen, allowed_paths, test_file und test_command sowie den Typen code/test. Wenn CON-0096 Abhängigkeiten über IDs statt Titel abbildet oder diese Felder nicht kennt, gibt es zwei unverträgliche Task-Formate.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:48Z"
+      }
+    },
+    {
+      "id": "CF-0066-003",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0097",
+      "detail": "CON-0097 beschreibt, wie `sdd decompose` Tasks ableitet und klassifiziert. CON-0200 $defs/decomposer legt dieselbe Zerlegung als Ausgabe einer Rolle fest. Ungeklärt bleibt, welcher Contract für Task-Typen, Klassifizierung und Pflichtfelder maßgeblich ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:49Z"
+      }
+    },
+    {
+      "id": "CF-0066-004",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0124",
+      "detail": "CON-0124 macht Tests zur Pflicht, bevor ein Task auf passed wechselt. CON-0200 INV-01 verlangt test_file und test_command nur für code-Tasks, Tasks anderer Typen (etwa docs) brauchen keine. Das Gate könnte solche Tasks blockieren oder müsste test_command anders auslegen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:50Z"
+      }
+    },
+    {
+      "id": "CF-0066-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0200",
+      "conflicting_contract": "CON-0061",
+      "detail": "CON-0061 regelt den TDD-Zyklus (zuerst ein roter Test, dann die Implementierung). In CON-0200 liefern test_author und implementer getrennte Ausgaben. Unklar ist, ob die Reihenfolge rot vor grün in CON-0061 oder über die Rollenausgaben/den RoleRunner durchgesetzt wird, und ob invalid_output als Fehlversuch mit den TDD-Retry-Regeln kollidiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:51Z"
+      }
+    },
+    {
+      "id": "CF-0066-006",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 (Pipeline Phase State JSON Schema) beschreibt bereits einen persistierten Pipeline-Zustand. CON-0202 legt mit state.json ($defs/state) einen zweiten Zustand für den Automaten und alle Tasks fest. Damit gibt es womöglich zwei maßgebliche Quellen für Phase und Status. Es fehlt eine Festlegung, ob CON-0202 den älteren Contract ersetzt, ergänzt oder nur auf ihn verweist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:52Z"
+      }
+    },
+    {
+      "id": "CF-0066-007",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate – Phase State Machine) definiert eine eigene Zustandsmaschine mit Phasen und Gates. CON-0202 nennt state.json den 'fortsetzbaren Automaten' und schreibt Gates in events.jsonl. Wenn die Zustandsnamen oder erlaubten Übergänge voneinander abweichen, ist offen, welche Maschine gilt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:53Z"
+      }
+    },
+    {
+      "id": "CF-0066-008",
+      "type": "field-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0096",
+      "detail": "state.json enthält den Zustand 'aller Tasks'. CON-0096 legt das Task-Schema (Distribution-Task) bereits fest. Verwendet CON-0202 eigene Task-Felder oder Statuswerte, statt per $ref auf CON-0096 zu verweisen, laufen die beiden Darstellungen auseinander.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:53Z"
+      }
+    },
+    {
+      "id": "CF-0066-009",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 gibt über GET /api/pipeline/{run_id} den Run-Status heraus. CON-0202 führt run_id als Verzeichnisschlüssel unter .sdd/runs/<SPEC>/<run_id>/ ein. Ungeklärt ist, ob beide dieselbe run_id meinen, ob der Endpoint aus state.json lesen soll und wie er die SPEC-Ebene auflöst, wenn der Pfad nur run_id enthält.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:54Z"
+      }
+    },
+    {
+      "id": "CF-0066-010",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0115",
+      "detail": "Mit pending-decision und decisions.jsonl bildet CON-0202 eine Dialog- bzw. Entscheidungs-Schnittstelle. CON-0115 (FlowSession State Machine) modelliert ebenfalls einen interaktiven Sitzungszustand. Ohne klare Abgrenzung gibt es zwei Mechanismen, die auf Benutzereingaben warten.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:55Z"
+      }
+    },
+    {
+      "id": "CF-0066-011",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0129",
+      "detail": "run.json und events.jsonl halten je Rollenaufruf Provider und Modell fest. CON-0129 erweitert die Token-History um agent_type und model. Dieselben Fakten stehen dann an zwei Stellen, in unterschiedlicher Struktur, und Rollenname und agent_type könnten verschieden benannt sein.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:56Z"
+      }
+    },
+    {
+      "id": "CF-0066-012",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0202",
+      "conflicting_contract": "CON-0062",
+      "detail": "CON-0062 (in-progress-spec-schema) bildet ab, welche Spec gerade bearbeitet wird. Ein aktiver Run unter .sdd/runs/<SPEC>/ zeigt dasselbe an. Es ist nicht festgelegt, welche Quelle bei laufenden Runs maßgeblich ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:57Z"
+      }
+    },
+    {
+      "id": "CF-0066-013",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0025",
+      "detail": "CON-0025 (Execution Gate – Phase State Machine) beschreibt ebenfalls einen Pipeline-Ablauf mit Phasen und Gate-Übergängen. CON-0205 legt für `sdd pipeline run|decide|status` einen eigenen Ablauf fest: Rollen-Checks vor S1, Eskalation, Abnahme und Fortsetzen. Wenn sich die Phasen- bzw. Statusmodelle beider Contracts nicht decken, gibt es zwei konkurrierende Zustandsautomaten für dieselbe Pipeline.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:58Z"
+      }
+    },
+    {
+      "id": "CF-0066-014",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0030",
+      "detail": "CON-0030 (Pipeline Phase State JSON Schema) definiert den persistierten Pipeline-Zustand. CON-0205 setzt für `--resume RUN` und `pipeline status|report` einen persistierten Run-Zustand voraus, verweist aber nicht auf CON-0030. Es ist offen, ob der Resume-Zustand diesem Schema folgen muss oder ein neues Format nutzt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:58Z"
+      }
+    },
+    {
+      "id": "CF-0066-015",
+      "type": "endpoint-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0021",
+      "detail": "CON-0021 stellt einen Pipeline-Start (POST /api/orchestrate) und eine Statusabfrage pro run_id (GET /api/pipeline/{run_id}) bereit. CON-0205 definiert für `pipeline run` und `pipeline status` eigene Run-IDs und Exit-Code-Semantik (0–3). Wenn die Web-API die CLI kapselt (ARCH-01), fehlt eine Zuordnung von Run-ID-Format und Statuswerten. Die API-Status könnten dann von CLI-Status und Exit-Codes abweichen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:53:59Z"
+      }
+    },
+    {
+      "id": "CF-0066-016",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0058",
+      "detail": "CON-0058 (sdd-skill-gate-flow) beschreibt, wie im Skill-Ablauf Gate-Entscheidungen interaktiv getroffen werden. CON-0205 führt mit `pipeline decide` und dem Dialogmodus eine eigene Entscheidungsquelle samt Eskalation ein. Ohne geregelten Vorrang können Skill-Gate und `pipeline decide` für denselben Run gegensätzliche Entscheidungen festhalten.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:54:00Z"
+      }
+    },
+    {
+      "id": "CF-0066-017",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0055",
+      "detail": "CON-0055 (extension-pipeline-control) steuert die Pipeline aus der VS-Code-Extension (Start, Stop, Status). Es ist unklar, ob die Extension die Befehle aus CON-0205 aufruft und deren Exit-Codes (0–3) und Abbruch- bzw. Fortsetzen-Semantik übernimmt. Das betrifft vor allem den Fall, dass ein Run in der Extension abgebrochen wird.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:54:01Z"
+      }
+    },
+    {
+      "id": "CF-0066-018",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0115",
+      "detail": "CON-0115 (FlowSession State Machine) modelliert ebenfalls einen fortsetzbaren, mehrstufigen Ablauf mit Sitzungszustand. Wenn AgentFlow-Sessions und Pipeline-Runs gleichzeitig dieselbe Spec bearbeiten, ist nicht geregelt, welcher Zustand gilt. Ebenso offen ist, ob `--resume` FlowSession-Zustände berücksichtigt.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:54:02Z"
+      }
+    },
+    {
+      "id": "CF-0066-019",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0205",
+      "conflicting_contract": "CON-0022",
+      "detail": "CON-0205 verlangt, dass jedes Szenario mit Fake-Providern getestet wird. Die Fakes müssen das Provider-Interface aus CON-0022 (CompletionProvider) erfüllen. CON-0205 nennt diese Abhängigkeit nicht, sodass die Fakes vom tatsächlichen Interface abweichen können. Nach ARCH-03 läuft der Zugriff außerdem nur über die Provider-Factory.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend seit SPEC-0053 (Koexistenz Pipeline-Runs mit Legacy-Contracts zu Tasks, Phasen-State, Orchestrate-API, FlowSession, Extension, Skill-Gates); SPEC-0066 ergänzt nur facts.review, stage_attempts, files: [] und Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:54:03Z"
+      }
+    },
+    {
+      "id": "CF-0066-020",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0200",
+      "detail": "CON-0232 points to CON-0200 for its data shapes (the S2 request and the facts.review structure), but CON-0200 is missing from the list of existing contracts. Nothing in the list confirms that facts.review with verdict and findings (at most 20 findings, a capped reason per finding) is a permitted field in the S2 request schema. If the schema has no facts.review field or forbids extra properties, INV-01 contradicts the data contract.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Falsch-positiv: CON-0200 und CON-0202 existieren und gehören zu SPEC-0066 selbst (Version 0.4.0 bzw. 0.6.0).",
+        "resolved_at": "2026-10-04T11:53:47Z"
+      }
+    },
+    {
+      "id": "CF-0066-021",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0202",
+      "detail": "CON-0232 also points to CON-0202 for its data shapes, probably the attempt and pipeline state records that the per-stage attempt count would be stored in. CON-0202 is missing from the list too, so nobody can check whether an attempt counter per stage, as opposed to per task, is already part of the schema.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Falsch-positiv: CON-0200 und CON-0202 existieren und gehören zu SPEC-0066 selbst (Version 0.4.0 bzw. 0.6.0).",
+        "resolved_at": "2026-10-04T11:53:48Z"
+      }
+    },
+    {
+      "id": "CF-0066-022",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0121",
+      "detail": "The token report in `sdd pipeline report` (FR-04) reads per-task token data, and CON-0121 already defines that structure. Neither contract says which one owns the aggregation, or what the report shows when the claude-cli provider delivers usage: None. The report needs a defined null or 'unknown' display, not a 0 and not a crash.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der Pipeline-Report liest token_usage aus SPEC-0063 (je Rolle), nicht die Task-Token-Struktur aus CON-0121; SPEC-0066 ergänzt dort nur Cache-Spalten.",
+        "resolved_at": "2026-10-04T11:54:03Z"
+      }
+    },
+    {
+      "id": "CF-0066-023",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0129",
+      "detail": "CON-0129 adds agent_type and model to token history. If the report breaks tokens down by stage or role, those fields overlap with the stage concept in CON-0232. The mapping from agent_type to pipeline stage (implementer, reviewer, test author, supervisor) is not written down anywhere.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der Report gruppiert wie bisher nach Rolle; Stufen betreffen nur die Versuchszählung, nicht die Token-Auswertung.",
+        "resolved_at": "2026-10-04T11:54:04Z"
+      }
+    },
+    {
+      "id": "CF-0066-024",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0124",
+      "detail": "CON-0232 defines how an empty implementer output is handled, either as a failed attempt or as a trigger for S2. CON-0124 governs the passed transition of a task through the requirement that tests exist. It is not stated whether an empty output can ever reach the CON-0124 gate, or whether it fails before the gate and counts as an attempt in its stage. Without that, the attempt count and the gate result can disagree.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "files: [] ist kein Fehlversuch, sondern läuft durch das GREEN-Gate (CON-0232 INV-03); der passed-Übergang aus CON-0124 betrifft den Legacy-Pfad.",
+        "resolved_at": "2026-10-04T11:54:05Z"
+      }
+    },
+    {
+      "id": "CF-0066-025",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0232",
+      "conflicting_contract": "CON-0061",
+      "detail": "CON-0061 (tdd-cycle-enforcement) defines the red/green cycle and how it is repeated. CON-0232 introduces attempts per stage and an S2 trigger based on them. The two contracts can count retries differently: a TDD repeat versus a stage attempt. It is not specified which counter controls escalation to S2.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Die Stufenzähler ändern nur, wann S2 kommt; RED vor GREEN bleibt durch die Pipeline-Gates erzwungen.",
+        "resolved_at": "2026-10-04T11:54:06Z"
+      }
+    },
+    {
+      "id": "CF-0066-R001",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "Erfolgskriterium 3 / Befund 4",
+      "conflicting_contract": "SPEC-0011:Kontext & Motivation",
+      "detail": "SPEC-0011 lernt Kostenschätzungen aus historischen Token-Daten. Rechnet SPEC-0066 im Report künftig Cache-Read- und Cache-Write-Tokens mit ein, muss die Schätzbasis aus SPEC-0011 diese Tokens genauso zählen, sonst sind Schätzung und Report-Ist-Werte nicht vergleichbar.",
+      "source": "regression",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 25,
+    "high": 1,
+    "medium": 13,
+    "low": 11,
+    "affected_specs_count": 0
+  }
+}
