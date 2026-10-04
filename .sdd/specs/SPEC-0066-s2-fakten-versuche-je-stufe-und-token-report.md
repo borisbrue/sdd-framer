@@ -2,11 +2,11 @@
 id: SPEC-0066
 title: "S2-Fakten, Versuche je Stufe und Token-Report"
 type: feature
-status: draft
+status: approved
 owner: "Boris"
 created: 2026-10-04
 updated: 2026-10-04
-version: 0.1.1
+version: 0.1.2
 priority: high
 tags: [pipeline, supervisor, usage]
 depends_on: [SPEC-0053, SPEC-0060, SPEC-0063, SPEC-0064]
@@ -20,11 +20,16 @@ tests:
 - TST-0231
 - TST-0234
 - TST-0261
+fr_test_map:
+  FR-01: [TST-0231, TST-0261]
+  FR-02: [TST-0229, TST-0261]
+  FR-03: [TST-0231, TST-0234, TST-0261]
+  FR-04: [TST-0261]
 ---
 
 # S2-Fakten, Versuche je Stufe und Token-Report
 
-> **Status:** draft · **Owner:** Boris · **Version:** 0.1.1
+> **Status:** draft · **Owner:** Boris · **Version:** 0.1.2
 
 ## 1. Kontext & Motivation
 
@@ -81,7 +86,9 @@ wirklich festhängt, und der Report zeigt die tatsächlichen Token-Kosten.
   der auch leer sein kann.
 - **FR-03:** **Versuche je Stufe.** Jede Task zählt Versuche getrennt nach Stufe (`test`,
   `implementation`, `review`). Eine Task eskaliert an S2, sobald eine Stufe `max_attempts`
-  erreicht. `retry_with_hint` setzt alle Stufenzähler der Task auf 0. `state.json` führt die
+  erreicht. Eine Review-Ablehnung beginnt eine neue Runde und setzt den Zähler `implementation`
+  auf 0; `review` begrenzt die Zahl der Runden. `retry_with_hint`, `reassign` und `reopen`
+  setzen alle Stufenzähler der Task auf 0. `state.json` führt die
   Zähler je Task in `stage_attempts`; `attempts` behält seine Bedeutung als Zahl der Versuche
   der aktuellen Stufe, die S2 auslöst.
 - **FR-04:** **Cache-Tokens im Report.** `sdd pipeline report` zeigt je Rolle zusätzlich
@@ -145,3 +152,4 @@ Feature: S2-Fakten, Versuche je Stufe und Token-Report
 |------------|---------|---------------|---------------------|
 | 2026-10-04 | 0.1.0   | Boris, Claude | Initiale Erstellung, ausgegliedert aus SPEC-0065 |
 | 2026-10-04 | 0.1.1   | Boris, Claude | SOLID-Warnungen: attempts behält seine Bedeutung, Reviewer-Contract benannt, Verhalten bei files: [] je Konsument |
+| 2026-10-04 | 0.1.2   | Claude        | FR-03 präzisiert: Review-Ablehnung beginnt eine neue Runde (setzt implementation auf 0); reassign/reopen setzen wie retry_with_hint zurück |
