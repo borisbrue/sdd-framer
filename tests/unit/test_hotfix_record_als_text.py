@@ -51,7 +51,7 @@ def test_vom_writer_geschriebene_records_lesen_sich_unveraendert(tmp_path):
     (tmp_path / ".sdd").mkdir()
     hf_id = start(tmp_path, "Ziffernhash")
     daten = _read_hf(tmp_path / ".sdd" / "hotfixes" / f"{hf_id}.md")
-    assert daten["commit"] is None and daten["status"] == "open"
+    assert daten["commit"] == "" and daten["status"] == "open"  # CON-0119 INV-04
 
     daten.update(status="done", commit="2494608")
     pfad = tmp_path / ".sdd" / "hotfixes" / f"{hf_id}.md"

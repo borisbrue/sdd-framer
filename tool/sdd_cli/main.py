@@ -1051,7 +1051,7 @@ def status() -> None:
     console.print(table)
 
     # Hotfix-Abschnitt (SPEC-0031 FR-06)
-    from .hotfix import list_hotfixes
+    from .hotfix import list_hotfixes, short_commit
     hotfixes = list_hotfixes(cfg.root)
     if hotfixes:
         console.print()
@@ -1067,7 +1067,7 @@ def status() -> None:
                 h.get("id", "?"),
                 h.get("description", ""),
                 f"[{_sc.get(st, 'white')}]{st}[/]",
-                h.get("commit") or "—",
+                short_commit(h.get("commit")),
             )
         console.print(hf_table)
 
@@ -3242,7 +3242,7 @@ def hotfix_abort(hf_id: str) -> None:
 @click.option("--status", default=None, type=click.Choice(["open", "done", "aborted"]),
               help="Filtert nach Status.")
 def hotfix_list(status: str | None) -> None:
-    from .hotfix import list_hotfixes
+    from .hotfix import list_hotfixes, short_commit
     cfg = _ensure_project()
     hotfixes = list_hotfixes(cfg.root, status_filter=status)
     if not hotfixes:
@@ -3262,7 +3262,7 @@ def hotfix_list(status: str | None) -> None:
             h.get("description", ""),
             f"[{_sc.get(st, 'white')}]{st}[/]",
             h.get("created", ""),
-            h.get("commit") or "—",
+            short_commit(h.get("commit")),
         )
     console.print(table)
 
