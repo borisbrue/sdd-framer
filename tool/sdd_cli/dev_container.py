@@ -269,6 +269,34 @@ def resolve_base_branch(cfg_raw: dict) -> str | None:
     return str(wert).strip() if wert else None
 
 
+def resolve_pr_base(cfg: SddConfig) -> str:
+    """Ziel-Branch fuer PR, Diff und Merge-Anleitung.
+
+    Vorher stand hier fest `main`. In Repos mit `master` scheiterte damit jeder
+    `gh pr create` ("Base ref must be a branch"), Diff und Merge-Anleitung im
+    lokalen PR-Dokument waren falsch (#138).
+
+    Reihenfolge: docker.base_branch, origin/HEAD, lokaler main/master, main.
+    """
+    konfiguriert = resolve_base_branch(cfg.raw)
+    if konfiguriert:
+        return konfiguriert
+    result = subprocess.run(
+        ["git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+        cwd=cfg.root, capture_output=True, text=True,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return result.stdout.strip().removeprefix("origin/")
+    for kandidat in ("main", "master"):
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"refs/heads/{kandidat}"],
+            cwd=cfg.root, capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            return kandidat
+    return "main"
+
+
 def _branch_exists(branch: str) -> bool:
     result = _git(["rev-parse", "--verify", branch], capture=True, check=False)
     return result.returncode == 0
@@ -307,7 +335,7 @@ class GhFallbackPRStrategy(PRStrategy):
                  "--title", title,
                  "--body", body,
                  "--head", branch,
-                 "--base", "main"],
+                 "--base", resolve_pr_base(cfg)],
                 capture_output=True,
                 text=True,
             )
@@ -336,15 +364,23 @@ class LocalGitStrategy(PRStrategy):
     def create(self, spec_id: str, cfg: SddConfig, branch: str | None = None) -> None:
         branch = branch or branch_name(spec_id)
 
-        result = _git(["diff", f"main..{branch}", "--stat"], capture=True, check=False)
-        diff_stat = result.stdout.strip() if result.returncode == 0 else "(diff nicht verfügbar)"
-
-        test_result, tests_passed, tests_total = _load_last_test_result(cfg, spec_id)
-        merge_cmd = f"git checkout main && git merge {branch}"
+        base = resolve_pr_base(cfg)
+        merge_cmd = f"git checkout {base} && git merge {branch}"
 
         pr_dir = cfg.root / ".sdd" / "prs"
         pr_dir.mkdir(parents=True, exist_ok=True)
         pr_path = pr_dir / f"PR-{spec_id}.md"
+        if pr_path.exists():
+            # Ein vorher geschriebenes PR-Dokument (Summary, FR-Tabelle, Test-Plan)
+            # wurde hier kommentarlos durch das leere Template ersetzt (#138).
+            print(f"✓ PR-Dokument vorhanden, nicht überschrieben: {pr_path}")
+            print(f"\nMerge-Anleitung:\n  {merge_cmd}")
+            return
+
+        result = _git(["diff", f"{base}..{branch}", "--stat"], capture=True, check=False)
+        diff_stat = result.stdout.strip() if result.returncode == 0 else "(diff nicht verfügbar)"
+
+        test_result, tests_passed, tests_total = _load_last_test_result(cfg, spec_id)
 
         today = datetime.date.today().isoformat()
         pr_path.write_text(
