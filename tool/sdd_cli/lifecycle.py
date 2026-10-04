@@ -380,6 +380,9 @@ class StartResult:
     # generiert wurde und welche als Platzhalter mit `raise NotImplementedError`
     # liegenblieb — beide standen unter "Test-Stubs angelegt".
     stub_outcomes: list[StubOutcome] = field(default_factory=list)
+    # Test-Dateien, fuer die kein Stub angelegt wurde, weil Platzhalter und
+    # Generierung nur pytest koennen (#141: `import pytest` in .rs-Dateien).
+    stubs_unsupported: list[Path] = field(default_factory=list)
 
     @property
     def stubs_generated(self) -> list[Path]:
@@ -424,13 +427,18 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
     stubs_created: list[Path] = []
     stubs_skipped: list[Path] = []
     stub_outcomes: list[StubOutcome] = []
+    stubs_unsupported: list[Path] = []
 
     for tst_id in tst_ids:
         tst_doc = _find_tst_doc(config, tst_id)
         stub_path = _derive_stub_path(config, tst_id, tst_doc)
         if stub_path is None:
             continue
-        if stub_path.exists():
+        if stub_path.suffix != ".py":
+            # Weder Datei noch Verzeichnis anlegen: ein pytest-Modul in einer
+            # .rs-Datei bricht `cargo test` ab (#141).
+            stubs_unsupported.append(stub_path)
+        elif stub_path.exists():
             stubs_skipped.append(stub_path)
         else:
             stub_path.parent.mkdir(parents=True, exist_ok=True)
@@ -450,6 +458,7 @@ def start_spec(config: SddConfig, spec_id: str) -> StartResult:
         tst_ids=list(tst_ids),
         stub_outcomes=stub_outcomes,
         status_changed=not bereits_gestartet,
+        stubs_unsupported=stubs_unsupported,
     )
 
 
