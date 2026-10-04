@@ -15,11 +15,19 @@ tags:
   - refactoring
 depends_on: []
 contracts:
+- CON-0165
+- CON-0166
+- CON-0167
+- CON-0168
 - CON-0169
 - CON-0170
 tests:
-- TST-0201
-- TST-0202
+- TST-0193
+- TST-0194
+- TST-0195
+- TST-0196
+- TST-0208
+- TST-0209
 fr_test_map: {}
 adrs: []
 ---

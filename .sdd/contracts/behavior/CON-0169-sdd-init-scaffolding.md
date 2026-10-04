@@ -9,7 +9,7 @@ version: 0.2.0
 status: approved
 artifact: "contracts/behavior/sdd-init-scaffolding.md"
 tests:
-  - TST-0201
+  - TST-0208
 ---
 
 # Contract: `sdd init` Scaffolding-Integration

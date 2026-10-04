@@ -1,4 +1,4 @@
-"""TST-0197 – sdd init Scaffolding-Integration (Integration)
+"""TST-0208 – sdd init Scaffolding-Integration (Integration)
 Spec: SPEC-0044 · Contract: CON-0169
 Prüft dass sdd new agents-md/github-workflow entfernt und sdd upgrade vorhanden ist.
 """

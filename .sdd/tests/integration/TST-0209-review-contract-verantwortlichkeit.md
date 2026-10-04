@@ -7,7 +7,7 @@ spec: SPEC-0044
 contract: CON-0170
 status: draft
 framework: pytest
-artifact: "tests/integration/test_tst_0198.py"
+artifact: "tests/integration/test_tst_0209.py"
 tags:
   - cli
   - cleanup

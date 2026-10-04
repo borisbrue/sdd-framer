@@ -1,4 +1,4 @@
-"""TST-0198 – Verantwortlichkeitstrennung review contract vs test generate (Integration)
+"""TST-0209 – Verantwortlichkeitstrennung review contract vs test generate (Integration)
 Spec: SPEC-0044 · Contract: CON-0170
 Prüft dass sdd review contract keine TST-Dateien anlegt und sdd test generate existiert.
 
@@ -28,7 +28,7 @@ def _count_tst_files(root: Path) -> int:
 @pytest.fixture
 def projekt(tmp_path: Path) -> Path:
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, capture_output=True)
-    _run(["init", "--name", "TST-0198"], tmp_path)
+    _run(["init", "--name", "TST-0209"], tmp_path)
     _run(["new", "spec", "Beispiel"], tmp_path)
     _run(["new", "contract", "--spec", "SPEC-0001", "--format", "gherkin",
           "--title", "Beispiel"], tmp_path)
