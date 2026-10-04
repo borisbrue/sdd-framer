@@ -255,7 +255,7 @@ export default function LogPanel({ specId, autoConnectTrigger }: Props) {
         {lines.length === 0 && conn !== "connecting" && (
           <div style={{ color: "#555", paddingTop: 8 }}>
             {conn === "no_stream"
-              ? "Kein aktiver Log-Stream. Starte den Container mit 'sdd dev up SPEC-XXXX'."
+              ? "Kein aktiver Log-Stream. Starte den Container über 'Container starten' in der Pipeline-Ansicht; danach erscheinen seine Logs hier."
               : conn === "disconnected"
               ? "Klicke 'Verbinden' um Container-Logs live zu sehen."
               : "Warte auf Log-Zeilen…"}

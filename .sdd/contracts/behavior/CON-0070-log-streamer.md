@@ -4,7 +4,7 @@ title: "log-streamer"
 type: behavior
 format: gherkin
 spec: SPEC-0022
-version: 0.1.0
+version: 0.2.0
 status: draft
 artifact: "contracts/behavior/log-streamer.feature"
 tests: [TST-0080]
@@ -19,16 +19,23 @@ tests: [TST-0080]
 Beschreibt das beobachtbare Verhalten des `LogStreamer` und `LogEventBus`:
 Attach/Detach von Container-Logs, Buffer-Verwaltung und WebSocket-Multicast.
 
+> **v0.2.0 (2026-10-04, #128):** G-01 und G-04 nannten `sdd dev up/start` und
+> `sdd dev down/close`. Die Befehle gibt es seit SPEC-0044 nicht mehr. Den Stream startet
+> heute nur der Container-Start über die Web-API; einen eigenen Stopp-Befehl gibt es nicht.
+
 ## Garantien
 
-- **G-01:** Nach `sdd dev up/start` startet `LogStreamer.attach(spec_id)` automatisch
-  wenn `log_stream.enabled: true`.
+- **G-01:** Nach einem erfolgreichen Container-Start über die Web-API
+  (`POST /api/specs/{spec_id}/start`, ruft `sdd start`) startet
+  `LogStreamer.attach(spec_id)` automatisch. `sdd start` auf der Kommandozeile streamt
+  nicht; dort läuft kein API-Prozess, der Clients bedienen könnte.
 - **G-02:** Neue Log-Zeilen werden innerhalb von 1 Sekunde an alle verbundenen
   WebSocket-Clients gesendet.
 - **G-03:** Bei WebSocket-Verbindungsaufbau werden die letzten `log_stream.max_lines`
   Zeilen aus dem In-Memory-Buffer gesendet, danach Live-Zeilen.
 - **G-04:** `LogStreamer.detach(spec_id)` stoppt den Log-Thread sauber (kein
-  hängender Prozess nach `sdd dev down/close`).
+  hängender Prozess). Endet der Container (Finalisierung), endet `logs --follow` und
+  mit ihm der Thread.
 - **G-05:** N gleichzeitige WebSocket-Clients für denselben `spec_id` empfangen
   alle Zeilen (Multicast via `LogEventBus`).
 
@@ -49,9 +56,9 @@ Feature: LogStreamer und LogEventBus
     Given log_stream.enabled ist true
     And log_stream.max_lines ist 500
 
-  Scenario: Automatischer Start nach sdd dev up
+  Scenario: Automatischer Start nach Container-Start über die Web-API
     Given Container "sdd-dev-spec-0022" wird gestartet
-    When "sdd dev up SPEC-0022" erfolgreich abgeschlossen ist
+    When "POST /api/specs/SPEC-0022/start" erfolgreich abgeschlossen ist
     Then ist LogStreamer für SPEC-0022 aktiv
     And ein Thread liest "docker logs --follow sdd-dev-spec-0022"
 
@@ -83,9 +90,9 @@ Feature: LogStreamer und LogEventBus
     Then bleibt LogStreamer aktiv
     And Client-2 empfängt weiterhin Log-Zeilen
 
-  Scenario: sdd dev down stoppt LogStreamer sauber
+  Scenario: detach stoppt LogStreamer sauber
     Given LogStreamer für SPEC-0022 ist aktiv
-    When "sdd dev down SPEC-0022" ausgeführt wird
+    When LogStreamer.detach(SPEC-0022) aufgerufen wird
     Then stoppt LogStreamer.detach(SPEC-0022) den Log-Thread
     And kein Zombie-Prozess bleibt übrig
 ```

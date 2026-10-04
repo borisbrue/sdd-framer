@@ -5,9 +5,10 @@ type: behavior
 format: gherkin
 spec: SPEC-0022
 version: 0.1.0
-status: draft
+status: deprecated
 artifact: "contracts/behavior/dev-stack-lifecycle.feature"
 tests: [TST-0079]
+deprecated_reason: "sdd dev build/push/up/down gibt es seit SPEC-0044 nicht mehr (#128). Das Image baut sdd start bei Bedarf, den Compose-Stack startet sdd start über docker.compose_file. Für push und down gibt es keinen Ersatz. Die Runtime-Abstraktion (Docker/Podman, G-02/G-07/INV-01) gilt weiter; TST-0079 prüft sie."
 ---
 
 # Contract: dev-stack-lifecycle
