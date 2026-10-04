@@ -99,3 +99,4 @@
 2026-10-04T07:44:47Z  hotfix.start  HF-0014  'sdd finalize ignoriert einen fehlgeschlagenen git add/commit (z. B. ohne Git-Identität): der Report nennt den alten HEAD als Commit und die Spec wird trotzdem implemented (#142)'
 2026-10-04T07:58:41Z  hotfix.finalize  HF-0014  commit=582bbb6
 2026-10-04T09:32:49Z  hotfix.start  HF-0015  'sdd finalize: PR-Base, Diff und Merge-Anleitung fest auf main (scheitert in Repos mit master), vorhandenes PR-Dokument wird durch das leere Template überschrieben (#138)'
+2026-10-04T09:46:03Z  hotfix.finalize  HF-0015  commit=2691d78
