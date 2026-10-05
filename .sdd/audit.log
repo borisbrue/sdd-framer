@@ -110,3 +110,4 @@
 2026-10-04T16:06:59Z  hotfix.finalize  HF-0019  commit=ce0dd8e
 2026-10-04T16:12:22Z CON-0069 draft → deprecated [sdd dev build/push/up/down gibt es seit SPEC-0044 nicht mehr (#128). Das Image baut sdd start bei Bedarf, den Compose-Stack startet sdd start über docker.compose_file. Für push und down gibt es keinen Ersatz. Die Runtime-Abstraktion (Docker/Podman, G-02/G-07/INV-01) gilt weiter; TST-0079 prüft sie.]
 2026-10-05T13:04:25Z  hotfix.start  HF-0020  'claude-cli-Provider übergibt den Prompt als argv-Element (-p): Prompts über 128 KiB (MAX_ARG_STRLEN) scheitern mit [Errno 7] Argument list too long; Prompt jetzt über stdin'
+2026-10-05T13:13:15Z  hotfix.finalize  HF-0020  commit=9ea519f6fb3ee527895400080a2bd7a7e15640f4
