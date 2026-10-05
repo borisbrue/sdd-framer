@@ -64,6 +64,7 @@ class ClaudeCliCompletionProvider:
 
     max_tokens: ignoriert (CLI kennt kein --max-tokens Flag).
     system_prompt: als Präfix <system>\\n...\\n</system>\\n\\n eingefügt.
+    prompt: wird über stdin übergeben (nie als argv – MAX_ARG_STRLEN 128 KiB).
     timeout: an subprocess.run weitergereicht. Reihenfolge: Argument, sonst der
     beim Erzeugen gesetzte Wert (aus llm.timeout_seconds), sonst 600s.
     usage: aus dem Envelope (SPEC-0060 FR-02); ohne Usage-Block `source: unavailable`.
@@ -96,9 +97,13 @@ class ClaudeCliCompletionProvider:
             if timeout is not None
             else (self._timeout or _DEFAULT_COMPLETION_TIMEOUT)
         )
+        # Prompt über stdin, nicht als argv-Element: Linux begrenzt ein einzelnes
+        # Argument auf MAX_ARG_STRLEN (128 KiB) → sonst "[Errno 7] Argument list
+        # too long" bei großen Prompts (z.B. Implementer-Rolle mit vielen Dateien).
         try:
             proc = subprocess.run(
-                [claude, "--print", "--output-format", "json", "-p", full_prompt],
+                [claude, "--print", "--output-format", "json"],
+                input=full_prompt,
                 capture_output=True,
                 text=True,
                 timeout=effective_timeout,

@@ -359,8 +359,7 @@ class TestClaudeCliCompletionProvider:
              patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
             provider.complete("user prompt", system_prompt="be helpful")
 
-        call_args = mock_run.call_args[0][0]
-        prompt_arg = call_args[-1]
+        prompt_arg = mock_run.call_args[1]["input"]
         assert prompt_arg.startswith("<system>\nbe helpful\n</system>\n\n")
         assert prompt_arg.endswith("user prompt")
 
@@ -404,8 +403,39 @@ class TestClaudeCliCompletionProvider:
              patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
             provider.complete("plain prompt")
 
-        call_args = mock_run.call_args[0][0]
-        assert call_args[-1] == "plain prompt"
+        assert mock_run.call_args[1]["input"] == "plain prompt"
+
+    def test_complete_passes_prompt_via_stdin_not_argv(self):
+        """Prompt geht über stdin (input=), nie als argv-Element (HF-0020)."""
+        provider = self._make_provider()
+        outer = json.dumps({"type": "result", "result": "ok"})
+
+        with patch("shutil.which", return_value="/usr/bin/claude"), \
+             patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
+            provider.complete("geheimer prompt", system_prompt="sys")
+
+        argv = mock_run.call_args[0][0]
+        kwargs = mock_run.call_args[1]
+        assert argv == ["/usr/bin/claude", "--print", "--output-format", "json"]
+        assert "-p" not in argv
+        assert not any("geheimer prompt" in a for a in argv)
+        assert kwargs["input"].endswith("geheimer prompt")
+        assert kwargs.get("text") is True
+
+    def test_complete_large_prompt_not_in_argv(self):
+        """>200 KB Prompt (über MAX_ARG_STRLEN 128 KiB) landet komplett in stdin (HF-0020)."""
+        provider = self._make_provider()
+        outer = json.dumps({"type": "result", "result": "ok"})
+        big = "x" * (200 * 1024 + 1)
+
+        with patch("shutil.which", return_value="/usr/bin/claude"), \
+             patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
+            result = provider.complete(big)
+
+        argv = mock_run.call_args[0][0]
+        assert all(len(a) < 128 * 1024 for a in argv)
+        assert mock_run.call_args[1]["input"] == big
+        assert result.text == "ok"
 
 
 # ─── TST-0032: AnthropicCompletionProvider ────────────────────────────────────

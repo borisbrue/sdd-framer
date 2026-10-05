@@ -249,8 +249,8 @@ def test_tc06_doc_type_influences_prompt():
     captured: list[str] = []
 
     def capture_run(cmd, **kwargs):
-        # Der Prompt ist das letzte Element des cmd-Arrays (-p <prompt>)
-        captured.append(cmd[-1])
+        # Der Prompt geht über stdin (input=), nicht als argv (HF-0020)
+        captured.append(kwargs["input"])
         return _make_proc()
 
     with patch(_CLI_WHICH, return_value=CLAUDE_BIN), \
@@ -321,7 +321,7 @@ def test_long_content_is_truncated():
     captured: list[str] = []
 
     def capture_run(cmd, **kwargs):
-        captured.append(cmd[-1])
+        captured.append(kwargs["input"])
         return _make_proc()
 
     long_content = "A" * 60_000
