@@ -1,0 +1,204 @@
+{
+  "spec_id": "SPEC-0067",
+  "generated_at": "2026-10-06T20:22:38Z",
+  "new_contracts": [
+    "CON-0022",
+    "CON-0233"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0067-001",
+      "type": "scope-overlap",
+      "severity": "medium",
+      "new_contract": "CON-0022",
+      "conflicting_contract": "CON-0031",
+      "detail": "CON-0031 legt Interface-Konformität und Betriebsmodi für den HuggingFaceCompletionProvider fest. CON-0022 beansprucht dagegen, 'alle Implementierungen' des CompletionProvider-Protocols zu spezifizieren. Damit regeln zwei Contracts dieselbe Implementierung. Das kann auseinanderlaufen, etwa bei Mindestwerten für max_tokens oder bei den Fehlerfällen (Exception statt leerer String). CON-0022 sollte die Provider-spezifischen Garantien an CON-0031 abgeben und nur noch auf ihn verweisen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend zwischen Bestandscontracts, durch SPEC-0067 nicht verändert; SPEC-0067 ändert nur die Aufrufform von claude (CON-0233)",
+        "resolved_at": "2026-10-06T20:21:50Z"
+      }
+    },
+    {
+      "id": "CF-0067-002",
+      "type": "behavior-contradiction",
+      "severity": "high",
+      "new_contract": "CON-0022",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 beschreibt den Analyzer als Subprocess der Claude Code CLI mit Session-Verwaltung, also zustandsbehaftet und mehrstufig. CON-0022 schreibt für den Analyzer eine zustandslose Schnittstelle vor: complete(prompt) -> str mit rohem Text. Beide Contracts sind active bzw. draft und gelten für dieselbe Komponente. Offen bleibt, ob der Analyzer Sessions direkt hält, was die Provider-Abstraktion und ARCH-03/ARCH-04 umgehen würde, oder ob er nur über den Provider arbeitet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend zwischen Bestandscontracts, durch SPEC-0067 nicht verändert; SPEC-0067 ändert nur die Aufrufform von claude (CON-0233)",
+        "resolved_at": "2026-10-06T20:21:51Z"
+      }
+    },
+    {
+      "id": "CF-0067-003",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0022",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0022 legt nicht fest, wie die konkrete Implementierung ausgewählt und konfiguriert wird (Provider-Factory, Default-Provider, Mindestwert für max_tokens). Die Auswahl regelt CON-0023 über das einheitliche llm-Konfigurationsschema. Ein Verweis auf CON-0023 fehlt, ebenso eine Abstimmung der Provider-Enum-Werte, zum Beispiel claude-cli als Default.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend zwischen Bestandscontracts, durch SPEC-0067 nicht verändert; SPEC-0067 ändert nur die Aufrufform von claude (CON-0233)",
+        "resolved_at": "2026-10-06T20:21:51Z"
+      }
+    },
+    {
+      "id": "CF-0067-004",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0022",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0190 prüft das Provider-Enum und die Konsistenz der Provider-Einstellungen. Jede Implementierung, die CON-0022 auflistet, braucht dort einen passenden gültigen Wert, sonst lehnt `sdd config validate` einen Provider ab, den der Contract erlaubt. Eine Querverbindung zwischen beiden Contracts ist nicht dokumentiert.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend zwischen Bestandscontracts, durch SPEC-0067 nicht verändert; SPEC-0067 ändert nur die Aufrufform von claude (CON-0233)",
+        "resolved_at": "2026-10-06T20:21:52Z"
+      }
+    },
+    {
+      "id": "CF-0067-005",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0022",
+      "conflicting_contract": "CON-0010",
+      "detail": "CON-0010 beschreibt den Evaluator als eigenständigen Python-Prozess. CON-0022 nennt den Evaluator als Nutzer des CompletionProvider. Beide Contracts definieren nicht, wie der Provider in den getrennten Prozess kommt (Konfiguration, Umgebung, claude im PATH). Was der Evaluator bei einer Provider-Exception macht, ist ebenfalls offen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Vorbestehend zwischen Bestandscontracts, durch SPEC-0067 nicht verändert; SPEC-0067 ändert nur die Aufrufform von claude (CON-0233)",
+        "resolved_at": "2026-10-06T20:21:53Z"
+      }
+    },
+    {
+      "id": "CF-0067-006",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 G-01 (Analyzer, status=active) legt den claude-Aufruf als `claude --print --output-format json -p \"<ANALYSIS_PROMPT>\"` fest: Der Prompt steht in der Argumentliste, und Tools, Settings, MCP und Auto-Memory bleiben aktiv. CON-0233 INV-01/INV-02 verlangt dagegen genau die Argumentliste ohne Prompt und ohne `-p`, den Prompt über stdin und INV-03 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. Zwei aktive Contracts schreiben also zwei verschiedene Aufrufformen desselben Binärs vor. Laut ADR-0005/ARCH-04 darf claude nur im Provider `claude_cli` aufgelöst werden. Der Analyzer müsste deshalb über den Provider laufen, womit CON-0013 G-01 veraltet ist, oder CON-0013 muss ausdrücklich als Ausnahme gekennzeichnet werden. Sonst bleiben beim Analyzer der Claude-Code-Overhead und das ARG_MAX-Risiko bei großen Prompts bestehen, die SPEC-0067 beseitigen soll.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0013 0.5.0: G-01 verweist auf den Provider und CON-0233 statt eigener Aufrufzeile",
+        "resolved_at": "2026-10-06T20:22:09Z"
+      }
+    },
+    {
+      "id": "CF-0067-007",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 G-03 beschreibt ebenfalls das Strippen des JSON-Envelopes `{\"type\":\"result\",\"result\":...}`, liefert bei einem Parse-Fehler aber `claude_parse_error` mit den ersten 500 Zeichen von `raw`. CON-0233 INV-04 wirft stattdessen `RuntimeError` mit den letzten 500 Zeichen von stderr. Envelope-Semantik und Fehlerbild sind damit zweimal definiert, und zwar unterschiedlich. Ein Contract sollte die Envelope-Definition besitzen, der andere nur darauf verweisen (wie CON-0233 es für CON-0022 G-02 schon tut).",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Unterschiedliche Ebenen: CON-0233 INV-04 regelt den Prozessfehler im Provider, CON-0013 G-03 das Parsing der Analyse-Antwort im Analyzer",
+        "resolved_at": "2026-10-06T20:22:07Z"
+      }
+    },
+    {
+      "id": "CF-0067-008",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0022",
+      "detail": "Das Szenario \"CLI scheitert mit Envelope\" verlangt, dass bei Exit-Code 1 und einem Envelope mit `result` (typischerweise `is_error: true`) der Fehlertext als normales Completion-Ergebnis zurückkommt. CON-0022 G-02 sagt dazu nur „gibt `result` zurück“ und erwähnt weder Exit-Code noch `is_error`. Ruft man CON-0022 als Grundlage auf, ist nicht festgelegt, ob ein Fehler-Envelope als Erfolg gilt. Die Aufrufer (z. B. JSON-Parsing in der Pipeline) bekommen dann Fehlertext als scheinbar gültige Antwort. Das sollte in CON-0022 G-02 ausdrücklich stehen, oder `is_error` sollte in CON-0233 als Fehlerfall gelten.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0233 INV-04 legt es fest: Envelope mit result gilt unabhängig vom Exit-Code wie bisher (Szenario 'CLI scheitert mit Envelope'); CON-0022 G-02 verweist auf CON-0233",
+        "resolved_at": "2026-10-06T20:22:08Z"
+      }
+    },
+    {
+      "id": "CF-0067-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0005:1. Kontext & Motivation",
+      "detail": "Der Analyzer aus SPEC-0005 läuft als Claude-Code-CLI-Subprozess im Web-API-Prozess. Er ist damit ein Aufrufer, den SPEC-0067 ohne System-Prompt, Tools und Settings-Quellen ausführt, deshalb ist zu prüfen, ob die Analyse-Prompts und das erwartete JSON nur von den Prompt-Inhalten abhängen und nicht von CLAUDE.md oder Projektkontext.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Geprüft: analyzer.py baut den Prompt vollständig aus dem Dokumentinhalt und ruft provider.complete(); CLAUDE.md/Projektkontext wird nicht gebraucht",
+        "resolved_at": "2026-10-06T20:23:11Z"
+      }
+    },
+    {
+      "id": "CF-0067-R002",
+      "type": "conflict",
+      "severity": "medium",
+      "new_contract": "Nicht-Ziele",
+      "conflicting_contract": "SPEC-0008:1. Kontext & Motivation",
+      "detail": "SPEC-0008 beschreibt den Claude-CLI-Pfad noch als agentische Code-Generierung mit Datei-Schreiben. SPEC-0067 macht den Provider dagegen ausdrücklich zum reinen Completion-Provider ohne Tools und ohne Rückweg in den Agent-Modus, deshalb sollte der veraltete Abschnitt in SPEC-0008 einen Verweis auf SPEC-0067 bekommen.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der agentische claude-Pfad (Orchestrator, ClaudeCliCodeGenProvider) ist mit SPEC-0062 entfernt; SPEC-0008 §1 ist an der Stelle historisch, der Code kennt nur den Completion-Provider",
+        "resolved_at": "2026-10-06T20:23:12Z"
+      }
+    },
+    {
+      "id": "CF-0067-R003",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "2. Zielsetzung",
+      "conflicting_contract": "SPEC-0008:2. Zielsetzung",
+      "detail": "Beide Specs regeln dieselbe Provider-Schnittstelle (CON-0022). SPEC-0067 ändert nur die Aufrufform im claude-cli-Provider und verlangt dabei, dass die Schnittstelle gleich bleibt, daher ist das eher eine Abhängigkeit als eine doppelte Lösung.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Abhängigkeit, kein Duplikat: depends_on SPEC-0008, Schnittstelle CON-0022 unverändert",
+        "resolved_at": "2026-10-06T20:23:13Z"
+      }
+    },
+    {
+      "id": "CF-0067-R004",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "1. Kontext & Motivation",
+      "conflicting_contract": "SPEC-0011:1. Kontext & Motivation",
+      "detail": "SPEC-0011 lernt Kostenschätzungen aus historischen Token-Daten. Wenn SPEC-0067 den Sockel von rund 28k auf unter 2k Input-Tokens je Aufruf senkt, werden ältere Messwerte unbrauchbar und sollten getrennt oder verworfen werden (beim claude-cli-Provider fehlt die Usage ohnehin).",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Als Edge Case in SPEC-0067 §7 aufgenommen; Usage wird seit SPEC-0060 erfasst, Altdaten schätzen bis zur Kalibrierung zu hoch",
+        "resolved_at": "2026-10-06T20:23:13Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 8,
+    "high": 1,
+    "medium": 3,
+    "low": 4,
+    "affected_specs_count": 0
+  }
+}

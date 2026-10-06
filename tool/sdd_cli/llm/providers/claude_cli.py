@@ -30,6 +30,21 @@ def _find_claude() -> str | None:
     return shutil.which("claude") or shutil.which("claude", path=_EXTRA_SEARCH_PATH)
 
 
+def _command(claude: str, system_prompt: str | None) -> list[str]:
+    """Aufruf als reine Completion-Engine (SPEC-0067 FR-01/FR-02, CON-0233 INV-01).
+
+    Ohne Tools, Einstellungen, MCP und den Claude-Code-System-Prompt; der Prompt kommt über stdin.
+    """
+    return [claude, "--print", "--output-format", "json",
+            "--tools", "", "--setting-sources", "", "--strict-mcp-config",
+            "--system-prompt", system_prompt or ""]
+
+
+def _environment() -> dict[str, str]:
+    """Elternumgebung ohne Auto-Memory des Projekts (SPEC-0067 FR-03, CON-0233 INV-03)."""
+    return {**os.environ, "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
+
+
 def _int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
@@ -62,8 +77,10 @@ def usage_from_envelope(envelope: Any) -> UsageMetadata:
 class ClaudeCliCompletionProvider:
     """Ruft `claude --print --output-format json` auf und gibt den inneren Text zurück.
 
+    Aufrufform nach CON-0233: keine Tools, keine Einstellungen, kein MCP, kein Auto-Memory;
+    Prompt über stdin.
     max_tokens: ignoriert (CLI kennt kein --max-tokens Flag).
-    system_prompt: als Präfix <system>\\n...\\n</system>\\n\\n eingefügt.
+    system_prompt: per --system-prompt; ohne ihn ein leerer System-Prompt.
     timeout: an subprocess.run weitergereicht. Reihenfolge: Argument, sonst der
     beim Erzeugen gesetzte Wert (aus llm.timeout_seconds), sonst 600s.
     usage: aus dem Envelope (SPEC-0060 FR-02); ohne Usage-Block `source: unavailable`.
@@ -86,11 +103,6 @@ class ClaudeCliCompletionProvider:
                 "claude CLI nicht gefunden. "
                 "Installiere Claude Code CLI und melde dich an."
             )
-        if system_prompt:
-            full_prompt = f"<system>\n{system_prompt}\n</system>\n\n{prompt}"
-        else:
-            full_prompt = prompt
-
         effective_timeout = (
             timeout
             if timeout is not None
@@ -98,9 +110,12 @@ class ClaudeCliCompletionProvider:
         )
         try:
             proc = subprocess.run(
-                [claude, "--print", "--output-format", "json", "-p", full_prompt],
+                _command(claude, system_prompt),
+                input=prompt,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                env=_environment(),
                 timeout=effective_timeout,
             )
         except subprocess.TimeoutExpired as exc:
@@ -116,5 +131,9 @@ class ClaudeCliCompletionProvider:
             outer = None
         if isinstance(outer, dict) and "result" in outer:
             return CompletionResult(text=str(outer["result"]), usage=usage_from_envelope(outer))
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"claude CLI mit Exit-Code {proc.returncode} beendet: {proc.stderr[-500:]}"
+            )
         log.info("claude-cli: Ausgabe ist kein JSON-Envelope – Usage 'unavailable'")
         return CompletionResult(text=raw, usage=UsageMetadata.unavailable())

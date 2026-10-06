@@ -350,8 +350,8 @@ class TestClaudeCliCompletionProvider:
         # SPEC-0060 FR-02: ohne Usage-Block im Envelope ist die Usage 'unavailable', nie None.
         assert result.usage is not None and result.usage.source == "unavailable"
 
-    def test_complete_system_prompt_prepended_as_xml(self):
-        """system_prompt wird als <system>...</system>\\n\\n vorangestellt."""
+    def test_complete_system_prompt_as_flag(self):
+        """system_prompt geht per --system-prompt, der Prompt unverändert über stdin (CON-0233)."""
         provider = self._make_provider()
         outer = json.dumps({"type": "result", "result": "ok"})
 
@@ -359,10 +359,8 @@ class TestClaudeCliCompletionProvider:
              patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
             provider.complete("user prompt", system_prompt="be helpful")
 
-        call_args = mock_run.call_args[0][0]
-        prompt_arg = call_args[-1]
-        assert prompt_arg.startswith("<system>\nbe helpful\n</system>\n\n")
-        assert prompt_arg.endswith("user prompt")
+        assert mock_run.call_args[0][0][-2:] == ["--system-prompt", "be helpful"]
+        assert mock_run.call_args[1]["input"] == "user prompt"
 
     def test_complete_timeout_passed_to_subprocess(self):
         """timeout wird an subprocess.run weitergereicht."""
@@ -404,8 +402,7 @@ class TestClaudeCliCompletionProvider:
              patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
             provider.complete("plain prompt")
 
-        call_args = mock_run.call_args[0][0]
-        assert call_args[-1] == "plain prompt"
+        assert mock_run.call_args[1]["input"] == "plain prompt"
 
 
 # ─── TST-0032: AnthropicCompletionProvider ────────────────────────────────────

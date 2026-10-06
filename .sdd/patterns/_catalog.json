@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-04T10:01:09Z",
+  "last_updated": "2026-10-06T20:16:41Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -489,6 +489,20 @@
       "spec_id": "SPEC-0066",
       "accepted_at": "2026-10-04T10:01:09Z",
       "acceptance_reason": "Erweitert die bestehende Usage-Erfassung (SPEC-0063) um Cache-Tokens, anbieterneutral; der Report liest sie auf demselben Weg wie Input- und Output-Tokens.",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0067",
+      "accepted_at": "2026-10-06T20:16:37Z",
+      "acceptance_reason": "Provider adaptiert Claude Code an CompletionProvider und schaltet Fähigkeiten ab, die die Schnittstelle nicht kennt",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Facade",
+      "spec_id": "SPEC-0067",
+      "accepted_at": "2026-10-06T20:16:38Z",
+      "acceptance_reason": "Flags, Umgebung und stdin-Übergabe an einer Stelle (ADR-0005)",
       "refactoring_guru_url": null
     }
   ]
