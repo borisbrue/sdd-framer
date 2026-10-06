@@ -2,7 +2,7 @@
 id: SPEC-0068
 title: 'Cachebarer Rollen-Prompt: stabile Quellen im System-Prompt'
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-10-06
 updated: '2026-10-06'
