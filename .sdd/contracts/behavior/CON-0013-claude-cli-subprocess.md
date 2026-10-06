@@ -5,7 +5,7 @@ title: "Analyzer – Claude Code CLI Subprocess und Session-Verwaltung"
 type: behavior
 format: markdown
 spec: SPEC-0005
-version: 0.4.0
+version: 0.5.0
 status: active
 artifact: ""
 tests: ["TST-0013"]
@@ -23,6 +23,7 @@ tests: ["TST-0013"]
 | 0.2.0 | Umstieg auf anthropic SDK (temporär) |
 | 0.3.0 | Rückkehr zum Subprocess-Ansatz gemäß SPEC-0005 §3.1 |
 | 0.4.0 | G-03: Markdown-Code-Fence-Handling vor JSON-Extraktion |
+| 0.5.0 | G-01: Aufruf über den `claude-cli`-Provider; Aufrufform in CON-0233 (SPEC-0067) |
 
 ## Zweck
 
@@ -34,9 +35,8 @@ wie Prompts aufgebaut sind.
 
 ### G-01: Claude Code CLI-Aufruf
 
-```bash
-claude --print --output-format json -p "<ANALYSIS_PROMPT>"
-```
+Der Analyzer ruft `claude` über den `claude-cli`-Provider auf (`provider.complete(prompt)`).
+Flags, Umgebung und die Übergabe des Prompts über stdin legt CON-0233 fest.
 
 - `claude` wird via `shutil.which("claude")` im PATH gesucht
 - Timeout: 120 Sekunden (`subprocess.run(..., timeout=120)`)

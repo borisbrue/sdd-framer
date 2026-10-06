@@ -5,7 +5,7 @@ title: "CompletionProvider-Interface und Implementierungen"
 type: behavior
 format: markdown
 spec: SPEC-0008
-version: 0.2.0
+version: 0.3.0
 status: draft
 artifact: "tool/sdd_cli/llm/"
 tests: ["TST-0028", "TST-0029"]
@@ -46,7 +46,8 @@ class CompletionProvider(Protocol):
 ### G-02: ClaudeCliCompletionProvider
 
 - Sucht `claude` via `shutil.which`; fehlt es → `RuntimeError("claude CLI nicht gefunden")`
-- Ruft `claude --print --output-format json -p <prompt>` auf
+- Ruft `claude --print --output-format json` ohne Tools, Einstellungen, MCP und Auto-Memory auf;
+  Prompt über stdin, System-Prompt per `--system-prompt` (Aufrufform: CON-0233)
 - Strippt den äußeren JSON-Envelope `{"type":"result","result":"<text>",...}` und gibt `result` zurück
 - Timeout via `subprocess.run(..., timeout=<max_tokens_based_or_120>)`
 - Rückgabe: innerer Text (noch vor JSON-Parsing durch den Aufrufer)

@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0067",
+  "generated_at": "2026-10-06T20:16:37Z",
+  "patterns": [
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-10-06T20:16:37Z",
+      "acceptance_reason": "Provider adaptiert Claude Code an CompletionProvider und schaltet Fähigkeiten ab, die die Schnittstelle nicht kennt",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "accepted",
+      "decided_at": "2026-10-06T20:16:38Z",
+      "acceptance_reason": "Flags, Umgebung und stdin-Übergabe an einer Stelle (ADR-0005)",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Builder",
+      "status": "rejected",
+      "decided_at": "2026-10-06T20:16:40Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Argumentliste ist fest; eine reine Funktion, die sie liefert, genügt und ist ohne Prozessstart prüfbar",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Chain of Responsibility",
+      "status": "rejected",
+      "decided_at": "2026-10-06T20:16:41Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Nur zwei Fälle (Envelope ja/nein); eine Kette wäre Überbau",
+      "refactoring_guru_url": null
+    }
+  ]
+}
