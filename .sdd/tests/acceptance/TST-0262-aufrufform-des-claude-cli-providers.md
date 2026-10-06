@@ -16,7 +16,8 @@ tags: [llm, claude-cli]
 
 ## Was wird geprüft?
 
-Der echte `ClaudeCliCompletionProvider` startet einen echten Prozess. An Stelle von `claude`
+Der echte `ClaudeCliCompletionProvider` startet einen echten Prozess (SPEC-0067; Datei-Übergabe
+des System-Prompts, Timeout und C-Locale seit SPEC-0068 FR-05). An Stelle von `claude`
 liegt ein Skript im `PATH`, das Argumente, Umgebung und stdin protokolliert und ein Envelope
 ausgibt. Kein Patch von `subprocess.run`: Nur so fällt eine Übergabe über argv bei großen
 Prompts wirklich mit `E2BIG` auf.
@@ -33,7 +34,8 @@ Prompts wirklich mit `E2BIG` auf.
 
 ## Erwartetes Ergebnis
 
-- Argumentliste exakt nach INV-01, mit und ohne `system_prompt`.
+- Argumentliste exakt nach INV-01; System-Prompt aus `--system-prompt-file` (Modus 0600, danach
+  gelöscht, auch nach Exit ≠ 0 und Timeout; Kindprozess beendet).
 - stdin enthält genau den Prompt, auch bei 200.000 Zeichen.
 - Umgebung: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`, eine vorher gesetzte Testvariable bleibt erhalten.
 - Exit 2 ohne Envelope: `RuntimeError` mit Exit-Code und stderr.

@@ -5,7 +5,7 @@ title: "CompletionProvider-Interface und Implementierungen"
 type: behavior
 format: markdown
 spec: SPEC-0008
-version: 0.3.0
+version: 0.4.0
 status: draft
 artifact: "tool/sdd_cli/llm/"
 tests: ["TST-0028", "TST-0029"]
@@ -26,12 +26,18 @@ und **AI-Routes**.
 ```python
 @runtime_checkable
 class CompletionProvider(Protocol):
-    def complete(self, prompt: str, *, max_tokens: int = 512) -> str: ...
+    def complete(self, prompt: str, *, max_tokens: int = 512,
+                 system_prompt: str | None = None,
+                 timeout: int | None = None) -> CompletionResult: ...
 ```
 
 - `prompt`: Plain-Text-Eingabe, beliebige Länge
 - `max_tokens`: Hint an das Modell; Implementierungen dürfen einen eigenen Mindestwert durchsetzen
-- Rückgabe: **roher Text** — JSON-Parsing liegt beim Aufrufer
+- `system_prompt`: optionaler System-Prompt, beliebige Länge; jede Implementierung bildet ihn auf
+  ihr Mittel ab (System-Nachricht, `system`-Feld, `--system-prompt-file`, Präfix)
+- `timeout`: optionale Obergrenze in Sekunden
+- Rückgabe: `CompletionResult` mit **rohem Text** (`text`) und Usage (CON-0207) — JSON-Parsing
+  liegt beim Aufrufer
 - Bei Fehler: wirft Exception (kein `None`-Rückgabe, kein leerer String bei Fehler)
 
 ## Garantien
