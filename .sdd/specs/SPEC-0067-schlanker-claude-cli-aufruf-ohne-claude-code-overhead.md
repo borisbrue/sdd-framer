@@ -2,7 +2,7 @@
 id: SPEC-0067
 title: Schlanker claude-cli-Aufruf ohne Claude-Code-Overhead
 type: feature
-status: in-progress
+status: implemented
 owner: borisbrue
 created: 2026-10-06
 updated: '2026-10-06'
