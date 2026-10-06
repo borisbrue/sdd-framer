@@ -19,7 +19,7 @@ tags: ["llm", "claude-cli", "completion", "subprocess", "mock"]
 ## Zweck
 
 Prüft `ClaudeCliCompletionProvider.complete()` via `unittest.mock.patch`:
-JSON-Envelope-Stripping, system_prompt-XML-Prefix, Timeout-Weiterleitung und
+JSON-Envelope-Stripping, Übergabe von system_prompt und Prompt, Timeout-Weiterleitung und
 Fehlerbehandlung — kein echter `claude`-Prozess wird gestartet.
 
 ## Test Cases
@@ -27,11 +27,11 @@ Fehlerbehandlung — kein echter `claude`-Prozess wird gestartet.
 | TC    | Was wird geprüft?                                                                     |
 |-------|---------------------------------------------------------------------------------------|
 | TC-01 | JSON-Envelope `{"type":"result","result":"..."}` → innerer Text wird zurückgegeben    |
-| TC-02 | `system_prompt` wird als `<system>…</system>` vor den Prompt gesetzt                 |
+| TC-02 | `system_prompt` geht per `--system-prompt`, der Prompt über stdin (CON-0233)        |
 | TC-03 | `timeout`-Parameter wird an `subprocess.run()` weitergereicht                         |
-| TC-04 | `usage` ist immer `None` (CLI liefert keine Token-Zählung)                           |
+| TC-04 | Envelope ohne Usage-Block → `usage.source == "unavailable"` (SPEC-0060)              |
 | TC-05 | `claude` nicht im PATH → `RuntimeError`                                              |
-| TC-06 | Kein `system_prompt` → Plain-Prompt ohne XML-Wrapper                                 |
+| TC-06 | Kein `system_prompt` → Prompt unverändert über stdin                                 |
 
 ## Ausführung
 
