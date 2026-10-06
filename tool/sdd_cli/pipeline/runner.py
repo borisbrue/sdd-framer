@@ -1,6 +1,7 @@
 """RoleRunner: ein Rollenaufruf nach festem Ablauf (SPEC-0053 FR-06, Template Method).
 
-Kontext zusammenstellen → Prompt mit Nonce rendern → LLM im Usage-Kontext aufrufen → Ausgabe
+Kontext zusammenstellen → System-Prompt und Prompt mit Nonce rendern → LLM im Usage-Kontext
+aufrufen → Ausgabe
 extrahieren → gegen das Ausgabeschema validieren → Rollen-Checks. Ungültige Ausgaben sind ein
 gezählter Fehlversuch (`invalid_output`), kein Absturz. Ein Längenabbruch ohne verwertbaren Inhalt
 wird genau einmal mit dem 1,5-fachen Ausgabebudget wiederholt (CON-0205 INV-06).
@@ -19,7 +20,7 @@ from typing import Any
 from ..llm.base import UsageMetadata
 from ..llm.usage import usage_context
 from . import checks as checks_mod
-from .roles import CONTEXT_SOURCES, RoleDefinition
+from .roles import CONTEXT_SOURCES, SOURCE_KINDS, RoleDefinition
 from .schemas import errors as schema_errors
 
 log = logging.getLogger(__name__)
@@ -85,10 +86,12 @@ def extract_json(text: str) -> Any:
     return None
 
 
-def render_sources(role_def: RoleDefinition, sources: Mapping[str, Any]) -> str:
+def render_sources(role_def: RoleDefinition, sources: Mapping[str, Any],
+                   kind: str | None = None) -> str:
+    """Quellen der Rolle in der Reihenfolge ihrer `inputs`; mit `kind` nur diese Einteilung."""
     teile = []
     for quelle in role_def.inputs:
-        if quelle not in CONTEXT_SOURCES:
+        if quelle not in CONTEXT_SOURCES or (kind and SOURCE_KINDS[quelle] != kind):
             continue
         wert = sources.get(quelle)
         if wert in (None, "", [], {}):
@@ -116,8 +119,8 @@ class RoleRunner:
         call_id = secrets.token_hex(6)
         max_tokens = int(params.get("max_output_tokens") or DEFAULT_MAX_OUTPUT)
         timeout = params.get("timeout_seconds")
-        prompt = self._prompt(role_def, sources, lead)
-        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+        system, prompt = self._prompt(role_def, sources, lead)
+        prompt_hash = hashlib.sha256(f"{system}\n\n{prompt}".encode()).hexdigest()[:16]
         ergebnis = RoleResult(role_def.role, call_id, attempt, "error", prompt_hash=prompt_hash)
 
         kontext: dict[str, Any] = {"spec_id": self.spec_id, "run_id": self.run_id,
@@ -130,7 +133,7 @@ class RoleRunner:
                 try:
                     antwort = provider.complete(
                         f"{prompt}\n\nnonce: {secrets.token_hex(8)}",
-                        max_tokens=max_tokens, system_prompt=role_def.prompt,
+                        max_tokens=max_tokens, system_prompt=system,
                         timeout=int(timeout) if timeout else None)
                 except Exception as exc:  # Server weg, Timeout: outcome error, kein Abbruch
                     log.warning("Rolle %s: Aufruf fehlgeschlagen: %s", role_def.role, exc)
@@ -159,12 +162,20 @@ class RoleRunner:
         return ergebnis
 
     @staticmethod
-    def _prompt(role_def: RoleDefinition, sources: Mapping[str, Any], lead: str) -> str:
+    def _prompt(role_def: RoleDefinition, sources: Mapping[str, Any],
+                lead: str) -> tuple[str, str]:
+        """(System-Prompt, Prompt) nach CON-0234 INV-02/INV-03.
+
+        Stabile Quellen hängen am Rollen-Prompt, damit der System-Prompt über Wiederholungsversuche
+        byte-gleich bleibt und aus dem Prompt-Cache gelesen wird (SPEC-0068).
+        """
+        stabil = render_sources(role_def, sources, "stable")
+        system = f"{role_def.prompt}\n\n{stabil}" if stabil else role_def.prompt
         teile = [lead] if lead else []
-        kontext = render_sources(role_def, sources)
-        if kontext:
-            teile.append(kontext)
-        return "\n\n".join(teile) or role_def.purpose
+        wechselnd = render_sources(role_def, sources, "volatile")
+        if wechselnd:
+            teile.append(wechselnd)
+        return system, "\n\n".join(teile) or role_def.purpose
 
     @staticmethod
     def validate_checks(role_def: RoleDefinition, output: Any,
