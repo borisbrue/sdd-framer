@@ -1,0 +1,38 @@
+{
+  "spec_id": "SPEC-0068",
+  "generated_at": "2026-10-06T21:00:02Z",
+  "patterns": [
+    {
+      "pattern_name": "Template Method",
+      "status": "accepted",
+      "decided_at": "2026-10-06T21:00:02Z",
+      "acceptance_reason": "Fester Ablauf des RoleRunners bleibt; nur der Render-Schritt liefert System-Prompt und Prompt",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "status": "accepted",
+      "decided_at": "2026-10-06T21:00:03Z",
+      "acceptance_reason": "complete(prompt, system_prompt) bleibt; jeder Provider bildet system_prompt auf sein Mittel ab",
+      "rejection_reason": null,
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Builder",
+      "status": "rejected",
+      "decided_at": "2026-10-06T21:00:05Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Zwei Teile aus fester Einteilung; eine Funktion genügt",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Facade",
+      "status": "rejected",
+      "decided_at": "2026-10-06T21:00:06Z",
+      "acceptance_reason": null,
+      "rejection_reason": "Keine neue Subsystem-Grenze; Aufteilung lebt im RoleRunner",
+      "refactoring_guru_url": null
+    }
+  ]
+}

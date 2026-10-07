@@ -350,16 +350,22 @@ class TestClaudeCliCompletionProvider:
         # SPEC-0060 FR-02: ohne Usage-Block im Envelope ist die Usage 'unavailable', nie None.
         assert result.usage is not None and result.usage.source == "unavailable"
 
-    def test_complete_system_prompt_as_flag(self):
-        """system_prompt geht per --system-prompt, der Prompt unverändert über stdin (CON-0233)."""
+    def test_complete_system_prompt_as_file(self):
+        """system_prompt per --system-prompt-file, der Prompt unverändert über stdin (CON-0233)."""
         provider = self._make_provider()
         outer = json.dumps({"type": "result", "result": "ok"})
+        gelesen = {}
+
+        def lauf(cmd, **kwargs):
+            gelesen["system"] = Path(cmd[-1]).read_text(encoding="utf-8")
+            return self._make_proc_result(outer)
 
         with patch("shutil.which", return_value="/usr/bin/claude"), \
-             patch("subprocess.run", return_value=self._make_proc_result(outer)) as mock_run:
+             patch("subprocess.run", side_effect=lauf) as mock_run:
             provider.complete("user prompt", system_prompt="be helpful")
 
-        assert mock_run.call_args[0][0][-2:] == ["--system-prompt", "be helpful"]
+        assert mock_run.call_args[0][0][-2] == "--system-prompt-file"
+        assert gelesen["system"] == "be helpful"
         assert mock_run.call_args[1]["input"] == "user prompt"
 
     def test_complete_timeout_passed_to_subprocess(self):

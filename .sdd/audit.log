@@ -110,3 +110,4 @@
 2026-10-04T16:06:59Z  hotfix.finalize  HF-0019  commit=ce0dd8e
 2026-10-04T16:12:22Z CON-0069 draft → deprecated [sdd dev build/push/up/down gibt es seit SPEC-0044 nicht mehr (#128). Das Image baut sdd start bei Bedarf, den Compose-Stack startet sdd start über docker.compose_file. Für push und down gibt es keinen Ersatz. Die Runtime-Abstraktion (Docker/Podman, G-02/G-07/INV-01) gilt weiter; TST-0079 prüft sie.]
 2026-10-06T20:23:25Z SPEC-0067 approved → in-progress [sdd-start]
+2026-10-06T21:06:44Z SPEC-0068 approved → in-progress [sdd-start]

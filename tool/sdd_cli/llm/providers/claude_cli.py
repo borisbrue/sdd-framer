@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -30,14 +31,15 @@ def _find_claude() -> str | None:
     return shutil.which("claude") or shutil.which("claude", path=_EXTRA_SEARCH_PATH)
 
 
-def _command(claude: str, system_prompt: str | None) -> list[str]:
+def _command(claude: str, system_file: str) -> list[str]:
     """Aufruf als reine Completion-Engine (SPEC-0067 FR-01/FR-02, CON-0233 INV-01).
 
-    Ohne Tools, Einstellungen, MCP und den Claude-Code-System-Prompt; der Prompt kommt über stdin.
+    Ohne Tools, Einstellungen, MCP und den Claude-Code-System-Prompt; der Prompt kommt über stdin,
+    der System-Prompt aus einer Datei (SPEC-0068 FR-05), damit beide die argv-Grenze nicht kennen.
     """
     return [claude, "--print", "--output-format", "json",
             "--tools", "", "--setting-sources", "", "--strict-mcp-config",
-            "--system-prompt", system_prompt or ""]
+            "--system-prompt-file", system_file]
 
 
 def _environment() -> dict[str, str]:
@@ -80,7 +82,7 @@ class ClaudeCliCompletionProvider:
     Aufrufform nach CON-0233: keine Tools, keine Einstellungen, kein MCP, kein Auto-Memory;
     Prompt über stdin.
     max_tokens: ignoriert (CLI kennt kein --max-tokens Flag).
-    system_prompt: per --system-prompt; ohne ihn ein leerer System-Prompt.
+    system_prompt: per --system-prompt-file (Datei 0600, danach gelöscht); ohne ihn leer.
     timeout: an subprocess.run weitergereicht. Reihenfolge: Argument, sonst der
     beim Erzeugen gesetzte Wert (aus llm.timeout_seconds), sonst 600s.
     usage: aus dem Envelope (SPEC-0060 FR-02); ohne Usage-Block `source: unavailable`.
@@ -108,9 +110,13 @@ class ClaudeCliCompletionProvider:
             if timeout is not None
             else (self._timeout or _DEFAULT_COMPLETION_TIMEOUT)
         )
+        # mkstemp legt die Datei mit Modus 0600 an (CON-0233 INV-01).
+        fd, system_file = tempfile.mkstemp(prefix="sdd-system-", suffix=".md")
         try:
+            with os.fdopen(fd, "w", encoding="utf-8") as datei:
+                datei.write(system_prompt or "")
             proc = subprocess.run(
-                _command(claude, system_prompt),
+                _command(claude, system_file),
                 input=prompt,
                 capture_output=True,
                 text=True,
@@ -119,9 +125,12 @@ class ClaudeCliCompletionProvider:
                 timeout=effective_timeout,
             )
         except subprocess.TimeoutExpired as exc:
+            # subprocess.run hat den Kindprozess bereits beendet (CON-0233 INV-05).
             raise RuntimeError(
                 f"claude CLI Timeout nach {effective_timeout}s."
             ) from exc
+        finally:
+            Path(system_file).unlink(missing_ok=True)
 
         raw = proc.stdout.strip()
         # Strip outer JSON envelope: {"type":"result","result":"<text>",...}

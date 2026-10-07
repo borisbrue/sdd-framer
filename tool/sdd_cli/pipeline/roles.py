@@ -19,9 +19,15 @@ DEFAULT_ROLES = ("decomposer", "test_author", "implementer", "reviewer", "superv
 ALL_ROLES = (*DEFAULT_ROLES, "judge")
 
 # Geschlossene Liste der Kontextquellen (FR-03, CON-0199 INV-01); `.sdd/holdout/` ist keine.
-CONTEXT_SOURCES = ("spec", "contracts", "agents_md", "repo_map", "current_files",
-                   "dependency_api", "task", "test_file", "test_output", "diff", "gate_results",
-                   "review", "history")
+# Jede Quelle ist eingeteilt (SPEC-0068 FR-01, CON-0234 INV-01): `stable` steht im System-Prompt
+# und bleibt über Wiederholungsversuche gleich, `volatile` ist Rückmeldung aus dem Versuch davor.
+SOURCE_KINDS = {
+    "spec": "stable", "contracts": "stable", "agents_md": "stable", "repo_map": "stable",
+    "current_files": "stable", "dependency_api": "stable", "task": "stable",
+    "test_file": "stable", "test_output": "volatile", "diff": "volatile",
+    "gate_results": "volatile", "review": "volatile", "history": "volatile",
+}
+CONTEXT_SOURCES = tuple(SOURCE_KINDS)
 DEFAULT_BUDGET = 4000  # Tokens je Quelle, wenn die Rolle kein Budget nennt
 
 

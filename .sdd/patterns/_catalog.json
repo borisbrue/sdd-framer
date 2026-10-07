@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-10-06T20:16:41Z",
+  "last_updated": "2026-10-06T21:00:06Z",
   "accepted_patterns": [
     {
       "pattern_name": "Strategy",
@@ -503,6 +503,20 @@
       "spec_id": "SPEC-0067",
       "accepted_at": "2026-10-06T20:16:38Z",
       "acceptance_reason": "Flags, Umgebung und stdin-Übergabe an einer Stelle (ADR-0005)",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Template Method",
+      "spec_id": "SPEC-0068",
+      "accepted_at": "2026-10-06T21:00:02Z",
+      "acceptance_reason": "Fester Ablauf des RoleRunners bleibt; nur der Render-Schritt liefert System-Prompt und Prompt",
+      "refactoring_guru_url": null
+    },
+    {
+      "pattern_name": "Adapter",
+      "spec_id": "SPEC-0068",
+      "accepted_at": "2026-10-06T21:00:03Z",
+      "acceptance_reason": "complete(prompt, system_prompt) bleibt; jeder Provider bildet system_prompt auf sein Mittel ab",
       "refactoring_guru_url": null
     }
   ]

@@ -1,0 +1,189 @@
+{
+  "spec_id": "SPEC-0068",
+  "generated_at": "2026-10-06T21:06:30Z",
+  "new_contracts": [
+    "CON-0234",
+    "CON-0233"
+  ],
+  "conflicts": [
+    {
+      "id": "CF-0068-001",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0234",
+      "conflicting_contract": "CON-0199",
+      "detail": "CON-0234 übernimmt Quellen, Titel und Budgets der Kontextquellen ausdrücklich aus CON-0199 (und SPEC-0053). In der übergebenen Contract-Liste kommt CON-0199 nicht vor; die höchste aufgeführte ID ist CON-0191. Damit ist nicht prüfbar, ob die Einteilung in roles.SOURCE_KINDS (stable/volatile, INV-01) alle Quellen aus CON-0199 abdeckt, ob jede Quelle genau eine Einteilung hat und ob Budgets oder Reihenfolge der Quellen durch die Aufteilung verändert werden. Wenn CON-0199 tatsächlich fehlt oder noch nicht approved ist, verweist ein approved Contract auf eine nicht gesicherte Grundlage.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0199 existiert (.sdd/contracts/data/); SOURCE_KINDS leitet CONTEXT_SOURCES ab, ein Test prüft die vollständige Einteilung (CON-0234 INV-01)",
+        "resolved_at": "2026-10-06T21:06:04Z"
+      }
+    },
+    {
+      "id": "CF-0068-002",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0234",
+      "conflicting_contract": "CON-0022",
+      "detail": "CON-0234 setzt voraus, dass der RoleRunner einen getrennten system_prompt und einen Prompt an den Provider übergeben kann. CON-0022 legt das CompletionProvider-Interface und seine Implementierungen fest und ist noch im Status draft. Wenn dieses Interface keinen eigenen system_prompt-Parameter vorsieht oder ihn nur optional bzw. anders benannt enthält, kann CON-0234 nicht erfüllt werden. Eine verbindliche Interface-Erweiterung um system_prompt muss in CON-0022 nachgezogen werden, bevor CON-0234 durchsetzbar ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0022 0.4.0: Protokoll an den Code angeglichen (system_prompt, timeout, CompletionResult)",
+        "resolved_at": "2026-10-06T21:06:04Z"
+      }
+    },
+    {
+      "id": "CF-0068-003",
+      "type": "behavior-contradiction",
+      "severity": "low",
+      "new_contract": "CON-0234",
+      "conflicting_contract": "CON-0031",
+      "detail": "Laut CON-0031 muss der HuggingFaceCompletionProvider zum Interface konform sein und mehrere Betriebsmodi unterstützen. CON-0234 begründet die Aufteilung mit einem System-Prompt, der über Wiederholungsversuche gleich bleibt und aus dem Prompt-Cache gelesen wird. Lokale bzw. HF-Modelle unterstützen teils keine separate System-Rolle (Chat-Templates ohne system) und kein Prompt-Caching. Es ist nicht geklärt, ob der Provider den system_prompt in den Prompt einfügen darf und ob die Garantien aus CON-0234 dann noch gelten. Das kann zu widersprüchlichen Erwartungen in den Konformitätstests führen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "HuggingFace bildet system_prompt schon heute als Präfix ab (CON-0022); Modelle ohne System-Rolle sind in SPEC-0068 §7 als Risiko über Rollen-Evals abgesichert",
+        "resolved_at": "2026-10-06T21:06:05Z"
+      }
+    },
+    {
+      "id": "CF-0068-004",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0234",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 regelt Aufrufe über die Claude Code CLI als Subprocess einschließlich der Session-Verwaltung. Wenn der RoleRunner diesen Weg nutzt, legt CON-0234 die Übergabe des System-Prompts neu fest, etwa ob er ersetzt oder angehängt wird. Session-Wiederaufnahme und Prompt-Cache überschneiden sich ebenfalls. Es sollte eindeutig festgelegt werden, welcher Contract für die Prompt-Aufteilung beim CLI-Provider maßgeblich ist.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Analyzer-Sessions aus CON-0013 sind In-Memory-Objekte im Web-Prozess, keine claude-Sessions; der Analyzer nutzt keinen --resume",
+        "resolved_at": "2026-10-06T21:06:06Z"
+      }
+    },
+    {
+      "id": "CF-0068-005",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0022",
+      "detail": "CON-0233 ergänzt laut Zweck explizit CON-0022 G-02 (CompletionProvider-Interface und Implementierungen). CON-0233 hat den Status 'approved', CON-0022 aber nur 'draft'. Ein freigegebener Contract hängt damit von einer nicht freigegebenen Garantie ab. Ändert sich G-02 noch, kann die festgelegte Aufrufform von ClaudeCliCompletionProvider (Flags, Umgebung, Fehlschlag-Verhalten) davon abweichen. Außerdem ist offen, ob CON-0022 G-02 bereits eigene Aussagen zur Aufrufform macht, etwa Argumente, Prompt-Übergabe über stdin oder Argument, oder das Fehlerverhalten. Dann gäbe es zwei Quellen der Wahrheit für dasselbe Verhalten.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "resolved",
+      "resolution": {
+        "action": "CON-0022 0.4.0 an den Code angeglichen; der Status draft ist vorbestehend und unabhängig von SPEC-0068",
+        "resolved_at": "2026-10-06T21:06:07Z"
+      }
+    },
+    {
+      "id": "CF-0068-006",
+      "type": "dependency-gap",
+      "severity": "medium",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0022",
+      "detail": "CON-0233 verweist darauf, dass die Usage-Auswertung des JSON-Envelopes bei CON-0207 bleibt. CON-0207 kommt in der Liste der Contracts im Workspace nicht vor. Die Abgrenzung (INV-01 legt '--output-format json' fest, die Auswertung dieses Envelopes ist aber ausgelagert) stützt sich damit auf einen nicht auffindbaren Contract. Er fehlt, ist umbenannt oder liegt außerhalb des Workspaces. Die Lücke wird hier CON-0022 als nächstem existierenden Bezugs-Contract zugeordnet.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0207 existiert (.sdd/contracts/behavior/CON-0207-usage-erfassung-…)",
+        "resolved_at": "2026-10-06T21:06:08Z"
+      }
+    },
+    {
+      "id": "CF-0068-007",
+      "type": "behavior-contradiction",
+      "severity": "medium",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0013",
+      "detail": "CON-0013 (Analyzer – Claude Code CLI Subprocess und Session-Verwaltung, active) regelt bereits, wie der Prozess 'claude' als Subprocess gestartet wird, einschließlich Session-Verwaltung. CON-0233 INV-01 legt eine exakte Argumentliste fest ('genau [<claude>, \"--print\", \"--output-format\", \"json\", ...]'). Nutzt der Analyzer andere Flags (z. B. '--resume'/'--session-id', 'stream-json', '--model') oder eine andere System-Prompt-Übergabe (inline statt per Datei wie in SPEC-0068 FR-05), entstehen zwei widersprüchliche Aufrufkonventionen für dasselbe Binary. Zu klären ist, ob der Analyzer über ClaudeCliCompletionProvider läuft und damit an INV-01 gebunden wäre, oder ob er bewusst einen eigenen Pfad hat. Das sollte in beiden Contracts explizit abgegrenzt werden.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "CON-0013 0.5.0 G-01 verweist für die Aufrufform auf CON-0233; der Analyzer ruft provider.complete() ohne eigene Flags",
+        "resolved_at": "2026-10-06T21:06:09Z"
+      }
+    },
+    {
+      "id": "CF-0068-008",
+      "type": "scope-overlap",
+      "severity": "low",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0023",
+      "detail": "CON-0023 (llm-Konfigurationsschema, unified provider config) definiert vermutlich die konfigurierbaren Parameter des claude-cli-Providers, etwa Pfad zum Binary, Modell, Timeout und Zusatzargumente. Laut INV-01 ist die Argumentliste 'genau' festgelegt. Konfigurierbare Optionen aus CON-0023, die zusätzliche CLI-Flags erzeugen würden (z. B. model, extra_args), stünden im Widerspruch zu dieser Exaktheitsgarantie. Es fehlt eine Aussage, welche Konfigurationsfelder die Argumentliste beeinflussen dürfen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Der Provider bekommt aus der Konfiguration nur timeout (factory.py); kein Modell- oder Zusatzflag existiert",
+        "resolved_at": "2026-10-06T21:06:10Z"
+      }
+    },
+    {
+      "id": "CF-0068-009",
+      "type": "dependency-gap",
+      "severity": "low",
+      "new_contract": "CON-0233",
+      "conflicting_contract": "CON-0190",
+      "detail": "CON-0190 (Config-Validierungsregeln – Provider-Enum, Provider-Konsistenz) muss 'claude-cli' als gültigen Provider-Wert enthalten, sonst ist der in CON-0233 spezifizierte Provider nicht konfigurierbar. Zudem kann die in CON-0233 beschriebene Umgebung (Env-Variablen beim Prozessstart) Konsistenzregeln aus CON-0190 berühren, etwa ob API-Keys gesetzt oder bewusst entfernt werden. Aus dem Auszug ist keine Verknüpfung zu erkennen.",
+      "affected_specs": [],
+      "required_action": "",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "claude-cli ist Default-Provider und im Enum (factory._COMPLETION_PROVIDERS); CON-0233 setzt nur CLAUDE_CODE_DISABLE_AUTO_MEMORY, keine Keys",
+        "resolved_at": "2026-10-06T21:06:10Z"
+      }
+    },
+    {
+      "id": "CF-0068-R001",
+      "type": "overlap",
+      "severity": "medium",
+      "new_contract": "§1 Abgrenzung (SPEC-0067/CON-0233)",
+      "conflicting_contract": "SPEC-0008:§1 Kontext (Claude CLI Provider)",
+      "detail": "SPEC-0008 legt fest, wie der claude-cli-Provider aufgerufen wird; SPEC-0068 ändert die Übergabe des System-Prompts von argv auf eine Datei, daher muss die Provider-Abstraktion in SPEC-0008 bzw. CON-0233 konsistent nachgezogen werden.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "Nachgezogen: CON-0233 0.3.1 (INV-01 --system-prompt-file), SPEC-0067 0.3.0 FR-02, CON-0022 0.4.0 Protokoll; SPEC-0008 ist an der Stelle historisch",
+        "resolved_at": "2026-10-06T21:06:40Z"
+      }
+    },
+    {
+      "id": "CF-0068-R002",
+      "type": "overlap",
+      "severity": "low",
+      "new_contract": "§2 Erfolgskriterien (cache_read-Anteil)",
+      "conflicting_contract": "SPEC-0011:§1 Kontext & Motivation",
+      "detail": "SPEC-0011 lernt Kostenschätzungen aus historischen Token-Daten; ohne Trennung von cache_read und cache_write verfälscht der von SPEC-0068 eingeführte hohe cache_read-Anteil diese Datenbasis.",
+      "source": "regression",
+      "status": "acknowledged",
+      "resolution": {
+        "action": "acknowledged",
+        "reason": "token_usage trennt cache_read_tokens und cache_write_tokens seit SPEC-0060 (estimation.py); die Datenbasis bleibt unterscheidbar",
+        "resolved_at": "2026-10-06T21:06:41Z"
+      }
+    }
+  ],
+  "impact_summary": {
+    "total_conflicts": 9,
+    "high": 0,
+    "medium": 5,
+    "low": 4,
+    "affected_specs_count": 0
+  }
+}

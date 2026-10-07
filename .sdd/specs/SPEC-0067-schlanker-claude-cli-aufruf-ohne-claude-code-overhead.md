@@ -6,7 +6,7 @@ status: implemented
 owner: borisbrue
 created: 2026-10-06
 updated: '2026-10-06'
-version: 0.2.0
+version: 0.3.0
 priority: medium
 tags:
 - llm
@@ -36,7 +36,7 @@ started_at: '2026-10-06T20:23:25Z'
 ---
 # Schlanker claude-cli-Aufruf ohne Claude-Code-Overhead
 
-> **Status:** draft · **Owner:** borisbrue · **Version:** 0.2.0
+> **Status:** draft · **Owner:** borisbrue · **Version:** 0.3.0
 
 ## 1. Kontext & Motivation
 
@@ -112,9 +112,9 @@ Aufrufer sehen davon nichts; ändert sich die CLI, ändert sich nur diese Funkti
   `--tools ""`, `--setting-sources ""` und `--strict-mcp-config` auf. Damit stehen dem Aufruf
   keine Tools, keine Einstellungen (inkl. Hooks und Berechtigungen) und keine MCP-Server zur
   Verfügung.
-- **FR-02:** Der Provider übergibt `system_prompt` per `--system-prompt <text>`. Ohne
-  `system_prompt` übergibt er `--system-prompt ""`, damit der Claude-Code-System-Prompt nie
-  geladen wird. Der Prompt enthält keinen `<system>`-Präfix mehr.
+- **FR-02:** Der Provider übergibt `system_prompt` als eigenen System-Prompt, nie als Präfix im
+  Prompt; ohne `system_prompt` einen leeren, damit der Claude-Code-System-Prompt nie geladen wird.
+  Seit SPEC-0068 FR-05 geschieht das per `--system-prompt-file` (Aufrufform: CON-0233).
 - **FR-03:** Der Provider setzt für den Kindprozess `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`; die
   übrige Umgebung erbt er unverändert.
 - **FR-04:** Der Provider übergibt den Prompt über stdin, nicht als Kommandozeilenargument.
@@ -144,12 +144,12 @@ Feature: Schlanker claude-cli-Aufruf
 
   Scenario: System-Prompt als echter System-Prompt
     When der Provider complete("Hallo", system_prompt="Sei knapp.") aufruft
-    Then enthält der claude-Aufruf --system-prompt "Sei knapp."
+    Then erhält claude "Sei knapp." als System-Prompt
     And der übergebene Prompt ist genau "Hallo"
 
   Scenario: Ohne System-Prompt
     When der Provider complete("Hallo") aufruft
-    Then enthält der claude-Aufruf --system-prompt ""
+    Then erhält claude einen leeren System-Prompt
 
   Scenario: Großer Prompt
     Given ein Prompt mit 200.000 Zeichen
@@ -197,3 +197,4 @@ Feature: Schlanker claude-cli-Aufruf
 |------------|---------|------------------|---------------------|
 | 2026-10-06 | 0.1.0   | borisbrue, Claude | Initiale Erstellung |
 | 2026-10-06 | 0.2.0   | borisbrue, Claude | Contract-Review: UTF-8 explizit (FR-04), Fehlerszenario an CON-0233 angeglichen |
+| 2026-10-06 | 0.3.0   | borisbrue, Claude | FR-02 und Gherkin unabhängig von der Übergabeart; Datei-Übergabe durch SPEC-0068 FR-05 |
