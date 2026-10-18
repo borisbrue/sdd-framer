@@ -139,8 +139,12 @@ class SpecFinalizer:
         effective_branch = branch or branch_name(spec_id, prefix=FINALIZE_BRANCH_PREFIX)
         root = self._cfg.root
 
+        # Ein Dry-Run wechselt keinen Branch und committet nicht (#178): vorher lief
+        # git add -A auch im Dry-Run und nahm unversionierte Laufdaten (.sdd/runs/) mit.
+        schreibt = not no_commit and not self._dry_run
+
         # 1. Branch sicherstellen
-        if not no_commit:
+        if schreibt:
             existing = _git(["branch", "--list", effective_branch], cwd=root)
             if effective_branch not in existing.stdout:
                 _git(["checkout", "-b", effective_branch], cwd=root)
@@ -149,7 +153,7 @@ class SpecFinalizer:
 
         # 2. Commit (wenn Caller noch nicht committed hat)
         commit_hash: str | None = None
-        if not no_commit:
+        if schreibt:
             status = _git(["status", "--porcelain"], cwd=root)
             if status.stdout.strip():
                 msg = commit_msg or f"feat({spec_id}): implementiert via sdd finalize"
@@ -191,12 +195,15 @@ class SpecFinalizer:
             )
 
         if self._dry_run:
+            offen = 0 if no_commit else len(
+                _git(["status", "--porcelain"], cwd=root).stdout.splitlines())
             return FinalizeReport(
                 spec_id=spec_id,
                 branch=effective_branch,
                 commit_hash=commit_hash,
                 tests_passed=True,
-                test_output="dry-run: Tests übersprungen",
+                test_output=("dry-run: kein Branch-Wechsel, kein Commit, Tests übersprungen"
+                             + (f" ({offen} Änderungen nicht committet)" if offen else "")),
                 pr_url="https://dry-run/pr/1",
                 pr_path=None,
                 error=None,
