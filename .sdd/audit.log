@@ -112,3 +112,4 @@
 2026-10-06T20:23:25Z SPEC-0067 approved → in-progress [sdd-start]
 2026-10-06T21:06:44Z SPEC-0068 approved → in-progress [sdd-start]
 2026-10-18T18:48:57Z  hotfix.start  HF-0020  'sdd finalize --dry-run wechselt den Branch und committet per git add -A (auch .sdd/runs/), obwohl die Option keinen Commit verspricht (#178)'
+2026-10-18T19:28:45Z  hotfix.finalize  HF-0020  commit=6a874c8a074e73d555ebb380312dbe3ea2748dc8
