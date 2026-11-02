@@ -8,6 +8,7 @@ Prüft drei Ebenen:
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -471,16 +472,59 @@ def _check_agents_md(config: SddConfig, report: Report) -> None:
             )
 
 
+def _git_foreign_paths(root: Path) -> set[tuple[str, ...]]:
+    """Pfade unter root, die nicht zum eigenen Projektcode gehören: Git-Submodule und
+    gitignorierte Pfade, als Teil-Tupel relativ zu root.
+
+    Submodule kommen aus dem Index (Mode 160000), damit greift es auch für nur
+    gestagte Submodule in einem Repo ohne Commit. Ignoriertes liefert ein einziger
+    ls-files-Aufruf; ganz ignorierte Verzeichnisse erscheinen dank --directory als ein
+    Eintrag. Ohne git oder ohne Repo: leere Menge, also das bisherige Verhalten.
+    """
+
+    def ls_files(*args: str) -> list[str] | None:
+        try:
+            proc = subprocess.run(
+                ["git", "ls-files", "-z", *args],
+                cwd=root, capture_output=True, text=True, check=False,
+            )
+        except OSError:
+            return None
+        if proc.returncode != 0:
+            return None
+        return [entry for entry in proc.stdout.split("\0") if entry]
+
+    foreign: set[tuple[str, ...]] = set()
+    staged = ls_files("--stage")
+    if staged is None:
+        return foreign
+    for entry in staged:
+        meta, _, path = entry.partition("\t")
+        if meta.startswith("160000 "):
+            foreign.add(Path(path).parts)
+    for path in ls_files("--others", "--ignored", "--exclude-standard", "--directory") or []:
+        foreign.add(Path(path.rstrip("/")).parts)
+    return foreign
+
+
+def _is_foreign(rel_parts: tuple[str, ...], foreign: set[tuple[str, ...]]) -> bool:
+    """True, wenn rel_parts selbst oder ein Elternpfad in foreign liegt."""
+    return any(rel_parts[:i] in foreign for i in range(1, len(rel_parts) + 1))
+
+
 def _check_multi_agents_md(config: SddConfig, report: Report) -> None:
     """Warnt wenn Unterverzeichnisse mit Quellcode kein eigenes AGENTS.md haben."""
     skip_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv",
                  ".sdd", "dist", "build", ".mypy_cache", ".pytest_cache"}
     # Indikatoren für ein "signifikantes" Subkomponenten-Verzeichnis
     source_indicators = {"src", "lib", "app", "cmd", "pkg", "source", "main"}
+    foreign = _git_foreign_paths(config.root)
     for subdir in sorted(config.root.iterdir()):
         if not subdir.is_dir():
             continue
         if subdir.name.startswith(".") or subdir.name in skip_dirs:
+            continue
+        if (subdir.name,) in foreign:
             continue
         has_source = any((subdir / ind).is_dir() for ind in source_indicators)
         if not has_source:
@@ -513,6 +557,8 @@ def _check_inline_disables(config: SddConfig, report: Report) -> None:
     """Findet Inline-Suppress-Kommentare in Quelldateien (Taste Invariant)."""
     skip_dirs = {".git", "__pycache__", "node_modules", ".venv", "venv",
                  ".sdd", "dist", "build", ".mypy_cache"}
+    # Vendored Code (Submodule, gitignorierte Klone) ist nicht Projektcode.
+    foreign = _git_foreign_paths(config.root)
     for src_file in config.root.rglob("*"):
         if not src_file.is_file():
             continue
@@ -520,7 +566,10 @@ def _check_inline_disables(config: SddConfig, report: Report) -> None:
             continue
         if any(part in skip_dirs for part in src_file.parts):
             continue
-        if _is_eval_data(src_file.relative_to(config.root).parts):
+        rel_parts = src_file.relative_to(config.root).parts
+        if _is_eval_data(rel_parts):
+            continue
+        if _is_foreign(rel_parts, foreign):
             continue
         try:
             text = src_file.read_text(encoding="utf-8", errors="ignore")

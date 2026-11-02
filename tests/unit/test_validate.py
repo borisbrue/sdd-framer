@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from sdd_cli.config import SddConfig
 from sdd_cli.validate import (
@@ -11,7 +14,9 @@ from sdd_cli.validate import (
     Issue,
     Report,
     _check_agents_md,
+    _check_inline_disables,
     _check_lifecycle_rules,
+    _check_multi_agents_md,
     validate,
 )
 
@@ -368,3 +373,69 @@ class TestCheckLifecycleRules:
         report = Report()
         _check_lifecycle_rules(report, [c], [s], {})
         assert len(report.warnings) == 0
+
+
+# ─── Vendored Code: Submodule und gitignorierte Pfade ─────────────────────────
+
+# Zusammengesetzt, damit diese Testdatei selbst keinen Suppress-Kommentar enthält.
+_SUPPRESSED_LINE = "import os  #" + " noqa\n"
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+
+
+def _suppress_files(root: Path) -> None:
+    for rel in ["src/own.py", "vendor/lib/tool.py", "reference/clone/x.py", "build.py"]:
+        f = root / rel
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(_SUPPRESSED_LINE, encoding="utf-8")
+
+
+def _flagged(root: Path) -> set[str]:
+    report = Report()
+    _check_inline_disables(SddConfig(root=root, raw={}), report)
+    return {str(i.file.relative_to(root)) for i in report.errors}
+
+
+@pytest.fixture
+def vendored_repo(tmp_path: Path) -> Path:
+    """Repo ohne Commit: Submodul nur gestaged (Mode 160000), reference/ und build.py ignoriert."""
+    if shutil.which("git") is None:
+        pytest.skip("git nicht installiert")
+    _suppress_files(tmp_path)
+    _git(tmp_path, "init", "-q")
+    (tmp_path / ".gitignore").write_text("reference/\nbuild.py\n", encoding="utf-8")
+    _git(
+        tmp_path, "update-index", "--add", "--cacheinfo",
+        "160000,0123456789abcdef0123456789abcdef01234567,vendor/lib",
+    )
+    return tmp_path
+
+
+class TestInlineDisablesForeignPaths:
+    def test_submodule_and_ignored_paths_are_skipped(self, vendored_repo):
+        assert _flagged(vendored_repo) == {"src/own.py"}
+
+    def test_without_git_repo_everything_is_scanned(self, tmp_path):
+        _suppress_files(tmp_path)
+        assert _flagged(tmp_path) == {
+            "src/own.py", "vendor/lib/tool.py", "reference/clone/x.py", "build.py",
+        }
+
+    def test_without_git_binary_everything_is_scanned(self, vendored_repo, monkeypatch):
+        monkeypatch.setenv("PATH", "")
+        assert len(_flagged(vendored_repo)) == 4
+
+    def test_multi_agents_md_skips_submodule_and_ignored(self, vendored_repo):
+        for top in ["vendored", "reference", "own"]:
+            (vendored_repo / top / "src").mkdir(parents=True)
+        _git(
+            vendored_repo, "update-index", "--add", "--cacheinfo",
+            "160000,0123456789abcdef0123456789abcdef01234567,vendored",
+        )
+        report = Report()
+        _check_multi_agents_md(SddConfig(root=vendored_repo, raw={}), report)
+        warned = {w.file.parent.name for w in report.warnings}
+        assert "own" in warned
+        assert not warned & {"vendored", "reference"}
