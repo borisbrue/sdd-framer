@@ -45,7 +45,7 @@ sys.exit(int(os.environ.get("FAKE_EXIT", "0")))
 """
 
 FLAGS = ["--print", "--output-format", "json", "--tools", "", "--setting-sources", "",
-         "--strict-mcp-config", "--system-prompt-file"]
+         "--strict-mcp-config", "--no-session-persistence", "--system-prompt-file"]
 
 
 @pytest.fixture

@@ -39,6 +39,7 @@ def _command(claude: str, system_file: str) -> list[str]:
     """
     return [claude, "--print", "--output-format", "json",
             "--tools", "", "--setting-sources", "", "--strict-mcp-config",
+            "--no-session-persistence",  # HF-0021: keine Transcripts in ~/.claude/projects
             "--system-prompt-file", system_file]
 
 
