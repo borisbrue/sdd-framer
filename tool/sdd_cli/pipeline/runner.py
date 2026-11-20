@@ -103,6 +103,23 @@ def render_sources(role_def: RoleDefinition, sources: Mapping[str, Any],
 
 # ── RoleRunner ────────────────────────────────────────────────────────────────
 
+def drop_null_finding_lines(output: Any) -> None:
+    """Remove `line: null` from review findings in place.
+
+    `line` is optional in the reviewer schema, but models often send it as null for
+    file-level findings. Rejecting the whole answer for that lost readable findings
+    and stalled runs at S2; dropping the null keeps every finding.
+    """
+    if not isinstance(output, dict):
+        return
+    findings = output.get("findings")
+    if not isinstance(findings, list):
+        return
+    for finding in findings:
+        if isinstance(finding, dict) and "line" in finding and finding["line"] is None:
+            del finding["line"]
+
+
 class RoleRunner:
     def __init__(self, *, run_id: str, spec_id: str) -> None:
         self.run_id = run_id
@@ -182,6 +199,7 @@ class RoleRunner:
                         ctx: Mapping) -> tuple[list[str], list[str]]:
         """Schema und Gate-Checks der Rolle: (Probleme, Namen der gescheiterten Checks)."""
         name, definition = role_def.schema_ref()
+        drop_null_finding_lines(output)
         probleme = schema_errors(name, output, definition)
         if probleme:
             return probleme, ["json_schema"]
